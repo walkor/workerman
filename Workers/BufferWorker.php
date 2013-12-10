@@ -1,7 +1,7 @@
 <?php
 /**
  * 
- * 压测worker
+ * 测试worker
 * @author walkor <worker-man@qq.com>
  */
 require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
