@@ -5,11 +5,10 @@
  * @author walkor <worker-man@qq.com>
  * 
  */
-require_once WORKERMAN_ROOT_DIR . 'Protocols/Buffer.php';
 
-class System
+class Event
 {
-   public static function onConnection($address, $socket_id, $sid)
+   public static function onConnect($address, $socket_id, $sid)
    {
        // 检查sid是否合法
        $uid = self::getUidBySid();

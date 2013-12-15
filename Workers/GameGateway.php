@@ -27,8 +27,6 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
     // 当前处理的包数据
     protected $data = array();
     
-    protected $onConnectBuffer = '';
-    protected $onCloseBuffer = ''; 
     public function start()
     {
         // 安装信号处理函数
@@ -63,9 +61,6 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
         
         // 添加读udp事件
         $this->event->add($this->innerMainSocket,  WORKERMAN\Core\Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
-        
-        // 初始化onConnetct / onclose buffer
-        $this->initOnBuffer();
         
         // 初始化到worker的通信地址
         $this->initWorkerAddresses();
@@ -116,17 +111,6 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
         $this->currentClientAddress = $address;
        
         $this->innerDealProcess($data);
-    }
-    
-    protected function initOnBuffer()
-    {
-        $buffer = new GameBuffer();
-        $buffer->header['cmd'] = GameBuffer::CMD_SYSTEM;
-        $buffer->header['sub_cmd'] = GameBuffer::SCMD_ON_CONNECT;
-        $buffer->body = '';
-        $this->onConnectBuffer = $buffer->getBuffer();
-        $buffer->header['sub_cmd'] = GameBuffer::SCMD_ON_CLOSE;
-        $this->onCloseBuffer = $buffer->getBuffer();
     }
     
     protected function initWorkerAddresses()
@@ -232,7 +216,13 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
                 return;
             }
             // 发送onconnet事件包,包体是sid
-            $this->sendToWorker($this->onConnectBuffer.$this->data['body']);
+            $on_buffer = new GameBuffer();
+            $on_buffer->header['cmd'] = GameBuffer::CMD_SYSTEM;
+            $on_buffer->head['sub_cmd'] = GameBuffer::SCMD_ON_CONNECT;
+            // 用from_uid来临时存储socketid
+            $on_buffer->head['from_uid'] = $this->currentDealFd;
+            $on_buffer->body = $this->data['body'];
+            $this->sendToWorker($on_buffer->getBuffer());
             return;
         }
         

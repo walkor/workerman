@@ -10,7 +10,7 @@
  */
 require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
 require_once WORKERMAN_ROOT_DIR . 'Applications/GameBuffer.php';
-require_once WORKERMAN_ROOT_DIR . 'Applications/Store.php';
+require_once WORKERMAN_ROOT_DIR . 'Applications/Event.php';
 
 class GameWorker extends WORKERMAN\Core\SocketWorker
 {
@@ -31,6 +31,15 @@ class GameWorker extends WORKERMAN\Core\SocketWorker
         $method = GameBuffer::$scmdMap[$this->data['sub_cmd']];
         if(!method_exists($class, $method))
         {
+            if($class == 'System')
+            {
+                switch($method)
+                {
+                    case GameBuffer::SCMD_ON_CONNECT:
+                        call_user_func_array(array('Event', 'onConnect'), array($this->currentClientAddress, $this->data['from_uid'], $this->data['body']));
+                        return; 
+                }
+            }
             $this->notice("cmd err $class::$method not exists");
             return;
         }
