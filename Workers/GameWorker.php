@@ -36,8 +36,7 @@ class GameWorker extends WORKERMAN\Core\SocketWorker
                 switch($this->data['sub_cmd'])
                 {
                     case GameBuffer::SCMD_ON_CONNECT:
-                        $ip =$this->getRemoteIp();
-                        call_user_func_array(array('Event', 'onConnect'), array('udp://'.$this->currentClientAddress, $this->data['from_uid'], $this->data['body']));
+                        call_user_func_array(array('Event', 'onConnect'), array('udp://'.$this->getRemoteIp().':'.$this->data['to_uid'], $this->data['from_uid'], $this->data['body']));
                         return; 
                 }
             }

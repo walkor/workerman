@@ -16,8 +16,10 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
 {
     // 内部通信socket
     protected $innerMainSocket = null;
-    // 内部通信地址
-    protected $innerAddress = '';
+    // 内网ip
+    protected $lanIp = '127.0.0.1';
+    // 内部通信端口
+    protected $lanPort = 0;
     // uid到连接的映射
     protected $uidConnMap = array();
     // 连接到uid的映射
@@ -38,17 +40,16 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
         $ret = $this->event->add($this->mainSocket,  WORKERMAN\Core\Events\BaseEvent::EV_READ, array($this, 'accept'));
         
         // 创建内部通信套接字
-        $inner_port = posix_getpid();
-        $lan_ip = WORKERMAN\Core\Lib\Config::get('workers.'.$this->workerName.'.lan_ip');
-        if(!$lan_ip)
+        $this->lanPort = posix_getpid();
+        $this->lanIp = WORKERMAN\Core\Lib\Config::get('workers.'.$this->workerName.'.lan_ip');
+        if(!$this->lanIp)
         {
             $this->notice($this->workerName.'.lan_ip not set');
-            $lan_ip = '127.0.0.1';
+            $this->lanIp = '127.0.0.1';
         }
         $error_no = 0;
         $error_msg = '';
-        $this->innerAddress = "udp://$lan_ip:$inner_port";
-        $this->innerMainSocket = stream_socket_server($this->innerAddress, $error_no, $error_msg, STREAM_SERVER_BIND);
+        $this->innerMainSocket = stream_socket_server("udp://".$this->lanIp.':'.$this->lanPort, $error_no, $error_msg, STREAM_SERVER_BIND);
         if(!$this->innerMainSocket)
         {
             $this->notice('create innerMainSocket fail and exit '.$error_no . ':'.$error_msg);
@@ -60,7 +61,7 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
             stream_set_blocking($this->innerMainSocket , 0);
         }
         
-        $this->registerAddress("udp://$lan_ip:$inner_port");
+        $this->registerAddress("udp://".$this->lanIp.':'.$this->lanPort);
         
         // 添加读udp事件
         $this->event->add($this->innerMainSocket,  WORKERMAN\Core\Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
@@ -239,6 +240,7 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
             $on_buffer->header['sub_cmd'] = GameBuffer::SCMD_ON_CONNECT;
             // 用from_uid来临时存储socketid
             $on_buffer->header['from_uid'] = $this->currentDealFd;
+            // 用to_uid来临时存储通信端口号
             $on_buffer->body = $this->data['body'];
             $this->sendToWorker($on_buffer->getBuffer());
             return;
@@ -259,7 +261,7 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
     protected function sendToWorker($bin_data)
     {
         $client = stream_socket_client($this->workerAddresses[array_rand($this->workerAddresses)]);
-        $len = stream_socket_sendto($client, $bin_data, 0, $this->innerAddress);
+        $len = stream_socket_sendto($client, $bin_data);
         return $len == strlen($bin_data);
     }
     
