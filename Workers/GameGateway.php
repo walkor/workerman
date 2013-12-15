@@ -172,6 +172,9 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
                 $buf = new GameBuffer();
                 $buf->body = 'connect success';
                 $this->sendToUid($uid, $buf->getBuffer());
+                return;
+            default :
+                $this->notice('gateway inner pack sub_cmd err data:' .$recv_str . ' serialize:' . serialize($data) );
         }
     }
     
@@ -241,6 +244,7 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
             // 用from_uid来临时存储socketid
             $on_buffer->header['from_uid'] = $this->currentDealFd;
             // 用to_uid来临时存储通信端口号
+            $on_buffer->header['to_uid'] = $this->lanPort;
             $on_buffer->body = $this->data['body'];
             $this->sendToWorker($on_buffer->getBuffer());
             return;
