@@ -6,6 +6,8 @@
  * 
  */
 
+require_once WORKERMAN_ROOT_DIR . 'Applications/Store.php';
+
 class Event
 {
    public static function onConnect($address, $socket_id, $sid)
