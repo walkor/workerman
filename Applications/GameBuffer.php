@@ -44,6 +44,7 @@ class GameBuffer extends WORKERMAN\Protocols\Buffer
             self::CMD_USER  => 'User',
             self::CMD_MAP => 'Map',
             self::CMD_GATEWAY => 'GateWay',
+            self::CMD_SYSTEM => 'System',
      );
     
     public static $scmdMap = array(
