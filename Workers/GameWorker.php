@@ -33,7 +33,7 @@ class GameWorker extends WORKERMAN\Core\SocketWorker
         {
             if($class == 'System')
             {
-                switch($method)
+                switch($this->data['sub_cmd'])
                 {
                     case GameBuffer::SCMD_ON_CONNECT:
                         call_user_func_array(array('Event', 'onConnect'), array($this->currentClientAddress, $this->data['from_uid'], $this->data['body']));
