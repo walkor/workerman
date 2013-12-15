@@ -39,10 +39,10 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
         
         // 创建内部通信套接字
         $inner_port = posix_getpid();
-        $lan_ip = WORKERMAN\Core\Lib\Config::get($this->workerName.'.lan_ip');
+        $lan_ip = WORKERMAN\Core\Lib\Config::get('workers.'.$this->workerName.'.lan_ip');
         if(!$lan_ip)
         {
-            $this->notice($this->workerName.'.lan_ip nost set');
+            $this->notice($this->workerName.'.lan_ip not set');
             $lan_ip = '127.0.0.1';
         }
         $error_no = 0;
@@ -131,7 +131,7 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
     
     protected function initWorkerAddresses()
     {
-        $this->workerAddresses = WORKERMAN\Core\Lib\Config::get($this->workerName.'.game_worker');
+        $this->workerAddresses = WORKERMAN\Core\Lib\Config::get('workers.'.$this->workerName.'.game_worker');
         if(!$this->workerAddresses)
         {
             $this->notice($this->workerName.'game_worker not set');
