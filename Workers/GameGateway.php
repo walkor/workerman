@@ -225,14 +225,14 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
         if(!$from_uid)
         {
             // 没传sid
-            if(empty($this->data->body))
+            if(empty($this->data['body']))
             {
                 $this->notice("onConnect miss sid ip:".$this->getRemoteIp(). " data[".serialize($this->data)."]");
                 $this->closeClient($this->currentDealFd);
                 return;
             }
             // 发送onconnet事件包,包体是sid
-            $this->sendToWorker($this->onConnectBuffer.$this->data->body);
+            $this->sendToWorker($this->onConnectBuffer.$this->data['body']);
             return;
         }
         
