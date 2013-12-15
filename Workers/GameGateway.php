@@ -16,6 +16,8 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
 {
     // 内部通信socket
     protected $innerMainSocket = null;
+    // 内部通信地址
+    protected $innerAddress = '';
     // uid到连接的映射
     protected $uidConnMap = array();
     // 连接到uid的映射
@@ -45,7 +47,8 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
         }
         $error_no = 0;
         $error_msg = '';
-        $this->innerMainSocket = stream_socket_server("udp://$lan_ip:$inner_port", $error_no, $error_msg, STREAM_SERVER_BIND);
+        $this->innerAddress = "udp://$lan_ip:$inner_port";
+        $this->innerMainSocket = stream_socket_server($this->innerAddress, $error_no, $error_msg, STREAM_SERVER_BIND);
         if(!$this->innerMainSocket)
         {
             $this->notice('create innerMainSocket fail and exit '.$error_no . ':'.$error_msg);
@@ -256,7 +259,7 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
     protected function sendToWorker($bin_data)
     {
         $client = stream_socket_client($this->workerAddresses[array_rand($this->workerAddresses)]);
-        $len = stream_socket_sendto($client, $bin_data);
+        $len = stream_socket_sendto($client, $bin_data, 0, $this->innerAddress);
         return $len == strlen($bin_data);
     }
     
