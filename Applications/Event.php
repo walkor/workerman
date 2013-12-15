@@ -11,7 +11,7 @@ class Event
    public static function onConnect($address, $socket_id, $sid)
    {
        // 检查sid是否合法
-       $uid = self::getUidBySid();
+       $uid = self::getUidBySid($sid);
        // 不合法踢掉
        if(!$uid)
        {
@@ -38,7 +38,7 @@ class Event
    
    public static function kickAddress($address, $socket_id)
    {
-       
+     
    }
    
    public static function storeUidAddress($uid, $address)
