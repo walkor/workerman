@@ -31,7 +31,7 @@ class Buffer
      * 包头长度
      * @var integer
      */
-    const HEAD_LEN = 19;
+    const HEAD_LEN = 23;
      
     /**
      * 序列号，防止串包
