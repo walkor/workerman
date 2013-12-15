@@ -168,7 +168,7 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
                     return;
                 }
                 $this->uidConnMap[$uid] = $socket_id;
-                $this->connections[$socket_id] = $uid;
+                $this->connUidMap[$socket_id] = $uid;
                 $buf = new GameBuffer();
                 $buf->body = 'connect success';
                 $this->sendToUid($uid, $buf->getBuffer());
