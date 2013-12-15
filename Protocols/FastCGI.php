@@ -2,7 +2,7 @@
 
 /**
  * fastcgi 协议解析 相关
- * 简单实现，测试时使用，可能会有bug，不要用到生产环境
+ * 简单实现
 * @author walkor <worker-man@qq.com>
 * */
 class FastCGI{

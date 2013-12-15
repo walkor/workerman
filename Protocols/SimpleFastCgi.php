@@ -5,7 +5,7 @@ namespace WORKERMAN\Protocols;
  * 简单实现，测试时使用，可能会有bug，不要用到生产环境
  * @author walkor <worker-man@qq.com>
  * */
-class FastCGI{
+class SimpleFastCgi{
     
     const VERSION_1            = 1;
 

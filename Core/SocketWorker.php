@@ -34,12 +34,6 @@ abstract class SocketWorker extends AbstractWorker
     const EXIT_WAIT_TIME = 3;
     
     /**
-     * 进程意外退出状态码
-     * @var integer
-     */ 
-    const EXIT_UNEXPECT_CODE = 119;
-    
-    /**
      * worker的传输层协议
      * @var string
      */
@@ -240,9 +234,8 @@ abstract class SocketWorker extends AbstractWorker
         
         // 主体循环,整个子进程会阻塞在这个函数上
         $ret = $this->event->loop();
-        $this->notice("evet->loop returned " . var_export($ret, true));
-        
-        exit(self::EXIT_UNEXPECT_CODE);
+        $this->notice('worker loop exit');
+        exit(0);
     }
     
     /**

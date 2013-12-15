@@ -10,12 +10,13 @@
  * 
  */
 require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
+require_once WORKERMAN_ROOT_DIR . 'Applications/GameBuffer.php';
 
-class ChatCenter extends WORKERMAN\Core\SocketWorker
+class DataCenter extends WORKERMAN\Core\SocketWorker
 {
     public function dealInput($recv_str)
     {
-        return 0; 
+        return GameBuffer::input($recv_str);
     }
 
     public function dealProcess($recv_str)

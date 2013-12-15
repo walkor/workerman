@@ -2,7 +2,7 @@
 namespace WORKERMAN\Protocols;
 /**
  * http 协议解析 相关
- * 简单的实现，可能会有bug，不要用于生产环境
+ * 简单的实现 不支持header cookie
  * @author walkor <worker-man@qq.com>
  * */
 class SimpleHttp{
