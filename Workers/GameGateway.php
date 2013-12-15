@@ -250,7 +250,8 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
     
     protected function sendToWorker($bin_data)
     {
-        $len = stream_socket_sendto($this->innerMainSocket, $bin_data, 0, $this->workerAddresses[array_rand($this->workerAddresses)]);
+        $client = stream_socket_client($this->workerAddresses[array_rand($this->workerAddresses)]);
+        $len = stream_socket_sendto($client, $bin_data);
         return $len == strlen($bin_data);
     }
     
