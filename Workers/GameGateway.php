@@ -153,6 +153,18 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
                 return;
             case GameBuffer::SCMD_BROADCAST:
                 return $this->broadCast($recv_str);
+            case GameBuffer::SCMD_CONNECT_SUCCESS:
+                $socket_id = $data['from_uid'];
+                $uid = $data['to_uid'];
+                // 查看是否已经绑定uid
+                $binded_uid = $this->getUidByFd($socket_id);
+                if($binded_uid)
+                {
+                    $this->notice('notify connection success fail ' . $socket_id . ' already binded data:'.serialize($data));
+                    return;
+                }
+                $this->uidConnMap[$uid] = $socket_id;
+                $this->connections[$socket_id] = $uid;
         }
     }
     

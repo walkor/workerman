@@ -58,7 +58,12 @@ class Event
    
    protected static function notifyConnectionSuccess($address, $socket_id, $uid)
    {
-       
+       $buf = new GameBuffer();
+       $buf->header['cmd'] = GameBuffer::CMD_GATEWAY;
+       $buf->header['sub_cmd'] = GameBuffer::SCMD_CONNECT_SUCCESS;
+       $buf->header['from_uid'] = $socket_id;
+       $buf->header['to_uid'] = $uid;
+       GameBuffer::sendToGateway($address, $buf->getBuffer());
    }
    
    protected static function getUidBySid($sid)

@@ -6,12 +6,12 @@
 * 
  */
 require_once WORKERMAN_ROOT_DIR . 'Protocols/Buffer.php';
-require_once WORKERMAN_ROOT_DIR . 'Applications/System.php';
+require_once WORKERMAN_ROOT_DIR . 'Applications/Event.php';
 
 class GameBuffer extends WORKERMAN\Protocols\Buffer
 {
     // 系统命令
-    const CMD_SYSTEM = 128;
+    const CMD_Event = 128;
     // 连接事件 
     const SCMD_ON_CONNECT = 1;
     // 关闭事件
@@ -27,6 +27,8 @@ class GameBuffer extends WORKERMAN\Protocols\Buffer
     const SCMD_KICK_ADDRESS = 3;
     // 广播内容
     const SCMD_BROADCAST = 4;
+    // 通知连接成功
+    const SCMD_CONNECT_SUCCESS = 5;
     
     // 用户中心
     const CMD_USER = 1;
@@ -42,7 +44,7 @@ class GameBuffer extends WORKERMAN\Protocols\Buffer
             self::CMD_USER  => 'User',
             self::CMD_MAP => 'Map',
             self::CMD_GATEWAY => 'GateWay',
-            self::CMD_SYSTEM => 'System',
+            self::CMD_Event => 'Event',
      );
     
     public static $scmdMap = array(
@@ -62,7 +64,7 @@ class GameBuffer extends WORKERMAN\Protocols\Buffer
     
     public static function sendToUid($uid, $buffer)
     {
-        $address = System::getAddressByUid($uid);
+        $address = Event::getAddressByUid($uid);
         if($address)
         {
             return self::sendToGateway($address, $buffer);
