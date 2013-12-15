@@ -11,7 +11,7 @@ require_once WORKERMAN_ROOT_DIR . 'Applications/Event.php';
 class GameBuffer extends WORKERMAN\Protocols\Buffer
 {
     // 系统命令
-    const CMD_Event = 128;
+    const CMD_SYSTEM = 128;
     // 连接事件 
     const SCMD_ON_CONNECT = 1;
     // 关闭事件
