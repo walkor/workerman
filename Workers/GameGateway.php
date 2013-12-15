@@ -230,9 +230,9 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
             // 发送onconnet事件包,包体是sid
             $on_buffer = new GameBuffer();
             $on_buffer->header['cmd'] = GameBuffer::CMD_SYSTEM;
-            $on_buffer->head['sub_cmd'] = GameBuffer::SCMD_ON_CONNECT;
+            $on_buffer->header['sub_cmd'] = GameBuffer::SCMD_ON_CONNECT;
             // 用from_uid来临时存储socketid
-            $on_buffer->head['from_uid'] = $this->currentDealFd;
+            $on_buffer->header['from_uid'] = $this->currentDealFd;
             $on_buffer->body = $this->data['body'];
             $this->sendToWorker($on_buffer->getBuffer());
             return;

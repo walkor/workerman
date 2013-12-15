@@ -11,7 +11,7 @@ while(1)
 {
     $buf = new \WORKERMAN\Protocols\Buffer();
     $buf->body = 'HELLO YAOYAO';
-    $buf->head['code'] = $code++;
+    $buf->header['code'] = $code++;
     fwrite($sock, $buf->getBuffer());
     $ret = fread($sock, 10240);
     var_export(\WORKERMAN\Protocols\Buffer::decode($ret));
