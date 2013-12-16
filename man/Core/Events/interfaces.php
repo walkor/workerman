@@ -1,5 +1,5 @@
 <?php 
-namespace WORKERMAN\Core\Events;
+namespace Man\Core\Events;
 /**
  * 
  * 事件轮询库的通用接口

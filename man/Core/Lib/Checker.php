@@ -1,5 +1,5 @@
 <?php
-namespace WORKERMAN\Core\Lib;
+namespace Man\Core\Lib;
 /**
  * 环境检查相关
  * 
@@ -47,7 +47,7 @@ class Checker
             $suport = extension_loaded($ext_name);
             if($must_required && !$suport)
             {
-                \WORKERMAN\Core\Master::notice($ext_name. " [NOT SUPORT BUT REQUIRED] \tYou have to compile CLI version of PHP with --enable-{$ext_name} \tServer start fail");
+                \Man\Core\Master::notice($ext_name. " [NOT SUPORT BUT REQUIRED] \tYou have to compile CLI version of PHP with --enable-{$ext_name} \tServer start fail");
                 exit($ext_name. " \033[31;40m [NOT SUPORT BUT REQUIRED] \033[0m\n\n\033[31;40mYou have to compile CLI version of PHP with --enable-{$ext_name} \033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
             }
     
@@ -90,7 +90,7 @@ class Checker
         {
             if(isset($disable_func_map[$func]))
             {
-                \WORKERMAN\Core\Master::notice("Function $func may be disabled\tPlease check disable_functions in php.ini \t Server start fail");
+                \Man\Core\Master::notice("Function $func may be disabled\tPlease check disable_functions in php.ini \t Server start fail");
                 exit("\n\033[31;40mFunction $func may be disabled\nPlease check disable_functions in php.ini\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
             }
         }
@@ -110,7 +110,7 @@ class Checker
         {
             if(empty($config['start_workers']))
             {
-                \WORKERMAN\Core\Master::notice(str_pad($worker_name, $pad_length)." [start_workers not set]\tServer start fail");
+                \Man\Core\Master::notice(str_pad($worker_name, $pad_length)." [start_workers not set]\tServer start fail");
                 exit(str_pad($worker_name, $pad_length)."\033[31;40m [start_workers not set]\033[0m\n\n\033[31;40mServer start fail\033[0m\n");
             }
     
@@ -120,7 +120,7 @@ class Checker
             if(0 != self::checkSyntaxError(WORKERMAN_ROOT_DIR . "Workers/$worker_name.php", $worker_name))
             {
                 unset(Config::instance()->config[$worker_name]);
-                \WORKERMAN\Core\Master::notice("$worker_name has Fatal Err");
+                \Man\Core\Master::notice("$worker_name has Fatal Err");
                 echo str_pad($worker_name, $pad_length),"\033[31;40m [Fatal Err] \033[0m\n";
                 continue;
             }
@@ -131,7 +131,7 @@ class Checker
                 if(!self::checkWorkerUserName($worker_user))
                 {
                     echo str_pad($worker_name, $pad_length),"\033[31;40m [FAIL] \033[0m\n";
-                    \WORKERMAN\Core\Master::notice("Can not run $worker_name processes as user $worker_user , User $worker_user not exists\tServer start fail");
+                    \Man\Core\Master::notice("Can not run $worker_name processes as user $worker_user , User $worker_user not exists\tServer start fail");
                     exit("\n\033[31;40mCan not run $worker_name processes as user $worker_user , User $worker_user not exists\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
                 }
             }
@@ -139,10 +139,10 @@ class Checker
             echo str_pad($worker_name, $pad_length),"\033[32;40m [OK] \033[0m\n";
         }
     
-        if($total_worker_count > \WORKERMAN\Core\Master::SERVER_MAX_WORKER_COUNT)
+        if($total_worker_count > \Man\Core\Master::SERVER_MAX_WORKER_COUNT)
         {
-            \WORKERMAN\Core\Master::notice("Number of worker processes can not be more than " . \WORKERMAN\Core\Master::SERVER_MAX_WORKER_COUNT . ".\tPlease check start_workers in " . WORKERMAN_ROOT_DIR . "config/main.php\tServer start fail");
-            exit("\n\033[31;40mNumber of worker processes can not be more than " . \WORKERMAN\Core\Master::SERVER_MAX_WORKER_COUNT . ".\nPlease check start_workers in " . WORKERMAN_ROOT_DIR . "config/main.php\033[0m\n\n\033[31;40mServer start fail\033[0m\n");
+            \Man\Core\Master::notice("Number of worker processes can not be more than " . \Man\Core\Master::SERVER_MAX_WORKER_COUNT . ".\tPlease check start_workers in " . WORKERMAN_ROOT_DIR . "config/main.php\tServer start fail");
+            exit("\n\033[31;40mNumber of worker processes can not be more than " . \Man\Core\Master::SERVER_MAX_WORKER_COUNT . ".\nPlease check start_workers in " . WORKERMAN_ROOT_DIR . "config/main.php\033[0m\n\n\033[31;40mServer start fail\033[0m\n");
         }
     
         echo "-------------------------------------------------\n";
@@ -184,13 +184,13 @@ class Checker
     {
         if($limit_info = posix_getrlimit())
         {
-            if('unlimited' != $limit_info['soft openfiles'] && $limit_info['soft openfiles'] < \WORKERMAN\Core\Master::MIN_SOFT_OPEN_FILES)
+            if('unlimited' != $limit_info['soft openfiles'] && $limit_info['soft openfiles'] < \Man\Core\Master::MIN_SOFT_OPEN_FILES)
             {
-                echo "Notice : Soft open files now is {$limit_info['soft openfiles']},  We recommend greater than " . \WORKERMAN\Core\Master::MIN_SOFT_OPEN_FILES . "\n";
+                echo "Notice : Soft open files now is {$limit_info['soft openfiles']},  We recommend greater than " . \Man\Core\Master::MIN_SOFT_OPEN_FILES . "\n";
             }
-            if('unlimited' != $limit_info['hard filesize'] && $limit_info['hard filesize'] < \WORKERMAN\Core\Master::MIN_SOFT_OPEN_FILES)
+            if('unlimited' != $limit_info['hard filesize'] && $limit_info['hard filesize'] < \Man\Core\Master::MIN_SOFT_OPEN_FILES)
             {
-                echo "Notice : Hard open files now is {$limit_info['hard filesize']},  We recommend greater than " . \WORKERMAN\Core\Master::MIN_HARD_OPEN_FILES . "\n";
+                echo "Notice : Hard open files now is {$limit_info['hard filesize']},  We recommend greater than " . \Man\Core\Master::MIN_HARD_OPEN_FILES . "\n";
             }
         }
     }
@@ -204,7 +204,7 @@ class Checker
         // 已经有进程pid可能server已经启动
         if(@file_get_contents(WORKERMAN_PID_FILE))
         {
-            \WORKERMAN\Core\Master::notice("Server already started", true);
+            \Man\Core\Master::notice("Server already started", true);
             exit;
         }
         

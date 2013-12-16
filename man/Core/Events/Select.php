@@ -1,6 +1,6 @@
 <?php 
-namespace WORKERMAN\Core\Events;
-require_once WORKERMAN_ROOT_DIR . 'Core/Events/interfaces.php';
+namespace Man\Core\Events;
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Events/interfaces.php';
 /**
  * 
  * select 轮询封装
@@ -83,7 +83,7 @@ class Select implements BaseEvent
    
     /**
      * 添加事件
-     * @see \WORKERMAN\Core\Events\BaseEvent::add()
+     * @see \Man\Core\Events\BaseEvent::add()
      */
     public function add($fd, $flag, $func, $args = null)
     {
@@ -122,7 +122,7 @@ class Select implements BaseEvent
     
     /**
      * 删除某个fd的某个事件
-     * @see \WORKERMAN\Core\Events\BaseEvent::del()
+     * @see \Man\Core\Events\BaseEvent::del()
      */
     public function del($fd ,$flag)
     {
@@ -156,7 +156,7 @@ class Select implements BaseEvent
 
     /**
      * 事件轮训库主循环
-     * @see \WORKERMAN\Core\Events\BaseEvent::loop()
+     * @see \Man\Core\Events\BaseEvent::loop()
      */
     public function loop()
     {

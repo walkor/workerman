@@ -1,12 +1,12 @@
 <?php 
-require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
 /**
  * 
  * 用这个worker监控文件更新
  * 
 * @author walkor <worker-man@qq.com>
  */
-class FileMonitor extends WORKERMAN\Core\AbstractWorker
+class FileMonitor extends Man\Core\AbstractWorker
 {
     
     /**
@@ -27,7 +27,7 @@ class FileMonitor extends WORKERMAN\Core\AbstractWorker
      */
     public function start()
     {
-        if(\WORKERMAN\Core\Lib\Config::get('workerman.debug') != 1)
+        if(\Man\Core\Lib\Config::get('workerman.debug') != 1)
         {
             return;
         }
@@ -39,10 +39,10 @@ class FileMonitor extends WORKERMAN\Core\AbstractWorker
             }
         }
         $msg_type = $message = 0;
-        \WORKERMAN\Core\Lib\Task::init();
-        \WORKERMAN\Core\Lib\Task::add(1, array($this, 'sendSignalAndGetResult'));
-        \WORKERMAN\Core\Lib\Task::add(1, array($this, 'checkFilesModify'));
-        \WORKERMAN\Core\Lib\Task::add(1, array($this, 'checkTty'));
+        \Man\Core\Lib\Task::init();
+        \Man\Core\Lib\Task::add(1, array($this, 'sendSignalAndGetResult'));
+        \Man\Core\Lib\Task::add(1, array($this, 'checkFilesModify'));
+        \Man\Core\Lib\Task::add(1, array($this, 'checkTty'));
         while(1)
         {
             $this->collectFiles(true);
@@ -135,7 +135,7 @@ class FileMonitor extends WORKERMAN\Core\AbstractWorker
                 $this->filesToInotify[$file] = $mtime_now;
                 if(!$has_send_signal)
                 {
-                    \WORKERMAN\Core\Lib\Log::add("$file updated and reload workers");
+                    \Man\Core\Lib\Log::add("$file updated and reload workers");
                     $this->sendSignalToAllWorker(SIGHUP);
                     $has_send_signal = true;
                 }

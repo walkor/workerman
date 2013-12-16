@@ -1,5 +1,5 @@
 <?php
-namespace WORKERMAN\Core\Lib;
+namespace Man\Core\Lib;
 class Config
 {
     public static $filename;

@@ -1,9 +1,9 @@
 <?php 
-namespace WORKERMAN\Core;
-require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Checker.php';
-require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Config.php';
-require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Task.php';
-require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Log.php';
+namespace Man\Core;
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Checker.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Task.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Log.php';
 
 /**
  * 
@@ -394,7 +394,7 @@ class Master
             self::setWorkerProcessTitle($worker_name);
     
             // 创建worker实例
-            include_once WORKERMAN_ROOT_DIR . "Workers/$worker_name.php";
+            include_once WORKERMAN_ROOT_DIR . "workers/$worker_name.php";
             $worker = new $worker_name($worker_name);
             // 如果该worker有配置监听端口，则将监听端口的socket传递给子进程
             if(isset(self::$listenedSockets[$worker_name]))
@@ -422,13 +422,13 @@ class Master
     protected static function installSignal()
     {
         // 设置终止信号处理函数
-        pcntl_signal(SIGINT,  array('\WORKERMAN\Core\Master', 'signalHandler'), false);
+        pcntl_signal(SIGINT,  array('\Man\Core\Master', 'signalHandler'), false);
         // 设置SIGUSR1信号处理函数,测试用
-        pcntl_signal(SIGUSR1, array('\WORKERMAN\Core\Master', 'signalHandler'), false);
+        pcntl_signal(SIGUSR1, array('\Man\Core\Master', 'signalHandler'), false);
         // 设置SIGUSR2信号处理函数,平滑重启Server
-        pcntl_signal(SIGHUP, array('\WORKERMAN\Core\Master', 'signalHandler'), false);
+        pcntl_signal(SIGHUP, array('\Man\Core\Master', 'signalHandler'), false);
         // 设置子进程退出信号处理函数
-        pcntl_signal(SIGCHLD, array('\WORKERMAN\Core\Master', 'signalHandler'), false);
+        pcntl_signal(SIGCHLD, array('\Man\Core\Master', 'signalHandler'), false);
     
         // 设置忽略信号
         pcntl_signal(SIGPIPE, SIG_IGN);
@@ -678,7 +678,7 @@ class Master
             {
                 self::$workerToRestart[$pid] = time();
                 posix_kill($pid, SIGHUP);
-                Lib\Task::add(self::KILL_WORKER_TIME_LONG, array('\WORKERMAN\Core\Master', 'forceKillWorker'), array($pid), false);
+                Lib\Task::add(self::KILL_WORKER_TIME_LONG, array('\Man\Core\Master', 'forceKillWorker'), array($pid), false);
                 break;
             }
         }
@@ -714,7 +714,7 @@ class Master
         self::$serverStatus = self::STATUS_SHUTDOWN;
     
         // killWorkerTimeLong 秒后如果还没停止则强制杀死所有进程
-        Lib\Task::add(self::KILL_WORKER_TIME_LONG, array('\WORKERMAN\Core\Master', 'stopAllWorker'), array(true), false);
+        Lib\Task::add(self::KILL_WORKER_TIME_LONG, array('\Man\Core\Master', 'stopAllWorker'), array(true), false);
     
         // 停止所有worker
         self::stopAllWorker();

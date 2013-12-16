@@ -8,11 +8,11 @@
  * @author walkor <worker-man@qq.com>
  * 
  */
-require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
-require_once WORKERMAN_ROOT_DIR . 'Applications/Game/GameBuffer.php';
-require_once WORKERMAN_ROOT_DIR . 'Applications/Game/Store.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
+require_once WORKERMAN_ROOT_DIR . 'applications/Game/GameBuffer.php';
+require_once WORKERMAN_ROOT_DIR . 'applications/Game/Store.php';
 
-class GameGateway extends WORKERMAN\Core\SocketWorker
+class GameGateway extends Man\Core\SocketWorker
 {
     // 内部通信socket
     protected $innerMainSocket = null;
@@ -37,11 +37,11 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
         $this->installSignal();
         
         // 添加accept事件
-        $ret = $this->event->add($this->mainSocket,  WORKERMAN\Core\Events\BaseEvent::EV_READ, array($this, 'accept'));
+        $ret = $this->event->add($this->mainSocket,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'accept'));
         
         // 创建内部通信套接字
         $this->lanPort = posix_getpid();
-        $this->lanIp = WORKERMAN\Core\Lib\Config::get($this->workerName.'.lan_ip');
+        $this->lanIp = Man\Core\Lib\Config::get($this->workerName.'.lan_ip');
         if(!$this->lanIp)
         {
             $this->notice($this->workerName.'.lan_ip not set');
@@ -64,7 +64,7 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
         $this->registerAddress("udp://".$this->lanIp.':'.$this->lanPort);
         
         // 添加读udp事件
-        $this->event->add($this->innerMainSocket,  WORKERMAN\Core\Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
+        $this->event->add($this->innerMainSocket,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
         
         // 初始化到worker的通信地址
         $this->initWorkerAddresses();
@@ -119,7 +119,7 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
     
     protected function initWorkerAddresses()
     {
-        $this->workerAddresses = WORKERMAN\Core\Lib\Config::get($this->workerName.'.game_worker');
+        $this->workerAddresses = Man\Core\Lib\Config::get($this->workerName.'.game_worker');
         if(!$this->workerAddresses)
         {
             $this->notice($this->workerName.'game_worker not set');
@@ -272,8 +272,8 @@ class GameGateway extends WORKERMAN\Core\SocketWorker
     protected function notice($str, $display=true)
     {
         $str = 'Worker['.get_class($this).']:'."$str ip:".$this->getRemoteIp();
-        WORKERMAN\Core\Lib\Log::add($str);
-        if($display && WORKERMAN\Core\Lib\Config::get('workerman.debug') == 1)
+        Man\Core\Lib\Log::add($str);
+        if($display && Man\Core\Lib\Config::get('workerman.debug') == 1)
         {
             echo $str."\n";
         }

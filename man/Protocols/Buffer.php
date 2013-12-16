@@ -1,5 +1,5 @@
 <?php 
-namespace WORKERMAN\Protocols;
+namespace Man\Protocols;
 /**
  * 通用的server协议,二进制协议
  * 

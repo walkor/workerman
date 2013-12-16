@@ -1,8 +1,8 @@
 <?php
-namespace WORKERMAN\Core;
-require_once WORKERMAN_ROOT_DIR . 'Core/Events/Select.php';
-require_once WORKERMAN_ROOT_DIR . 'Core/AbstractWorker.php';
-require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Config.php';
+namespace Man\Core;
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Events/Select.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/AbstractWorker.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
 
 /**
  * SocketWorker 监听某个端口，对外提供网络服务的worker
@@ -295,7 +295,7 @@ abstract class SocketWorker extends AbstractWorker
     public function setEventLoopName($event_loop_name)
     {
         $this->eventLoopName = "\\WORKERMAN\\Core\\Events\\".$event_loop_name;
-        require_once WORKERMAN_ROOT_DIR . 'Core/Events/'.ucfirst(str_replace('WORKERMAN', '', $event_loop_name)).'.php';
+        require_once WORKERMAN_ROOT_DIR . 'man/Core/Events/'.ucfirst(str_replace('WORKERMAN', '', $event_loop_name)).'.php';
     }
     
     /**

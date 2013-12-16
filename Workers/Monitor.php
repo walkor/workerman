@@ -1,5 +1,5 @@
 <?php 
-require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
 /**
  * 
  * 1、提供telnet接口，查看服务状态
@@ -10,7 +10,7 @@ require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
  * 
 * @author walkor <worker-man@qq.com>
  */
-class Monitor extends WORKERMAN\Core\SocketWorker
+class Monitor extends Man\Core\SocketWorker
 {
     /**
      * 一天有多少秒
@@ -115,14 +115,14 @@ class Monitor extends WORKERMAN\Core\SocketWorker
         }
         
         // 初始化任务
-        \WORKERMAN\Core\Lib\Task::init($this->event);
-        \WORKERMAN\Core\Lib\Task::add(self::CLEAR_LOGS_TIME_LONG, array($this, 'clearLogs'), array(WORKERMAN_LOG_DIR));
-        \WORKERMAN\Core\Lib\Task::add(self::CHECK_MASTER_PROCESS_TIME_LONG, array($this, 'checkMasterProcess'));
-        \WORKERMAN\Core\Lib\Task::add(self::CHECK_MASTER_STATUS_TIME_LONG, array($this, 'checkMasterStatus'));
-        \WORKERMAN\Core\Lib\Task::add(self::CHECK_MASTER_STATUS_TIME_LONG, array($this, 'checkMemUsage'));
+        \Man\Core\Lib\Task::init($this->event);
+        \Man\Core\Lib\Task::add(self::CLEAR_LOGS_TIME_LONG, array($this, 'clearLogs'), array(WORKERMAN_LOG_DIR));
+        \Man\Core\Lib\Task::add(self::CHECK_MASTER_PROCESS_TIME_LONG, array($this, 'checkMasterProcess'));
+        \Man\Core\Lib\Task::add(self::CHECK_MASTER_STATUS_TIME_LONG, array($this, 'checkMasterStatus'));
+        \Man\Core\Lib\Task::add(self::CHECK_MASTER_STATUS_TIME_LONG, array($this, 'checkMemUsage'));
         
         // 添加accept事件
-        $this->event->add($this->mainSocket,  \WORKERMAN\Core\Events\BaseEvent::EV_READ, array($this, 'onAccept'));
+        $this->event->add($this->mainSocket,  \Man\Core\Events\BaseEvent::EV_READ, array($this, 'onAccept'));
         
         // 主体循环
         $ret = $this->event->loop();
@@ -175,7 +175,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
         $ip = $this->getRemoteIp();
         if($ip != '127.0.0.1' && $buffer == 'status')
         {
-            \WORKERMAN\Core\Lib\Log::add("IP:$ip $buffer");
+            \Man\Core\Lib\Log::add("IP:$ip $buffer");
         }
         
         // 判断是否认证过
@@ -236,15 +236,15 @@ class Monitor extends WORKERMAN\Core\SocketWorker
                 }
                 $msg_type = $message = 0;
                 // 将过期的消息读出来，清理掉
-                if(\WORKERMAN\Core\Master::getQueueId())
+                if(\Man\Core\Master::getQueueId())
                 {
-                    while(msg_receive(\WORKERMAN\Core\Master::getQueueId(), self::MSG_TYPE_STATUS, $msg_type, 1000, $message, true, MSG_IPC_NOWAIT))
+                    while(msg_receive(\Man\Core\Master::getQueueId(), self::MSG_TYPE_STATUS, $msg_type, 1000, $message, true, MSG_IPC_NOWAIT))
                     {
                     }
                 }
                 $loadavg = sys_getloadavg();
                 $this->sendToClient("---------------------------------------GLOBAL STATUS--------------------------------------------\n");
-                $this->sendToClient(\WORKERMAN\Core\Master::NAME.' version:' . \WORKERMAN\Core\Master::VERSION . "\n");
+                $this->sendToClient(\Man\Core\Master::NAME.' version:' . \Man\Core\Master::VERSION . "\n");
                 $this->sendToClient('start time:'. date('Y-m-d H:i:s', $status['start_time']).'   run ' . floor((time()-$status['start_time'])/(24*60*60)). ' days ' . floor(((time()-$status['start_time'])%(24*60*60))/(60*60)) . " hours   \n");
                 $this->sendToClient('load average: ' . implode(", ", $loadavg) . "\n");
                 $this->sendToClient(count($this->connections) . ' users          ' . count($worker_pids) . ' workers       ' . count($pid_worker_name_map)." processes\n");
@@ -266,7 +266,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
                 
                 $this->sendToClient("---------------------------------------PROCESS STATUS-------------------------------------------\n");
                 $this->sendToClient("pid\tmemory  ".str_pad('    listening', 20)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('recv_timeout', 12)." ".str_pad('proc_timeout',12)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total\n");
-                if(!\WORKERMAN\Core\Master::getQueueId())
+                if(!\Man\Core\Master::getQueueId())
                 {
                     return;
                 }
@@ -337,11 +337,11 @@ class Monitor extends WORKERMAN\Core\SocketWorker
      */
     protected function getStatusFromQueue()
     {
-        if(msg_receive(\WORKERMAN\Core\Master::getQueueId(), self::MSG_TYPE_STATUS, $msg_type, 10000, $message, true, MSG_IPC_NOWAIT))
+        if(msg_receive(\Man\Core\Master::getQueueId(), self::MSG_TYPE_STATUS, $msg_type, 10000, $message, true, MSG_IPC_NOWAIT))
         {
             $pid = $message['pid'];
             $worker_name = $message['worker_name'];
-            $address = \WORKERMAN\Core\Lib\Config::get($this->workerName . '.listen');
+            $address = \Man\Core\Lib\Config::get($this->workerName . '.listen');
             if(!$address)
             {
                 $address = '';
@@ -390,7 +390,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
      */
     public function checkMasterProcess()
     {
-        $master_pid = \WORKERMAN\Core\Master::getMasterPid();
+        $master_pid = \Man\Core\Master::getMasterPid();
         if(!posix_kill($master_pid, 0))
         {
             $this->onMasterDead();
@@ -439,7 +439,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
             return;
         }
         
-        $max_worker_exit_count = (int)\WORKERMAN\Core\Lib\Config::get($this->workerName.".max_worker_exit_count");
+        $max_worker_exit_count = (int)\Man\Core\Lib\Config::get($this->workerName.".max_worker_exit_count");
         if($max_worker_exit_count <= 0)
         {
             $max_worker_exit_count = 2000;
@@ -479,7 +479,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
      */
     protected function checkWorkerMemByPid($pid, $worker_name)
     {
-        $mem_limit = \WORKERMAN\Core\Lib\Config::get($this->workerName.'.max_mem_limit');
+        $mem_limit = \Man\Core\Lib\Config::get($this->workerName.'.max_mem_limit');
         if(!$mem_limit)
         {
             $mem_limit = self::DEFAULT_MEM_LIMIT;
@@ -556,7 +556,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
         {
             if($worker_name)
             {
-                $ip = \WORKERMAN\Core\Lib\Config::get($worker_name . '.ip');
+                $ip = \Man\Core\Lib\Config::get($worker_name . '.ip');
             }
             if(empty($ip) || $ip == '0.0.0.0' || $ip = '127.0.0.1')
             {

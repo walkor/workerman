@@ -1,5 +1,5 @@
 <?php
-namespace WORKERMAN\Core\Lib;
+namespace Man\Core\Lib;
 /**
  * 
  * 日志类
@@ -20,7 +20,7 @@ class Log
      */
     public static function init()
     {
-        set_error_handler(array('\WORKERMAN\Core\Lib\Log', 'errHandle'), E_RECOVERABLE_ERROR | E_USER_ERROR);
+        set_error_handler(array('\Man\Core\Lib\Log', 'errHandle'), E_RECOVERABLE_ERROR | E_USER_ERROR);
         return self::checkWriteable();
     }
     

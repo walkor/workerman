@@ -1,5 +1,5 @@
 <?php
-namespace WORKERMAN\Core\Lib;
+namespace Man\Core\Lib;
 /**
  * 
  * 定时任务
@@ -7,8 +7,8 @@ namespace WORKERMAN\Core\Lib;
  * <b>使用示例:</b>
  * <pre>
  * <code>
- * \WORKERMAN\Core\Lib\Task::init();
- * \WORKERMAN\Core\Lib\Task::add(5, array('class', 'method'), array($arg1, $arg2..));
+ * \Man\Core\Lib\Task::init();
+ * \Man\Core\Lib\Task::add(5, array('class', 'method'), array($arg1, $arg2..));
  * <code>
  * </pre>
 * @author walkor <worker-man@qq.com>
@@ -36,11 +36,11 @@ class Task
         pcntl_alarm(1);
         if($event)
         {
-            $event->add(SIGALRM, \WORKERMAN\Core\Events\BaseEvent::EV_SIGNAL, array('\WORKERMAN\Core\Lib\Task', 'signalHandle'));
+            $event->add(SIGALRM, \Man\Core\Events\BaseEvent::EV_SIGNAL, array('\Man\Core\Lib\Task', 'signalHandle'));
         }
         else 
         {
-            pcntl_signal(SIGALRM, array('\WORKERMAN\Core\Lib\Task', 'signalHandle'), false);
+            pcntl_signal(SIGALRM, array('\Man\Core\Lib\Task', 'signalHandle'), false);
         }
     }
     
@@ -72,7 +72,7 @@ class Task
         }
         if(!is_callable($func) && class_exists('Log'))
         {
-            \WORKERMAN\Core\Lib\Log::add(var_export($func, true). "not callable\n");
+            \Man\Core\Lib\Log::add(var_export($func, true). "not callable\n");
             return false;
         }
         $time_now = time();

@@ -6,9 +6,9 @@
 * 
  */
 require_once WORKERMAN_ROOT_DIR . 'Protocols/Buffer.php';
-require_once WORKERMAN_ROOT_DIR . 'Applications/Game/Event.php';
+require_once WORKERMAN_ROOT_DIR . 'applications/Game/Event.php';
 
-class GameBuffer extends WORKERMAN\Protocols\Buffer
+class GameBuffer extends Man\Protocols\Buffer
 {
     // 系统命令
     const CMD_SYSTEM = 128;

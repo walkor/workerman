@@ -16,30 +16,30 @@ $cmd = $argv[1];
 define('WORKERMAN_ROOT_DIR', realpath(__DIR__."/../")."/");
 
 // ==pid-file==
-require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Config.php';
-WORKERMAN\Core\Lib\Config::instance();
-if(!($pid_file = WORKERMAN\Core\Lib\Config::get('workerman.pid_file')))
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
+Man\Core\Lib\Config::instance();
+if(!($pid_file = Man\Core\Lib\Config::get('workerman.pid_file')))
 {
     $pid_file = '/var/run/php-server.pid';
 }
 define('WORKERMAN_PID_FILE', $pid_file);
 
 // ==log-dir==
-if(!($log_dir = WORKERMAN\Core\Lib\Config::get('workerman.log_dir')))
+if(!($log_dir = Man\Core\Lib\Config::get('workerman.log_dir')))
 {
     $log_dir = WORKERMAN_ROOT_DIR . 'logs/';
 }
 define('WORKERMAN_LOG_DIR', $log_dir . '/');
 
 // ==ipc-key==
-if(!($ipc_key = WORKERMAN\Core\Lib\Config::get('workerman.ipc_key')))
+if(!($ipc_key = Man\Core\Lib\Config::get('workerman.ipc_key')))
 {
     $ipc_key = 0x70010a2e;
 }
 define('IPC_KEY', $ipc_key);
 
 // ==shm-size==
-if(!($shm_size = WORKERMAN\Core\Lib\Config::get('workerman.shm_size')))
+if(!($shm_size = Man\Core\Lib\Config::get('workerman.shm_size')))
 {
     $shm_size = 393216;
 }
@@ -81,7 +81,7 @@ switch($cmd)
 {
     case 'start':
         $worker_user = isset($argv[2]) ? $argv[2] : '';
-        WORKERMAN\Core\Master::run($worker_user);
+        Man\Core\Master::run($worker_user);
         break;
     case 'stop':
         $pid = @file_get_contents(WORKERMAN_PID_FILE);
@@ -94,7 +94,7 @@ switch($cmd)
     case 'restart':
         stop_and_wait();
         $worker_user = isset($argv[2]) ? $argv[2] : '';
-        WORKERMAN\Core\Master::run();
+        Man\Core\Master::run();
         break;
     case 'reload':
         $pid = @file_get_contents(WORKERMAN_PID_FILE);
@@ -110,7 +110,7 @@ switch($cmd)
         force_kill();
         break;
     case 'status':
-        $address = WORKERMAN\Core\Lib\Config::get('Monitor.listen');
+        $address = Man\Core\Lib\Config::get('Monitor.listen');
         $sock = @stream_socket_client($address);
         if(!$sock)
         {
@@ -144,7 +144,7 @@ switch($cmd)
 function force_kill()
 {
     $ret = $match = array();
-    exec("ps aux | grep -E '".WORKERMAN\Core\Master::NAME.":|serverd' | grep -v grep", $ret);
+    exec("ps aux | grep -E '".Man\Core\Master::NAME.":|serverd' | grep -v grep", $ret);
     $this_pid = posix_getpid();
     $this_ppid = posix_getppid();
     foreach($ret as $line)

@@ -8,11 +8,11 @@
  * @author walkor <worker-man@qq.com>
  * 
  */
-require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
-require_once WORKERMAN_ROOT_DIR . 'Applications/Game/GameBuffer.php';
-require_once WORKERMAN_ROOT_DIR . 'Applications/Game/Event.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
+require_once WORKERMAN_ROOT_DIR . 'applications/Game/GameBuffer.php';
+require_once WORKERMAN_ROOT_DIR . 'applications/Game/Event.php';
 
-class GameWorker extends WORKERMAN\Core\SocketWorker
+class GameWorker extends Man\Core\SocketWorker
 {
     protected $data = array();
     public function dealInput($recv_str)
