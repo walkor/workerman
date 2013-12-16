@@ -47,8 +47,6 @@ define('DEFAULT_SHM_SIZE', $shm_size);
 
 require_once WORKERMAN_ROOT_DIR . "man/Core/Master.php";
 
-chdir(WORKERMAN_ROOT_DIR."Core");
-
 //检查pid对应的进程是否存在，不存在删除PID文件
 if($cmd != 'status' && is_file(WORKERMAN_PID_FILE))
 {
