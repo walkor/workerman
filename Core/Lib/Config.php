@@ -15,7 +15,7 @@ class Config
         }
         self::$config['workerman'] = self::parseFile($config_file);
         self::$filename = realpath($config_file);
-        foreach(glob(WORKERMAN_ROOT_DIR . 'conf.d/*.conf') as $config_file)
+        foreach(glob(WORKERMAN_ROOT_DIR . 'conf/conf.d/*.conf') as $config_file)
         {
             $worker_name = basename($config_file, '.conf');
             self::$config[$worker_name] = self::parseFile($config_file);
@@ -64,7 +64,7 @@ class Config
     
     public static function reload()
     {
-        self::$instances = array();
+        self::$instances = null;
     }
     
 }
