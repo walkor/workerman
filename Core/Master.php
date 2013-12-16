@@ -178,7 +178,7 @@ class Master
     public static function init()
     {
         // 获取配置文件
-        $config_path = Lib\Config::instance()->filename;
+        $config_path = Lib\Config::$filename;
     
         // 设置进程名称，如果支持的话
         self::setProcessTitle(self::NAME.':master with-config:' . $config_path);
