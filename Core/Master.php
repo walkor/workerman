@@ -1,10 +1,5 @@
 <?php 
 namespace WORKERMAN\Core;
-error_reporting(E_ALL);
-ini_set('display_errors', 'on');
-ini_set('limit_memory','512M');
-date_default_timezone_set('Asia/Shanghai');
-
 require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Checker.php';
 require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Config.php';
 require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Task.php';

@@ -1,5 +1,10 @@
 #!/usr/bin/env php
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 'on');
+ini_set('limit_memory','512M');
+date_default_timezone_set('Asia/Shanghai');
+
 if(empty($argv[1]))
 {
     echo "Usage: serverd {start|stop|restart|reload|kill|status}\n";
@@ -12,28 +17,28 @@ define('WORKERMAN_ROOT_DIR', realpath(__DIR__."/../")."/");
 
 // ==pid-file==
 require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Config.php';
-if(!($pid_file = WORKERMAN\Core\Lib\Config::get('pid_file')))
+if(!($pid_file = WORKERMAN\Core\Lib\Config::get('workerman.pid_file')))
 {
     $pid_file = '/var/run/php-server.pid';
 }
 define('WORKERMAN_PID_FILE', $pid_file);
 
 // ==log-dir==
-if(!($log_dir = WORKERMAN\Core\Lib\Config::get('log_dir')))
+if(!($log_dir = WORKERMAN\Core\Lib\Config::get('workerman.log_dir')))
 {
     $log_dir = WORKERMAN_ROOT_DIR . 'logs/';
 }
 define('WORKERMAN_LOG_DIR', $log_dir . '/');
 
 // ==ipc-key==
-if(!($ipc_key = WORKERMAN\Core\Lib\Config::get('ipc_key')))
+if(!($ipc_key = WORKERMAN\Core\Lib\Config::get('workerman.ipc_key')))
 {
     $ipc_key = 0x70010a2e;
 }
 define('IPC_KEY', $ipc_key);
 
 // ==shm-size==
-if(!($shm_size = WORKERMAN\Core\Lib\Config::get('shm_size')))
+if(!($shm_size = WORKERMAN\Core\Lib\Config::get('workerman.shm_size')))
 {
     $shm_size = 393216;
 }
@@ -104,10 +109,7 @@ switch($cmd)
         force_kill();
         break;
     case 'status':
-        $ip = '127.0.0.1';
-        $port = WORKERMAN\Core\Lib\Config::get('workers.Monitor.socket.port');
-        $port = $port ? $port : 10101;
-        $address = "$ip:$port";
+        $address = WORKERMAN\Core\Lib\Config::get('Monitor.listen');
         $sock = @stream_socket_client($address);
         if(!$sock)
         {
