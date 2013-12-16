@@ -299,20 +299,19 @@ class Master
     protected static function createSocketsAndListen()
     {
         // 循环读取配置创建socket
-        foreach (Lib\Config::get('workers') as $worker_name=>$config)
+        foreach (Lib\Config::getAllWorkers() as $worker_name=>$config)
         {
-            if(isset($config['socket']))
+            if(isset($config['listen']))
             {
-                $flags = $config['socket']['protocol'] == 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
-                $ip = isset($config['socket']['ip']) ? $config['socket']['ip'] : "0.0.0.0";
+                $flags = substr($config['listen'], 0, 3) == 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
                 $error_no = 0;
                 $error_msg = '';
                 // 创建监听socket
-                self::$listenedSockets[$worker_name] = stream_socket_server("{$config['socket']['protocol']}://{$ip}:{$config['socket']['port']}", $error_no, $error_msg, $flags);
+                self::$listenedSockets[$worker_name] = stream_socket_server($config['listen'], $error_no, $error_msg, $flags);
                 if(!self::$listenedSockets[$worker_name])
                 {
-                    Lib\Log::add("can not create socket {$config['socket']['protocol']}://{$ip}:{$config['socket']['port']} info:{$error_no} {$error_msg}\tServer start fail");
-                    exit("\n\033[31;40mcan not create socket {$config['socket']['protocol']}://{$ip}:{$config['socket']['port']} info:{$error_no} {$error_msg}\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
+                    Lib\Log::add("can not create socket {{$config['listen']} info:{$error_no} {$error_msg}\tServer start fail");
+                    exit("\n\033[31;40mcan not create socket {{$config['listen']} info:{$error_no} {$error_msg}\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
                 }
             }
         }
@@ -326,7 +325,7 @@ class Master
     protected static function createWorkers()
     {
         // 循环读取配置创建一定量的worker进程
-        foreach (Lib\Config::get('workers') as $worker_name=>$config)
+        foreach (Lib\Config::getAllWorkers() as $worker_name=>$config)
         {
             // 初始化
             if(empty(self::$workerPids[$worker_name]))
@@ -334,7 +333,7 @@ class Master
                 self::$workerPids[$worker_name] = array();
             }
     
-            while(count(self::$workerPids[$worker_name]) < $config['children_count'])
+            while(count(self::$workerPids[$worker_name]) < $config['start_workers'])
             {
                 $pid = self::forkOneWorker($worker_name);
                 // 子进程退出
@@ -388,7 +387,7 @@ class Master
             }
     
             // 尝试以指定用户运行worker
-            if($worker_user = Lib\Config::get('workers.' . $worker_name . '.user'))
+            if($worker_user = Lib\Config::get($worker_name . '.user'))
             {
                 self::setWorkerUser($worker_user);
             }
@@ -816,7 +815,7 @@ class Master
     protected static function resetStdFd()
     {
         // 开发环境不关闭标准输出，用于调试
-        if(Lib\Config::get('debug') == 1 && posix_ttyname(STDOUT))
+        if(Lib\Config::get('workerman.debug') == 1 && posix_ttyname(STDOUT))
         {
             return;
         }

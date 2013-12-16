@@ -27,7 +27,7 @@ class FileMonitor extends WORKERMAN\Core\AbstractWorker
      */
     public function start()
     {
-        if(\WORKERMAN\Core\Lib\Config::get('debug') != 1)
+        if(\WORKERMAN\Core\Lib\Config::get('workerman.debug') != 1)
         {
             return;
         }

@@ -106,34 +106,20 @@ class Checker
         $total_worker_count = 0;
         // 检查worker 是否有语法错误
         echo "----------------------WORKERS--------------------\n";
-        foreach (Config::get('workers') as $worker_name=>$config)
+        foreach (Config::getAllWorkers() as $worker_name=>$config)
         {
-            if(isset($config['socket']))
+            if(empty($config['start_workers']))
             {
-                // 端口、协议、进程数等信息
-                if(empty($config['socket']['port']))
-                {
-                    \WORKERMAN\Core\Master::notice(str_pad($worker_name, $pad_length)." [port not set] \t Server start fail");
-                    exit(str_pad($worker_name, $pad_length)."\033[31;40m [port not set] \033[0m\n\n\033[31;40mServer start fail\033[0m\n");
-                }
-                if(empty($config['socket']['protocol']))
-                {
-                    \WORKERMAN\Core\Master::notice(str_pad($worker_name, $pad_length)." [protocol not set]\tServer start fail");
-                    exit(str_pad($worker_name, $pad_length)."\033[31;40m [protocol not set]\033[0m\n\n\033[31;40mServer start fail\033[0m\n");
-                }
-            }
-            if(empty($config['children_count']))
-            {
-                \WORKERMAN\Core\Master::notice(str_pad($worker_name, $pad_length)." [children_count not set]\tServer start fail");
-                exit(str_pad($worker_name, $pad_length)."\033[31;40m [children_count not set]\033[0m\n\n\033[31;40mServer start fail\033[0m\n");
+                \WORKERMAN\Core\Master::notice(str_pad($worker_name, $pad_length)." [start_workers not set]\tServer start fail");
+                exit(str_pad($worker_name, $pad_length)."\033[31;40m [start_workers not set]\033[0m\n\n\033[31;40mServer start fail\033[0m\n");
             }
     
-            $total_worker_count += $config['children_count'];
+            $total_worker_count += $config['start_workers'];
     
             // 语法检查
             if(0 != self::checkSyntaxError(WORKERMAN_ROOT_DIR . "Workers/$worker_name.php", $worker_name))
             {
-                unset(Config::instance()->config['workers'][$worker_name]);
+                unset(Config::instance()->config[$worker_name]);
                 \WORKERMAN\Core\Master::notice("$worker_name has Fatal Err");
                 echo str_pad($worker_name, $pad_length),"\033[31;40m [Fatal Err] \033[0m\n";
                 continue;
@@ -155,8 +141,8 @@ class Checker
     
         if($total_worker_count > \WORKERMAN\Core\Master::SERVER_MAX_WORKER_COUNT)
         {
-            \WORKERMAN\Core\Master::notice("Number of worker processes can not be more than " . \WORKERMAN\Core\Master::SERVER_MAX_WORKER_COUNT . ".\tPlease check children_count in " . WORKERMAN_ROOT_DIR . "config/main.php\tServer start fail");
-            exit("\n\033[31;40mNumber of worker processes can not be more than " . \WORKERMAN\Core\Master::SERVER_MAX_WORKER_COUNT . ".\nPlease check children_count in " . WORKERMAN_ROOT_DIR . "config/main.php\033[0m\n\n\033[31;40mServer start fail\033[0m\n");
+            \WORKERMAN\Core\Master::notice("Number of worker processes can not be more than " . \WORKERMAN\Core\Master::SERVER_MAX_WORKER_COUNT . ".\tPlease check start_workers in " . WORKERMAN_ROOT_DIR . "config/main.php\tServer start fail");
+            exit("\n\033[31;40mNumber of worker processes can not be more than " . \WORKERMAN\Core\Master::SERVER_MAX_WORKER_COUNT . ".\nPlease check start_workers in " . WORKERMAN_ROOT_DIR . "config/main.php\033[0m\n\n\033[31;40mServer start fail\033[0m\n");
         }
     
         echo "-------------------------------------------------\n";

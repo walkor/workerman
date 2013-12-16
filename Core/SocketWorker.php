@@ -171,12 +171,12 @@ abstract class SocketWorker extends AbstractWorker
         }
         
         // 是否开启长连接
-        $this->isPersistentConnection = (bool)Lib\Config::get('workers.' . $worker_name . '.socket.persistent');
+        $this->isPersistentConnection = (bool)Lib\Config::get( $worker_name . '.persistent_connection');
         // 最大请求数，如果没有配置则使用PHP_INT_MAX
-        $this->maxRequests = (int)Lib\Config::get('workers.' . $worker_name . '.max_requests');
+        $this->maxRequests = (int)Lib\Config::get( $worker_name . '.max_requests');
         $this->maxRequests = $this->maxRequests <= 0 ? PHP_INT_MAX : $this->maxRequests;
 
-        $preread_length = (int)Lib\Config::get('workers.' . $worker_name . '.preread_length');
+        $preread_length = (int)Lib\Config::get( $worker_name . '.preread_length');
         if($preread_length > 0)
         {
             $this->prereadLength = $preread_length;

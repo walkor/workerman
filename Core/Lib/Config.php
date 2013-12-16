@@ -3,41 +3,46 @@ namespace WORKERMAN\Core\Lib;
 class Config
 {
     public $filename;
-    public $config;
-    protected static $instances = array();
+    public $config = array();
+    protected static $instances = null;
 
-    private function __construct($domain = 'main') {
-        $folder = WORKERMAN_ROOT_DIR . 'Config';
-        $filename = $folder . '/' . $domain;
-        $filename .= '.ini';
-
-        if (!file_exists($filename)) {
-            throw new \Exception('Configuration file "' . $filename . '" not found');
+    private function __construct()
+     {
+        $config_file = WORKERMAN_ROOT_DIR . 'conf/workerman.conf';
+        if (!file_exists($config_file)) 
+        {
+            throw new \Exception('Configuration file "' . $config_file . '" not found');
         }
-
-        $config = parse_ini_file($filename, true);
-        if (!is_array($config) || empty($config)) {
-            throw new \Exception('Invalid configuration file format');
+        $this->config['workerman'] = $this->parseFile($config_file);
+        $this->filename = realpath($config_file);
+        foreach(glob(WORKERMAN_ROOT_DIR . 'conf.d/*.conf') as $config_file)
+        {
+            $worker_name = basename($config_file, '.conf');
+            $this->config[$worker_name] = $this->parseFile($config_file);
         }
-
-        $this->config = $config['main'];
-        unset($config['main']);
-        $this->config['workers'] = $config;
-        $this->filename = realpath($filename);
+    }
+    
+    protected function parseFile($config_file)
+    {
+        $config = parse_ini_file($config_file, true);
+        if (!is_array($config) || empty($config))
+        {
+            throw new \Exception('Invalid configuration format');
+        }
+        return $config;
     }
 
-    public static function instance($domain = 'main')
+    public static function instance()
     {
-        if (empty(self::$instances[$domain])) {
-            self::$instances[$domain] = new self($domain);
+        if (!self::$instances) {
+            self::$instances = new self();
         }
-        return self::$instances[$domain];
+        return self::$instances;
     }
 
-    public static function get($uri, $domain = 'main')
+    public static function get($uri)
     {
-        $node = self::instance($domain)->config;
-
+        $node = self::instance()->config;
         $paths = explode('.', $uri);
         while (!empty($paths)) {
             $path = array_shift($paths);
@@ -48,6 +53,13 @@ class Config
         }
 
         return $node;
+    }
+    
+    public static function getAllWorkers()
+    {
+         $copy = $this->config;
+         unset($copy['workerman']);
+         return $copy;
     }
     
     public static function reload()

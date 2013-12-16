@@ -253,7 +253,7 @@ abstract class AbstractWorker
     {
         $str = 'Worker['.get_class($this).']:'.$str;
         Lib\Log::add($str);
-        if($display && Lib\Config::get('debug') == 1)
+        if($display && Lib\Config::get('workerman.debug') == 1)
         {
             echo $str."\n";
         }

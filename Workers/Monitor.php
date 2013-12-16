@@ -341,7 +341,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
         {
             $pid = $message['pid'];
             $worker_name = $message['worker_name'];
-            $workers = \WORKERMAN\Core\Lib\Config::get('workers');
+            $workers = \WORKERMAN\Core\Lib\Config::getAllWorkers();
             $port = $workers[$worker_name]['socket']['port'];
             $proto = $workers[$worker_name]['socket']['protocol'];
             $str = "$pid\t".str_pad(round($message['memory']/(1024*1024),2)."M", 9)." $proto    ". str_pad($port, 5) ." ". $message['start_time'] ." ".str_pad($worker_name, $this->maxWorkerNameLength)." ";
@@ -437,7 +437,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
             return;
         }
         
-        $max_worker_exit_count = (int)\WORKERMAN\Core\Lib\Config::get("workers.".$this->workerName.".max_worker_exit_count");
+        $max_worker_exit_count = (int)\WORKERMAN\Core\Lib\Config::get($this->workerName.".max_worker_exit_count");
         if($max_worker_exit_count <= 0)
         {
             $max_worker_exit_count = 2000;
@@ -477,7 +477,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
      */
     protected function checkWorkerMemByPid($pid, $worker_name)
     {
-        $mem_limit = \WORKERMAN\Core\Lib\Config::get('workers.'.__CLASS__.'.max_mem_limit');
+        $mem_limit = \WORKERMAN\Core\Lib\Config::get($this->workerName.'.max_mem_limit');
         if(!$mem_limit)
         {
             $mem_limit = self::DEFAULT_MEM_LIMIT;
@@ -554,7 +554,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
         {
             if($worker_name)
             {
-                $ip = \WORKERMAN\Core\Lib\Config::get('workers.' . $worker_name . '.ip');
+                $ip = \WORKERMAN\Core\Lib\Config::get($worker_name . '.ip');
             }
             if(empty($ip) || $ip == '0.0.0.0' || $ip = '127.0.0.1')
             {
