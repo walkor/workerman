@@ -265,7 +265,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
                 }
                 
                 $this->sendToClient("---------------------------------------PROCESS STATUS-------------------------------------------\n");
-                $this->sendToClient("pid\tmemory ".str_pad('address', 23)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('recv_timeout', 12)." ".str_pad('proc_timeout',12)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total\n");
+                $this->sendToClient("pid\tmemory ".str_pad('address', 20)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('recv_timeout', 12)." ".str_pad('proc_timeout',12)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total\n");
                 if(!\WORKERMAN\Core\Master::getQueueId())
                 {
                     return;
@@ -341,12 +341,12 @@ class Monitor extends WORKERMAN\Core\SocketWorker
         {
             $pid = $message['pid'];
             $worker_name = $message['worker_name'];
-            $address = \WORKERMAN\Core\Lib\Config::get($this->workerName . 'listen');
+            $address = \WORKERMAN\Core\Lib\Config::get($this->workerName . '.listen');
             if(!$address)
             {
                 $address = '';
             }
-            $str = "$pid\t".str_pad(round($message['memory']/(1024*1024),2)."M", 9)." " .str_pad($address,23) ." ". $message['start_time'] ." ".str_pad($worker_name, $this->maxWorkerNameLength)." ";
+            $str = "$pid\t".str_pad(round($message['memory']/(1024*1024),2)."M", 9)." " .str_pad($address,20) ." ". $message['start_time'] ." ".str_pad($worker_name, $this->maxWorkerNameLength)." ";
             if($message)
             {
                 $str = $str . str_pad($message['total_request'], 14)." ".str_pad($message['recv_timeout'], 12)." ".str_pad($message['proc_timeout'],12)." ".str_pad($message['packet_err'],10)." ".str_pad($message['thunder_herd'],12)." ".str_pad($message['client_close'], 12)." ".str_pad($message['send_fail'],9)." ".str_pad($message['throw_exception'],15)." ".($message['total_request'] == 0 ? 100 : (round(($message['total_request']-($message['proc_timeout']+$message['packet_err']+$message['send_fail']))/$message['total_request'], 6)*100))."%";
