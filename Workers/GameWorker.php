@@ -9,7 +9,7 @@
  * 
  */
 require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
-require_once WORKERMAN_ROOT_DIR . 'Applications/GameBuffer.php';
+require_once WORKERMAN_ROOT_DIR . 'Applications/Game/GameBuffer.php';
 require_once WORKERMAN_ROOT_DIR . 'Applications/Game/Event.php';
 
 class GameWorker extends WORKERMAN\Core\SocketWorker
