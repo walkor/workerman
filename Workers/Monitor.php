@@ -265,7 +265,7 @@ class Monitor extends WORKERMAN\Core\SocketWorker
                 }
                 
                 $this->sendToClient("---------------------------------------PROCESS STATUS-------------------------------------------\n");
-                $this->sendToClient("pid\tmemory  ".str_pad('address', 20)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('recv_timeout', 12)." ".str_pad('proc_timeout',12)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total\n");
+                $this->sendToClient("pid\tmemory  ".str_pad('     address', 20)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('recv_timeout', 12)." ".str_pad('proc_timeout',12)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total\n");
                 if(!\WORKERMAN\Core\Master::getQueueId())
                 {
                     return;
