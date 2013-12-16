@@ -85,7 +85,7 @@ abstract class SocketWorker extends AbstractWorker
      * 事件轮询库的名称
      * @var string
      */
-    protected $eventLoopName ="\\WORKERMAN\\Core\\Events\\Select";
+    protected $eventLoopName ="\\Man\\Core\\Events\\Select";
     
     /**
      * 时间轮询库实例
@@ -294,7 +294,7 @@ abstract class SocketWorker extends AbstractWorker
      */
     public function setEventLoopName($event_loop_name)
     {
-        $this->eventLoopName = "\\WORKERMAN\\Core\\Events\\".$event_loop_name;
+        $this->eventLoopName = "\\Man\\Core\\Events\\".$event_loop_name;
         require_once WORKERMAN_ROOT_DIR . 'man/Core/Events/'.ucfirst(str_replace('WORKERMAN', '', $event_loop_name)).'.php';
     }
     
