@@ -42,7 +42,7 @@ class Config
 
     public static function get($uri)
     {
-        $node = self::instance()->config;
+        $node = self::config;
         $paths = explode('.', $uri);
         while (!empty($paths)) {
             $path = array_shift($paths);
