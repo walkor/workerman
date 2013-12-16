@@ -6,7 +6,7 @@
 * 
  */
 require_once WORKERMAN_ROOT_DIR . 'Protocols/Buffer.php';
-require_once WORKERMAN_ROOT_DIR . 'Applications/Event.php';
+require_once WORKERMAN_ROOT_DIR . 'Applications/game/Event.php';
 
 class GameBuffer extends WORKERMAN\Protocols\Buffer
 {

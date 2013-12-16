@@ -6,7 +6,7 @@
  * 
  */
 
-require_once WORKERMAN_ROOT_DIR . 'Applications/Store.php';
+require_once WORKERMAN_ROOT_DIR . 'Applications/Game/Store.php';
 
 class Event
 {
