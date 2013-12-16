@@ -45,7 +45,7 @@ if(!($shm_size = Man\Core\Lib\Config::get('workerman.shm_size')))
 }
 define('DEFAULT_SHM_SIZE', $shm_size);
 
-require_once WORKERMAN_ROOT_DIR . "Core/Master.php";
+require_once WORKERMAN_ROOT_DIR . "man/Core/Master.php";
 
 chdir(WORKERMAN_ROOT_DIR."Core");
 
