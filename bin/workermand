@@ -16,8 +16,8 @@ $cmd = $argv[1];
 define('WORKERMAN_ROOT_DIR', realpath(__DIR__."/../")."/");
 
 // ==pid-file==
-WORKERMAN\Core\Lib\Config::instance();
 require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Config.php';
+WORKERMAN\Core\Lib\Config::instance();
 if(!($pid_file = WORKERMAN\Core\Lib\Config::get('workerman.pid_file')))
 {
     $pid_file = '/var/run/php-server.pid';
