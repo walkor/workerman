@@ -335,6 +335,7 @@ class Monitor extends Man\Core\SocketWorker
                     {
                         posix_kill($pid, SIGHUP);
                     }
+                    $this->sendToClient("Restart Workers\n");
                 }
                 else
                 {
