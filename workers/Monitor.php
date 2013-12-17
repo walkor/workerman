@@ -212,7 +212,7 @@ class Monitor extends Man\Core\SocketWorker
         {
             $pid = $match[1];
             $this->sendToClient("Kill Pid $pid\n");
-            if(!posix_kill($pid, SIGTHUP))
+            if(!posix_kill($pid, SIGHUP))
             {
                 $this->sendToClient("Pid Not Exsits\n");
             }
