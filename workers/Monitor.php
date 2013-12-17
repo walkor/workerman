@@ -92,6 +92,12 @@ class Monitor extends Man\Core\SocketWorker
     protected $maxWorkerNameLength = 10;
     
     /**
+     * 最长的Address
+     * @var integer
+     */
+    protected $maxAddressLength = 20;
+    
+    /**
      * 上次发送告警的时间
      * @var array
      */
@@ -234,6 +240,18 @@ class Monitor extends Man\Core\SocketWorker
                         $this->maxWorkerNameLength = strlen($worker_name);
                     }
                 }
+                foreach(\Man\Core\Lib\Config::getAllWorkers() as $worker_name=>$config)
+                {
+                    if(!isset($config['listen']))
+                    {
+                        continue;
+                    }
+                    if($this->maxAddressLength < strlen($config['listen']))
+                    {
+                        $this->maxAddressLength = strlen($config['listen']);
+                    }
+                }
+                
                 $msg_type = $message = 0;
                 // 将过期的消息读出来，清理掉
                 if(\Man\Core\Master::getQueueId())
@@ -265,7 +283,7 @@ class Monitor extends Man\Core\SocketWorker
                 }
                 
                 $this->sendToClient("---------------------------------------PROCESS STATUS-------------------------------------------\n");
-                $this->sendToClient("pid\tmemory  ".str_pad('    listening', 20)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('recv_timeout', 12)." ".str_pad('proc_timeout',12)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total\n");
+                $this->sendToClient("pid\tmemory  ".str_pad('    listening', $this->maxAddressLength)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('recv_timeout', 12)." ".str_pad('proc_timeout',12)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total\n");
                 if(!\Man\Core\Master::getQueueId())
                 {
                     return;
@@ -346,7 +364,7 @@ class Monitor extends Man\Core\SocketWorker
             {
                 $address = '';
             }
-            $str = "$pid\t".str_pad(round($message['memory']/(1024*1024),2)."M", 7)." " .str_pad($address,20) ." ". $message['start_time'] ." ".str_pad($worker_name, $this->maxWorkerNameLength)." ";
+            $str = "$pid\t".str_pad(round($message['memory']/(1024*1024),2)."M", 7)." " .str_pad($address,$this->maxAddressLength) ." ". $message['start_time'] ." ".str_pad($worker_name, $this->maxWorkerNameLength)." ";
             if($message)
             {
                 $str = $str . str_pad($message['total_request'], 14)." ".str_pad($message['recv_timeout'], 12)." ".str_pad($message['proc_timeout'],12)." ".str_pad($message['packet_err'],10)." ".str_pad($message['thunder_herd'],12)." ".str_pad($message['client_close'], 12)." ".str_pad($message['send_fail'],9)." ".str_pad($message['throw_exception'],15)." ".($message['total_request'] == 0 ? 100 : (round(($message['total_request']-($message['proc_timeout']+$message['packet_err']+$message['send_fail']))/$message['total_request'], 6)*100))."%";
