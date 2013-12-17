@@ -1,7 +1,7 @@
 <?php 
 namespace Man\Protocols;
 /**
- * 通用的server协议,二进制协议
+ * 二进制协议
  * 
  * struct BufferProtocol
  * {
@@ -13,7 +13,7 @@ namespace Man\Protocols;
  *     unsigned int        from_uid,//来自用户uid
  *     unsigned int        to_uid,//发往的uid
  *     unsigned int       pack_len,//包长
- *     char[pack_length-15] body//包体
+ *     char[pack_length-HEAD_LEN] body//包体
  * }
  * 
  * @author walkor <worker-man@qq.com>

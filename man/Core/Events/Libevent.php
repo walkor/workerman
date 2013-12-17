@@ -4,7 +4,6 @@ require_once WORKERMAN_ROOT_DIR . 'man/Core/Events/interfaces.php';
 /**
  * 
  * libevent事件轮询库的封装
- * Worker类事件的轮询库
  * 
  * @author walkor <worker-man@qq.com>
  */
@@ -43,25 +42,25 @@ class Libevent implements BaseEvent
      */
     public function add($fd, $flag, $func, $args = null)
     {
-        $event_key = (int)$fd;
+        $fd_key = (int)$fd;
         
         if ($flag == self::EV_SIGNAL)
         {
             $real_flag = EV_SIGNAL | EV_PERSIST;
             // 创建一个用于监听的event
-            $this->eventSignal[$event_key] = event_new();
+            $this->eventSignal[$fd_key] = event_new();
             // 设置监听处理函数
-            if(!event_set($this->eventSignal[$event_key], $fd, $real_flag, $func, $args))
+            if(!event_set($this->eventSignal[$fd_key], $fd, $real_flag, $func, $args))
             {
                 return false;
             }
             // 设置event base
-            if(!event_base_set($this->eventSignal[$event_key], $this->eventBase))
+            if(!event_base_set($this->eventSignal[$fd_key], $this->eventBase))
             {
                 return false;
             }
             // 添加事件
-            if(!event_add($this->eventSignal[$event_key]))
+            if(!event_add($this->eventSignal[$fd_key]))
             {
                 return false;
             }
@@ -71,22 +70,22 @@ class Libevent implements BaseEvent
         $real_flag = EV_READ | EV_PERSIST;
         
         // 创建一个用于监听的event
-        $this->allEvents[$event_key][$flag] = event_new();
+        $this->allEvents[$fd_key][$flag] = event_new();
         
         // 设置监听处理函数
-        if(!event_set($this->allEvents[$event_key][$flag], $fd, $real_flag, $func, $args))
+        if(!event_set($this->allEvents[$fd_key][$flag], $fd, $real_flag, $func, $args))
         {
             return false;
         }
         
         // 设置event base
-        if(!event_base_set($this->allEvents[$event_key][$flag], $this->eventBase))
+        if(!event_base_set($this->allEvents[$fd_key][$flag], $this->eventBase))
         {
             return false;
         }
         
         // 添加事件
-        if(!event_add($this->allEvents[$event_key][$flag]))
+        if(!event_add($this->allEvents[$fd_key][$flag]))
         {
             return false;
         }
@@ -100,35 +99,34 @@ class Libevent implements BaseEvent
      */
     public function del($fd ,$flag)
     {
-        $event_key = (int)$fd;
+        $fd_key = (int)$fd;
         switch($flag)
         {
             // 读事件
             case \Man\Core\Events\BaseEvent::EV_READ:
             case \Man\Core\Events\BaseEvent::EV_WRITE:
-                if(isset($this->allEvents[$event_key][$flag]))
+                if(isset($this->allEvents[$fd_key][$flag]))
                 {
-                    event_del($this->allEvents[$event_key][$flag]);
+                    event_del($this->allEvents[$fd_key][$flag]);
                 }
-                unset($this->allEvents[$event_key][$flag]);
+                unset($this->allEvents[$fd_key][$flag]);
             case  \Man\Core\Events\BaseEvent::EV_SIGNAL:
-                if(isset($this->eventSignal[$event_key]))
+                if(isset($this->eventSignal[$fd_key]))
                 {
-                    event_del($this->eventSignal[$event_key]);
+                    event_del($this->eventSignal[$fd_key]);
                 }
-                unset($this->eventSignal[$event_key]);
+                unset($this->eventSignal[$fd_key]);
         }
         return true;
     }
 
     /**
-     * 事件轮训主循环
+     * 轮训主循环
      * @see \Man\Core\Events\BaseEvent::loop()
      */
     public function loop()
     {
         event_base_loop($this->eventBase);
     }
-    
 }
 

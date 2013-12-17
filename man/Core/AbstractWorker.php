@@ -34,6 +34,13 @@ abstract class AbstractWorker
     const MSG_TYPE_FILE_MONITOR = 2;
     
     /**
+     * worker名称
+     * @var string
+     */
+    protected $workerName = __CLASS__;
+    
+    
+    /**
      * worker监听端口的Socket
      * @var resource
      */
@@ -58,6 +65,7 @@ abstract class AbstractWorker
      */
     public function __construct()
     {
+        $this->workerName = get_class($this);
         $this->installSignal();
         $this->addShutdownHook();
     }

@@ -341,7 +341,7 @@ class Monitor extends Man\Core\SocketWorker
         {
             $pid = $message['pid'];
             $worker_name = $message['worker_name'];
-            $address = \Man\Core\Lib\Config::get($this->workerName . '.listen');
+            $address = \Man\Core\Lib\Config::get($worker_name . '.listen');
             if(!$address)
             {
                 $address = '';

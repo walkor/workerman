@@ -70,12 +70,6 @@ abstract class SocketWorker extends AbstractWorker
     protected $currentClientAddress = '';
     
     /**
-     * worker的服务状态
-     * @var integer
-     */
-    protected $workerStatus = self::STATUS_RUNNING;
-    
-    /**
      * 是否是长链接，(短连接每次请求后服务器主动断开，长连接一般是客户端主动断开)
      * @var bool
      */
@@ -92,12 +86,6 @@ abstract class SocketWorker extends AbstractWorker
      * @var object
      */
     protected $event = null;
-    
-    /**
-     * worker名称
-     * @var string
-     */
-    protected $workerName = __CLASS__;
     
     /**
      * 该worker进程处理多少请求后退出，0表示不自动退出
@@ -158,25 +146,18 @@ abstract class SocketWorker extends AbstractWorker
      * @param string $protocol
      * @return void
      */
-    public function __construct($worker_name = '')
+    public function __construct()
     {
         // worker name
-        if(!empty($worker_name))
-        {
-            $this->workerName = $worker_name;
-        }
-        else
-        {
-            $this->workerName = get_class($this);
-        }
+        $this->workerName = get_class($this);
         
         // 是否开启长连接
-        $this->isPersistentConnection = (bool)Lib\Config::get( $worker_name . '.persistent_connection');
+        $this->isPersistentConnection = (bool)Lib\Config::get( $this->workerName . '.persistent_connection');
         // 最大请求数，如果没有配置则使用PHP_INT_MAX
-        $this->maxRequests = (int)Lib\Config::get( $worker_name . '.max_requests');
+        $this->maxRequests = (int)Lib\Config::get( $this->workerName . '.max_requests');
         $this->maxRequests = $this->maxRequests <= 0 ? PHP_INT_MAX : $this->maxRequests;
 
-        $preread_length = (int)Lib\Config::get( $worker_name . '.preread_length');
+        $preread_length = (int)Lib\Config::get( $this->workerName . '.preread_length');
         if($preread_length > 0)
         {
             $this->prereadLength = $preread_length;
@@ -414,8 +395,6 @@ abstract class SocketWorker extends AbstractWorker
             }
             catch(\Exception $e)
             {
-                // 关闭闹钟
-                //pcntl_alarm(0);
                 $this->notice('CODE:' . $e->getCode() . ' MESSAGE:' . $e->getMessage()."\n".$e->getTraceAsString()."\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".var_export($this->recvBuffers[$fd]['buf'],true)."]\n");
                 $this->statusInfo['throw_exception'] ++;
                 $this->sendToClient($e->getMessage());
@@ -484,12 +463,6 @@ abstract class SocketWorker extends AbstractWorker
      */
     protected function installSignal()
     {
-        // 如果是由worker脚本启动则不安装信号
-        if(!defined('WORKERMAN_PID_FILE'))
-        {
-            return;
-        }
-        
         // 闹钟信号
         $this->event->add(SIGALRM, Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'), SIGALRM);
         // 终止进程信号
@@ -564,8 +537,7 @@ abstract class SocketWorker extends AbstractWorker
             return true;
         }
         // udp 直接发送，要求数据包不能超过65515
-        $len = stream_socket_sendto($this->mainSocket, $str_to_send, 0, $this->currentClientAddress);
-        return $len == strlen($str_to_send);
+       return strlen($str_to_send) == stream_socket_sendto($this->mainSocket, $str_to_send, 0, $this->currentClientAddress);
     }
     
     /**

@@ -169,9 +169,7 @@ class GameGateway extends Man\Core\SocketWorker
                 }
                 $this->uidConnMap[$uid] = $socket_id;
                 $this->connUidMap[$socket_id] = $uid;
-                $buf = new GameBuffer();
-                $buf->body = 'connect success';
-                $this->sendToUid($uid, $buf->getBuffer());
+                $this->sendToUid($uid, $recv_str);
                 return;
             default :
                 $this->notice('gateway inner pack sub_cmd err data:' .$recv_str . ' serialize:' . serialize($data) );

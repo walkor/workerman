@@ -34,8 +34,6 @@ class Checker
                         'sysvshm'   => false,
                         'sysvmsg'   => false,
                         'libevent'  => false,
-                        'ev'        => false,
-                        'uv'        => false,
                         'proctitle' => false,
         );
     
@@ -60,7 +58,7 @@ class Checker
             else
             {
                 // ev uv inotify不是必须
-                if('ev' == $ext_name || 'uv' == $ext_name || 'proctitle' == $ext_name)
+                if('proctitle' == $ext_name)
                 {
                     continue;
                 }
@@ -226,6 +224,5 @@ class Checker
         {
             exit("\n\033[31;40mYou should start the server as root\033[0m\n\n\033[31;40mServer start failed\033[0m\n\n");
         }
-        
     }
 }

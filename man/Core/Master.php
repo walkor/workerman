@@ -145,6 +145,7 @@ class Master
      */
     public static function run()
     {
+        // 输出信息
         self::notice("Server is starting ...", true);
         // 初始化
         self::init();
@@ -160,7 +161,7 @@ class Master
         self::createSocketsAndListen();
         // 创建worker进程
         self::createWorkers();
-        
+        // 输出信息
         self::notice("Server start success ...", true);
         // 标记sever状态为运行中...
         self::$serverStatus = self::STATUS_RUNNING;
@@ -198,6 +199,7 @@ class Master
      */
     public static function checkEnv()
     {
+        // 检查PID文件
         Lib\Checker::checkPidFile();
         
         // 检查扩展支持情况
@@ -262,6 +264,7 @@ class Master
     
     /**
      * 保存主进程pid
+     * @return void
      */
     public static function savePid()
     {

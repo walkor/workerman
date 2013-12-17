@@ -4,7 +4,6 @@ require_once WORKERMAN_ROOT_DIR . 'man/Core/Events/interfaces.php';
 /**
  * 
  * select 轮询封装
- * 目前master进程使用这个库
  * 如果没有其它可用库worker进程也会自动使用该库
  * 
 * @author walkor <worker-man@qq.com>
@@ -88,22 +87,22 @@ class Select implements BaseEvent
     public function add($fd, $flag, $func, $args = null)
     {
         // key
-        $event_key = (int)$fd;
+        $fd_key = (int)$fd;
         switch ($flag)
         {
             // 可读事件
             case self::EV_READ:
-                $this->allEvents[$event_key][$flag] = array('args'=>$args, 'func'=>$func, 'fd'=>$fd);
-                $this->readFds[$event_key] = $fd;
+                $this->allEvents[$fd_key][$flag] = array('args'=>$args, 'func'=>$func, 'fd'=>$fd);
+                $this->readFds[$fd_key] = $fd;
                 break;
             // 写事件 目前没用到，未实现
             case self::EV_WRITE:
-                $this->allEvents[$event_key][$flag] = array('args'=>$args, 'func'=>$func, 'fd'=>$fd);
-                $this->writeFds[$event_key] = $fd;
+                $this->allEvents[$fd_key][$flag] = array('args'=>$args, 'func'=>$func, 'fd'=>$fd);
+                $this->writeFds[$fd_key] = $fd;
                 break;
             // 信号处理事件
             case self::EV_SIGNAL:
-                $this->signalEvents[$event_key][$flag] = array('args'=>$args, 'func'=>$func, 'fd'=>$fd);
+                $this->signalEvents[$fd_key][$flag] = array('args'=>$args, 'func'=>$func, 'fd'=>$fd);
                 pcntl_signal($fd, array($this, 'signalHandler'));
                 break;
         }
@@ -126,28 +125,28 @@ class Select implements BaseEvent
      */
     public function del($fd ,$flag)
     {
-        $event_key = (int)$fd;
+        $fd_key = (int)$fd;
         switch ($flag)
         {
             // 可读事件
             case self::EV_READ:
-                unset($this->allEvents[$event_key][$flag], $this->readFds[$event_key]);
-                if(empty($this->allEvents[$event_key]))
+                unset($this->allEvents[$fd_key][$flag], $this->readFds[$fd_key]);
+                if(empty($this->allEvents[$fd_key]))
                 {
-                    unset($this->allEvents[$event_key]);
+                    unset($this->allEvents[$fd_key]);
                 }
                 break;
             // 可写事件
             case self::EV_WRITE:
-                unset($this->allEvents[$event_key][$flag], $this->writeFds[$event_key]);
-                if(empty($this->allEvents[$event_key]))
+                unset($this->allEvents[$fd_key][$flag], $this->writeFds[$fd_key]);
+                if(empty($this->allEvents[$fd_key]))
                 {
-                    unset($this->allEvents[$event_key]);
+                    unset($this->allEvents[$fd_key]);
                 }
                 break;
             // 信号
             case self::EV_SIGNAL:
-                unset($this->signalEvents[$event_key]);
+                unset($this->signalEvents[$fd_key]);
                 pcntl_signal($fd, SIG_IGN);
                 break;
         }
@@ -186,18 +185,18 @@ class Select implements BaseEvent
             // 检查所有可读描述符
             foreach($read as $fd)
             {
-                $event_key = (int) $fd;
-                if(isset($this->allEvents[$event_key][self::EV_READ]))
+                $fd_key = (int) $fd;
+                if(isset($this->allEvents[$fd_key][self::EV_READ]))
                 {
-                    call_user_func_array($this->allEvents[$event_key][self::EV_READ]['func'], array($this->allEvents[$event_key][self::EV_READ]['fd'], self::EV_READ,  $this->allEvents[$event_key][self::EV_READ]['args']));
+                    call_user_func_array($this->allEvents[$fd_key][self::EV_READ]['func'], array($this->allEvents[$fd_key][self::EV_READ]['fd'], self::EV_READ,  $this->allEvents[$fd_key][self::EV_READ]['args']));
                 }
             }
             
             // 检查可写描述符，没用到，暂不实现
             foreach($write as $fd)
             {
-                $event_key = (int) $fd;
-                if(isset($this->allEvents[$event_key][self::EV_WRITE]))
+                $fd_key = (int) $fd;
+                if(isset($this->allEvents[$fd_key][self::EV_WRITE]))
                 {
                     // 留空
                 }
