@@ -327,14 +327,26 @@ class Monitor extends Man\Core\SocketWorker
                 break;
                 // 平滑重启server
             case 'reload':
-                if($master_pid)
+                $pid_worker_name_map = $this->getPidWorkerMap();
+                unset($pid_worker_name_map[posix_getpid()]);
+                if($pid_worker_name_map)
                 {
-                    posix_kill($master_pid, SIGHUP);
-                    $this->sendToClient("Restart Workers\n");
+                    foreach($pid_worker_name_map as $pid=>$item)
+                    {
+                        posix_kill($pid, SIGHUP);
+                    }
                 }
                 else
                 {
-                    $this->sendToClient("Can not get master pid\n");
+                    if($master_pid)
+                    {
+                        posix_kill($master_pid, SIGHUP);
+                        $this->sendToClient("Restart Workers\n");
+                    }
+                    else
+                    {
+                        $this->sendToClient("Can not get master pid\n");
+                    }
                 }
                 break;
                 // admin管理员退出
@@ -586,30 +598,6 @@ class Monitor extends Man\Core\SocketWorker
             }
         }
         return $ip;
-    }
-    
-    /**
-     * 安装信号处理函数
-     * @return void
-     */
-    protected function installSignal()
-    {
-        // 闹钟信号
-        $this->event->add(SIGALRM, \Man\Core\Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'), SIGALRM);
-        // 终止进程信号
-        $this->event->add(SIGINT, \Man\Core\Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'), SIGINT);
-        // 报告进程状态
-        $this->event->add(SIGUSR1, \Man\Core\Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'), SIGUSR1);
-        // 报告该进程使用的文件
-        $this->event->add(SIGUSR2, \Man\Core\Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'), SIGUSR2);
-    
-        // 设置忽略信号
-        pcntl_signal(SIGTTIN, SIG_IGN);
-        pcntl_signal(SIGTTOU, SIG_IGN);
-        pcntl_signal(SIGQUIT, SIG_IGN);
-        pcntl_signal(SIGPIPE, SIG_IGN);
-        pcntl_signal(SIGCHLD, SIG_IGN);
-        pcntl_signal(SIGHUP, SIG_IGN);
     }
     
     /**
