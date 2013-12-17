@@ -1,7 +1,7 @@
 <?php
 ini_set('display_errors', 'on');
 error_reporting(E_ALL);
-define('WORKERMAN_ROOT_DIR', __DIR__.'/../../');
+define('WORKERMAN_ROOT_DIR', __DIR__.'/../../../');
 include '../GameBuffer.php';
 
 $sock = stream_socket_client("tcp://127.0.0.1:8282");
