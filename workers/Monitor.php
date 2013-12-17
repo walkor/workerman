@@ -589,6 +589,30 @@ class Monitor extends Man\Core\SocketWorker
     }
     
     /**
+     * 安装信号处理函数
+     * @return void
+     */
+    protected function installSignal()
+    {
+        // 闹钟信号
+        $this->event->add(SIGALRM, Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'), SIGALRM);
+        // 终止进程信号
+        $this->event->add(SIGINT, Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'), SIGINT);
+        // 报告进程状态
+        $this->event->add(SIGUSR1, Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'), SIGUSR1);
+        // 报告该进程使用的文件
+        $this->event->add(SIGUSR2, Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'), SIGUSR2);
+    
+        // 设置忽略信号
+        pcntl_signal(SIGTTIN, SIG_IGN);
+        pcntl_signal(SIGTTOU, SIG_IGN);
+        pcntl_signal(SIGQUIT, SIG_IGN);
+        pcntl_signal(SIGPIPE, SIG_IGN);
+        pcntl_signal(SIGCHLD, SIG_IGN);
+        pcntl_signal(SIGHUP, SIG_IGN);
+    }
+    
+    /**
      * 递归删除文件
      * @param string $path
      */
