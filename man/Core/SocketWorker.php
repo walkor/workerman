@@ -112,8 +112,6 @@ abstract class SocketWorker extends AbstractWorker
     protected $statusInfo = array(
         'start_time'      => 0, // 该进程开始时间戳
         'total_request'   => 0, // 该进程处理的总请求数
-        'recv_timeout'    => 0, // 该进程接收数据超时总数
-        'proc_timeout'    => 0, // 该进程逻辑处理超时总数
         'packet_err'      => 0, // 该进程收到错误数据包的总数
         'throw_exception' => 0, // 该进程逻辑处理时收到异常的总数
         'thunder_herd'    => 0, // 该进程受惊群效应影响的总数
@@ -364,8 +362,6 @@ abstract class SocketWorker extends AbstractWorker
             }
             else
             {
-                // 超时了
-                $this->statusInfo['recv_timeout']++;
                 // 如果该链接对应的buffer有数据，说明放生错误
                 if(!empty($this->recvBuffers[$fd]['buf']))
                 {
