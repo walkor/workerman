@@ -363,7 +363,8 @@ class Master
             self::$workerPids[$worker_name][$pid] = $pid;
             // 更新进程信息到共享内存
             self::updateStatusToShm();
-            
+            // 序列号加1
+            echo call_user_func_array(array($worker_name, 'increaseNumber'), array());
             return $pid;
         }
         // 子进程
@@ -398,7 +399,7 @@ class Master
     
             // 创建worker实例
             include_once WORKERMAN_ROOT_DIR . "workers/$worker_name.php";
-            $worker = new $worker_name($worker_name);
+            $worker = new $worker_name();
             // 如果该worker有配置监听端口，则将监听端口的socket传递给子进程
             if(isset(self::$listenedSockets[$worker_name]))
             {
