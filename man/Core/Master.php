@@ -363,8 +363,7 @@ class Master
             self::$workerPids[$worker_name][$pid] = $pid;
             // 更新进程信息到共享内存
             self::updateStatusToShm();
-            // 序列号加1
-            echo call_user_func_array(array($worker_name, 'increaseNumber'), array());
+            
             return $pid;
         }
         // 子进程

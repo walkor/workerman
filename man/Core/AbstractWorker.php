@@ -34,12 +34,6 @@ abstract class AbstractWorker
     const MSG_TYPE_FILE_MONITOR = 2;
     
     /**
-     * 进程编号
-     * @var integer
-     */
-    public static $number = 0;
-    
-    /**
      * worker名称
      * @var string
      */
@@ -213,15 +207,6 @@ abstract class AbstractWorker
             }
             $this->notice($error_msg);
         }
-    }
-    
-    /**
-     * 增加进程序列号
-     * @return int
-     */
-    public function increaseNumber()
-    {
-        return ++self::$number;
     }
     
     /**

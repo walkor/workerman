@@ -40,7 +40,8 @@ class GameGateway extends Man\Core\SocketWorker
         $ret = $this->event->add($this->mainSocket,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'accept'));
         
         // 创建内部通信套接字
-        $this->lanPort = posix_getpid();
+        $start_port = Man\Core\Lib\Config::get($this->workerName.'.lan_start_port');
+        $this->lanPort = $start_port + posix_getppid() - posix_getpid();
         $this->lanIp = Man\Core\Lib\Config::get($this->workerName.'.lan_ip');
         if(!$this->lanIp)
         {
