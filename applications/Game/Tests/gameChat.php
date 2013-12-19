@@ -1,7 +1,6 @@
 <?php
 ini_set('display_errors', 'on');
 error_reporting(E_ALL);
-define('WORKERMAN_ROOT_DIR', __DIR__.'/../../../');
 
 $sock = stream_socket_client("tcp://115.28.44.100:8282");
 if(!$sock)exit("can not create sock\n");
