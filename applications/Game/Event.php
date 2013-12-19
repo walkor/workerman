@@ -28,9 +28,15 @@ class Event
        self::notifyConnectionSuccess($address, $socket_id, $uid);
    }
    
-   public static function onClose($uid)
+   public static function onClose($address, $uid)
    {
-       
+       $buf = new Gamebuffer();
+       $buf->header['cmd'] = GameBuffer::CMD_GATEWAY;
+       $buf->header['sub_cmd'] = GameBuffer::SCMD_BROADCAST;
+       $buf->header['from_uid'] = $uid;
+       $buf->body = "logout bye!!!";
+       GameBuffer::sendToAll($buf->getBuffer());
+       self::deleteUidAddress($uid);
    }
    
    public static function kickUid($uid)

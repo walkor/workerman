@@ -11,6 +11,7 @@
 require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
 require_once WORKERMAN_ROOT_DIR . 'applications/Game/GameBuffer.php';
 require_once WORKERMAN_ROOT_DIR . 'applications/Game/Event.php';
+require_once WORKERMAN_ROOT_DIR . 'applications/Game/User.php';
 
 class GameWorker extends Man\Core\SocketWorker
 {
@@ -37,12 +38,15 @@ class GameWorker extends Man\Core\SocketWorker
                 {
                     case GameBuffer::SCMD_ON_CONNECT:
                         call_user_func_array(array('Event', 'onConnect'), array('udp://'.$this->getRemoteIp().':'.$this->data['to_uid'], $this->data['from_uid'], $this->data['body']));
+                        return;
+                    case GameBuffer::SCMD_ON_CLOSE:
+                        call_user_func_array(array('Event', 'onClose'), array('udp://'.$this->getRemoteIp().':'.$this->data['to_uid'], $this->data['from_uid']));
                         return; 
                 }
             }
             $this->notice("cmd err $class::$method not exists");
             return;
         }
-        call_user_func_array(array($class, $method),  $this->data);
+        call_user_func_array(array($class, $method),  array($this->data));
     }
 }

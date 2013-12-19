@@ -1,0 +1,858 @@
+phpinfo()
+PHP Version => 5.3.28-1~dotdeb.0
+
+System => Linux AY1312071624136270f5Z 2.6.32-5-amd64 #1 SMP Sun Jan 1 04:57:38 CST 2012 x86_64
+Build Date => Dec 13 2013 01:36:52
+Server API => Command Line Interface
+Virtual Directory Support => disabled
+Configuration File (php.ini) Path => /etc/php5/cli
+Loaded Configuration File => /etc/php5/cli/php.ini
+Scan this dir for additional .ini files => /etc/php5/cli/conf.d
+Additional .ini files parsed => /etc/php5/cli/conf.d/apc.ini,
+/etc/php5/cli/conf.d/libevent.ini,
+/etc/php5/cli/conf.d/mysql.ini,
+/etc/php5/cli/conf.d/mysqli.ini,
+/etc/php5/cli/conf.d/pdo.ini,
+/etc/php5/cli/conf.d/pdo_mysql.ini,
+/etc/php5/cli/conf.d/proctitle.ini
+
+PHP API => 20090626
+PHP Extension => 20090626
+Zend Extension => 220090626
+Zend Extension Build => API220090626,NTS
+PHP Extension Build => API20090626,NTS
+Debug Build => no
+Thread Safety => disabled
+Zend Memory Manager => enabled
+Zend Multibyte Support => disabled
+IPv6 Support => enabled
+Registered PHP Streams => https, ftps, compress.zlib, compress.bzip2, php, file, glob, data, http, ftp, zip, phar  
+Registered Stream Socket Transports => tcp, udp, unix, udg, ssl, sslv3, sslv2, tls
+Registered Stream Filters => zlib.*, bzip2.*, convert.iconv.*, string.rot13, string.toupper, string.tolower, string.strip_tags, convert.*, consumed, dechunk
+
+
+This server is protected with the Suhosin Patch 0.9.10
+Copyright (c) 2006-2007 Hardened-PHP Project
+Copyright (c) 2007-2012 SektionEins GmbH
+
+
+This program makes use of the Zend Scripting Language Engine:
+Zend Engine v2.3.0, Copyright (c) 1998-2013 Zend Technologies
+
+
+This program was built by Dotdeb (http://www.dotdeb.org/).
+
+ _______________________________________________________________________
+
+
+Configuration
+
+apc
+
+APC Support => disabled
+Version => 3.1.13
+APC Debugging => Disabled
+MMAP Support => Enabled
+MMAP File Mask =>  
+Locking type => pthread mutex Locks
+Serialization Support => broken
+Revision => $Revision: 327136 $
+Build Date => Dec 13 2013 15:32:50
+
+Directive => Local Value => Master Value
+apc.cache_by_default => On => On
+apc.canonicalize => On => On
+apc.coredump_unmap => Off => Off
+apc.enable_cli => Off => Off
+apc.enabled => On => On
+apc.file_md5 => Off => Off
+apc.file_update_protection => 2 => 2
+apc.filters => no value => no value
+apc.gc_ttl => 3600 => 3600
+apc.include_once_override => Off => Off
+apc.lazy_classes => Off => Off
+apc.lazy_functions => Off => Off
+apc.max_file_size => 1M => 1M
+apc.mmap_file_mask => no value => no value
+apc.num_files_hint => 1000 => 1000
+apc.preload_path => no value => no value
+apc.report_autofilter => Off => Off
+apc.rfc1867 => Off => Off
+apc.rfc1867_freq => 0 => 0
+apc.rfc1867_name => APC_UPLOAD_PROGRESS => APC_UPLOAD_PROGRESS
+apc.rfc1867_prefix => upload_ => upload_
+apc.rfc1867_ttl => 3600 => 3600
+apc.serializer => default => default
+apc.shm_segments => 1 => 1
+apc.shm_size => 32M => 32M
+apc.slam_defense => On => On
+apc.stat => On => On
+apc.stat_ctime => Off => Off
+apc.ttl => 0 => 0
+apc.use_request_time => On => On
+apc.user_entries_hint => 4096 => 4096
+apc.user_ttl => 0 => 0
+apc.write_lock => On => On
+
+bcmath
+
+BCMath support => enabled
+
+Directive => Local Value => Master Value
+bcmath.scale => 0 => 0
+
+bz2
+
+BZip2 Support => Enabled
+Stream Wrapper support => compress.bzip2://
+Stream Filter support => bzip2.decompress, bzip2.compress
+BZip2 Version => 1.0.5, 10-Dec-2007
+
+calendar
+
+Calendar support => enabled
+
+Core
+
+PHP Version => 5.3.28-1~dotdeb.0
+
+Directive => Local Value => Master Value
+allow_call_time_pass_reference => Off => Off
+allow_url_fopen => On => On
+allow_url_include => Off => Off
+always_populate_raw_post_data => Off => Off
+arg_separator.input => & => &
+arg_separator.output => & => &
+asp_tags => Off => Off
+auto_append_file => no value => no value
+auto_globals_jit => On => On
+auto_prepend_file => no value => no value
+browscap => no value => no value
+default_charset => no value => no value
+default_mimetype => text/html => text/html
+define_syslog_variables => Off => Off
+disable_classes => no value => no value
+disable_functions => no value => no value
+display_errors => Off => Off
+display_startup_errors => Off => Off
+doc_root => no value => no value
+docref_ext => no value => no value
+docref_root => no value => no value
+enable_dl => Off => Off
+error_append_string => no value => no value
+error_log => /var/log/php_errors.log => /var/log/php_errors.log
+error_prepend_string => no value => no value
+error_reporting => 22527 => 22527
+exit_on_timeout => Off => Off
+expose_php => On => On
+extension_dir => /usr/lib/php5/20090626 => /usr/lib/php5/20090626
+file_uploads => On => On
+highlight.bg => <font style="color: #FFFFFF">#FFFFFF</font> => <font style="color: #FFFFFF">#FFFFFF</font>
+highlight.comment => <font style="color: #FF8000">#FF8000</font> => <font style="color: #FF8000">#FF8000</font>
+highlight.default => <font style="color: #0000BB">#0000BB</font> => <font style="color: #0000BB">#0000BB</font>
+highlight.html => <font style="color: #000000">#000000</font> => <font style="color: #000000">#000000</font>
+highlight.keyword => <font style="color: #007700">#007700</font> => <font style="color: #007700">#007700</font>
+highlight.string => <font style="color: #DD0000">#DD0000</font> => <font style="color: #DD0000">#DD0000</font>
+html_errors => Off => Off
+ignore_repeated_errors => Off => Off
+ignore_repeated_source => Off => Off
+ignore_user_abort => Off => Off
+implicit_flush => On => On
+include_path => .:/usr/share/php:/usr/share/pear => .:/usr/share/php:/usr/share/pear
+log_errors => On => On
+log_errors_max_len => 1024 => 1024
+magic_quotes_gpc => Off => Off
+magic_quotes_runtime => Off => Off
+magic_quotes_sybase => Off => Off
+mail.add_x_header => On => On
+mail.force_extra_parameters => no value => no value
+mail.log => no value => no value
+max_execution_time => 0 => 0
+max_file_uploads => 20 => 20
+max_input_nesting_level => 64 => 64
+max_input_time => -1 => -1
+max_input_vars => 1000 => 1000
+memory_limit => -1 => -1
+open_basedir => no value => no value
+output_buffering => 0 => 0
+output_handler => no value => no value
+post_max_size => 8M => 8M
+precision => 14 => 14
+realpath_cache_size => 16K => 16K
+realpath_cache_ttl => 120 => 120
+register_argc_argv => On => On
+register_globals => Off => Off
+register_long_arrays => Off => Off
+report_memleaks => On => On
+report_zend_debug => Off => Off
+request_order => GP => GP
+safe_mode => Off => Off
+safe_mode_exec_dir => no value => no value
+safe_mode_gid => Off => Off
+safe_mode_include_dir => no value => no value
+sendmail_from => no value => no value
+sendmail_path => /usr/sbin/sendmail -t -i  => /usr/sbin/sendmail -t -i 
+serialize_precision => 17 => 17
+short_open_tag => Off => Off
+SMTP => localhost => localhost
+smtp_port => 25 => 25
+sql.safe_mode => Off => Off
+track_errors => Off => Off
+unserialize_callback_func => no value => no value
+upload_max_filesize => 2M => 2M
+upload_tmp_dir => no value => no value
+user_dir => no value => no value
+user_ini.cache_ttl => 300 => 300
+user_ini.filename => .user.ini => .user.ini
+variables_order => GPCS => GPCS
+xmlrpc_error_number => 0 => 0
+xmlrpc_errors => Off => Off
+y2k_compliance => On => On
+zend.enable_gc => On => On
+
+ctype
+
+ctype functions => enabled
+
+date
+
+date/time support => enabled
+"Olson" Timezone Database Version => 2013.3
+Timezone Database => internal
+Default timezone => Asia/Chongqing
+
+Directive => Local Value => Master Value
+date.default_latitude => 31.7667 => 31.7667
+date.default_longitude => 35.2333 => 35.2333
+date.sunrise_zenith => 90.583333 => 90.583333
+date.sunset_zenith => 90.583333 => 90.583333
+date.timezone => no value => no value
+
+dba
+
+DBA support => enabled
+Supported handlers => cdb cdb_make db4 inifile flatfile qdbm 
+
+Directive => Local Value => Master Value
+dba.default_handler => flatfile => flatfile
+
+dom
+
+DOM/XML => enabled
+DOM/XML API Version => 20031129
+libxml Version => 2.7.8
+HTML Support => enabled
+XPath Support => enabled
+XPointer Support => enabled
+Schema Support => enabled
+RelaxNG Support => enabled
+
+ereg
+
+Regex Library => Bundled library enabled
+
+exif
+
+EXIF Support => enabled
+EXIF Version => 1.4 $Id$
+Supported EXIF Version => 0220
+Supported filetypes => JPEG,TIFF
+
+Directive => Local Value => Master Value
+exif.decode_jis_intel => JIS => JIS
+exif.decode_jis_motorola => JIS => JIS
+exif.decode_unicode_intel => UCS-2LE => UCS-2LE
+exif.decode_unicode_motorola => UCS-2BE => UCS-2BE
+exif.encode_jis => no value => no value
+exif.encode_unicode => ISO-8859-15 => ISO-8859-15
+
+fileinfo
+
+fileinfo support => enabled
+version => 1.0.5-dev
+
+filter
+
+Input Validation and Filtering => enabled
+Revision => $Id: 209a1c3c98c04a5474846e7bbe8ca72054ccfd4f $
+
+Directive => Local Value => Master Value
+filter.default => unsafe_raw => unsafe_raw
+filter.default_flags => no value => no value
+
+ftp
+
+FTP support => enabled
+
+gettext
+
+GetText Support => enabled
+
+hash
+
+hash support => enabled
+Hashing Engines => md2 md4 md5 sha1 sha224 sha256 sha384 sha512 ripemd128 ripemd160 ripemd256 ripemd320 whirlpool tiger128,3 tiger160,3 tiger192,3 tiger128,4 tiger160,4 tiger192,4 snefru snefru256 gost adler32 crc32 crc32b salsa10 salsa20 haval128,3 haval160,3 haval192,3 haval224,3 haval256,3 haval128,4 haval160,4 haval192,4 haval224,4 haval256,4 haval128,5 haval160,5 haval192,5 haval224,5 haval256,5 
+
+iconv
+
+iconv support => enabled
+iconv implementation => glibc
+iconv library version => 2.11.3
+
+Directive => Local Value => Master Value
+iconv.input_encoding => ISO-8859-1 => ISO-8859-1
+iconv.internal_encoding => ISO-8859-1 => ISO-8859-1
+iconv.output_encoding => ISO-8859-1 => ISO-8859-1
+
+json
+
+json support => enabled
+json version => 1.2.1
+
+libevent
+
+libevent support => enabled
+extension version => 0.1.0
+Revision => $Revision$
+libevent version => 1.4.13-stable
+
+libxml
+
+libXML support => active
+libXML Compiled Version => 2.7.8
+libXML Loaded Version => 20708
+libXML streams => enabled
+
+mbstring
+
+Multibyte Support => enabled
+Multibyte string engine => libmbfl
+HTTP input encoding translation => disabled
+
+mbstring extension makes use of "streamable kanji code filter and converter", which is distributed under the GNU Lesser General Public License version 2.1.
+
+Multibyte (japanese) regex support => enabled
+Multibyte regex (oniguruma) version => 5.9.1
+
+Directive => Local Value => Master Value
+mbstring.detect_order => no value => no value
+mbstring.encoding_translation => Off => Off
+mbstring.func_overload => 0 => 0
+mbstring.http_input => pass => pass
+mbstring.http_output => pass => pass
+mbstring.http_output_conv_mimetypes => ^(text/|application/xhtml\+xml) => ^(text/|application/xhtml\+xml)
+mbstring.internal_encoding => no value => no value
+mbstring.language => neutral => neutral
+mbstring.strict_detection => Off => Off
+mbstring.substitute_character => no value => no value
+
+mhash
+
+MHASH support => Enabled
+MHASH API Version => Emulated Support
+
+mysql
+
+MySQL Support => enabled
+Active Persistent Links => 0
+Active Links => 0
+Client API version => mysqlnd 5.0.8-dev - 20102224 - $Id: 731e5b87ba42146a687c29995d2dfd8b4e40b325 $
+
+Directive => Local Value => Master Value
+mysql.allow_local_infile => On => On
+mysql.allow_persistent => On => On
+mysql.connect_timeout => 60 => 60
+mysql.default_host => no value => no value
+mysql.default_password => no value => no value
+mysql.default_port => no value => no value
+mysql.default_socket => /var/run/mysqld/mysqld.sock => /var/run/mysqld/mysqld.sock
+mysql.default_user => no value => no value
+mysql.max_links => Unlimited => Unlimited
+mysql.max_persistent => Unlimited => Unlimited
+mysql.trace_mode => Off => Off
+
+mysqli
+
+MysqlI Support => enabled
+Client API library version => mysqlnd 5.0.8-dev - 20102224 - $Id: 731e5b87ba42146a687c29995d2dfd8b4e40b325 $
+Active Persistent Links => 0
+Inactive Persistent Links => 0
+Active Links => 0
+
+Directive => Local Value => Master Value
+mysqli.allow_local_infile => On => On
+mysqli.allow_persistent => On => On
+mysqli.default_host => no value => no value
+mysqli.default_port => 3306 => 3306
+mysqli.default_pw => no value => no value
+mysqli.default_socket => /var/run/mysqld/mysqld.sock => /var/run/mysqld/mysqld.sock
+mysqli.default_user => no value => no value
+mysqli.max_links => Unlimited => Unlimited
+mysqli.max_persistent => Unlimited => Unlimited
+mysqli.reconnect => Off => Off
+
+mysqlnd
+
+mysqlnd => enabled
+Version => mysqlnd 5.0.8-dev - 20102224 - $Id: 731e5b87ba42146a687c29995d2dfd8b4e40b325 $
+Compression => supported
+SSL => supported
+Command buffer size => 4096
+Read buffer size => 32768
+Read timeout => 31536000
+Collecting statistics => Yes
+Collecting memory statistics => No
+Tracing => n/a
+
+Client statistics =>  
+bytes_sent => 0
+bytes_received => 0
+packets_sent => 0
+packets_received => 0
+protocol_overhead_in => 0
+protocol_overhead_out => 0
+bytes_received_ok_packet => 0
+bytes_received_eof_packet => 0
+bytes_received_rset_header_packet => 0
+bytes_received_rset_field_meta_packet => 0
+bytes_received_rset_row_packet => 0
+bytes_received_prepare_response_packet => 0
+bytes_received_change_user_packet => 0
+packets_sent_command => 0
+packets_received_ok => 0
+packets_received_eof => 0
+packets_received_rset_header => 0
+packets_received_rset_field_meta => 0
+packets_received_rset_row => 0
+packets_received_prepare_response => 0
+packets_received_change_user => 0
+result_set_queries => 0
+non_result_set_queries => 0
+no_index_used => 0
+bad_index_used => 0
+slow_queries => 0
+buffered_sets => 0
+unbuffered_sets => 0
+ps_buffered_sets => 0
+ps_unbuffered_sets => 0
+flushed_normal_sets => 0
+flushed_ps_sets => 0
+ps_prepared_never_executed => 0
+ps_prepared_once_executed => 0
+rows_fetched_from_server_normal => 0
+rows_fetched_from_server_ps => 0
+rows_buffered_from_client_normal => 0
+rows_buffered_from_client_ps => 0
+rows_fetched_from_client_normal_buffered => 0
+rows_fetched_from_client_normal_unbuffered => 0
+rows_fetched_from_client_ps_buffered => 0
+rows_fetched_from_client_ps_unbuffered => 0
+rows_fetched_from_client_ps_cursor => 0
+rows_affected_normal => 0
+rows_affected_ps => 0
+rows_skipped_normal => 0
+rows_skipped_ps => 0
+copy_on_write_saved => 0
+copy_on_write_performed => 0
+command_buffer_too_small => 0
+connect_success => 0
+connect_failure => 0
+connection_reused => 0
+reconnect => 0
+pconnect_success => 0
+active_connections => 0
+active_persistent_connections => 0
+explicit_close => 0
+implicit_close => 0
+disconnect_close => 0
+in_middle_of_command_close => 0
+explicit_free_result => 0
+implicit_free_result => 0
+explicit_stmt_close => 0
+implicit_stmt_close => 0
+mem_emalloc_count => 0
+mem_emalloc_amount => 0
+mem_ecalloc_count => 0
+mem_ecalloc_amount => 0
+mem_erealloc_count => 0
+mem_erealloc_amount => 0
+mem_efree_count => 0
+mem_efree_amount => 0
+mem_malloc_count => 0
+mem_malloc_amount => 0
+mem_calloc_count => 0
+mem_calloc_amount => 0
+mem_realloc_count => 0
+mem_realloc_amount => 0
+mem_free_count => 0
+mem_free_amount => 0
+mem_estrndup_count => 0
+mem_strndup_count => 0
+mem_estndup_count => 0
+mem_strdup_count => 0
+proto_text_fetched_null => 0
+proto_text_fetched_bit => 0
+proto_text_fetched_tinyint => 0
+proto_text_fetched_short => 0
+proto_text_fetched_int24 => 0
+proto_text_fetched_int => 0
+proto_text_fetched_bigint => 0
+proto_text_fetched_decimal => 0
+proto_text_fetched_float => 0
+proto_text_fetched_double => 0
+proto_text_fetched_date => 0
+proto_text_fetched_year => 0
+proto_text_fetched_time => 0
+proto_text_fetched_datetime => 0
+proto_text_fetched_timestamp => 0
+proto_text_fetched_string => 0
+proto_text_fetched_blob => 0
+proto_text_fetched_enum => 0
+proto_text_fetched_set => 0
+proto_text_fetched_geometry => 0
+proto_text_fetched_other => 0
+proto_binary_fetched_null => 0
+proto_binary_fetched_bit => 0
+proto_binary_fetched_tinyint => 0
+proto_binary_fetched_short => 0
+proto_binary_fetched_int24 => 0
+proto_binary_fetched_int => 0
+proto_binary_fetched_bigint => 0
+proto_binary_fetched_decimal => 0
+proto_binary_fetched_float => 0
+proto_binary_fetched_double => 0
+proto_binary_fetched_date => 0
+proto_binary_fetched_year => 0
+proto_binary_fetched_time => 0
+proto_binary_fetched_datetime => 0
+proto_binary_fetched_timestamp => 0
+proto_binary_fetched_string => 0
+proto_binary_fetched_blob => 0
+proto_binary_fetched_enum => 0
+proto_binary_fetched_set => 0
+proto_binary_fetched_geometry => 0
+proto_binary_fetched_other => 0
+init_command_executed_count => 0
+init_command_failed_count => 0
+com_quit => 0
+com_init_db => 0
+com_query => 0
+com_field_list => 0
+com_create_db => 0
+com_drop_db => 0
+com_refresh => 0
+com_shutdown => 0
+com_statistics => 0
+com_process_info => 0
+com_connect => 0
+com_process_kill => 0
+com_debug => 0
+com_ping => 0
+com_time => 0
+com_delayed_insert => 0
+com_change_user => 0
+com_binlog_dump => 0
+com_table_dump => 0
+com_connect_out => 0
+com_register_slave => 0
+com_stmt_prepare => 0
+com_stmt_execute => 0
+com_stmt_send_long_data => 0
+com_stmt_close => 0
+com_stmt_reset => 0
+com_stmt_set_option => 0
+com_stmt_fetch => 0
+com_deamon => 0
+bytes_received_real_data_normal => 0
+bytes_received_real_data_ps => 0
+
+openssl
+
+OpenSSL support => enabled
+OpenSSL Library Version => OpenSSL 0.9.8o 01 Jun 2010
+OpenSSL Header Version => OpenSSL 0.9.8o 01 Jun 2010
+
+pcntl
+
+pcntl support => enabled
+
+pcre
+
+PCRE (Perl Compatible Regular Expressions) Support => enabled
+PCRE Library Version => 8.32 2012-11-30
+
+Directive => Local Value => Master Value
+pcre.backtrack_limit => 1000000 => 1000000
+pcre.recursion_limit => 100000 => 100000
+
+PDO
+
+PDO support => enabled
+PDO drivers => mysql
+
+pdo_mysql
+
+PDO Driver for MySQL => enabled
+Client API version => mysqlnd 5.0.8-dev - 20102224 - $Id: 731e5b87ba42146a687c29995d2dfd8b4e40b325 $
+
+Directive => Local Value => Master Value
+pdo_mysql.default_socket => /var/run/mysqld/mysqld.sock => /var/run/mysqld/mysqld.sock
+
+Phar
+
+Phar: PHP Archive support => enabled
+Phar EXT version => 2.0.1
+Phar API version => 1.1.1
+SVN revision => $Id: 21d763042eb5769ae0a09dc1118df2b5aae6fb33 $
+Phar-based phar archives => enabled
+Tar-based phar archives => enabled
+ZIP-based phar archives => enabled
+gzip compression => enabled
+bzip2 compression => enabled
+OpenSSL support => enabled
+
+
+Phar based on pear/PHP_Archive, original concept by Davey Shafik.
+Phar fully realized by Gregory Beaver and Marcus Boerger.
+Portions of tar implementation Copyright (c) 2003-2009 Tim Kientzle.
+Directive => Local Value => Master Value
+phar.cache_list => no value => no value
+phar.readonly => On => On
+phar.require_hash => On => On
+
+posix
+
+Revision => $Id: 5a2da3946b96c5afbf3aff8db8a8681f8bedee85 $
+
+proctitle
+
+proctitle support => enabled
+
+Reflection
+
+Reflection => enabled
+Version => $Id: 4af6c4c676864b1c0bfa693845af0688645c37cf $
+
+session
+
+Session Support => enabled
+Registered save handlers => files user 
+Registered serializer handlers => php php_binary wddx 
+
+Directive => Local Value => Master Value
+session.auto_start => Off => Off
+session.bug_compat_42 => Off => Off
+session.bug_compat_warn => Off => Off
+session.cache_expire => 180 => 180
+session.cache_limiter => nocache => nocache
+session.cookie_domain => no value => no value
+session.cookie_httponly => Off => Off
+session.cookie_lifetime => 0 => 0
+session.cookie_path => / => /
+session.cookie_secure => Off => Off
+session.entropy_file => no value => no value
+session.entropy_length => 0 => 0
+session.gc_divisor => 1000 => 1000
+session.gc_maxlifetime => 1440 => 1440
+session.gc_probability => 1 => 1
+session.hash_bits_per_character => 5 => 5
+session.hash_function => 0 => 0
+session.name => PHPSESSID => PHPSESSID
+session.referer_check => no value => no value
+session.save_handler => files => files
+session.save_path => no value => no value
+session.serialize_handler => php => php
+session.use_cookies => On => On
+session.use_only_cookies => On => On
+session.use_trans_sid => 0 => 0
+
+shmop
+
+shmop support => enabled
+
+SimpleXML
+
+Simplexml support => enabled
+Revision => $Id: 02ab7893b36d51e9c59da77d7e287eb3b35e1e32 $
+Schema support => enabled
+
+soap
+
+Soap Client => enabled
+Soap Server => enabled
+
+Directive => Local Value => Master Value
+soap.wsdl_cache => 1 => 1
+soap.wsdl_cache_dir => /tmp => /tmp
+soap.wsdl_cache_enabled => 1 => 1
+soap.wsdl_cache_limit => 5 => 5
+soap.wsdl_cache_ttl => 86400 => 86400
+
+sockets
+
+Sockets Support => enabled
+
+SPL
+
+SPL support => enabled
+Interfaces => Countable, OuterIterator, RecursiveIterator, SeekableIterator, SplObserver, SplSubject
+Classes => AppendIterator, ArrayIterator, ArrayObject, BadFunctionCallException, BadMethodCallException, CachingIterator, DirectoryIterator, DomainException, EmptyIterator, FilesystemIterator, FilterIterator, GlobIterator, InfiniteIterator, InvalidArgumentException, IteratorIterator, LengthException, LimitIterator, LogicException, MultipleIterator, NoRewindIterator, OutOfBoundsException, OutOfRangeException, OverflowException, ParentIterator, RangeException, RecursiveArrayIterator, RecursiveCachingIterator, RecursiveDirectoryIterator, RecursiveFilterIterator, RecursiveIteratorIterator, RecursiveRegexIterator, RecursiveTreeIterator, RegexIterator, RuntimeException, SplDoublyLinkedList, SplFileInfo, SplFileObject, SplFixedArray, SplHeap, SplMinHeap, SplMaxHeap, SplObjectStorage, SplPriorityQueue, SplQueue, SplStack, SplTempFileObject, UnderflowException, UnexpectedValueException
+
+standard
+
+Dynamic Library Support => enabled
+Path to sendmail => /usr/sbin/sendmail -t -i 
+
+Directive => Local Value => Master Value
+assert.active => 1 => 1
+assert.bail => 0 => 0
+assert.callback => no value => no value
+assert.quiet_eval => 0 => 0
+assert.warning => 1 => 1
+auto_detect_line_endings => 0 => 0
+default_socket_timeout => 60 => 60
+from => no value => no value
+safe_mode_allowed_env_vars => PHP_ => PHP_
+safe_mode_protected_env_vars => LD_LIBRARY_PATH => LD_LIBRARY_PATH
+url_rewriter.tags => a=href,area=href,frame=src,input=src,form=fakeentry => a=href,area=href,frame=src,input=src,form=fakeentry
+user_agent => no value => no value
+
+sysvmsg
+
+sysvmsg support => enabled
+Revision => $Id: 4de54c4c0f668d2754472253f317a1de000b5b04 $
+
+tokenizer
+
+Tokenizer Support => enabled
+
+wddx
+
+WDDX Support => enabled
+WDDX Session Serializer => enabled
+
+xml
+
+XML Support => active
+XML Namespace Support => active
+libxml2 Version => 2.7.8
+
+xmlreader
+
+XMLReader => enabled
+
+xmlwriter
+
+XMLWriter => enabled
+
+zip
+
+Zip => enabled
+Extension Version => $Id: b1a1a3628c4ed0ad78fb0cc4a99b06a56aa281c4 $
+Zip version => 1.11.0
+Libzip version => 0.10.1
+
+zlib
+
+ZLib Support => enabled
+Stream Wrapper support => compress.zlib://
+Stream Filter support => zlib.inflate, zlib.deflate
+Compiled Version => 1.2.1.1
+Linked Version => 1.2.3.4
+
+Directive => Local Value => Master Value
+zlib.output_compression => Off => Off
+zlib.output_compression_level => -1 => -1
+zlib.output_handler => no value => no value
+
+Additional Modules
+
+Module Name
+readline
+sysvsem
+sysvshm
+
+Environment
+
+Variable => Value
+LC_PAPER => zh_CN.UTF-8
+LC_ADDRESS => zh_CN.UTF-8
+LC_MONETARY => zh_CN.UTF-8
+TERM => xterm
+SHELL => /bin/bash
+SSH_CLIENT => 182.148.123.35 38570 22
+LC_NUMERIC => zh_CN.UTF-8
+SSH_TTY => /dev/pts/2
+USER => root
+LS_COLORS => rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lz=01;31:*.xz=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.rar=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.axv=01;35:*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.axa=00;36:*.oga=00;36:*.spx=00;36:*.xspf=00;36:
+LC_TELEPHONE => zh_CN.UTF-8
+MAIL => /var/mail/root
+PATH => /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+LC_IDENTIFICATION => zh_CN.UTF-8
+PWD => /home/workerman
+LANG => en_US.UTF-8
+LC_MEASUREMENT => zh_CN.UTF-8
+SHLVL => 1
+HOME => /root
+LANGUAGE => en_US:en
+LS_OPTIONS => --color=auto
+LOGNAME => root
+SSH_CONNECTION => 182.148.123.35 38570 115.28.44.100 22
+LC_TIME => zh_CN.UTF-8
+LC_NAME => zh_CN.UTF-8
+_ => /usr/bin/php
+OLDPWD => /root
+
+PHP Variables
+
+Variable => Value
+_SERVER["LC_PAPER"] => zh_CN.UTF-8
+_SERVER["LC_ADDRESS"] => zh_CN.UTF-8
+_SERVER["LC_MONETARY"] => zh_CN.UTF-8
+_SERVER["TERM"] => xterm
+_SERVER["SHELL"] => /bin/bash
+_SERVER["SSH_CLIENT"] => 182.148.123.35 38570 22
+_SERVER["LC_NUMERIC"] => zh_CN.UTF-8
+_SERVER["SSH_TTY"] => /dev/pts/2
+_SERVER["USER"] => root
+_SERVER["LS_COLORS"] => rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lz=01;31:*.xz=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.rar=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.axv=01;35:*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.axa=00;36:*.oga=00;36:*.spx=00;36:*.xspf=00;36:
+_SERVER["LC_TELEPHONE"] => zh_CN.UTF-8
+_SERVER["MAIL"] => /var/mail/root
+_SERVER["PATH"] => /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+_SERVER["LC_IDENTIFICATION"] => zh_CN.UTF-8
+_SERVER["PWD"] => /home/workerman
+_SERVER["LANG"] => en_US.UTF-8
+_SERVER["LC_MEASUREMENT"] => zh_CN.UTF-8
+_SERVER["SHLVL"] => 1
+_SERVER["HOME"] => /root
+_SERVER["LANGUAGE"] => en_US:en
+_SERVER["LS_OPTIONS"] => --color=auto
+_SERVER["LOGNAME"] => root
+_SERVER["SSH_CONNECTION"] => 182.148.123.35 38570 115.28.44.100 22
+_SERVER["LC_TIME"] => zh_CN.UTF-8
+_SERVER["LC_NAME"] => zh_CN.UTF-8
+_SERVER["_"] => /usr/bin/php
+_SERVER["OLDPWD"] => /root
+_SERVER["PHP_SELF"] => 
+_SERVER["SCRIPT_NAME"] => 
+_SERVER["SCRIPT_FILENAME"] => 
+_SERVER["PATH_TRANSLATED"] => 
+_SERVER["DOCUMENT_ROOT"] => 
+_SERVER["REQUEST_TIME"] => 1387432207
+_SERVER["argv"] => Array
+(
+)
+
+_SERVER["argc"] => 0
+
+PHP License
+This program is free software; you can redistribute it and/or modify
+it under the terms of the PHP License as published by the PHP Group
+and included in the distribution in the file:  LICENSE
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+If you did not receive a copy of the PHP license, or have any
+questions about PHP licensing, please contact license@php.net.

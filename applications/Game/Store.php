@@ -10,7 +10,8 @@ class Store
 {
     public static function set($key, $value, $ttl = 0)
     {
-        return apc_store($key, $value, $ttl);
+        $key = strval($key);
+        return apc_store($key, $value);
     }
     
    public static function get($key)
@@ -20,6 +21,7 @@ class Store
    
    public static function delete($key)
    {
+       $key = strval($key);
        return apc_delete($key);
    }
    

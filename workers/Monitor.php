@@ -193,7 +193,7 @@ class Monitor extends Man\Core\SocketWorker
                 if(++$this->adminAuth[$this->currentDealFd] >= 3)
                 {
                     $this->sendToClient("Password Incorrect \n");
-                    $this->closeClient();
+                    $this->closeClient($this->currentDealFd);
                 }
                 $this->sendToClient("Please Try Again\n");
                 return;

@@ -222,6 +222,20 @@ class GameGateway extends Man\Core\SocketWorker
         $send_len = fwrite($this->connections[$this->uidConnMap[$uid]], $bin_data);
         return $send_len == strlen($bin_data);
     }
+
+    protected function closeClient($fd)
+    {
+        if($uid = $this->getUidByFd($fd))
+        {
+            $buf = new GameBuffer();
+            $buf->header['cmd'] = GameBuffer::CMD_SYSTEM;
+            $buf->header['sub_cmd'] = GameBuffer::SCMD_ON_CLOSE;
+            $buf->header['from_uid'] = $uid;
+            $this->sendToWorker($buf->getBuffer());
+            unset($this->uidConnMap[$uid], $this->connUidMap[$fd]);
+        }
+        parent::closeClient($fd);
+    }
     
     public function dealProcess($recv_str)
     {
