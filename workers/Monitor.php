@@ -2,7 +2,7 @@
 require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
 /**
  * 
- * 1、提供telnet接口，查看服务状态
+ * 1、提供telnet接口，远程控制服务器查看服务状态
  * 2、监控主进程是否挂掉
  * 3、监控worker进程是否频繁退出
  * 4、定时清理log文件
@@ -183,7 +183,7 @@ class Monitor extends Man\Core\SocketWorker
         $this->adminAuth[$this->currentDealFd] = !isset($this->adminAuth[$this->currentDealFd]) ? 0 : $this->adminAuth[$this->currentDealFd];
         if($this->adminAuth[$this->currentDealFd] < 3)
         {
-            if($buffer != 'P@ssword')
+            if($buffer != \Man\Core\Lib\Config::get($this->workerName.'.password'))
             {
                 if(++$this->adminAuth[$this->currentDealFd] >= 3)
                 {

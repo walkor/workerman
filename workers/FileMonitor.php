@@ -3,6 +3,8 @@ require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
 /**
  * 
  * 用这个worker监控文件更新
+ * 当文件更新后会给每个worker进程发送平滑重启信号
+ * 做到文件更新自动加载到内存
  * 
 * @author walkor <worker-man@qq.com>
  */
