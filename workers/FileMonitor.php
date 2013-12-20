@@ -81,7 +81,7 @@ class FileMonitor extends Man\Core\AbstractWorker
     {
         $msg_type = $message = null;
         $flag = $block ? 0 : MSG_IPC_NOWAIT;
-        if(msg_receive(Master::getQueueId(), self::MSG_TYPE_FILE_MONITOR, $msg_type, 10000, $message, true, $flag))
+        if(msg_receive(\Man\Core\Master::getQueueId(), self::MSG_TYPE_FILE_MONITOR, $msg_type, 10000, $message, true, $flag))
         {
             foreach($message as $file)
             {
