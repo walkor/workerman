@@ -9,7 +9,7 @@
  * 
  */
 require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
-require_once WORKERMAN_ROOT_DIR . 'applications/Game/GameBuffer.php';
+require_once WORKERMAN_ROOT_DIR . 'applications/Game/Protocols/GameBuffer.php';
 require_once WORKERMAN_ROOT_DIR . 'applications/Game/Store.php';
 
 class GameGateway extends Man\Core\SocketWorker
