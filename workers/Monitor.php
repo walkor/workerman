@@ -115,11 +115,6 @@ class Monitor extends Man\Core\SocketWorker
         // 安装信号
         $this->installSignal();
         
-        if(!is_dir(WORKERMAN_LOG_DIR . 'statistic'))
-        {
-            @mkdir(WORKERMAN_LOG_DIR . 'statistic', 0777);
-        }
-        
         // 初始化任务
         \Man\Core\Lib\Task::init($this->event);
         \Man\Core\Lib\Task::add(self::CLEAR_LOGS_TIME_LONG, array($this, 'clearLogs'), array(WORKERMAN_LOG_DIR));

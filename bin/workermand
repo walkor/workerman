@@ -15,6 +15,8 @@ $cmd = $argv[1];
 
 define('WORKERMAN_ROOT_DIR', realpath(__DIR__."/../")."/");
 
+chdir(WORKERMAN_ROOT_DIR);
+
 // ==pid-file==
 require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
 Man\Core\Lib\Config::instance();
