@@ -31,7 +31,7 @@ class FileMonitor extends Man\Core\AbstractWorker
         {
             return;
         }
-        if(!Master::getQueueId())
+        if(!\Man\Core\Master::getQueueId())
         {
             while(1)
             {
