@@ -189,6 +189,7 @@ class Monitor extends Man\Core\SocketWorker
                 {
                     $this->sendToClient("Password Incorrect \n");
                     $this->closeClient($this->currentDealFd);
+                    return;
                 }
                 $this->sendToClient("Please Try Again\n");
                 return;
