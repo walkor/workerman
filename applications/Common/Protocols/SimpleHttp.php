@@ -1,5 +1,5 @@
 <?php 
-namespace Man\Protocols;
+
 /**
  * http 协议解析 相关
  * 简单的实现 不支持header cookie
