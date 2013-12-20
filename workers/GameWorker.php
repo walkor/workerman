@@ -1,15 +1,13 @@
 <?php
 /**
  * 
- * 处理具体聊天逻辑
- * 1、查询某用户内网通信gateway ip及端口
- * 2、向某用户对应内网gateway ip及端口发送数据
+ * 处理具体逻辑
  * 
  * @author walkor <worker-man@qq.com>
  * 
  */
 require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
-require_once WORKERMAN_ROOT_DIR . 'applications/Game/GameBuffer.php';
+require_once WORKERMAN_ROOT_DIR . 'applications/Game/Protocols/GameBuffer.php';
 require_once WORKERMAN_ROOT_DIR . 'applications/Game/Event.php';
 require_once WORKERMAN_ROOT_DIR . 'applications/Game/User.php';
 

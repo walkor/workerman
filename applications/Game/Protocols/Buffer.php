@@ -1,5 +1,4 @@
 <?php 
-namespace Man\Protocols;
 /**
  * 二进制协议
  * 

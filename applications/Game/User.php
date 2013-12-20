@@ -1,5 +1,5 @@
 <?php
-require_once WORKERMAN_ROOT_DIR . 'applications/Game/GameBuffer.php';
+require_once WORKERMAN_ROOT_DIR . 'applications/Game/Protocols/GameBuffer.php';
 class User
 {
     public static function broadcast($data)

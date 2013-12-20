@@ -5,10 +5,10 @@
 * @author walkor <worker-man@qq.com>
 * 
  */
-require_once WORKERMAN_ROOT_DIR . 'man/Protocols/Buffer.php';
+require_once WORKERMAN_ROOT_DIR . 'applications/Game/Protocols/Buffer.php';
 require_once WORKERMAN_ROOT_DIR . 'applications/Game/Event.php';
 
-class GameBuffer extends Man\Protocols\Buffer
+class GameBuffer extends Buffer
 {
     // 系统命令
     const CMD_SYSTEM = 128;
