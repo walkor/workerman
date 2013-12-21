@@ -5,7 +5,7 @@
  * @author walkor <worker-man@qq.com>
  */
 require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
-class EchoWorker extends Man\Core\SocketWorker
+class RpcWorker extends Man\Core\SocketWorker
 {
     /**
      * 确定数据是否接收完整，这里每次收到包都认为数据完整

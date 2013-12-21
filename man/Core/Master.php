@@ -5,6 +5,11 @@ require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
 require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Task.php';
 require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Log.php';
 
+if(!defined('WORKERMAN_ROOT_DIR'))
+{
+    define('WORKERMAN_ROOT_DIR', realpath(__DIR__."/../../")."/");
+}
+
 /**
  * 
  * 主进程
