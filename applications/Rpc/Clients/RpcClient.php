@@ -46,7 +46,7 @@ class RpcClient
     public function __call($method, $arguments)
     {
         // 判断是否是异步发送
-        if(0 === str_pos($method, self::ASYNC_SEND_PREFIX))
+        if(0 === strpos($method, self::ASYNC_SEND_PREFIX))
         {
             $real_method = substr($method, strlen(self::ASYNC_SEND_PREFIX));
             $instance_key = $real_method . serialize($arguments);
@@ -57,7 +57,7 @@ class RpcClient
             self::$asyncInstances[$instance_key] = new self($this->serviceName);
             return self::$asyncInstances[$instance_key]->sendData($real_method, $arguments);
         }
-        if(0 === str_pos($method, self::ASYNC_RECV_PREFIX))
+        if(0 === strpos($method, self::ASYNC_RECV_PREFIX))
         {
             $real_method = substr($method, strlen(self::ASYNC_RECV_PREFIX));
             $instance_key = $real_method . serialize($arguments);
@@ -67,6 +67,9 @@ class RpcClient
             }
             return self::$asyncInstances[$instance_key]->recvData($real_method, $arguments);
         }
+        // 同步发送接收
+        $this->sendData($method, $arguments);
+        return $this->recvData();
     }
     
     public function sendData($method, $arguments)
@@ -80,7 +83,7 @@ class RpcClient
         return fwrite($this->connection, $bin_data);
     }
     
-    public function recvData($method, $arguments)
+    public function recvData()
     {
         $ret = fgets($this->connection);
         $this->closeConnection();
@@ -88,6 +91,7 @@ class RpcClient
         {
             throw new Exception("recvData empty");
         }
+        return RpcProtocol::decode($ret);
     }
     
     protected function openConnection()
@@ -154,12 +158,25 @@ class RpcProtocol
     }
 }
 
-if(false)
+if(1)
 {
     $address_array = array(
             'tcp://127.0.0.1:2015',
             'tcp://127.0.0.1:2015'
             );
     RpcClient::config($address_array);
-    var_export(RpcClient::instance('User')->getInfoByUid(123));
+    
+    $uid = 567;
+    $blog_id = 789;
+    $user_client = RpcClient::instance('User');
+    // ==同步调用==
+    $ret_sync = $user_client->getInfoByUid($uid);
+   
+    // ==异步调用==
+    // 发送数据
+    $user_client->asend_getInfoByUid($uid);
+    $user_client->asend_getEmail($uid);
+    $ret_async1 = $user_client->arecv_getEmail($uid);
+    $ret_async2 = $user_client->arecv_getInfoByUid($uid);
+    var_dump($ret_sync, $ret_async1, $ret_async2);
 }

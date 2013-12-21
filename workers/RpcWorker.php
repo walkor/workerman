@@ -44,7 +44,7 @@ class RpcWorker extends Man\Core\SocketWorker
         $param_array = $data['param_array'];
         
         // 判断类对应文件是否载入
-        if(class_exists($class))
+        if(!class_exists($class))
         {
             $include_file = WORKERMAN_ROOT_DIR . "applications/Rpc/Services/$class.php";
             if(!is_file($include_file))
@@ -58,7 +58,7 @@ class RpcWorker extends Man\Core\SocketWorker
         // 调用类的方法
         try 
         {
-            $ret = call_user_function_array(array($class, $method), $param_array);
+            $ret = call_user_func_array(array($class, $method), $param_array);
             // 发送数据给客户端，调用成功，data下标对应的元素即为调用结果
             return $this->sendToClient(RpcProtocol::encode(array('code'=>0, 'msg'=>'ok', 'data'=>$ret)));
         }
