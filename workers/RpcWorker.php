@@ -4,7 +4,7 @@ require_once WORKERMAN_ROOT_DIR . 'applications/Common/Protocols/RpcProtocol.php
 
 /**
  * 
- *  Rpcworker，Rpc服务的入口文件
+ *  RpcWorker，Rpc服务的入口文件
  *  根据客户端传递参数调用 applications/Rpc/Services/目录下的文件的类的方法
  *  
  * @author walkor <worker-man@qq.com>

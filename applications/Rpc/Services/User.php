@@ -11,7 +11,7 @@ class User
                'uid'    => $uid,
                'name'=> 'test',
                'age'   => 18,
-               'sex'    => '?',
+               'sex'    => 'hmm..',
                );
    }
    
