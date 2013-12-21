@@ -20,7 +20,7 @@ class RpcClient
     
     protected $serviceName = '';
     
-    protected static function config($address_array = array())
+    public static function config($address_array = array())
     {
         if(!empty($address_array))
         {
@@ -152,5 +152,14 @@ class RpcProtocol
     {
         return json_decode(trim($bin_data), true);
     }
+}
 
+if(false)
+{
+    $address_array = array(
+            'tcp://127.0.0.1:2015',
+            'tcp://127.0.0.1:2015'
+            );
+    RpcClient::config($address_array);
+    var_export(RpcClient::instance('User')->getInfoByUid(123));
 }

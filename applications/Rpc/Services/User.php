@@ -5,7 +5,7 @@
  */
 class User
 {
-   public static function getInfo($uid)
+   public static function getInfoByUid($uid)
    {
        return array(
                'uid'    => $uid,
