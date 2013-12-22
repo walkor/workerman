@@ -1,11 +1,11 @@
 <?php 
-
+namespace  App\Common\Protocols;
 /**
  * http 协议解析 相关
- * 简单的实现 不支持header cookie
  * @author walkor <worker-man@qq.com>
  * */
-class SimpleHttp{
+class Http
+{
     
     /**
      * 构造函数
@@ -85,9 +85,7 @@ class SimpleHttp{
                 'HTTP_COOKIE'    => '',
                 );
         
-        $_POST = array();
-        $_GET = array();
-        $GLOBALS['HTTP_RAW_POST_DATA'] = array();
+        $_POST = $_GET = $_COOKIE = $REQUEST = $GLOBALS['HTTP_RAW_POST_DATA'] = array();
         
         // 将header分割成数组
         $header_data = explode("\r\n", $data);
@@ -134,6 +132,10 @@ class SimpleHttp{
                 {
                     $_SERVER['HTTP_COOKIE'] = $tmp[1];
                 }
+                if($_SERVER['HTTP_COOKIE'])
+                {
+                    parse_str(str_replace('; ', '&', $_SERVER['HTTP_COOKIE']), $_COOKIE);
+                }
             }
         }
         
@@ -170,15 +172,25 @@ class SimpleHttp{
     }
     
     /**
-     * 
-     * @param string $name
-     * @param string/int $value
-     * @param int $expire
-     */
-    public static function setcookie($name, $value='', $expire=0)
-    {
-        // 待完善
-    }
+	 * Set the cookie
+	 * @param string $name         Name of cookie
+	 * @param string $value        Value
+	 * @param integer $maxage      . Optional. Max-Age. Default is 0.
+	 * @param string $path         . Optional. Path. Default is empty string.
+	 * @param bool|string $domain  . Optional. Secure. Default is false.
+	 * @param boolean $secure      . Optional. HTTPOnly. Default is false.
+	 * @param bool $HTTPOnly
+	 * @return void
+	 */
+	public static function setcookie($name, $value = '', $maxage = 0, $path = '', $domain = '', $secure = false, $HTTPOnly = false) {
+		self::header(
+			'Set-Cookie: ' . $name . '=' . rawurlencode($value)
+			. (empty($domain) ? '' : '; Domain=' . $domain)
+			. (empty($maxage) ? '' : '; Max-Age=' . $maxage)
+			. (empty($path) ? '' : '; Path=' . $path)
+			. (!$secure ? '' : '; Secure')
+			. (!$HTTPOnly ? '' : '; HttpOnly'), false);
+	}
     
     /**
      * 清除header
@@ -190,7 +202,7 @@ class SimpleHttp{
     }
     
     /**
-     * 打包http协议，用于返回数据给nginx
+     * 打包http协议，用于返回数据
      * 
      * @param string $data
      * @return string
@@ -198,7 +210,7 @@ class SimpleHttp{
     public static function encode($data)
     {
         // header
-        $header = "Server: PHPServer/1.0\r\nContent-Length: ".strlen($data)."\r\n";
+        $header = "Server: WorkerMan/1.0\r\nContent-Length: ".strlen($data)."\r\n";
         
         // 没有Content-Type默认给个
         if(!isset(self::$header['Content-Type']))

@@ -441,7 +441,7 @@ class Monitor extends Man\Core\SocketWorker
         
         $ip = $this->getIp();
         
-        $this->sendSms('告警消息 PHPServer框架监控 ip:'.$ip.' 主进程意外退出');
+        $this->sendSms('告警消息 WorkerMan框架监控 ip:'.$ip.' 主进程意外退出');
         
         // 记录这次告警时间
         self::$lastWarningTimeMap[self::WARNING_MASTER_DEAD] = $time_now;
@@ -456,7 +456,7 @@ class Monitor extends Man\Core\SocketWorker
         $status = $this->getMasterStatus();
         if(empty($status))
         {
-            $this->notice("can not get master status");
+            $this->notice("can not get master status" , false);
             return;
         }
         $status = $status['worker_exit_code'];
@@ -553,7 +553,7 @@ class Monitor extends Man\Core\SocketWorker
     
         $ip = $this->getIp();
     
-        $this->sendSms('告警消息 PHPServer框架监控 '.$ip.' '.$worker_name.'进程频繁退出 退出次数'.$exit_count.' 退出状态码：'.$status);
+        $this->sendSms('告警消息 WorkerMan框架监控 '.$ip.' '.$worker_name.'进程频繁退出 退出次数'.$exit_count.' 退出状态码：'.$status);
     
         // 记录这次告警时间
         self::$lastWarningTimeMap[self::WARNING_TOO_MANY_WORKERS_EXIT] = $time_now;
