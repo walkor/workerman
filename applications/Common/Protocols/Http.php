@@ -1,72 +1,27 @@
 <?php 
 namespace  App\Common\Protocols;
 
-class HttpCache 
-{
-    public static $instance = null;
-    public static $header = array();
-    public static $sessionPath = '';
-    public static $sessionName = '';
-    public $sessionStarted = false;
-    public $sessionFile = '';
-
-
-
-    public static function init()
-    {   
-       self::$sessionName = ini_get('session.name');
-       self::$sessionPath = session_save_path();
-       if(!self::$sessionPath)
-       {
-          self::$sessionPath = sys_get_temp_dir();
-       }
-    }
-
-
-}
-
 /**
- * 设置http头
- * @return bool
+ * 判断http协议的数据包是否完整
+ * @param string $http_string
+ * @return integer 0表示完整 否则还需要integer长度的数据
  */
-function header($content)
-{
-    if(strpos($content, 'HTTP') === 0)
-    {
-        $key = 'Http-Code';
-    }
-    else
-    {
-        $key = strstr($content, ":", true);
-        if(empty($key))
-        {
-            return false;
-        }
-    }
-    HttpCache::$header[$key] = $content;
-    if('location' == strtolower($key))
-    {
-        header("HTTP/1.1 302 Moved Temporarily");
-    }
-    return true;
-}
-
-function http_deal_input($data)
+function http_input($http_string)
 {
     // 查找\r\n\r\n
-    $data_length = strlen($data);
+    $data_length = strlen($http_string);
     
-    if(!strpos($data, "\r\n\r\n"))
+    if(!strpos($http_string, "\r\n\r\n"))
     {
         return 1;
     }
     
     // POST请求还要读包体
-    if(strpos($data, "POST"))
+    if(strpos($http_string, "POST"))
     {
         // 找Content-Length
         $match = array();
-        if(preg_match("/\r\nContent-Length: ?(\d?)\r\n/", $data, $match))
+        if(preg_match("/\r\nContent-Length: ?(\d?)\r\n/", $http_string, $match))
         {
             $content_lenght = $match[1];
         }
@@ -74,46 +29,38 @@ function http_deal_input($data)
         {
             return 0;
         }
-    
         // 看包体长度是否符合
-        $tmp = explode("\r\n\r\n", $data);
-        if(strlen($tmp[1]) >= $content_lenght)
-        {
-            return 0;
-        }
-        return 1;
-    }
-    else
-    {
-        return 0;
+        $tmp = explode("\r\n\r\n", $http_string);
+        $remain_length = $content_lenght - strlen($tmp[1]);
+        return $remain_length >= 0 ? $remain_length : 0;
     }
     
     return 0;
 }
 
-function http_response_begin()
+/**
+ * 解析http协议，设置$_POST  $_GET  $_COOKIE  $_REQUEST
+ * @param string $http_string
+ */
+function http_start($http_string)
 {
-    $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $GLOBALS['HTTP_RAW_POST_DATA'] = array();
+    $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION =  array();
+    $GLOBALS['HTTP_RAW_POST_DATA'] = '';
     HttpCache::$header = array();
     HttpCache::$instance = new HttpCache();
-}
-
-function http_requset_parse($data)
-{
     $_SERVER = array(
             'REQUEST_URI'    => '/',
             'HTTP_HOST'      => '127.0.0.1',
             'HTTP_COOKIE'    => '',
     );
     
-    
     // 将header分割成数组
-    $header_data = explode("\r\n", $data);
+    $header_data = explode("\r\n", $http_string);
     
     // 需要解析$_POST
-    if(strpos($data, "POST") === 0)
+    if(strpos($http_string, "POST") === 0)
     {
-        $tmp = explode("\r\n\r\n", $data);
+        $tmp = explode("\r\n\r\n", $http_string);
         parse_str($tmp[1], $_POST);
     
         // $GLOBALS['HTTP_RAW_POST_DATA']
@@ -161,9 +108,11 @@ function http_requset_parse($data)
     // GET
     parse_str(preg_replace('/^\/.*?\?/', '', $_SERVER['REQUEST_URI']), $_GET);
     unset($_GET['/']);
+    
+    $_REQUEST = array_merge($_GET, $_POST);
 }
 
-function http_encode($content)
+function http_end($content)
 {
     // 没有http-code默认给个
     if(!isset(HttpCache::$header['Http-Code']))
@@ -173,41 +122,73 @@ function http_encode($content)
     else
     {
         $header = HttpCache::$header['Http-Code']."\r\n";
-        unset(Header::$header['Http-Code']);
+        unset(HttpCache::$header['Http-Code']);
     }
-
+    
     // 没有Content-Type默认给个
     if(!isset(HttpCache::$header['Content-Type']))
     {
         $header .= "Content-Type: text/html;charset=utf-8\r\n";
     }
-
+    
     // 其它header
     foreach(HttpCache::$header as $item)
     {
         $header .= $item."\r\n";
     }
-   
+     
     // header
     $header .= "Server: WorkerMan/2.1\r\nContent-Length: ".strlen($content)."\r\n";
- 
+    
     $header .= "\r\n";
     
     HttpCache::$header = array();
+    
+    // 保存cookie
+    session_write_close();
+    $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = array();
+    $GLOBALS['HTTP_RAW_POST_DATA'] = '';
+    HttpCache::$instance = null;
     
     // 整个http包
     return $header.$content;
 }
 
-function http_response_finish()
+/**
+ * 设置http头
+ * @return bool
+ */
+function header($content)
 {
-    // 保存cookie
-    session_write_close(); 
-    $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = array();
-    $GLOBALS['HTTP_RAW_POST_DATA'] = '';
-    HttpCache::$instance = null;
+    if(strpos($content, 'HTTP') === 0)
+    {
+        $key = 'Http-Code';
+    }
+    else
+    {
+        $key = strstr($content, ":", true);
+        if(empty($key))
+        {
+            return false;
+        }
+    }
+    HttpCache::$header[$key] = $content;
+    if('location' == strtolower($key))
+    {
+        header("HTTP/1.1 302 Moved Temporarily");
+    }
+    return true;
 }
-
+/**
+ * 设置cookie
+ * @param string $name
+ * @param string $value
+ * @param integer $maxage
+ * @param string $path
+ * @param string $domain
+ * @param bool $secure
+ * @param bool $HTTPOnly
+ */
 function setcookie($name, $value = '', $maxage = 0, $path = '', $domain = '', $secure = false, $HTTPOnly = false) {
     header(
             'Set-Cookie: ' . $name . '=' . rawurlencode($value)
@@ -218,12 +199,15 @@ function setcookie($name, $value = '', $maxage = 0, $path = '', $domain = '', $s
             . (!$HTTPOnly ? '' : '; HttpOnly'), false);
 }
 
-
 /**
  * http session 相关
- * @author walkor <worker-man@qq.com>
+ * 
  * */
 
+/**
+ * session_start
+ * 
+ */
 function session_start()
 {
     if(HttpCache::$instance->sessionStarted)
@@ -267,6 +251,10 @@ function session_start()
     }
 }
 
+/**
+ * 反序列化session
+ * @param string $raw
+ */
 function session_unserialize($raw) {
     $return_data = array();
     $offset     = 0;
@@ -289,6 +277,10 @@ function session_unserialize($raw) {
     return $return_data;
 }
 
+/**
+ * 序列化session
+ * @param array $session
+ */
 function session_serialize($session)
 { 
   $session_str = '';
@@ -302,6 +294,9 @@ function session_serialize($session)
   return $session_str;
 }
 
+/**
+ * 保存session
+ */
 function session_write_close()
 {
     if(HttpCache::$instance->sessionStarted && !empty($_SESSION))
@@ -313,4 +308,29 @@ function session_write_close()
        }
     }
     return empty($_SESSION);
+}
+
+
+/**
+ * 解析http协议数据包 缓存先关
+ * @author walkor
+ */
+class HttpCache
+{
+    public static $instance = null;
+    public static $header = array();
+    public static $sessionPath = '';
+    public static $sessionName = '';
+    public $sessionStarted = false;
+    public $sessionFile = '';
+
+    public static function init()
+    {
+        self::$sessionName = ini_get('session.name');
+        self::$sessionPath = session_save_path();
+        if(!self::$sessionPath)
+        {
+            self::$sessionPath = sys_get_temp_dir();
+        }
+    }
 }

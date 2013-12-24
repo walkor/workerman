@@ -12,6 +12,15 @@ require_once WORKERMAN_ROOT_DIR . 'applications/Common/Protocols/Http.php';
 class WorkerManAdmin extends Man\Core\SocketWorker
 {
     
+    protected static $typeMap = array(
+            'js'     => 'text/javascript',
+            'png' => 'image/png',
+            'jpg'  => 'image/jpeg',
+            'gif'   => 'image/gif',
+            'png' => 'image/png',
+            'css'   => 'text/css',
+        );
+    
     public function onStart()
     {
         App\Common\Protocols\HttpCache::init();
@@ -23,7 +32,7 @@ class WorkerManAdmin extends Man\Core\SocketWorker
      */
     public function dealInput($recv_str)
     {
-        return App\Common\Protocols\http_deal_input($recv_str); 
+        return App\Common\Protocols\http_input($recv_str); 
     }
 
     /**
@@ -35,17 +44,42 @@ class WorkerManAdmin extends Man\Core\SocketWorker
         /**
          * 解析http协议，生成$_POST $_GET $_COOKIE
          */
-        App\Common\Protocols\http_response_begin();
-        App\Common\Protocols\http_requset_parse($recv_str);
-        App\Common\Protocols\session_start();
+        App\Common\Protocols\http_start($recv_str);
+        //App\Common\Protocols\session_start();
         ob_start();
-        echo 'cookie';var_export($_COOKIE);
-        echo 'session';var_export($_SESSION);
-        $_SESSION['abc'] = 1333;
-        $_SESSION['ddd'] = array('a'=>2,3=>0);
+        $pos = strpos($_SERVER['REQUEST_URI'], '?');
+        $file = $_SERVER['REQUEST_URI'];
+        if($pos !== false)
+        {
+            $file = substr($_SERVER['REQUEST_URI'], 0, $pos);
+        }
+        $file = WORKERMAN_ROOT_DIR . 'applications/Wordpress/'.$file;
+        if(!is_file($file))
+        {
+            $file = WORKERMAN_ROOT_DIR . 'applications/Wordpress/index.php';
+        }
+        if(is_file($file))
+        {
+            $extension = pathinfo($file, PATHINFO_EXTENSION);
+            if($extension == 'php')
+            {
+                include $file;
+            }
+            else
+            {
+                if(isset(self::$typeMap[$extension]))
+                {
+                    App\Common\Protocols\header('Content-Type: '. self::$typeMap[$extension]);
+                }
+                echo file_get_contents($file);
+            }
+        }
+        else 
+        {
+            echo 'index.php missed';
+        }
         $content = ob_get_clean();
-        App\Common\Protocols\http_response_finish();
-        $buffer = App\Common\Protocols\http_encode($content);
+        $buffer = App\Common\Protocols\http_end($content);
         $this->sendToClient($buffer);
     }
 }
