@@ -200,11 +200,6 @@ function setcookie($name, $value = '', $maxage = 0, $path = '', $domain = '', $s
 }
 
 /**
- * http session 相关
- * 
- * */
-
-/**
  * session_start
  * 
  */
@@ -246,52 +241,9 @@ function session_start()
         $raw = file_get_contents(HttpCache::$instance->sessionFile);
         if($raw)
         { 
-            $_SESSION = session_unserialize($raw);
+            session_decode($raw);
         }
     }
-}
-
-/**
- * 反序列化session
- * @param string $raw
- */
-function session_unserialize($raw) {
-    $return_data = array();
-    $offset     = 0;
-
-    while ($offset < strlen($raw)) {
-        if (!strstr(substr($raw, $offset), "|")) {
-            return false;
-        }
-
-        $pos     = strpos($raw, "|", $offset);
-        $num     = $pos - $offset;
-        $varname = substr($raw, $offset, $num);
-        $offset += $num + 1;
-        $data    = unserialize(substr($raw, $offset));
-
-        $return_data[$varname] = $data;
-        $offset += strlen(serialize($data));
-    }
-
-    return $return_data;
-}
-
-/**
- * 序列化session
- * @param array $session
- */
-function session_serialize($session)
-{ 
-  $session_str = '';
-  if(is_array($session))
-  {
-    foreach($session as $key => $value)
-    {
-        $session_str .= "$key|".serialize($value);
-    }
-  }
-  return $session_str;
 }
 
 /**
@@ -301,7 +253,7 @@ function session_write_close()
 {
     if(HttpCache::$instance->sessionStarted && !empty($_SESSION))
     {
-       $session_str = session_serialize($_SESSION);
+       $session_str = session_encode();
        if($session_str && HttpCache::$instance->sessionFile)
        {
            return file_put_contents(HttpCache::$instance->sessionFile, $session_str);
@@ -310,6 +262,11 @@ function session_write_close()
     return empty($_SESSION);
 }
 
+
+function jump_exit()
+{
+    throw new \Exception('jump_exit');
+}
 
 /**
  * 解析http协议数据包 缓存先关
@@ -332,5 +289,6 @@ class HttpCache
         {
             self::$sessionPath = sys_get_temp_dir();
         }
+        @\session_start();
     }
 }

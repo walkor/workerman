@@ -11,7 +11,10 @@ require_once WORKERMAN_ROOT_DIR . 'applications/Common/Protocols/Http.php';
  */
 class WorkerManAdmin extends Man\Core\SocketWorker
 {
-    
+    /**
+     * 资源类型
+     * @var array
+     */
     protected static $typeMap = array(
             'js'     => 'text/javascript',
             'png' => 'image/png',
@@ -41,37 +44,57 @@ class WorkerManAdmin extends Man\Core\SocketWorker
      */
     public function dealProcess($recv_str)
     {
-        /**
-         * 解析http协议，生成$_POST $_GET $_COOKIE
-         */
+         // http请求处理开始。解析http协议，生成$_POST $_GET $_COOKIE
         App\Common\Protocols\http_start($recv_str);
-        //App\Common\Protocols\session_start();
+        // 开启session
+        App\Common\Protocols\session_start();
+        // 缓冲输出
         ob_start();
-        $pos = strpos($_SERVER['REQUEST_URI'], '?');
+        // 请求的文件
         $file = $_SERVER['REQUEST_URI'];
+        $pos = strpos($file, '?');
         if($pos !== false)
         {
+            // 去掉文件名后面的querystring
             $file = substr($_SERVER['REQUEST_URI'], 0, $pos);
         }
-        $file = WORKERMAN_ROOT_DIR . 'applications/Wordpress/'.$file;
+        // 得到文件真实路径
+        $file = WORKERMAN_ROOT_DIR . 'applications/WorkerManAdmin/'.$file;
         if(!is_file($file))
         {
-            $file = WORKERMAN_ROOT_DIR . 'applications/Wordpress/index.php';
+            // 从定向到index.php
+            $file = WORKERMAN_ROOT_DIR . 'applications/WorkerManAdmin/index.php';
         }
+        // 请求的文件存在
         if(is_file($file))
         {
             $extension = pathinfo($file, PATHINFO_EXTENSION);
+            // 如果请求的是php文件
             if($extension == 'php')
             {
-                include $file;
+                // 载入php文件
+                try 
+                {
+                    include $file;
+                }
+                catch(\Exception $e) 
+                {
+                    // 如果不是exit
+                    if($e->getMessage() != 'jump_exit')
+                    {
+                        echo $e;
+                    }
+                }
             }
+            // 请求的是静态资源文件
             else
             {
                 if(isset(self::$typeMap[$extension]))
                 {
                     App\Common\Protocols\header('Content-Type: '. self::$typeMap[$extension]);
                 }
-                echo file_get_contents($file);
+                // 发送文件
+                readfile($file);
             }
         }
         else 
