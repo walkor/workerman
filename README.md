@@ -58,7 +58,7 @@ workerman不能运行在Window平台
 Rpc应用使用方法
 =========
 
- * 客户端同步调用：
+###客户端同步调用：
 
 ```php
 <?php
@@ -81,7 +81,7 @@ $ret_sync = $user_client->getInfoByUid($uid);
 
 ```
 
- * 客户端异步调用：
+###客户端异步调用：
 RpcClient支持异步远程调用
 
 ```php
@@ -115,7 +115,7 @@ $ret_async2 = $user_client->arecv_getInfoByUid($uid);
 
 ```
 
- * 服务端：  
+###服务端：  
 服务端每个类提供一组服务，类文件默认放在workerman/applications/Rpc/Services目录下。  
 客户端实际上是远程调用这些类的静态方法。
 例如：
@@ -167,3 +167,48 @@ user=www-data
 ;socket有数据可读的时候预读长度，一般设置为应用层协议包头的长度，这里设置成尽可能读取更多的数据
 preread_length=84000
 ```
+
+telnet远程控制及监控
+====================
+
+###workerman通过workerman/workers/Monitor.php提供telnet远程控制及监控功能
+<pre>
+输入
+telnet xxx.xxx.xxx.xxx 2001
+输入
+status
+展示workerman状态
+status
+---------------------------------------GLOBAL STATUS--------------------------------------------
+WorkerMan version:2.0.1
+start time:2013-12-26 22:12:48   run 0 days 0 hours
+load average: 0, 0, 0
+1 users          4 workers       15 processes
+worker_name    exit_status     exit_count
+FileMonitor    0                0
+Monitor        0                0
+RpcWorker      0                0
+WorkerManAdmin 0                0
+---------------------------------------PROCESS STATUS-------------------------------------------
+pid     memory      listening        timestamp  worker_name    total_request packet_err thunder_herd client_close send_fail throw_exception suc/total
+24139   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24140   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24141   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24142   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24143   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24144   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24145   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24146   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24147   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24148   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24149   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24150   1.25M   tcp://0.0.0.0:2015   1388067168 RpcWorker      0              0          0            0            0         0               100%
+24151   1.25M   tcp://0.0.0.0:3000   1388067168 WorkerManAdmin 0              0          0            0            0         0               100%
+</pre>
+
+###telnet支持的命令
+ * status
+ * stop
+ * reload
+ * kill pid
+ * quit
