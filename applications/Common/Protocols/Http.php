@@ -30,7 +30,7 @@ function http_input($http_string)
             return 0;
         }
         // 看包体长度是否符合
-        $tmp = explode("\r\n\r\n", $http_string);
+        $tmp = explode("\r\n\r\n", $http_string, 2);
         $remain_length = $content_lenght - strlen($tmp[1]);
         return $remain_length >= 0 ? $remain_length : 0;
     }
@@ -42,74 +42,133 @@ function http_input($http_string)
  * 解析http协议，设置$_POST  $_GET  $_COOKIE  $_REQUEST
  * @param string $http_string
  */
-function http_start($http_string)
+function http_start($http_string, $SERVER = array())
 {
+    // 初始化
     $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION =  array();
     $GLOBALS['HTTP_RAW_POST_DATA'] = '';
+    // 清空上次的数据
     HttpCache::$header = array();
     HttpCache::$instance = new HttpCache();
-    $_SERVER = array(
-            'REQUEST_URI'    => '/',
-            'HTTP_HOST'      => '127.0.0.1',
-            'HTTP_COOKIE'    => '',
-    );
+    // 需要设置的变量名
+    $_SERVER = array (
+          'QUERY_STRING' => '',
+          'REQUEST_METHOD' => '',
+          'REQUEST_URI' => '',
+          'SERVER_PROTOCOL' => 'HTTP/1.1',
+          'GATEWAY_INTERFACE' => 'CGI/1.1',
+          'SERVER_SOFTWARE' => 'workerman/2.1',
+          'SERVER_NAME' => '', 
+          'HTTP_HOST' => '',
+          'HTTP_USER_AGENT' => '',
+          'HTTP_ACCEPT' => '',
+          'HTTP_ACCEPT_LANGUAGE' => '',
+          'HTTP_ACCEPT_ENCODING' => '',
+          'HTTP_COOKIE' => '',
+          'HTTP_CONNECTION' => '',
+          'REQUEST_TIME' => 0,
+          'SCRIPT_NAME' => '',//$SERVER传递
+          'REMOTE_ADDR' => '',// $SERVER传递
+          'REMOTE_PORT' => '0',// $SERVER传递
+          'SERVER_ADDR' => '', // $SERVER传递
+          'DOCUMENT_ROOT' => '',//$SERVER传递
+          'SCRIPT_FILENAME' => '',// $SERVER传递
+          'SERVER_PORT' => '80',
+          'PHP_SELF' => '', // 设置成SCRIPT_NAME
+       );
     
     // 将header分割成数组
     $header_data = explode("\r\n", $http_string);
     
+    list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(' ', $header_data[0]);
     // 需要解析$_POST
-    if(strpos($http_string, "POST") === 0)
+    if($_SERVER['REQUEST_METHOD'] == 'POST')
     {
-        $tmp = explode("\r\n\r\n", $http_string);
+        $tmp = explode("\r\n\r\n", $http_string, 2);
         parse_str($tmp[1], $_POST);
     
         // $GLOBALS['HTTP_RAW_POST_DATA']
         $GLOBALS['HTTP_RAW_POST_DATA'] = $tmp[1];
+        unset($header_data[count($header_data) - 1]);
     }
-    
-    // REQUEST_URI
-    $tmp = explode(' ', $header_data[0]);
-    $_SERVER['REQUEST_URI'] = isset($tmp[1]) ? $tmp[1] : '/';
-    
-    // PHP_SELF
-    $base_name = basename($_SERVER['REQUEST_URI']);
-    $_SERVER['PHP_SELF'] = empty($base_name) ? 'index.php' : $base_name;
     
     unset($header_data[0]);
     foreach($header_data as $content)
     {
-        // 解析HTTP_HOST
-        if(strpos($content, 'Host') === 0)
+        // \r\n\r\n
+        if(empty($content))
         {
-            $tmp = explode(':', $content);
-            if(isset($tmp[1]))
-            {
-                $_SERVER['HTTP_HOST'] = $tmp[1];
-            }
-            if(isset($tmp[2]))
-            {
-                $_SERVER['SERVER_PORT'] = $tmp[2];
-            }
+            continue;
         }
-        // 解析Cookie
-        elseif(stripos($content, 'Cookie') === 0)
+        list($key, $value) = explode(':', $content, 2);
+        $key = strtolower($key);
+        $value = trim($value);
+        switch($key)
         {
-            $_SERVER['HTTP_COOKIE'] = trim(substr($content, strlen('Cookie:')));
-            if($_SERVER['HTTP_COOKIE'])
-            {
-                parse_str(str_replace('; ', '&', $_SERVER['HTTP_COOKIE']), $_COOKIE);
-            }
+            // HTTP_HOST
+            case 'host':
+                $_SERVER['HTTP_HOST'] = $value;
+                $tmp = explode(':', $value);
+                $_SERVER['SERVER_NAME'] = $tmp[0];
+                if(isset($tmp[1]))
+                {
+                    $_SERVER['SERVER_PORT'] = $tmp[1];
+                }
+                break;
+            // cookie
+            case 'cookie':
+                {
+                    $_SERVER['HTTP_COOKIE'] = $value;
+                    parse_str(str_replace('; ', '&', $_SERVER['HTTP_COOKIE']), $_COOKIE);
+                }
+                break;
+            // user-agent
+            case 'user-agent':
+                $_SERVER['HTTP_USER_AGENT'] = $value;
+                break;
+            // accept
+            case 'accept':
+                $_SERVER['HTTP_ACCEPT'] = $value;
+                break;
+            // accept-language
+            case 'accept-language':
+                $_SERVER['HTTP_ACCEPT_LANGUAGE'] = $value;
+                break;
+            // accept-encoding
+            case 'accept-encoding':
+                $_SERVER['HTTP_ACCEPT_ENCODING'] = $value;
+                break;
+            // connection
+            case 'connection':
+                $_SERVER['HTTP_CONNECTION'] = $value;
+                break;
+            case 'referer':
+                $_SERVER['HTTP_REFERER'] = $value;
+                break;
         }
     }
+    
     // 'REQUEST_TIME_FLOAT' => 1375774613.237,
     $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
     $_SERVER['REQUEST_TIME'] = intval($_SERVER['REQUEST_TIME_FLOAT']);
     
-    // GET
-    parse_str(preg_replace('/^\/.*?\?/', '', $_SERVER['REQUEST_URI']), $_GET);
-    unset($_GET['/']);
+    // QUERY_STRING
+    $_SERVER['QUERY_STRING'] = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
     
+    // GET
+    parse_str($_SERVER['QUERY_STRING'], $_GET);
+    
+    // REQUEST
     $_REQUEST = array_merge($_GET, $_POST);
+    
+    // 合并传递的值
+    $_SERVER = array_merge($_SERVER, $SERVER);
+    
+    // PHP_SELF
+    if($_SERVER['SCRIPT_NAME'] && !$_SERVER['PHP_SELF'])
+    {
+        $_SERVER['PHP_SELF'] = $_SERVER['SCRIPT_NAME'];
+    }
 }
 
 function http_end($content)
@@ -132,9 +191,19 @@ function http_end($content)
     }
     
     // 其它header
-    foreach(HttpCache::$header as $item)
+    foreach(HttpCache::$header as $key=>$item)
     {
-        $header .= $item."\r\n";
+        if('Set-Cookie' == $key && is_array($item))
+        {
+            foreach($item as $it)
+            {
+                $header .= $it."\r\n";
+            }
+        }
+        else
+        {
+            $header .= $item."\r\n";
+        }
     }
      
     // header
@@ -158,8 +227,19 @@ function http_end($content)
  * 设置http头
  * @return bool
  */
-function header($content)
+function header($content, $replace = true, $http_response_code = 0)
 {
+    if(!defined('WORKERMAN_ROOT_DIR'))
+    {
+        if($http_response_code != 0)
+        {
+            return \header($content, $replace, $http_response_code);
+        }
+        else 
+        {
+            return \header($content, $replace);
+        }
+    }
     if(strpos($content, 'HTTP') === 0)
     {
         $key = 'Http-Code';
@@ -172,13 +252,35 @@ function header($content)
             return false;
         }
     }
-    HttpCache::$header[$key] = $content;
+    if($key == 'Set-Cookie')
+    {
+        HttpCache::$header[$key][] = $content;
+    }
+    else
+    {
+        HttpCache::$header[$key] = $content;
+    }
     if('location' == strtolower($key))
     {
         header("HTTP/1.1 302 Moved Temporarily");
     }
     return true;
 }
+
+/**
+ * 删除一个header
+ * @param string $name
+ * @return void
+ */
+function header_remove($name)
+{
+    if(!defined('WORKERMAN_ROOT_DIR'))
+    {
+        return \header_remove($name);
+    }
+    unset( HttpCache::$header[$name]);
+}
+
 /**
  * 设置cookie
  * @param string $name
@@ -190,6 +292,10 @@ function header($content)
  * @param bool $HTTPOnly
  */
 function setcookie($name, $value = '', $maxage = 0, $path = '', $domain = '', $secure = false, $HTTPOnly = false) {
+    if(!defined('WORKERMAN_ROOT_DIR'))
+    {
+        return \setcookie($name, $value, $maxage, $path, $domain, $secure, $HTTPOnly);
+    }
     header(
             'Set-Cookie: ' . $name . '=' . rawurlencode($value)
             . (empty($domain) ? '' : '; Domain=' . $domain)
@@ -205,6 +311,10 @@ function setcookie($name, $value = '', $maxage = 0, $path = '', $domain = '', $s
  */
 function session_start()
 {
+    if(!defined('WORKERMAN_ROOT_DIR'))
+    {
+        return \session_start();
+    }
     if(HttpCache::$instance->sessionStarted)
     {
         echo "already sessionStarted\nn";
@@ -251,6 +361,10 @@ function session_start()
  */
 function session_write_close()
 {
+    if(!defined('WORKERMAN_ROOT_DIR'))
+    {
+        return \session_write_close();
+    }
     if(HttpCache::$instance->sessionStarted && !empty($_SESSION))
     {
        $session_str = session_encode();
@@ -262,9 +376,21 @@ function session_write_close()
     return empty($_SESSION);
 }
 
-
-function jump_exit()
+/**
+ * 退出
+ * @param string $msg
+ * @throws \Exception
+ */
+function jump_exit($msg = '')
 {
+    if(!defined('WORKERMAN_ROOT_DIR'))
+    {
+        return exit($msg);
+    }
+    if($msg)
+    {
+        echo $msg;
+    }
     throw new \Exception('jump_exit');
 }
 

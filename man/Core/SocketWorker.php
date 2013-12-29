@@ -566,22 +566,20 @@ abstract class SocketWorker extends AbstractWorker
     }
     
     /**
-     * 获取客户端ip
+     * 获取客户端地址
      * @param int $fd 已经链接的socket id
-     * @return string
+     * @return string ip:port
      */
-    public function getRemoteIp($fd = null)
+    public function getRemoteAddress($fd = null)
     {
         if(empty($fd))
         {
             if(!isset($this->connections[$this->currentDealFd]))
             {
-                return '0.0.0.0';
+                return '';
             }
             $fd = $this->currentDealFd;
         }
-        
-        $ip = '';
         if($this->protocol == 'udp')
         {
             $sock_name = $this->currentClientAddress;
@@ -590,14 +588,39 @@ abstract class SocketWorker extends AbstractWorker
         {
             $sock_name = stream_socket_get_name($this->connections[$fd], true);
         }
-        
-        if($sock_name)
+        return $sock_name;
+    }
+    
+    /**
+     * 获取客户端ip
+     * @param integer $fd 已经链接的socket id
+     * @return string
+     */
+    public function getRemoteIp($fd = null)
+    {
+        $ip = '';
+        $address= $this->getRemoteAddress($fd);
+        if($address)
         {
-            $tmp = explode(':', $sock_name);
-            $ip = $tmp[0];
+            list($ip, $port) = explode(':', $address, 2);
         }
-        
         return $ip;
+    }
+    
+    /**
+     * 获取客户端ip
+     * @param integer $fd 已经链接的socket id
+     * @return integer
+     */
+    public function getRemotePort($fd = null)
+    {
+        $port = 0;
+        $address= $this->getRemoteAddress($fd);
+        if($address)
+        {
+            list($ip, $port) = explode(':', $address, 2);
+        }
+        return $port;
     }
     
     /**
