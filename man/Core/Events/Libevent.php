@@ -67,7 +67,7 @@ class Libevent implements BaseEvent
             return true;
         }
         
-        $real_flag = EV_READ | EV_PERSIST;
+        $real_flag = $flag == self::EV_READ ? EV_READ | EV_PERSIST : EV_WRITE | EV_PERSIST;
         
         // 创建一个用于监听的event
         $this->allEvents[$fd_key][$flag] = event_new();

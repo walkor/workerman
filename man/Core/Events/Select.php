@@ -198,7 +198,7 @@ class Select implements BaseEvent
                 $fd_key = (int) $fd;
                 if(isset($this->allEvents[$fd_key][self::EV_WRITE]))
                 {
-                    // 留空
+                    call_user_func_array($this->allEvents[$fd_key][self::EV_WRITE]['func'], array($this->allEvents[$fd_key][self::EV_WRITE]['fd'], self::EV_WRITE,  $this->allEvents[$fd_key][self::EV_WRITE]['args']));
                 }
             }
         }
