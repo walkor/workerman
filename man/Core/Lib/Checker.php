@@ -115,7 +115,16 @@ class Checker
             $total_worker_count += $config['start_workers'];
     
             // 语法检查
-            if(0 != self::checkSyntaxError(WORKERMAN_ROOT_DIR . "workers/$worker_name.php", $worker_name))
+            if($worker_file = \Man\Core\Lib\Config::get($worker_name.'.worker_file'))
+            {
+                $class_name = basename($worker_file, '.php');
+            }
+            else
+            {
+                $worker_file = WORKERMAN_ROOT_DIR . "workers/$worker_name.php";
+                $class_name = $worker_name;
+            }
+            if(0 != self::checkSyntaxError($worker_file, $class_name))
             {
                 unset(Config::instance()->config[$worker_name]);
                 \Man\Core\Master::notice("$worker_name has Fatal Err");

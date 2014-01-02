@@ -401,9 +401,21 @@ class Master
             // 尝试设置子进程进程名称
             self::setWorkerProcessTitle($worker_name);
     
-            // 创建worker实例
-            include_once WORKERMAN_ROOT_DIR . "workers/$worker_name.php";
-            $worker = new $worker_name();
+            // 查找worker文件
+            if($worker_file = \Man\Core\Lib\Config::get($worker_name.'.worker_file'))
+            {
+                include_once $worker_file;
+                $class_name = basename($worker_file, '.php');
+            }
+            else
+            {
+                $class_name = $worker_name;
+                include_once WORKERMAN_ROOT_DIR . "workers/$worker_name.php";
+            }
+            
+            // 创建实例
+            $worker = new $class_name($worker_name);
+            
             // 如果该worker有配置监听端口，则将监听端口的socket传递给子进程
             if(isset(self::$listenedSockets[$worker_name]))
             {

@@ -63,9 +63,9 @@ abstract class AbstractWorker
      * 构造函数，主要是初始化信号处理函数
      * @return void
      */
-    public function __construct()
+    public function __construct($worker_name = null)
     {
-        $this->workerName = get_class($this);
+        $this->workerName = $worker_name ? $worker_name : get_class($this);
         $this->installSignal();
         $this->addShutdownHook();
     }

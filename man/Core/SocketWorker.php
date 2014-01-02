@@ -152,10 +152,10 @@ abstract class SocketWorker extends AbstractWorker
      * @param string $protocol
      * @return void
      */
-    public function __construct()
+    public function __construct($worker_name = null)
     {
         // worker name
-        $this->workerName = get_class($this);
+        $this->workerName = $worker_name ? $worker_name : get_class($this);
         
         // 是否开启长连接
         $this->isPersistentConnection = (bool)Lib\Config::get( $this->workerName . '.persistent_connection');
