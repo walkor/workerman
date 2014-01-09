@@ -736,7 +736,10 @@ abstract class SocketWorker extends AbstractWorker
         $this->includeFiles = $flip_file_list;
         if($file_list)
         {
-            msg_send(Master::getQueueId(), self::MSG_TYPE_FILE_MONITOR, array_keys($file_list), true, false, $error_code);
+            foreach(array_chunk($file_list, 10, true) as $list)
+            {
+                msg_send(Master::getQueueId(), self::MSG_TYPE_FILE_MONITOR, array_keys($list), true, false, $error_code);
+            }
         }
     }
     

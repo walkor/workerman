@@ -313,7 +313,7 @@ class Master
                 self::$listenedSockets[$worker_name] = stream_socket_server($config['listen'], $error_no, $error_msg, $flags);
                 if(!self::$listenedSockets[$worker_name])
                 {
-                    Lib\Log::add("can not create socket {{$config['listen']} info:{$error_no} {$error_msg}\tServer start fail");
+                    Lib\Log::add("can not create socket {$config['listen']} info:{$error_no} {$error_msg}\tServer start fail");
                     exit("\n\033[31;40mcan not create socket {{$config['listen']} info:{$error_no} {$error_msg}\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
                 }
             }
