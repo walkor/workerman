@@ -356,11 +356,11 @@ abstract class SocketWorker extends AbstractWorker
         $this->currentDealFd = $fd;
         $buffer = stream_socket_recvfrom($connection, $this->recvBuffers[$fd]['remain_len']);
         // 出错了
-        if('' == $buffer)
+        if('' == $buffer && '' == ($buffer = fread($connection, $this->recvBuffers[$fd]['remain_len'])))
         {
             if(!feof($connection))
             {
-                continue;
+                return;
             }
             
             // 客户端提前断开链接
