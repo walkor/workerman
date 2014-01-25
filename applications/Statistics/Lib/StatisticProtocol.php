@@ -88,7 +88,7 @@ class StatisticProtocol
     public static function decode($bin_data)
     {
         // 解包
-        $data = unpack("Cmodule_name_len/Cinterface_name_len/fcost_time/Csuccess/Ncode/nmsg_len/Ntime", $data);
+        $data = unpack("Cmodule_name_len/Cinterface_name_len/fcost_time/Csuccess/Ncode/nmsg_len/Ntime", $bin_data);
         $module = substr($bin_data, self::PACKEGE_FIXED_LENGTH, $data['module_name_len']);
         $interface = substr($bin_data, self::PACKEGE_FIXED_LENGTH + $data['module_name_len'], $data['interface_name_len']);
         $msg = substr($bin_data, self::PACKEGE_FIXED_LENGTH + $data['module_name_len'] + $data['interface_name_len']);

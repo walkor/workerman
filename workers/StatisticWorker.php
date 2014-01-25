@@ -33,7 +33,7 @@ class StatisticWorker extends Man\Core\SocketWorker
     
     /**
      * 统计数据 
-     * ip=>modid=>interface=>['code'=>[xx=>count,xx=>count],'suc_cost_time'=>xx,'fail_cost_time'=>xx, 'suc_count'=>xx, 'fail_count'=>xx, 'time'=>xxx]
+     * ip=>modid=>interface=>['code'=>[xx=>count,xx=>count],'suc_cost_time'=>xx,'fail_cost_time'=>xx, 'suc_count'=>xx, 'fail_count'=>xx]
      * @var array
      */
     protected $statisticData = array();
@@ -118,7 +118,7 @@ class StatisticWorker extends Man\Core\SocketWorker
        }
        if(!isset($this->statisticData[$ip][$module][$interface]))
        {
-           $this->statisticData[$ip][$module][$interface] = array('code'=>array(), 'suc_cost_time'=>0, 'fail_cost_time'=>0, 'suc_count'=>0, 'fail_count'=>0, 'time'=>$this->stLastWriteTime);
+           $this->statisticData[$ip][$module][$interface] = array('code'=>array(), 'suc_cost_time'=>0, 'fail_cost_time'=>0, 'suc_count'=>0, 'fail_count'=>0);
        }
        if(!isset($this->statisticData[$ip][$module][$interface]['code'][$code]))
        {
