@@ -624,7 +624,7 @@ abstract class SocketWorker extends AbstractWorker
      */
     public function getRemoteAddress($fd = null)
     {
-        if(empty($fd))
+        if(empty($fd) && $this->protocol !== 'udp')
         {
             if(!isset($this->connections[$this->currentDealFd]))
             {
