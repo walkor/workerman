@@ -1,6 +1,5 @@
 <?php 
 require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
-require_once WORKERMAN_ROOT_DIR . 'applications/Statistics/Lib/StatisticProtocol.php';
 /**
  * 
 * @author walkor <worker-man@qq.com>
@@ -229,7 +228,7 @@ class StatisticWorker extends Man\Core\SocketWorker
         \Man\Core\Lib\Task::add(self::CLEAR_PERIOD_LENGTH, array($this, 'clearDisk'), array(WORKERMAN_LOG_DIR . $this->logDir, self::EXPIRED_TIME));
         
         // 创建一个tcp监听，用来提供统计查询服务
-        $this->providerSocket = stream_socket_client(\Man\Core\Lib\Config::get($this->workerName.'.provider_listen'));
+        $this->providerSocket = stream_socket_server(\Man\Core\Lib\Config::get($this->workerName.'.provider_listen'));
         if($this->providerSocket)
         {
             $ret = $this->event->add($this->providerSocket,  \Man\Core\Events\BaseEvent::EV_READ, array($this, 'accept'));

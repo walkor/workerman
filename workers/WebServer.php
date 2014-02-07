@@ -123,44 +123,34 @@ class WebServer extends Man\Core\SocketWorker
         App\Common\Protocols\Http\http_start($recv_str);
        
         // 请求的文件
-        $file = $_SERVER['REQUEST_URI'];
-        $pos = strpos($file, '?');
-        if($pos !== false)
+        $url_info = parse_url($_SERVER['REQUEST_URI']);
+        if(!$url_info)
         {
-            // 去掉文件名后面的querystring
-            $file = substr($file, 0, $pos);
+            App\Common\Protocols\Http\header('HTTP1.1/ 400 Bad Request');
+            return $this->sendToClient(App\Common\Protocols\Http\http_end(''));
         }
         
-        $extension = pathinfo($file, PATHINFO_EXTENSION);
+        $path = $url_info['path'];
+        
+        $path_info = pathinfo($path);
+        $extension = $path_info['basename'];
         if($extension == '')
         {
-            $dir_name = $file == '/' ? '' : $file;
+            $path = ($len = strlen($path)) && $path[$len -1] == '/' ? $path.'index.php' : $path . '/index.php';
+            $extension = 'php';
         }
-        else 
-        {
-            $dir_name = pathinfo($file, PATHINFO_DIRNAME);
-        }
-        
-        // rootDir
-        $root_dir = isset(self::$serverRoot[$_SERVER['HTTP_HOST']]) ? self::$serverRoot[$_SERVER['HTTP_HOST']] : current(self::$serverRoot);
-        
-        // 得到文件真实路径
-        $file = "$root_dir/$file";
         
         // 命中缓存，直接返回
-        if(isset(self::$fileCache[$file]) )
+        if(isset(self::$fileCache[$path]) )
         {
-                $file_content = self::$fileCache[$file];
+                $file_content = self::$fileCache[$path];
                 // 发送给客户端
                 return $this->sendToClient(App\Common\Protocols\Http\http_end($file_content));
         }
         
-        if(!is_file($file))
-        {
-            // 从定向到index.php
-            $file = $root_dir.'/'.$dir_name.'/index.php';
-            $extension = 'php';
-        }
+        $root_dir = isset(self::$serverRoot[$_SERVER['HTTP_HOST']]) ? self::$serverRoot[$_SERVER['HTTP_HOST']] : current(self::$serverRoot);
+        
+        $file = "$root_dir/$path";
         
         // 请求的文件存在
         if(is_file($file))
@@ -174,7 +164,7 @@ class WebServer extends Man\Core\SocketWorker
                 try 
                 {
                     // $_SERVER变量
-                    $_SERVER['SCRIPT_NAME'] = str_replace($root_dir, '', $file);
+                    $_SERVER['SCRIPT_NAME'] = $path;
                     $_SERVER['REMOTE_ADDR'] = $this->getRemoteIp();
                     $_SERVER['REMOTE_PORT'] = $this->getRemotePort();
                     $_SERVER['SERVER_ADDR'] = $this->getLocalIp();
@@ -258,7 +248,7 @@ class WebServer extends Man\Core\SocketWorker
         {
             // 404
             App\Common\Protocols\Http\header("HTTP/1.1 404 Not Found");
-            return $this->sendToClient(App\Common\Protocols\Http\http_end(''));
+            return $this->sendToClient(App\Common\Protocols\Http\http_end('<html><head><title>页面不存在</title></head><body><h3>WorkerMan提醒你，文件不存在</h3></body></html>'));
         }
     }
 }
