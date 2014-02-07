@@ -124,3 +124,24 @@ pid     memory      listening        timestamp  worker_name    total_request pac
  * reload
  * kill pid
  * quit
+ 
+性能测试
+=============
+
+###测试环境：
+系统：ubuntu 12.04 LTS 64位  
+内存：8G  
+cpu：Intel® Core™ i3-3220 CPU @ 3.30GHz × 4  
+
+###结果
+
+    Workerman开启4个worker进程（worker进程业务逻辑只是将收到的包写回客户端）
+
+    短链接（每次请求完成后关闭链接，下次请求建立新的链接）:
+        条件： 压测脚本开500个线程，每个线程链接Workerman 10W次，每次链接发送1个请求
+        结果： 吞吐量：3W/S ， cpu：60% ， 内存占用：4*8M = 32M
+
+    长链接（每次请求后不关闭链接，下次请求继续复用这个链接）:
+        条件： 压测脚本开1000个线程，每个线程链接Workerman 1次，每个链接发送10W请求
+        结果： 吞吐量：9.7W/S ， cpu：68% ， 内存占用：4*8M = 32M
+
