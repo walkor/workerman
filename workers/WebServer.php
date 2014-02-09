@@ -133,7 +133,7 @@ class WebServer extends Man\Core\SocketWorker
         $path = $url_info['path'];
         
         $path_info = pathinfo($path);
-        $extension = $path_info['basename'];
+        $extension = isset($path_info['extension']) ? $path_info['extension'] : '' ;
         if($extension == '')
         {
             $path = ($len = strlen($path)) && $path[$len -1] == '/' ? $path.'index.php' : $path . '/index.php';
