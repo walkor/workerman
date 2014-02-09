@@ -1,0 +1,10 @@
+body {margin: 10px 0px}
+a.list-group-item.active, a.list-group-item.active:hover, a.list-group-item.active:focus {
+    background-color: #DDDDDD;
+    border-color: #DDDDDD;
+    color: #333333;
+    z-index: 2;
+}
+.nav {
+    margin-bottom: 10px;
+}
