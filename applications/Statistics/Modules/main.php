@@ -1,5 +1,5 @@
 <?php
-function main($module, $interface, $date, $date, $start_time, $offset)
+function main($module, $interface, $date,$start_time, $offset)
 {
     $module = 'WorkerMan';
     $interface = 'Statistics';

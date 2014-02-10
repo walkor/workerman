@@ -73,7 +73,7 @@ function multiRequest($request_buffer_array)
         $this->lastSuccessIpArray[$ip] = $ip;
     }
 
-    $this->lastFailedIpArray = array_diff($ip_list, $this->lastSuccessIpArray);
+    Cache::$lastFailedIpArray = array_diff($ip_list, $this->lastSuccessIpArray);
 
     ksort($read_buffer);
 
