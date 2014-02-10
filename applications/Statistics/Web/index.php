@@ -23,4 +23,4 @@ $interface = isset($_GET['interface']) ? $_GET['interface'] : '';
 $date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
 $start_time = isset($_GET['start_time']) ? $_GET['start_time'] : date('Y-m-d');
 $offset =  isset($_GET['offset']) ? $_GET['offset'] : 0; 
-call_user_func($func, array($module, $interface, $date, $start_time, $offset));
+call_user_func_array($func, array($module, $interface, $date, $start_time, $offset));

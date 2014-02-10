@@ -13,6 +13,26 @@ function main($module, $interface, $date,$start_time, $offset)
         }
     }
     $data = formatSt($all_st_str, $date);
+    $interface_name = '整体';
+    $req_suc_series = $req_fail_series = $costfail_series = $cost_fail_series = array();
+    foreach($data as $time_point=>$item)
+    {
+        if($item['total_count'])
+        {
+            $success_series_data[] = "[".($time_point*1000).",{$item['total_count']}]";
+        }
+        $fail_series_data[] = "[".($time_point*1000).",{$item['fail_count']}]";
+        if($item['total_avg_time'])
+        {
+            $success_time_series_data[] = "[".($time_point*1000).",{$item['total_avg_time']}]";
+        }
+        $fail_time_series_data[] = "[".($time_point*1000).",{$item['fail_avg_time']}]";
+    }
+    $success_series_data = implode(',', $success_series_data);
+    $fail_series_data = implode(',', $fail_series_data);
+    $success_time_series_data = implode(',', $success_time_series_data);
+    $fail_time_series_data = implode(',', $fail_time_series_data);
+    $date = $start_time ? date('Y年m月d日', $start_time) : date('Y年m月d日');
     
     include ST_ROOT . '/Views/header.tpl.php';
     include ST_ROOT . '/Views/main.tpl.php';
