@@ -53,7 +53,7 @@ function multiRequest($request_buffer_array)
                     $read_buffer[$address] .= $buf;
                 }
                 // 数据接收完毕
-                if(0 === JMProtocol::checkInput($read_buffer[$address]))
+                if(($len = strlen($read_buffer[$address])) && $read_buffer[$address][$len-1] === "\n")
                 {
                     unset($client_array[$address]);
                 }
@@ -70,7 +70,7 @@ function multiRequest($request_buffer_array)
     foreach($read_buffer as $address => $buf)
     {
         list($ip, $port) = explode(':', $address);
-        $this->lastSuccessIpArray[$ip] = $ip;
+        Cache::$lastSuccessIpArray[$ip] = $ip;
     }
 
     Cache::$lastFailedIpArray = array_diff($ip_list, Cache::$lastSuccessIpArray);

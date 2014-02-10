@@ -294,12 +294,20 @@ class StatisticWorker extends Man\Core\SocketWorker
         {
             case 'get_statistic':
                 $buffer = json_encode(array('modules'=>$this->getModules($module), 'statistic' => $this->getStatistic($date, $module, $interface)))."\n";
-                return $this->sendToClient($buffer);
+                $this->tcpSendToClient($buffer);
+                break;
             case 'get_log':
                 $buffer = json_encode($this->getStasticLog($module, $interface , $start_time , $end_time, $code = '', $msg = '', $offset='', $count=10))."\n";
-                return $this->sendToClient($buffer);
+                $this->tcpSendToClient($buffer);
+                break;
+            default :
+                $this->tcpSendToClient('pack err');
         }
-        return $this->sendToClient('pack err');
+        $fd = $this->currentDealFd;
+        $this->event->del($this->connections[$fd], Man\Core\Events\BaseEvent::EV_READ);
+        $this->event->del($this->connections[$fd], Man\Core\Events\BaseEvent::EV_WRITE);
+        fclose($this->connections[$fd]);
+        unset($this->connections[$fd], $this->recvBuffers[$fd], $this->sendBuffers[$fd]);
     }
     
     /**
@@ -348,7 +356,7 @@ class StatisticWorker extends Man\Core\SocketWorker
             return '';
         }
         // log文件
-        $log_file = $this->statisticDir."{$module}/{$interface}|{$date}";
+        $log_file = WORKERMAN_LOG_DIR . $this->statisticDir."{$module}/{$interface}|{$date}";
         return @file_get_contents($log_file);
     }
     
@@ -585,6 +593,24 @@ class StatisticWorker extends Man\Core\SocketWorker
             return $current_point;
         }
     }
+    
+    public function tcpSendToClient($str_to_send)
+    {
+        $send_len = @stream_socket_sendto($this->connections[$this->currentDealFd], $str_to_send);
+        if($send_len === strlen($str_to_send))
+        {
+            return true;
+        }
+        if($send_len > 0)
+        {
+            $this->sendBuffers[$this->currentDealFd] = substr($str_to_send, $send_len);
+        }
+        else
+        {
+            $this->sendBuffers[$this->currentDealFd] = $str_to_send;
+        }
+        $this->event->add($this->connections[$this->currentDealFd],  \Man\Core\Events\BaseEvent::EV_WRITE, array($this, 'tcpWriteToClient'), array($this->currentDealFd));
+    }
 } 
 
 /**
@@ -690,5 +716,4 @@ class StatisticProtocol
                 'msg'                => $msg,
         );
     }
-
 }
