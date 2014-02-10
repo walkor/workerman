@@ -299,6 +299,7 @@ class StatisticWorker extends Man\Core\SocketWorker
                 $buffer = json_encode($this->getStasticLog($module, $interface , $start_time , $end_time, $code = '', $msg = '', $offset='', $count=10))."\n";
                 return $this->sendToClient($buffer);
         }
+        return $this->sendToClient('pack err');
     }
     
     /**

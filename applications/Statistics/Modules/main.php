@@ -1,5 +1,5 @@
 <?php
-function main($module, $interface, $date,$start_time, $offset)
+function main($module, $interface, $date, $offset)
 {
     $module = 'WorkerMan';
     $interface = 'Statistics';
@@ -32,7 +32,6 @@ function main($module, $interface, $date,$start_time, $offset)
     $fail_series_data = implode(',', $fail_series_data);
     $success_time_series_data = implode(',', $success_time_series_data);
     $fail_time_series_data = implode(',', $fail_time_series_data);
-    $date = $start_time ? date('Y年m月d日', $start_time) : date('Y年m月d日');
     
     include ST_ROOT . '/Views/header.tpl.php';
     include ST_ROOT . '/Views/main.tpl.php';
@@ -42,10 +41,10 @@ function main($module, $interface, $date,$start_time, $offset)
 function multiRequestStAndModules($module, $interface, $date)
 {
     Cache::$statisticDataCache['statistic'] = '';
-    $buffer = json_encode(array('module'=>$module, 'interface'=>$interface, 'date'=>$date))."\n";
+    $buffer = json_encode(array('cmd'=>'get_statistic','module'=>$module, 'interface'=>$interface, 'date'=>$date))."\n";
     $ip_list = (!empty($_GET['server_ip']) && is_array($_GET['server_ip'])) ? $_GET['server_ip'] : Cache::$ServerIpList;
     $reqest_buffer_array = array();
-    $port = \Man\Core\Lib\Config::get('StatisticWorker.port') ? \Man\Core\Lib\Config::get('StatisticWorker.port') : 55656;
+    $port =  55858;
     foreach($ip_list as $ip)
     {
         $reqest_buffer_array["$ip:$port"] = $buffer;
