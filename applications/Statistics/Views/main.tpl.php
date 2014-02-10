@@ -216,7 +216,7 @@ $(function () {
         series: [        {
             name: '成功曲线',
             data: [
-                <?php echo $req_suc_series;?>
+                <?php echo $success_series_data;?>
             ],
             lineWidth: 2,
             marker:{
@@ -228,7 +228,7 @@ $(function () {
         {
             name: '失败曲线',
             data: [
-                <?php echo $req_fail_series;?>
+                <?php echo $fail_series_data;?>
             ],
             lineWidth: 2,
             marker:{
@@ -278,7 +278,7 @@ $(function () {
         series: [        {
             name: '成功曲线',
             data: [
-                <?php echo $cost_suc_series;?>
+                <?php echo $success_time_series_data;?>
             ],
             lineWidth: 2,
             marker:{
@@ -289,7 +289,7 @@ $(function () {
         {
             name: '失败曲线',
             data: [
-                   <?php echo $cost_fail_series;?>
+                   <?php echo $fail_time_series_data;?>
             ],
             lineWidth: 2,
             marker:{

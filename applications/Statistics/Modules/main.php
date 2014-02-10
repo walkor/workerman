@@ -14,7 +14,7 @@ function main($module, $interface, $date,$start_time, $offset)
     }
     $data = formatSt($all_st_str, $date);
     $interface_name = '整体';
-    $req_suc_series = $req_fail_series = $costfail_series = $cost_fail_series = array();
+    $success_series_data = $fail_series_data = $success_time_series_data = $fail_time_series_data = array();
     foreach($data as $time_point=>$item)
     {
         if($item['total_count'])
