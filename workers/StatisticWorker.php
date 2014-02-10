@@ -267,22 +267,9 @@ class StatisticWorker extends Man\Core\SocketWorker
             }
             return;
         }
-        foreach (glob($file."/*") as $file_name) {
-            if(is_dir($file_name))
-            {
-                $this->clearDisk($file_name, $exp_time);
-                continue;
-            }
-            $mtime = filemtime($file);
-            if(!$mtime)
-            {
-                $this->notice("filemtime $file fail");
-                return;
-            }
-            if($time_now - $mtime > $exp_time)
-            {
-                unlink($file_name);
-            }
+        foreach (glob($file."/*") as $file_name) 
+        {
+            $this->clearDisk($file_name, $exp_time);
         }
     }
     
@@ -301,7 +288,7 @@ class StatisticWorker extends Man\Core\SocketWorker
         $date = isset($req_data['date']) ? $req_data['date'] : '';
         $code = isset($req_data['code']) ? $req_data['code'] : '';
         $msg = isset($req_data['msg']) ? $req_data['msg'] : '';
-        $pointer = isset($req_data['pointer']) ? $req_data['pointer'] : '';
+        $offset = isset($req_data['offset']) ? $req_data['offset'] : '';
         $count = isset($req_data['count']) ? $req_data['count'] : 10;
         switch($cmd)
         {
@@ -309,7 +296,7 @@ class StatisticWorker extends Man\Core\SocketWorker
                 $buffer = json_encode(array('modules'=>$this->getModules($module), 'statistic' => $this->getStatistic($date, $module, $interface)))."\n";
                 return $this->sendToClient($buffer);
             case 'get_log':
-                $buffer = json_encode($this->getStasticLog($module, $interface , $start_time , $end_time, $code = '', $msg = '', $pointer='', $count=10))."\n";
+                $buffer = json_encode($this->getStasticLog($module, $interface , $start_time , $end_time, $code = '', $msg = '', $offset='', $count=10))."\n";
                 return $this->sendToClient($buffer);
         }
     }
@@ -439,22 +426,22 @@ class StatisticWorker extends Man\Core\SocketWorker
      * 获取指定日志
      *
      */
-    protected function getStasticLog($module, $interface , $start_time = '', $end_time = '', $code = '', $msg = '', $pointer='', $count=100)
+    protected function getStasticLog($module, $interface , $start_time = '', $end_time = '', $code = '', $msg = '', $offset='', $count=100)
     {
         // log文件
         $log_file = WORKERMAN_ROOT_DIR . $this->logDir. (empty($start_time) ? date('Y-m-d') : date('Y-m-d', $start_time));
         if(!is_readable($log_file))
         {
-            return array('pointer'=>0, 'data'=>$log_file . 'not exists or not readable');
+            return array('offset'=>0, 'data'=>$log_file . 'not exists or not readable');
         }
         // 读文件
         $h = fopen($log_file, 'r');
     
         // 如果有时间，则进行二分查找，加速查询
-        if($start_time && $pointer === '' && ($file_size = filesize($log_file) > 50000))
+        if($start_time && $offset === '' && ($file_size = filesize($log_file) > 50000))
         {
-            $pointer = $this->binarySearch(0, $file_size, $start_time-1, $h);
-            $pointer = $pointer < 1000 ? 0 : $pointer - 1000;
+            $offset = $this->binarySearch(0, $file_size, $start_time-1, $h);
+            $offset = $offset < 1000 ? 0 : $offset - 1000;
         }
     
         // 正则表达式
@@ -469,7 +456,7 @@ class StatisticWorker extends Man\Core\SocketWorker
             $pattern .= ".*::";
         }
     
-        if($interface && $module != 'PHPServer')
+        if($interface && $module != 'WorkerMan')
         {
             $pattern .= $interface."\t";
         }
@@ -495,9 +482,9 @@ class StatisticWorker extends Man\Core\SocketWorker
         $pattern .= '/';
     
         // 指定偏移位置
-        if($pointer >= 0)
+        if($offset >= 0)
         {
-            fseek($h, (int)$pointer);
+            fseek($h, (int)$offset);
         }
     
         // 查找符合条件的数据
@@ -539,8 +526,8 @@ class StatisticWorker extends Man\Core\SocketWorker
             }
         }
         // 记录偏移位置
-        $pointer = ftell($h);
-        return array('pointer'=>$pointer, 'data'=>$log_buffer);
+        $offset = ftell($h);
+        return array('offset'=>$offset, 'data'=>$log_buffer);
     }
     /**
      * 日志二分查找法
