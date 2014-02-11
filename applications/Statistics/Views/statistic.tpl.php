@@ -8,9 +8,6 @@
 				<li class="active">
 					<a href="#">监控</a>
 				</li>
-				<li>
-					<a href="#">日志</a>
-				</li>
 				<li class="disabled">
 					<a href="#">告警</a>
 				</li>
@@ -54,19 +51,14 @@
 			<h3 class="text-primary text-center">
 				{$module}::{$interface}请求量曲线
 			</h3>
-			<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-			<h3 class="text-danger text-center">
-				{$module}::{$interface}耗时曲线
-			</h3>
-			<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-			<h3 class="text-primary text-center">
-				{$module}::{$interface}请求量曲线
-			</h3>
-			<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-			<h3 class="text-danger text-center">
-				{$module}::{$interface}耗时曲线
-			</h3> 
-			<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+			<div class="row clearfix">
+				<div class="col-md-12 column" id="req-container" >
+				</div>
+			</div>
+			<div class="row clearfix">
+				<div class="col-md-12 column" id="time-container" >
+				</div>
+			</div>
 			<div class="text-center">
 			<button class="btn btn-primary" type="button">分别统计</button>
 			<button class="btn btn-primary" type="button">汇总统计</button>
@@ -78,116 +70,137 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr>
-						<td>
-							2014-02-09 00:05:00
-						</td>
-						<td>
-							13500
-						</td>
-						<td>
-							0.0268
-						</td>
-						<td>
-							13500
-						</td>
-						<td>
-							0.0268
-						</td>
-						<td>
-							0
-						</td>
-						<td>
-							0
-						</td>
-						<td>
-							100%
-						</td>
-					</tr>
-					<tr class="danger">
-						<td>
-							2014-02-09 00:10:00
-						</td>
-						<td>
-							13500
-						</td>
-						<td>
-							0.0268
-						</td>
-						<td>
-							13400
-						</td>
-						<td>
-							0.0268
-						</td>
-						<td>
-							100
-						</td>
-						<td>
-							0.0263
-						</td>
-						<td>
-							98.1%
-						</td>
-					</tr>
-					<tr>
-						<td>
-							2014-02-09 00:15:00
-						</td>
-						<td>
-							13500
-						</td>
-						<td>
-							0.0268
-						</td>
-						<td>
-							13500
-						</td>
-						<td>
-							0.0268
-						</td>
-						<td>
-							0
-						</td>
-						<td>
-							0
-						</td>
-						<td>
-							100%
-						</td>
-					</tr>
-					<tr>
-						<td>
-							2014-02-09 00:20:00
-						</td>
-						<td>
-							13500
-						</td>
-						<td>
-							0.0268
-						</td>
-						<td>
-							13500
-						</td>
-						<td>
-							0.0268
-						</td>
-						<td>
-							0
-						</td>
-						<td>
-							0
-						</td>
-						<td>
-							100%
-						</td>
-					</tr>
+				<?php echo $table_data;?>
 				</tbody>
 			</table>
 		</div>
 	</div>
 </div>
-
-<script type="text/javascript">
-
+<script>
+Highcharts.setOptions({
+    global: {
+        useUTC: false
+    }
+});
+$(function () {
+    $('#req-container').highcharts({
+        chart: {
+            type: 'spline'
+        },
+        title: {
+            text: '<?php echo "$date $interface_name";?>  请求量曲线'
+        },
+        subtitle: {
+            text: ''
+        },
+        xAxis: {
+            type: 'datetime',
+            dateTimeLabelFormats: { 
+                hour: '%H:%M'
+            }
+        },
+        yAxis: {
+            title: {
+                text: '请求量(次/5分钟)'
+            },
+            min: 0
+        },
+        tooltip: {
+            formatter: function() {
+                return '<p style="color:'+this.series.color+';font-weight:bold;">'
+                 + this.series.name + 
+                 '</p><br /><p style="color:'+this.series.color+';font-weight:bold;">时间：' + Highcharts.dateFormat('%m月%d日 %H:%M', this.x) + 
+                 '</p><br /><p style="color:'+this.series.color+';font-weight:bold;">数量：'+ this.y + '</p>';
+            }
+        },
+        credits: {
+            enabled: false,
+        },
+        series: [        {
+            name: '成功曲线',
+            data: [
+                <?php echo $success_series_data;?>
+            ],
+            lineWidth: 2,
+            marker:{
+                radius: 1
+            },
+            
+            pointInterval: 300*1000
+        },
+        {
+            name: '失败曲线',
+            data: [
+                <?php echo $fail_series_data;?>
+            ],
+            lineWidth: 2,
+            marker:{
+                radius: 1
+            },
+            pointInterval: 300*1000,
+            color : '#9C0D0D'
+        }]
+    });
+});
+$(function () {
+    $('#time-container').highcharts({
+        chart: {
+            type: 'spline'
+        },
+        title: {
+            text: '<?php echo "$date $interface_name";?>  请求耗时曲线'
+        },
+        subtitle: {
+            text: ''
+        },
+        xAxis: {
+            type: 'datetime',
+            dateTimeLabelFormats: { 
+                hour: '%H:%M'
+            }
+        },
+        yAxis: {
+            title: {
+                text: '平均耗时(单位：秒)'
+            },
+            min: 0
+        },
+        tooltip: {
+            formatter: function() {
+                return '<p style="color:'+this.series.color+';font-weight:bold;">'
+                 + this.series.name + 
+                 '</p><br /><p style="color:'+this.series.color+';font-weight:bold;">时间：' + Highcharts.dateFormat('%m月%d日 %H:%M', this.x) + 
+                 '</p><br /><p style="color:'+this.series.color+';font-weight:bold;">平均耗时：'+ this.y + '</p>';
+            }
+        },
+        credits: {
+            enabled: false,
+            text: "jumei.com",
+            href: "http://www.jumei.com"
+        },
+        series: [        {
+            name: '成功曲线',
+            data: [
+                <?php echo $success_time_series_data;?>
+            ],
+            lineWidth: 2,
+            marker:{
+                radius: 1
+            },
+            pointInterval: 300*1000
+        },
+        {
+            name: '失败曲线',
+            data: [
+                   <?php echo $fail_time_series_data;?>
+            ],
+            lineWidth: 2,
+            marker:{
+                radius: 1
+            },
+            pointInterval: 300*1000,
+            color : '#9C0D0D'
+        }            ]
+    });
+});
 </script>

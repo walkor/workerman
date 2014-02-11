@@ -1,5 +1,4 @@
 <?php
-require_once  __DIR__ . '/../Lib/StatisticProtocol.php'; 
 /**
  * 统计客户端
  * @author workerman.net
