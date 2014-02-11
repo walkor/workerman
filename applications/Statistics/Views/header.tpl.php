@@ -34,6 +34,3 @@
 	 <script type="text/javascript" src="/js/highcharts.js"></script>
 </head>
 <body>
-
-</body>
-</html>

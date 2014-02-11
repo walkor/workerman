@@ -185,6 +185,7 @@ class WebServer extends Man\Core\SocketWorker
                 $this->sendToClient($buffer);
                 // 执行php每执行一次就退出(原因是有的业务使用了require_once类似的语句，不能重复加载业务逻辑)
                 //return $this->stop();
+                return ;
             }
             
             // 请求的是静态资源文件

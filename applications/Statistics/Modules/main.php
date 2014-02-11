@@ -12,6 +12,7 @@ function main($module, $interface, $date, $offset)
             $all_st_str .= $st_str;
         }
     }
+
     $data = formatSt($all_st_str, $date);
     $interface_name = '整体';
     $success_series_data = $fail_series_data = $success_time_series_data = $fail_time_series_data = array();
@@ -32,7 +33,7 @@ function main($module, $interface, $date, $offset)
     $fail_series_data = implode(',', $fail_series_data);
     $success_time_series_data = implode(',', $success_time_series_data);
     $fail_time_series_data = implode(',', $fail_time_series_data);
-    
+
     include ST_ROOT . '/Views/header.tpl.php';
     include ST_ROOT . '/Views/main.tpl.php';
     include ST_ROOT . '/Views/footer.tpl.php';
@@ -87,6 +88,7 @@ function formatSt($str, $date)
             continue;
         }
         $time_line = $line_data[1];
+        $time_line = ceil($time_line/300)*300;
         $suc_count = $line_data[2];
         $suc_cost_time = $line_data[3];
         $fail_count = $line_data[4];
