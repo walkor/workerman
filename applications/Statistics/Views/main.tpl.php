@@ -36,22 +36,18 @@
 				</div>
 		    </div>
 			<div class="row clearfix">
-				<div class="col-md-6 column" id="suc-pie">
+				<div class="col-md-6 column height-400" id="suc-pie">
 				</div>
-				<div class="col-md-6 column" id="code-pie">
-				</div>
-			</div>
-			<div class="row clearfix">
-				<div class="col-md-12 column" id="req-container" >
+				<div class="col-md-6 column height-400" id="code-pie">
 				</div>
 			</div>
 			<div class="row clearfix">
-				<div class="col-md-12 column" id="time-container" >
+				<div class="col-md-12 column height-400" id="req-container" >
 				</div>
 			</div>
-			<div class="text-center">
-			<button class="btn btn-primary" type="button">分别统计</button>
-			<button class="btn btn-primary" type="button">汇总统计</button>
+			<div class="row clearfix">
+				<div class="col-md-12 column height-400" id="time-container" >
+				</div>
 			</div>
 			<table class="table table-hover table-condensed table-bordered">
 				<thead>

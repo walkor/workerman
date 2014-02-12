@@ -43,12 +43,17 @@ function main($module, $interface, $date, $offset)
     // 返回码分布
     $code_pie_data = '';
     $code_pie_array = array(); 
+    unset($code_map[0]);
+    if(empty($code_map))
+    {
+        $code_map[0] = $total_count > 0 ? $total_count : 1;
+    }
     if(is_array($code_map))
     {
         $total_item_count = array_sum($code_map);
         foreach($code_map as $code=>$count)
         {
-            $code_pie_array[] = "[\"$code\", ".round($count*100/$total_item_count, 4)."]";
+            $code_pie_array[] = "[\"$code:{$count}个\", ".round($count*100/$total_item_count, 4)."]";
         }
         $code_pie_data = implode(',', $code_pie_array);
     }
