@@ -1,13 +1,16 @@
 <?php
-function main($module, $interface, $date, $offset)
+namespace Statistics\Modules;
+function main($module, $interface, $date, $start_time, $offset)
 {
     $module = 'WorkerMan';
     $interface = 'Statistics';
+    $today = date('Y-m-d');
+    $time_now = time();
     multiRequestStAndModules($module, $interface, $date);
     $all_st_str = '';
-    if(is_array(Cache::$statisticDataCache['statistic']))
+    if(is_array(\Statistics\Lib\Cache::$statisticDataCache['statistic']))
     {
-        foreach(Cache::$statisticDataCache['statistic'] as $ip=>$st_str)
+        foreach(\Statistics\Lib\Cache::$statisticDataCache['statistic'] as $ip=>$st_str)
         {
             $all_st_str .= $st_str;
         }
@@ -58,8 +61,17 @@ function main($module, $interface, $date, $offset)
         $code_pie_data = implode(',', $code_pie_array);
     }
     
-    unset($_GET['start_time'], $_GET['end_time'], $_GET['date']);
+    unset($_GET['start_time'], $_GET['end_time'], $_GET['date'], $_GET['fn']);
     $query = http_build_query($_GET);
+    
+    // 删除末尾0的记录
+    if($today == $date)
+    {
+        while(!empty($data) && ($item = end($data)) && $item['total_count'] == 0 && ($key = key($data)) &&  $time_now < $key)
+        {
+            unset($data[$key]);
+        }
+    }
     
     $table_data = '';
     if($data)
@@ -98,7 +110,7 @@ function main($module, $interface, $date, $offset)
                         <td> {$item['total_avg_time']}</td>
                         <td>{$item['suc_count']}</td>
                         <td>{$item['suc_avg_time']}</td>
-                        <td>".($item['fail_count']>0?("<a href='/?fn=log&$query&start_time=".strtotime($item['time'])."&end_time=".(strtotime($item['time'])+300)."'>{$item['fail_count']}</a>"):$item['fail_count'])."</td>
+                        <td>".($item['fail_count']>0?("<a href='/?fn=logger&$query&start_time=".strtotime($item['time'])."&end_time=".(strtotime($item['time'])+300)."'>{$item['fail_count']}</a>"):$item['fail_count'])."</td>
                         <td>{$item['fail_avg_time']}</td>
                         <td>{$item['precent']}%</td>
                     </tr>
@@ -130,9 +142,9 @@ function main($module, $interface, $date, $offset)
 
 function multiRequestStAndModules($module, $interface, $date)
 {
-    Cache::$statisticDataCache['statistic'] = '';
+    \Statistics\Lib\Cache::$statisticDataCache['statistic'] = '';
     $buffer = json_encode(array('cmd'=>'get_statistic','module'=>$module, 'interface'=>$interface, 'date'=>$date))."\n";
-    $ip_list = (!empty($_GET['server_ip']) && is_array($_GET['server_ip'])) ? $_GET['server_ip'] : Cache::$ServerIpList;
+    $ip_list = (!empty($_GET['ip']) && is_array($_GET['ip'])) ? $_GET['ip'] : \Statistics\Lib\Cache::$ServerIpList;
     $reqest_buffer_array = array();
     $port =  55858;
     foreach($ip_list as $ip)
@@ -149,16 +161,16 @@ function multiRequestStAndModules($module, $interface, $date)
         // 整理modules
         foreach($modules_data as $mod => $interfaces)
         {
-            if(!isset(Cache::$modulesDataCache[$mod]))
+            if(!isset(\Statistics\Lib\Cache::$modulesDataCache[$mod]))
             {
-                Cache::$modulesDataCache[$mod] = array();
+                \Statistics\Lib\Cache::$modulesDataCache[$mod] = array();
             }
             foreach($interfaces as $if)
             {
-                Cache::$modulesDataCache[$mod][$if] = $if;
+                \Statistics\Lib\Cache::$modulesDataCache[$mod][$if] = $if;
             }
         }
-        Cache::$statisticDataCache['statistic'][$ip] = $statistic_data;
+        \Statistics\Lib\Cache::$statisticDataCache['statistic'][$ip] = $statistic_data;
     }
 }
 

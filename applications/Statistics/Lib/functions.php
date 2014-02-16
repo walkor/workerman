@@ -70,10 +70,10 @@ function multiRequest($request_buffer_array)
     foreach($read_buffer as $address => $buf)
     {
         list($ip, $port) = explode(':', $address);
-        Cache::$lastSuccessIpArray[$ip] = $ip;
+        \Statistics\Lib\Cache::$lastSuccessIpArray[$ip] = $ip;
     }
 
-    Cache::$lastFailedIpArray = array_diff($ip_list, Cache::$lastSuccessIpArray);
+     \Statistics\Lib\Cache::$lastFailedIpArray = array_diff($ip_list,  \Statistics\Lib\Cache::$lastSuccessIpArray);
 
     ksort($read_buffer);
 

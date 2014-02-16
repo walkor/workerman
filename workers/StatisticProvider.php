@@ -94,7 +94,7 @@ class StatisticProvider extends Man\Core\SocketWorker
                 $this->sendToClient($buffer);
                 break;
             case 'get_log':
-                $buffer = json_encode($this->getStasticLog($module, $interface , $start_time , $end_time, $code = '', $msg = '', $offset='', $count=10))."\n";
+                $buffer = json_encode($this->getStasticLog($module, $interface , $start_time , $end_time, $code, $msg, $offset, $count))."\n";
                 $this->sendToClient($buffer);
                 break;
             default :
@@ -108,7 +108,7 @@ class StatisticProvider extends Man\Core\SocketWorker
      */
     public function getModules($current_module = '')
     {
-        $st_dir = WORKERMAN_ROOT_DIR . $this->statisticDir;
+        $st_dir = WORKERMAN_LOG_DIR . $this->statisticDir;
         $modules_name_array = array();
         foreach(glob($st_dir."/*", GLOB_ONLYDIR) as $module_file)
         {
@@ -160,23 +160,23 @@ class StatisticProvider extends Man\Core\SocketWorker
     protected function getStasticLog($module, $interface , $start_time = '', $end_time = '', $code = '', $msg = '', $offset='', $count=100)
     {
         // log文件
-        $log_file = WORKERMAN_ROOT_DIR . $this->logDir. (empty($start_time) ? date('Y-m-d') : date('Y-m-d', $start_time));
+        $log_file = WORKERMAN_LOG_DIR . $this->logDir. (empty($start_time) ? date('Y-m-d') : date('Y-m-d', $start_time));
         if(!is_readable($log_file))
         {
-            return array('offset'=>0, 'data'=>$log_file . 'not exists or not readable');
+            return array('offset'=>0, 'data'=>'');
         }
         // 读文件
         $h = fopen($log_file, 'r');
     
         // 如果有时间，则进行二分查找，加速查询
-        if($start_time && $offset === '' && ($file_size = filesize($log_file) > 50000))
+        if($start_time && $offset == 0 && ($file_size = filesize($log_file)) > 1024000)
         {
             $offset = $this->binarySearch(0, $file_size, $start_time-1, $h);
-            $offset = $offset < 1000 ? 0 : $offset - 1000;
+            $offset = $offset < 100000 ? 0 : $offset - 100000;
         }
     
         // 正则表达式
-        $pattern = "/^([\d: \-]+)\t";
+        $pattern = "/^([\d: \-]+)\t\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\t";
     
         if($module && $module != 'WorkerMan')
         {
@@ -213,9 +213,9 @@ class StatisticProvider extends Man\Core\SocketWorker
         $pattern .= '/';
     
         // 指定偏移位置
-        if($offset >= 0)
+        if($offset > 0)
         {
-            fseek($h, (int)$offset);
+            fseek($h, (int)$offset-1);
         }
     
         // 查找符合条件的数据
@@ -270,31 +270,36 @@ class StatisticProvider extends Man\Core\SocketWorker
      */
     protected function binarySearch($start_point, $end_point, $time, $fd)
     {
+        if($end_point - $start_point < 65535)
+        {
+            return $start_point;
+        }
+        
         // 计算中点
         $mid_point = (int)(($end_point+$start_point)/2);
     
         // 定位文件指针在中点
-        fseek($fd, $mid_point);
+        fseek($fd, $mid_point - 1);
     
         // 读第一行
         $line = fgets($fd);
         if(feof($fd) || false === $line)
         {
-            return ftell($fd);
+            return $start_point;
         }
     
         // 第一行可能数据不全，再读一行
         $line = fgets($fd);
         if(feof($fd) || false === $line || trim($line) == '')
         {
-            return ftell($fd);
+            return $start_point;
         }
     
         // 判断是否越界
         $current_point = ftell($fd);
         if($current_point>=$end_point)
         {
-            return $end_point;
+            return $start_point;
         }
     
         // 获得时间

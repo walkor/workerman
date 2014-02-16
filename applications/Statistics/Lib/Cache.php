@@ -1,4 +1,5 @@
 <?php
+namespace Statistics\Lib;
 class Cache
 {
     public static $statisticDataCache = array();
