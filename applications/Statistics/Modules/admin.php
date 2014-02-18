@@ -33,14 +33,17 @@ function admin()
             }
             
             // 过滤掉已经保存的ip
+            $count = 0;
             foreach($ip_list as $ip)
             {
                 if(!isset(\Statistics\Lib\Cache::$ServerIpList[$ip]))
                 {
                     $ip_list_str .= $ip."\r\n";
+                    $count ++;
                 }
             }
             $action = 'add_to_server_list';
+            $notice_msg = "探测到{$count}个节点";
             break;
         case 'add_to_server_list':
             if(empty($_POST['ip_list']))
@@ -91,6 +94,11 @@ function admin()
                 $ip_list_str .= $ip."\r\n";
             }
             break;
+        default:
+            foreach(\Statistics\Lib\Cache::$ServerIpList as $ip)
+            {
+                $ip_list_str .= $ip."\r\n";
+            }
     }
     
     include ST_ROOT . '/Views/header.tpl.php';
