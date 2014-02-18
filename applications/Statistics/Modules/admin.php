@@ -1,11 +1,11 @@
 <?php
 namespace Statistics\Modules;
-use Statistics\Lib\Cache;
 
 function admin()
 {
     $act = isset($_GET['act'])? $_GET['act'] : 'home';
-    $ip_list_str = '';
+    $err_msg = $notice_msg = $suc_msg = $ip_list_str = '';
+    $action = 'save_server_list';
     switch($act)
     {
         case 'detect_server':
@@ -31,18 +31,67 @@ function admin()
                     $ip_list[$host] = $host;
                 }
             }
+            
             // 过滤掉已经保存的ip
             foreach($ip_list as $ip)
             {
-                if(!isset(Cache::$ServerIpList[$ip]))
+                if(!isset(\Statistics\Lib\Cache::$ServerIpList[$ip]))
                 {
                     $ip_list_str .= $ip."\r\n";
                 }
             }
-            
+            $action = 'add_to_server_list';
+            break;
+        case 'add_to_server_list':
+            if(empty($_POST['ip_list']))
+            {
+                $err_msg = "保存的ip列表为空";
+                break;
+            }
+            $ip_list = explode("\n", $ip_list);
+            if($ip_list)
+            {
+                foreach($ip_list as $ip)
+                {
+                    $ip = trim($ip);
+                    if(false !== ip2long($ip))
+                    {
+                        \Statistics\Lib\Cache::$ServerIpList[$ip] = $ip;
+                    }
+                }
+            }
+            $suc_msg = "添加成功";
+            foreach(\Statistics\Lib\Cache::$ServerIpList as $ip)
+            {
+                $ip_list_str .= $ip."\r\n";
+            }
+            break;
+        case 'save_server_list':
+            if(empty($_POST['ip_list']))
+            {
+                $err_msg = "保存的ip列表为空";
+                break;
+            }
+            \Statistics\Lib\Cache::$ServerIpList = array();
+            $ip_list = explode("\n", $ip_list);
+            if($ip_list)
+            {
+                foreach($ip_list as $ip)
+                {
+                    $ip = trim($ip);
+                    if(false !== ip2long($ip))
+                    {
+                        \Statistics\Lib\Cache::$ServerIpList[$ip] = $ip;
+                    }
+                }
+            }
+            $suc_msg = "添加成功";
+            foreach(\Statistics\Lib\Cache::$ServerIpList as $ip)
+            {
+                $ip_list_str .= $ip."\r\n";
+            }
             break;
     }
-    
     
     include ST_ROOT . '/Views/header.tpl.php';
     include ST_ROOT . '/Views/admin.tpl.php';

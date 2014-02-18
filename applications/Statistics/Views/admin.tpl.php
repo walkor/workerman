@@ -27,13 +27,26 @@
 	</div>
 	<div class="row clearfix">
 		<div class="col-md-12 column">
-			<form action="/?fn=admin&act=save_server_list" method="post">
-			<textarea rows="100" cols="30"><?php echo $ip_list_str;?></textarea>
-			<div class="form-group">
-				<div class="col-sm-offset-2 col-sm-10">
-					 <button type="submit" class="btn btn-default">保存</button>
+		<?php if($suc_msg){?>
+				<div class="alert alert-dismissable alert-success">
+				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+				 <strong><?php echo $suc_msg;?></strong> 
 				</div>
+		<?php }elseif($err_msg){?>
+			<div class="alert alert-dismissable alert-danger">
+				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+				<strong><?php echo $err_msg;?></strong> 
 			</div>
+		<?php }elseif($notie_msg){?>
+			<div class="alert alert-dismissable alert-info">
+				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+				<strong><?php echo $notie_msg;?></strong>
+			</div>
+		<?php }?>
+		
+			<form action="/?fn=admin&act=<?php echo $action;?>" method="post">
+			<textarea rows="22" cols="30" name="ip_list"><?php echo $ip_list_str;?></textarea>
+			<button type="submit" class="btn btn-default">保存</button>
 			</form>
 		</div>
 	</div>
