@@ -28,9 +28,7 @@
 	<div class="row clearfix">
 		<div class="col-md-12 column">
 			<form action="/?fn=admin&act=save_server_list" method="post">
-			<textarea rows="100" cols="30">
-			<?php echo $ip_list_str;?>
-			</textarea>
+			<textarea rows="100" cols="30"><?php echo $ip_list_str;?></textarea>
 			<div class="form-group">
 				<div class="col-sm-offset-2 col-sm-10">
 					 <button type="submit" class="btn btn-default">保存</button>
