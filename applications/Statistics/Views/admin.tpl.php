@@ -28,8 +28,8 @@
 	<div class="row clearfix">
 		<div class="col-md-12 column">
 			<form action="/?fn=admin&act=save_server_list" method="post">
-			<textarea rows="300" cols="100">
-			<?php echo $ip_list;?>
+			<textarea rows="100" cols="30">
+			<?php echo $ip_list_str;?>
 			</textarea>
 			</form>
 		</div>

@@ -1,5 +1,7 @@
 <?php
 namespace Statistics\Modules;
+use Statistics\Lib\Cache;
+
 function admin()
 {
     $act = isset($_GET['act'])? $_GET['act'] : 'home';
@@ -31,6 +33,14 @@ function admin()
             break;
     }
     
+    $ip_list_str = '';
+    foreach($ip_list as $ip)
+    {
+        if(!isset(Cache::$ServerIpList[$ip]))
+        {
+            $ip_list_str .= $ip."\r\n"; 
+        }
+    }
     
     include ST_ROOT . '/Views/header.tpl.php';
     include ST_ROOT . '/Views/admin.tpl.php';
