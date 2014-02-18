@@ -31,6 +31,11 @@
 			<textarea rows="100" cols="30">
 			<?php echo $ip_list_str;?>
 			</textarea>
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					 <button type="submit" class="btn btn-default">保存</button>
+				</div>
+			</div>
 			</form>
 		</div>
 	</div>

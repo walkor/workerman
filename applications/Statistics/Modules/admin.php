@@ -5,6 +5,7 @@ use Statistics\Lib\Cache;
 function admin()
 {
     $act = isset($_GET['act'])? $_GET['act'] : 'home';
+    $ip_list_str = '';
     switch($act)
     {
         case 'detect_server':
@@ -30,17 +31,18 @@ function admin()
                     $ip_list[$host] = $host;
                 }
             }
+            // 过滤掉已经保存的ip
+            foreach($ip_list as $ip)
+            {
+                if(!isset(Cache::$ServerIpList[$ip]))
+                {
+                    $ip_list_str .= $ip."\r\n";
+                }
+            }
+            
             break;
     }
     
-    $ip_list_str = '';
-    foreach($ip_list as $ip)
-    {
-        if(!isset(Cache::$ServerIpList[$ip]))
-        {
-            $ip_list_str .= $ip."\r\n"; 
-        }
-    }
     
     include ST_ROOT . '/Views/header.tpl.php';
     include ST_ROOT . '/Views/admin.tpl.php';
