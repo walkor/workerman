@@ -35,7 +35,7 @@
 					<a href="/?fn=admin<?php echo $act == 'detect_server' ? '&act=detect_server' : '';?>"><?php echo $act == 'detect_server' ? '节点探测' : '节点管理';?></a> <span class="divider">/</span>
 				</li>
 				<li class="active">
-					<?php if($act == 'home')echo '节点列表';elseif($act == 'detect_server')echo '探测结果';?>
+					<?php if($act == 'home')echo '节点列表';elseif($act == 'detect_server')echo '探测结果';elseif($act == 'add_to_server_list')echo '添加结果';elseif($act == 'save_server_list')echo '保存结果';?>
 				</li>
 			</ul>
 		<?php if($suc_msg){?>
@@ -57,7 +57,7 @@
 		
 			<form action="/?fn=admin&act=<?php echo $action;?>" method="post">
 			<textarea rows="22" cols="30" name="ip_list"><?php echo $ip_list_str;?></textarea>
-			<button type="submit" class="btn btn-default">保存</button>
+			<button type="submit" class="btn btn-default"><?php echo $act == 'detect_server' ? '添加到节点列表' : '保存'?></button>
 			</form>
 		</div>
 	</div>
