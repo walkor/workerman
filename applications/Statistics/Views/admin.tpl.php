@@ -37,10 +37,10 @@
 				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 				<strong><?php echo $err_msg;?></strong> 
 			</div>
-		<?php }elseif($notie_msg){?>
+		<?php }elseif($notice_msg){?>
 			<div class="alert alert-dismissable alert-info">
 				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-				<strong><?php echo $notie_msg;?></strong>
+				<strong><?php echo $notice_msg;?></strong>
 			</div>
 		<?php }?>
 		
