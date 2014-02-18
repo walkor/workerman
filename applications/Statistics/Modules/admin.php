@@ -31,7 +31,8 @@ function admin()
             break;
     }
     
+    
     include ST_ROOT . '/Views/header.tpl.php';
-    include ST_ROOT . '/Views/main.tpl.php';
+    include ST_ROOT . '/Views/admin.tpl.php';
     include ST_ROOT . '/Views/footer.tpl.php';
 }
