@@ -88,7 +88,7 @@ function admin()
                     }
                 }
             }
-            $suc_msg = "添加成功";
+            $suc_msg = "保存成功";
             foreach(\Statistics\Lib\Cache::$ServerIpList as $ip)
             {
                 $ip_list_str .= $ip."\r\n";

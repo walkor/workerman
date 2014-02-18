@@ -19,7 +19,7 @@ if(!function_exists($func))
 $module = isset($_GET['module']) ? $_GET['module'] : '';
 $interface = isset($_GET['interface']) ? $_GET['interface'] : '';
 $date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
-$start_time = isset($_GET['start_time']) ? $_GET['start_time'] : date('Y-m-d');
+$start_time = isset($_GET['start_time']) ? $_GET['start_time'] : strtotime(date('Y-m-d'));
 $offset =  isset($_GET['offset']) ? $_GET['offset'] : 0; 
 $count =  isset($_GET['count']) ? $_GET['count'] : 10; 
 call_user_func_array($func, array($module, $interface, $date, $start_time, $offset, $count));
