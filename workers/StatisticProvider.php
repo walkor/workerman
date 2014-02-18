@@ -56,10 +56,52 @@ class StatisticProvider extends Man\Core\SocketWorker
     protected $logDir = 'statistic/log/';
     
     /**
-     * 提供统计查询的socket
+     * 用于接收广播的udp socket
      * @var resource
      */
-    protected $providerSocket = null;
+    protected $broadcastSocket = null;
+    
+    public function onStart()
+    {
+        $listen = \Man\Core\Lib\Config::get($this->workerName . '.listen');
+        $udp_address = str_replace('tcp', 'udp', $listen);
+        $this->broadcastSocket = stream_socket_server($udp_address, $error_no, $error_msg, STREAM_SERVER_BIND);
+        $this->event->add($this->broadcastSocket,  \Man\Core\Events\BaseEvent::EV_READ, array($this, 'dealBroadcastUdp'));
+    }
+    
+    
+    /**
+     * 接收Udp数据
+     * 如果数据超过一个udp包长，需要业务自己解析包体，判断数据是否全部到达
+     * @param resource $socket
+     * @param $null_one $flag
+     * @param $null_two $base
+     * @return void
+     */
+    public function dealBroadcastUdp($socket, $null_one = null, $null_two = null)
+    {
+        $data = stream_socket_recvfrom($socket , self::MAX_UDP_PACKEG_SIZE, 0, $address);
+        // 可能是惊群效应
+        if(false === $data || empty($address))
+        {
+            return false;
+        }
+        // 解析包体
+        $data = json_decode(trim($data), true);
+        if(empty($data))
+        {
+            return false;
+        }
+        
+        // 无法解析的包
+        if(empty($data['cmd']) || $data['cmd'] != 'REPORT_IP' )
+        {
+            return false;
+        }
+        
+        // 回应
+        return stream_socket_sendto($this->broadcastSocket, json_encode(array('result'=>ok)), 0, $address);
+    }
     
     /**
      * udp 默认全部接收完毕

@@ -1,8 +1,5 @@
 <?php
 require_once WORKERMAN_ROOT_DIR .'applications/Statistics/Web/_init.php';
-require_once WORKERMAN_ROOT_DIR .'applications/Statistics/Lib/functions.php';
-require_once WORKERMAN_ROOT_DIR .'applications/Statistics/Lib/Cache.php';
-// fn = main/statistic/log/admin
 
 $func = isset($_GET['fn']) ? $_GET['fn'] : 'main';
 $func = "\\Statistics\\Modules\\".$func;

@@ -104,7 +104,7 @@ function statistic($module, $interface, $date, $start_time, $offset)
         $the_time = strtotime("-$i day");
         $the_date = date('Y-m-d',$the_time);
         $html_the_date = $date == $the_date ? "<b>$the_date</b>" : $the_date;
-        $date_btn_str .= '<a href="/?date='."$the_date&$query".'" class="btn '.$html_class.'" type="button">'.$html_the_date.'</a>';
+        $date_btn_str .= '<a href="/?fn=statistic&date='."$the_date&$query".'" class="btn '.$html_class.'" type="button">'.$html_the_date.'</a>';
         if($i == 7)
         {
             $date_btn_str .= '</br>';
