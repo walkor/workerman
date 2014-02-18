@@ -30,6 +30,14 @@
 	</div>
 	<div class="row clearfix">
 		<div class="col-md-12 column">
+		<ul class="breadcrumb">
+				<li>
+					<a href="/?fn=admin<?php echo $act == 'detect_server' ? '&act=detect_server' : '';?>"><?php echo $act == 'detect_server' ? '节点探测' : '节点管理';?></a> <span class="divider">/</span>
+				</li>
+				<li class="active">
+					<?php if($act == 'home')echo '节点列表';elseif($act == 'detect_server')echo '探测结果';?>
+				</li>
+			</ul>
 		<?php if($suc_msg){?>
 				<div class="alert alert-dismissable alert-success">
 				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>

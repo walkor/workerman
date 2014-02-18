@@ -43,7 +43,7 @@ function admin()
                 }
             }
             $action = 'add_to_server_list';
-            $notice_msg = "探测到{$count}个节点";
+            $notice_msg = "探测到{$count}个新节点";
             break;
         case 'add_to_server_list':
             if(empty($_POST['ip_list']))
