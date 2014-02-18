@@ -100,7 +100,7 @@ class StatisticProvider extends Man\Core\SocketWorker
         }
         
         // 回应
-        return stream_socket_sendto($this->broadcastSocket, json_encode(array('result'=>ok)), 0, $address);
+        return stream_socket_sendto($this->broadcastSocket, json_encode(array('result'=>'ok')), 0, $address);
     }
     
     /**
