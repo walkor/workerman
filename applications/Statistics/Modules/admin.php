@@ -48,7 +48,7 @@ function admin()
                 $err_msg = "保存的ip列表为空";
                 break;
             }
-            $ip_list = explode("\n", $ip_list);
+            $ip_list = explode("\n", $_POST['ip_list']);
             if($ip_list)
             {
                 foreach($ip_list as $ip)
@@ -73,7 +73,7 @@ function admin()
                 break;
             }
             \Statistics\Lib\Cache::$ServerIpList = array();
-            $ip_list = explode("\n", $ip_list);
+            $ip_list = explode("\n", $_POST['ip_list']);
             if($ip_list)
             {
                 foreach($ip_list as $ip)
