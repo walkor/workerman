@@ -65,7 +65,7 @@
 		<div class="col-md-6 column">
 			<form class="form-horizontal" role="form" action="/?fn=setting&act=save" method="post">
 				<div class="form-group">
-					 <label class="col-sm-3control-label">数据源探测端口</label>
+					 <label class="col-sm-3 control-label">数据源探测端口</label>
 					<div class="col-sm-9">
 						<input class="form-control" name="detect_port" value="<?php echo $detect_port;?>"/>
 					</div>
