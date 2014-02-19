@@ -30,6 +30,12 @@
 	</div>
 	<div class="row clearfix">
 		<div class="col-md-12 column">
+		<?php if($err_msg){?>
+			<div class="alert alert-dismissable alert-danger">
+				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+				<strong><?php echo $err_msg;?></strong> 
+			</div>
+		<?php }?>
 			<div class="row clearfix">
 				<div class="col-md-12 column text-center">
 					<?php echo $date_btn_str;?>

@@ -2,6 +2,7 @@
 namespace Statistics\Modules;
 function main($module, $interface, $date, $start_time, $offset)
 {
+    $err_msg = '';
     $module = 'WorkerMan';
     $interface = 'Statistics';
     $today = date('Y-m-d');
@@ -134,6 +135,11 @@ function main($module, $interface, $date, $start_time, $offset)
     $the_date = date('Y-m-d');
     $html_the_date = $date == $the_date ? "<b>$the_date</b>" : $the_date;
     $date_btn_str .=  '<a href="/?date='."$the_date&$query".'" class="btn" type="button">'.$html_the_date.'</a>';
+    
+    if( \Statistics\Lib\Cache::$lastFailedIpArray)
+    {
+        $err_msg = '<strong>无法从以下节点获取数据:</strong>'.implode(',',  \Statistics\Lib\Cache::$lastFailedIpArray);
+    }
 
     include ST_ROOT . '/Views/header.tpl.php';
     include ST_ROOT . '/Views/main.tpl.php';
