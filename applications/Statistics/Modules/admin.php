@@ -114,5 +114,5 @@ function saveServerIpListToCache()
     {
         unlink($php_file);
     }
-    file_put_contents(ST_ROOT . '/Config/Cache/'.time().'.iplist.cache.php', "<?php\n\\Statistics\\Lib\\Cache::\$ServerIpLis=".var_export(\Statistics\Lib\Cache::$ServerIpList,true).';');
+    file_put_contents(ST_ROOT . '/Config/Cache/'.time().'.iplist.cache.php', "<?php\n\\Statistics\\Lib\\Cache::\$ServerIpList=".var_export(\Statistics\Lib\Cache::$ServerIpList,true).';');
 }
