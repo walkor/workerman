@@ -110,9 +110,9 @@ function admin()
 
 function saveServerIpListToCache()
 {
-    foreach(glob(ST_ROOT . '/Config/*.iplist.cache.php') as $php_file)
+    foreach(glob(ST_ROOT . '/Config/Cache/*.iplist.cache.php') as $php_file)
     {
         unlink($php_file);
     }
-    file_put_contents(ST_ROOT . '/Config/'.time().'.iplist.cache.php', "<?php\n\\Statistics\\Lib\\Cache::\$ServerIpLis=".var_export(\Statistics\Lib\Cache::$ServerIpList,true).';');
+    file_put_contents(ST_ROOT . '/Config/Cache/'.time().'.iplist.cache.php', "<?php\n\\Statistics\\Lib\\Cache::\$ServerIpLis=".var_export(\Statistics\Lib\Cache::$ServerIpList,true).';');
 }
