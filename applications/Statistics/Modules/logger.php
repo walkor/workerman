@@ -31,7 +31,7 @@ function logger($module, $interface, $date, $start_time, $offset, $count)
         }
         
         $next_page_url = http_build_query($_GET);
-        $log_str = nl2br($log_str);
+        $log_str = nl2br(htmlspecialchars($log_str));
         $log_str .= "</br><center><a href='/?fn=logger&$next_page_url'>下一页</a></center>";
 
         include ST_ROOT . '/Views/header.tpl.php';
