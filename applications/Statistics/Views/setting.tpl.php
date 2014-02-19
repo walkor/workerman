@@ -35,10 +35,10 @@
 		<div class="col-md-12 column">
 			<ul class="breadcrumb">
 				<li>
-					<a href="/?fn=admin<?php echo $act == 'detect_server' ? '&act=detect_server' : '';?>"><?php echo $act == 'detect_server' ? '数据源探测' : '数据源管理';?></a> <span class="divider">/</span>
+					<a href="/?fn=setting">设置</a> <span class="divider">/</span>
 				</li>
 				<li class="active">
-					<?php if($act == 'home')echo '数据源列表';elseif($act == 'detect_server')echo '探测结果';elseif($act == 'add_to_server_list')echo '添加结果';elseif($act == 'save_server_list')echo '保存结果';?>
+					选项列表
 				</li>
 			</ul>
 			<?php if($suc_msg){?>
@@ -63,14 +63,19 @@
 		<div class="col-md-3 column">
 		</div>
 		<div class="col-md-6 column">
-		<?php if($act!='add_to_server_list'){?>
-			<form action="/?fn=admin&act=<?php echo $action;?>" method="post">
-			<textarea rows="22" cols="30" name="ip_list"><?php echo $ip_list_str;?></textarea>
-			<div><button type="submit" class="btn btn-default"><?php echo $act == 'detect_server' ? '添加到数据源列表' : '保存'?></button></div>
+			<form class="form-horizontal" role="form" action="/?fn=setting&act=save" method="post">
+				<div class="form-group">
+					 <label class="col-sm-2 control-label">数据源探测端口</label>
+					<div class="col-sm-10">
+						<input class="form-control" name="detect_port" value=<?php echo $detect_port;?>/>
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-sm-offset-2 col-sm-10">
+						 <button type="submit" class="btn btn-default">Sign in</button>
+					</div>
+				</div>
 			</form>
-			<?php }else{?>
-			<a type="button" class="btn btn-default" href="/">返回主页</a><a type="button" class="btn btn-default" href="/?fn=admin">继续添加</a>
-			<?php }?>
 		</div>
 		<div class="col-md-3 column">
 		</div>

@@ -23,6 +23,9 @@
 						<li>
 							<a href="/?fn=admin">节点管理</a>
 						</li>
+						<li>
+							<a href="/?fn=setting">设置</a>
+						</li>
 					</ul>
 				</li>
 			</ul>
