@@ -38,6 +38,12 @@
 					<?php if($act == 'home')echo '节点列表';elseif($act == 'detect_server')echo '探测结果';elseif($act == 'add_to_server_list')echo '添加结果';elseif($act == 'save_server_list')echo '保存结果';?>
 				</li>
 			</ul>
+		</div>
+	</div>
+	<div class="row clearfix">
+		<div class="col-md-3 column">
+		</div>
+		<div class="col-md-6 column">
 		<?php if($suc_msg){?>
 				<div class="alert alert-dismissable alert-success">
 				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
@@ -59,6 +65,8 @@
 			<textarea rows="22" cols="30" name="ip_list"><?php echo $ip_list_str;?></textarea>
 			<div class='col-xs-offset-10 ' ><button type="submit" class="btn btn-default"><?php echo $act == 'detect_server' ? '添加到节点列表' : '保存'?></button></div>
 			</form>
+		</div>
+		<div class="col-md-3 column">
 		</div>
 	</div>
 </div>
