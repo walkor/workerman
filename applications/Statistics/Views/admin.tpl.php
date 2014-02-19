@@ -63,7 +63,7 @@
 		
 			<form action="/?fn=admin&act=<?php echo $action;?>" method="post">
 			<textarea rows="22" cols="30" name="ip_list"><?php echo $ip_list_str;?></textarea>
-			<div class='col-xs-offset-10 ' ><button type="submit" class="btn btn-default"><?php echo $act == 'detect_server' ? '添加到节点列表' : '保存'?></button></div>
+			<div><button type="submit" class="btn btn-default"><?php echo $act == 'detect_server' ? '添加到节点列表' : '保存'?></button></div>
 			</form>
 		</div>
 		<div class="col-md-3 column">
