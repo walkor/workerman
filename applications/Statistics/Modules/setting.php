@@ -1,7 +1,7 @@
 <?php
 namespace Statistics\Modules;
 
-function admin()
+function setting()
 {
     $act = isset($_GET['act'])? $_GET['act'] : 'home';
     $err_msg = $notice_msg = $suc_msg = $ip_list_str = '';
