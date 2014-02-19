@@ -2,7 +2,7 @@
 namespace Statistics\Modules;
 function main($module, $interface, $date, $start_time, $offset)
 {
-    $err_msg = '';
+    $err_msg = $notice_msg=  '';
     $module = 'WorkerMan';
     $interface = 'Statistics';
     $today = date('Y-m-d');
@@ -139,6 +139,14 @@ function main($module, $interface, $date, $start_time, $offset)
     if( \Statistics\Lib\Cache::$lastFailedIpArray)
     {
         $err_msg = '<strong>无法从以下节点获取数据:</strong>'.implode(',',  \Statistics\Lib\Cache::$lastFailedIpArray);
+    }
+    
+    if(empty(\Statistics\Lib\Cache::$ServerIpList))
+    {
+        $notice_msg = <<<EOT
+<h4>数据源为空</h4>
+您可以 <a href="/?fn=admin&act=detect_server" class="btn" type="button">探测数据源</a> 或者 <a href="/?fn=admin" class="btn" type="button">添加数据源</a>
+EOT;
     }
 
     include ST_ROOT . '/Views/header.tpl.php';
