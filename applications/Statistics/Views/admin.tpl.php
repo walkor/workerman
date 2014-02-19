@@ -32,10 +32,10 @@
 		<div class="col-md-12 column">
 			<ul class="breadcrumb">
 				<li>
-					<a href="/?fn=admin<?php echo $act == 'detect_server' ? '&act=detect_server' : '';?>"><?php echo $act == 'detect_server' ? '节点探测' : '节点管理';?></a> <span class="divider">/</span>
+					<a href="/?fn=admin<?php echo $act == 'detect_server' ? '&act=detect_server' : '';?>"><?php echo $act == 'detect_server' ? '数据源探测' : '数据源管理';?></a> <span class="divider">/</span>
 				</li>
 				<li class="active">
-					<?php if($act == 'home')echo '节点列表';elseif($act == 'detect_server')echo '探测结果';elseif($act == 'add_to_server_list')echo '添加结果';elseif($act == 'save_server_list')echo '保存结果';?>
+					<?php if($act == 'home')echo '数据源列表';elseif($act == 'detect_server')echo '探测结果';elseif($act == 'add_to_server_list')echo '添加结果';elseif($act == 'save_server_list')echo '保存结果';?>
 				</li>
 			</ul>
 			<?php if($suc_msg){?>
