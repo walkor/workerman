@@ -2,7 +2,7 @@
 namespace Statistics\Modules;
 function statistic($module, $interface, $date, $start_time, $offset)
 {
-    
+    $err_msg = '';
     $today = date('Y-m-d');
     $time_now = time();
     multiRequestStAndModules($module, $interface, $date);
@@ -129,7 +129,12 @@ function statistic($module, $interface, $date, $start_time, $offset)
                         $module_str .= '<li>&nbsp;&nbsp;<a href="/?fn=statistic&module='.$mod.'&interface='.$if.'">'.$if.'</a></li>';
                     }
                 }
-        } 
+        }
+        
+        if( \Statistics\Lib\Cache::$lastFailedIpArray)
+        {
+            $err_msg = '<strong>无法从以下节点获取数据:</strong>'.implode(',',  \Statistics\Lib\Cache::$lastFailedIpArray);
+        }
 
         include ST_ROOT . '/Views/header.tpl.php';
         include ST_ROOT . '/Views/statistic.tpl.php';

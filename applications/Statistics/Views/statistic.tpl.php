@@ -5,8 +5,8 @@
 				<li>
 					<a href="/">概述</a>
 				</li>
-				<li>
-					<a class="active" href="/?fn=statistic">监控</a>
+				<li class="active" >
+					<a href="/?fn=statistic">监控</a>
 				</li>
 				<li>
 					<a href="/?fn=logger">日志</a>
@@ -33,6 +33,12 @@
 			<ul><?php echo $module_str;?></ul>
 		</div>
 		<div class="col-md-9 column">
+		<?php if($err_msg){?>
+			<div class="alert alert-dismissable alert-danger">
+				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+				<strong><?php echo $err_msg;?></strong> 
+			</div>
+		<?php }?>
 		<?php if($module && $interface){?>
 			<div class="row clearfix">
 				<div class="col-md-12 column text-center">

@@ -8,8 +8,8 @@
 				<li>
 					<a href="/?fn=statistic">监控</a>
 				</li>
-				<li>
-					<a class="active" href="/?fn=logger">日志</a>
+				<li class="active" >
+					<a href="/?fn=logger">日志</a>
 				</li>
 				<li class="disabled">
 					<a href="#">告警</a>
