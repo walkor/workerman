@@ -30,7 +30,7 @@
 	</div>
 	<div class="row clearfix">
 		<div class="col-md-12 column">
-		<ul class="breadcrumb">
+			<ul class="breadcrumb">
 				<li>
 					<a href="/?fn=admin<?php echo $act == 'detect_server' ? '&act=detect_server' : '';?>"><?php echo $act == 'detect_server' ? '节点探测' : '节点管理';?></a> <span class="divider">/</span>
 				</li>
@@ -38,23 +38,23 @@
 					<?php if($act == 'home')echo '节点列表';elseif($act == 'detect_server')echo '探测结果';elseif($act == 'add_to_server_list')echo '添加结果';elseif($act == 'save_server_list')echo '保存结果';?>
 				</li>
 			</ul>
-		</div>
-		<?php if($suc_msg){?>
+			<?php if($suc_msg){?>
 				<div class="alert alert-dismissable alert-success">
 				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 				 <strong><?php echo $suc_msg;?></strong> 
 				</div>
-		<?php }elseif($err_msg){?>
-			<div class="alert alert-dismissable alert-danger">
-				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-				<strong><?php echo $err_msg;?></strong> 
-			</div>
-		<?php }elseif($notice_msg){?>
+			<?php }elseif($err_msg){?>
+				<div class="alert alert-dismissable alert-danger">
+					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+					<strong><?php echo $err_msg;?></strong> 
+				</div>
+			<?php }elseif($notice_msg){?>
 			<div class="alert alert-dismissable alert-info">
 				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 				<strong><?php echo $notice_msg;?></strong>
 			</div>
-		<?php }?>
+			<?php }?>
+		</div>
 	</div>
 	<div class="row clearfix">
 		<div class="col-md-3 column">
