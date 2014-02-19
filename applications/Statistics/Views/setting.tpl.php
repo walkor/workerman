@@ -65,13 +65,13 @@
 		<div class="col-md-6 column">
 			<form class="form-horizontal" role="form" action="/?fn=setting&act=save" method="post">
 				<div class="form-group">
-					 <label class="col-sm-2 control-label">数据源探测端口</label>
-					<div class="col-sm-10">
+					 <label class="col-sm-6 control-label">数据源探测端口</label>
+					<div class="col-sm-6">
 						<input class="form-control" name="detect_port" value="<?php echo $detect_port;?>"/>
 					</div>
 				</div>
 				<div class="form-group">
-					<div class="col-sm-offset-6 col-sm-6">
+					<div class="col-sm-offset-2 col-sm-10">
 						 <button type="submit" class="btn btn-default">保存</button>
 					</div>
 				</div>
