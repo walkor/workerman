@@ -14,7 +14,7 @@ function admin()
             socket_set_option($socket, SOL_SOCKET, SO_BROADCAST, 1);
             $buffer = json_encode(array('cmd'=>'REPORT_IP'))."\n";
             // 广播
-            socket_sendto($socket, $buffer, strlen($buffer), 0, '255.255.255.255', \Statistics\Web\Config::$ProviderPort);
+            socket_sendto($socket, $buffer, strlen($buffer), 0, '255.255.255.255', \Statistics\Config\Config::$ProviderPort);
             // 超时相关
             $time_start = microtime(true);
             $global_timeout = 1;
@@ -68,6 +68,7 @@ function admin()
             {
                 $ip_list_str .= $ip."\r\n";
             }
+            saveServerIpListToCache();
             break;
         case 'save_server_list':
             if(empty($_POST['ip_list']))
@@ -93,6 +94,7 @@ function admin()
             {
                 $ip_list_str .= $ip."\r\n";
             }
+            saveServerIpListToCache();
             break;
         default:
             foreach(\Statistics\Lib\Cache::$ServerIpList as $ip)
@@ -104,4 +106,13 @@ function admin()
     include ST_ROOT . '/Views/header.tpl.php';
     include ST_ROOT . '/Views/admin.tpl.php';
     include ST_ROOT . '/Views/footer.tpl.php';
+}
+
+function saveServerIpListToCache()
+{
+    foreach(glob(ST_ROOT . '/Config/*.iplist.cache.php') as $php_file)
+    {
+        unlink($php_file);
+    }
+    file_put_contents(ST_ROOT . '/Config/'.time().'.iplist.cache.php', "<?php\n\\Statistics\\Lib\\Cache::\$ServerIpLis=".var_export(\Statistics\Lib\Cache::$ServerIpList,true).';');
 }
