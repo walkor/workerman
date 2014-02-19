@@ -7,6 +7,7 @@
  */
 function multiRequest($request_buffer_array)
 {
+    \Statistics\Lib\Cache::$lastSuccessIpArray = array();
     $client_array = $sock_to_ip = $ip_list = array();
     foreach($request_buffer_array as $address => $buffer)
     {
