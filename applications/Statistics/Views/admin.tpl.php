@@ -18,10 +18,10 @@
 					 <a href="#" data-toggle="dropdown" class="dropdown-toggle">其它<strong class="caret"></strong></a>
 					<ul class="dropdown-menu">
 						<li>
-							<a href="/?fn=admin&act=detect_server">探测节点</a>
+							<a href="/?fn=admin&act=detect_server">探测数据源</a>
 						</li>
 						<li>
-							<a href="/?fn=admin">节点管理</a>
+							<a href="/?fn=admin">数据源管理</a>
 						</li>
 					</ul>
 				</li>
@@ -62,7 +62,7 @@
 		<div class="col-md-6 column">
 			<form action="/?fn=admin&act=<?php echo $action;?>" method="post">
 			<textarea rows="22" cols="30" name="ip_list"><?php echo $ip_list_str;?></textarea>
-			<div><button type="submit" class="btn btn-default"><?php echo $act == 'detect_server' ? '添加到节点列表' : '保存'?></button></div>
+			<div><button type="submit" class="btn btn-default"><?php echo $act == 'detect_server' ? '添加到数据源列表' : '保存'?></button></div>
 			</form>
 		</div>
 		<div class="col-md-3 column">

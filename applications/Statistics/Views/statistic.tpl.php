@@ -18,10 +18,10 @@
 					 <a href="#" data-toggle="dropdown" class="dropdown-toggle">其它<strong class="caret"></strong></a>
 					<ul class="dropdown-menu">
 						<li>
-							<a href="/?fn=admin&act=detect_server">探测节点</a>
+							<a href="/?fn=admin&act=detect_server">探测数据源</a>
 						</li>
 						<li>
-							<a href="/?fn=admin">节点管理</a>
+							<a href="/?fn=admin">数据源管理</a>
 						</li>
 					</ul>
 				</li>

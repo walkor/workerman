@@ -145,7 +145,7 @@ function main($module, $interface, $date, $start_time, $offset)
     {
         $notice_msg = <<<EOT
 <h4>数据源为空</h4>
-您可以 <a href="/?fn=admin&act=detect_server" class="btn" type="button">探测数据源</a> 或者 <a href="/?fn=admin" class="btn" type="button">添加数据源</a>
+您可以 <a href="/?fn=admin&act=detect_server" class="btn" type="button"><strong>探测数据源</strong></a>或者<a href="/?fn=admin" class="btn" type="button"><strong>添加数据源</strong></a>
 EOT;
     }
 
