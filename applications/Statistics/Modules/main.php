@@ -138,7 +138,11 @@ function main($module, $interface, $date, $start_time, $offset)
     
     if( \Statistics\Lib\Cache::$lastFailedIpArray)
     {
-        $err_msg = '<strong>无法从以下节点获取数据:</strong>'.implode(',',  \Statistics\Lib\Cache::$lastFailedIpArray);
+        $err_msg = '<strong>无法从以下节点获取数据:</strong>';
+        foreach (\Statistics\Lib\Cache::$lastFailedIpArray as $ip)
+        {
+            $err_msg .= $ip.'::'.\Statistics\Config\Config::$ProviderPort . '&nbsp;';
+        }
     }
     
     if(empty(\Statistics\Lib\Cache::$ServerIpList))
