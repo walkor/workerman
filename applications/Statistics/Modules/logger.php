@@ -43,7 +43,7 @@ function getStasticLog($module, $interface , $start_time, $offset = '', $count =
 {
     $ip_list = (!empty($_GET['ip']) && is_array($_GET['ip'])) ? $_GET['ip'] : \Statistics\Lib\Cache::$ServerIpList;
     $offset_list = (!empty($_GET['offset']) && is_array($_GET['offset'])) ? $_GET['offset'] : array();
-    $port = 55858;
+    $port = \Statistics\Config\Config::$ProviderPort;
     $request_buffer_array = array();
     foreach($ip_list as $key=>$ip)
     {
