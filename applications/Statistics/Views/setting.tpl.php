@@ -67,7 +67,7 @@
 				<div class="form-group">
 					 <label class="col-sm-2 control-label">数据源探测端口</label>
 					<div class="col-sm-10">
-						<input class="form-control" name="detect_port" value=<?php echo $detect_port;?>/>
+						<input class="form-control" name="detect_port" value="<?php echo $detect_port;?>"/>
 					</div>
 				</div>
 				<div class="form-group">
