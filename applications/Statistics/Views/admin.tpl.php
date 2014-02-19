@@ -39,11 +39,6 @@
 				</li>
 			</ul>
 		</div>
-	</div>
-	<div class="row clearfix">
-		<div class="col-md-3 column">
-		</div>
-		<div class="col-md-6 column">
 		<?php if($suc_msg){?>
 				<div class="alert alert-dismissable alert-success">
 				 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
@@ -60,7 +55,11 @@
 				<strong><?php echo $notice_msg;?></strong>
 			</div>
 		<?php }?>
-		
+	</div>
+	<div class="row clearfix">
+		<div class="col-md-3 column">
+		</div>
+		<div class="col-md-6 column">
 			<form action="/?fn=admin&act=<?php echo $action;?>" method="post">
 			<textarea rows="22" cols="30" name="ip_list"><?php echo $ip_list_str;?></textarea>
 			<div><button type="submit" class="btn btn-default"><?php echo $act == 'detect_server' ? '添加到节点列表' : '保存'?></button></div>
