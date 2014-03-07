@@ -45,8 +45,8 @@ class Checker
             $suport = extension_loaded($ext_name);
             if($must_required && !$suport)
             {
-                \Man\Core\Master::notice($ext_name. " [NOT SUPORT BUT REQUIRED] \tYou have to compile CLI version of PHP with --enable-{$ext_name} \tServer start fail");
-                exit($ext_name. " \033[31;40m [NOT SUPORT BUT REQUIRED] \033[0m\n\n\033[31;40mYou have to compile CLI version of PHP with --enable-{$ext_name} \033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
+                \Man\Core\Master::notice($ext_name. " [NOT SUPORT BUT REQUIRED] \tYou have to compile CLI version of PHP with --enable-{$ext_name} \tWorkerman start fail");
+                exit($ext_name. " \033[31;40m [NOT SUPORT BUT REQUIRED] \033[0m\n\n\033[31;40mYou have to compile CLI version of PHP with --enable-{$ext_name} \033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n\n");
             }
     
             // 支持扩展
@@ -88,8 +88,8 @@ class Checker
         {
             if(isset($disable_func_map[$func]))
             {
-                \Man\Core\Master::notice("Function $func may be disabled\tPlease check disable_functions in php.ini \t Server start fail");
-                exit("\n\033[31;40mFunction $func may be disabled\nPlease check disable_functions in php.ini\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
+                \Man\Core\Master::notice("Function $func may be disabled\tPlease check disable_functions in php.ini \t Workerman start fail");
+                exit("\n\033[31;40mFunction $func may be disabled\nPlease check disable_functions in php.ini\033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n\n");
             }
         }
     }
@@ -108,8 +108,8 @@ class Checker
         {
             if(empty($config['start_workers']))
             {
-                \Man\Core\Master::notice(str_pad($worker_name, $pad_length)." [start_workers not set]\tServer start fail");
-                exit(str_pad($worker_name, $pad_length)."\033[31;40m [start_workers not set]\033[0m\n\n\033[31;40mServer start fail\033[0m\n");
+                \Man\Core\Master::notice(str_pad($worker_name, $pad_length)." [start_workers not set]\tWorkerman start fail");
+                exit(str_pad($worker_name, $pad_length)."\033[31;40m [start_workers not set]\033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n");
             }
     
             $total_worker_count += $config['start_workers'];
@@ -138,8 +138,8 @@ class Checker
                 if(!self::checkWorkerUserName($worker_user))
                 {
                     echo str_pad($worker_name, $pad_length),"\033[31;40m [FAIL] \033[0m\n";
-                    \Man\Core\Master::notice("Can not run $worker_name processes as user $worker_user , User $worker_user not exists\tServer start fail");
-                    exit("\n\033[31;40mCan not run $worker_name processes as user $worker_user , User $worker_user not exists\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
+                    \Man\Core\Master::notice("Can not run $worker_name processes as user $worker_user , User $worker_user not exists\tWorkerman start fail");
+                    exit("\n\033[31;40mCan not run $worker_name processes as user $worker_user , User $worker_user not exists\033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n\n");
                 }
             }
             
@@ -148,8 +148,8 @@ class Checker
     
         if($total_worker_count > \Man\Core\Master::SERVER_MAX_WORKER_COUNT)
         {
-            \Man\Core\Master::notice("Number of worker processes can not be more than " . \Man\Core\Master::SERVER_MAX_WORKER_COUNT . ".\tPlease check start_workers in " . WORKERMAN_ROOT_DIR . "config/main.php\tServer start fail");
-            exit("\n\033[31;40mNumber of worker processes can not be more than " . \Man\Core\Master::SERVER_MAX_WORKER_COUNT . ".\nPlease check start_workers in " . WORKERMAN_ROOT_DIR . "config/main.php\033[0m\n\n\033[31;40mServer start fail\033[0m\n");
+            \Man\Core\Master::notice("Number of worker processes can not be more than " . \Man\Core\Master::SERVER_MAX_WORKER_COUNT . ".\tPlease check start_workers in " . WORKERMAN_ROOT_DIR . "config/main.php\tWorkerman start fail");
+            exit("\n\033[31;40mNumber of worker processes can not be more than " . \Man\Core\Master::SERVER_MAX_WORKER_COUNT . ".\nPlease check start_workers in " . WORKERMAN_ROOT_DIR . "config/main.php\033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n");
         }
     
         echo "-------------------------------------------------\n";
@@ -211,13 +211,13 @@ class Checker
         // 已经有进程pid可能server已经启动
         if(@file_get_contents(WORKERMAN_PID_FILE))
         {
-            \Man\Core\Master::notice("Server already started", true);
+            \Man\Core\Master::notice("Workerman already started", true);
             exit;
         }
         
         if(is_dir(WORKERMAN_PID_FILE))
         {
-            exit("\n\033[31;40mpid-file ".WORKERMAN_PID_FILE." is Directory\033[0m\n\n\033[31;40mServer start failed\033[0m\n\n");
+            exit("\n\033[31;40mpid-file ".WORKERMAN_PID_FILE." is Directory\033[0m\n\n\033[31;40mWorkerman start failed\033[0m\n\n");
         }
         
         $pid_dir = dirname(WORKERMAN_PID_FILE);
@@ -231,7 +231,7 @@ class Checker
         
         if(!is_writeable($pid_dir))
         {
-            exit("\n\033[31;40mYou should start the server as root\033[0m\n\n\033[31;40mServer start failed\033[0m\n\n");
+            exit("\n\033[31;40mYou should start the server as root\033[0m\n\n\033[31;40mWorkerman start failed\033[0m\n\n");
         }
     }
 }

@@ -151,7 +151,7 @@ class Master
     public static function run()
     {
         // 输出信息
-        self::notice("Server is starting ...", true);
+        self::notice("Workerman is starting ...", true);
         // 初始化
         self::init();
         // 检查环境
@@ -167,7 +167,7 @@ class Master
         // 创建worker进程
         self::createWorkers();
         // 输出信息
-        self::notice("Server start success ...", true);
+        self::notice("Workerman start success ...", true);
         // 标记sever状态为运行中...
         self::$serverStatus = self::STATUS_RUNNING;
         // 关闭标准输出
@@ -279,7 +279,7 @@ class Master
         // 保存到文件中，用于实现停止、重启
         if(false === @file_put_contents(WORKERMAN_PID_FILE, self::$masterPid))
         {
-            exit("\033[31;40mCan not save pid to pid-file(" . WORKERMAN_PID_FILE . ")\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
+            exit("\033[31;40mCan not save pid to pid-file(" . WORKERMAN_PID_FILE . ")\033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n\n");
         }
         
         // 更改权限
@@ -313,8 +313,8 @@ class Master
                 self::$listenedSockets[$worker_name] = stream_socket_server($config['listen'], $error_no, $error_msg, $flags);
                 if(!self::$listenedSockets[$worker_name])
                 {
-                    Lib\Log::add("can not create socket {$config['listen']} info:{$error_no} {$error_msg}\tServer start fail");
-                    exit("\n\033[31;40mcan not create socket {{$config['listen']} info:{$error_no} {$error_msg}\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
+                    Lib\Log::add("can not create socket {$config['listen']} info:{$error_no} {$error_msg}\tWorkerman start fail");
+                    exit("\n\033[31;40mcan not create socket {{$config['listen']} info:{$error_no} {$error_msg}\033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n\n");
                 }
             }
         }
@@ -445,7 +445,7 @@ class Master
         pcntl_signal(SIGINT,  array('\Man\Core\Master', 'signalHandler'), false);
         // 设置SIGUSR1信号处理函数,测试用
         pcntl_signal(SIGUSR1, array('\Man\Core\Master', 'signalHandler'), false);
-        // 设置SIGUSR2信号处理函数,平滑重启Server
+        // 设置SIGUSR2信号处理函数,平滑重启Workerman
         pcntl_signal(SIGHUP, array('\Man\Core\Master', 'signalHandler'), false);
         // 设置子进程退出信号处理函数
         pcntl_signal(SIGCHLD, array('\Man\Core\Master', 'signalHandler'), false);
@@ -488,7 +488,7 @@ class Master
         {
             // 停止server信号
             case SIGINT:
-                self::notice("Server is shutting down");
+                self::notice("Workerman is shutting down");
                 self::stop();
                 break;
             // 测试用
@@ -502,7 +502,7 @@ class Master
             // 平滑重启server信号
             case SIGHUP:
                 Lib\Config::reload();
-                self::notice("Server reloading");
+                self::notice("Workerman reloading");
                 self::addToRestartWorkers(array_keys(self::getPidWorkerNameMap()));
                 self::restartWorkers();
                 break;
@@ -578,7 +578,7 @@ class Master
                 // 没有子进程了,可能是出现Fatal Err 了
                 if(pcntl_get_last_error() == 10)
                 {
-                    self::notice('Server has no workers now');
+                    self::notice('Workerman has no workers now');
                 }
                 return -1;
             }
@@ -621,7 +621,7 @@ class Master
                     // 删除共享内存
                     self::removeShmAndQueue();
                     // 发送提示
-                    self::notice("Server stoped");
+                    self::notice("Workerman stoped");
                     // 删除pid文件
                     @unlink(WORKERMAN_PID_FILE);
                     exit(0);
@@ -881,7 +881,7 @@ class Master
         // >=php 5.5
         if (version_compare(phpversion(), "5.5", "ge") && function_exists('cli_set_process_title'))
         {
-            cli_set_process_title($title);
+            @cli_set_process_title($title);
         }
         // 需要扩展
         elseif(extension_loaded('proctitle') && function_exists('setproctitle'))
@@ -898,7 +898,7 @@ class Master
      */
     public static function notice($msg, $display = false)
     {
-        Lib\Log::add("Server:".$msg);
+        Lib\Log::add("Workerman:".$msg);
         if($display)
         {
             if(self::$serverStatus == self::STATUS_STARTING)

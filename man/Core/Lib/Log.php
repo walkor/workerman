@@ -50,8 +50,8 @@ class Log
         if(!$ok)
         {
             $pad_length = 26;
-            Master::notice(WORKERMAN_LOG_DIR." Need to have read and write permissions\tServer start fail");
-            exit("------------------------LOG------------------------\n".str_pad(WORKERMAN_LOG_DIR, $pad_length) . "\033[31;40m [NOT READABLE/WRITEABLE] \033[0m\n\n\033[31;40mDirectory ".WORKERMAN_LOG_DIR." Need to have read and write permissions\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
+            Master::notice(WORKERMAN_LOG_DIR." Need to have read and write permissions\tWorkerman start fail");
+            exit("------------------------LOG------------------------\n".str_pad(WORKERMAN_LOG_DIR, $pad_length) . "\033[31;40m [NOT READABLE/WRITEABLE] \033[0m\n\n\033[31;40mDirectory ".WORKERMAN_LOG_DIR." Need to have read and write permissions\033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n\n");
         }
     }
     

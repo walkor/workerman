@@ -35,7 +35,7 @@ require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
 Man\Core\Lib\Config::instance();
 if(!($pid_file = Man\Core\Lib\Config::get('workerman.pid_file')))
 {
-    $pid_file = '/var/run/php-server.pid';
+    $pid_file = '/var/run/workerman.pid';
 }
 define('WORKERMAN_PID_FILE', $pid_file);
 
@@ -70,10 +70,10 @@ if($cmd != 'status' && is_file(WORKERMAN_PID_FILE))
         {
             if(($start_pwuid = posix_getpwuid($stat['uid'])) && ($current_pwuid = posix_getpwuid(posix_getuid())))
             {
-                exit("\n\033[31;40mServer is started by user {$start_pwuid['name']}, {$current_pwuid['name']} can not $cmd Server, Permission denied\033[0m\n\n\033[31;40mServer $cmd failed\033[0m\n\n");
+                exit("\n\033[31;40mWorkerman is started by user {$start_pwuid['name']}, {$current_pwuid['name']} can not $cmd Workerman, Permission denied\033[0m\n\n\033[31;40mWorkerman $cmd failed\033[0m\n\n");
             }
         }
-        exit("Can not $cmd Server, Permission denied\n");
+        exit("Can not $cmd Workerman, Permission denied\n");
     }
     //检查pid进程是否存在
     if($pid = @file_get_contents(WORKERMAN_PID_FILE))
@@ -82,7 +82,7 @@ if($cmd != 'status' && is_file(WORKERMAN_PID_FILE))
         {
             if(!unlink(WORKERMAN_PID_FILE))
             {
-                exit("Can not $cmd Server\n\n");
+                exit("Can not $cmd Workerman\n\n");
             }
         }
     }
@@ -98,7 +98,7 @@ switch($cmd)
         $pid = @file_get_contents(WORKERMAN_PID_FILE);
         if(empty($pid))
         {
-            exit("Server not running?\n");
+            exit("Workerman not running?\n");
         }
         stop_and_wait();
         break;
@@ -114,7 +114,7 @@ switch($cmd)
             exit("server not running?\n");
         }
         posix_kill($pid, SIGHUP);
-        echo "reload PHP-Server\n";
+        echo "reload Workerman\n";
         break;
     case 'kill':
         force_kill();
@@ -125,7 +125,7 @@ switch($cmd)
         $sock = @stream_socket_client($address);
         if(!$sock)
         {
-            exit("\n\033[31;40mcan not connect to $address \033[0m\n\n\033[31;40mServer not running\033[0m\n\n");
+            exit("\n\033[31;40mcan not connect to $address \033[0m\n\n\033[31;40mWorkerman not running\033[0m\n\n");
         }
         fwrite($sock, 'status');
         $read_fds = array($sock);
@@ -195,7 +195,7 @@ function stop_and_wait($wait_time = 6)
                 break;
             }
         }
-        echo "PHP-Server stoped\n";
+        echo "Workerman stoped\n";
     }
 }
 
