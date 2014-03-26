@@ -42,6 +42,18 @@ class WebServer extends Man\Core\SocketWorker
     protected static $serverRoot = array();
     
     /**
+     * 默认访问日志目录
+     * @var string
+     */
+    protected static $defaultAccessLog = './logs/access.log';
+    
+    /**
+     * 访问日志存储路径
+     * @var array
+     */
+    protected static $accessLog = array();
+    
+    /**
      * mime类型映射关系
      * @var array
      */
@@ -60,6 +72,8 @@ class WebServer extends Man\Core\SocketWorker
         $this->initMimeTypeMap();
         // 初始化ServerRoot
         $this->initServerRoot();
+        // 初始化访问路径
+        $this->initAccessLog();
     }
     
     /**
@@ -103,6 +117,21 @@ class WebServer extends Man\Core\SocketWorker
     {
         self::$serverRoot = \Man\Core\Lib\Config::get($this->workerName.'.root');
     }
+    
+    /**
+     * 初始化AccessLog
+     * @return void 
+     */
+    public function initAccessLog()
+    {
+        // 虚拟机访问日志目录
+        self::$accessLog = \Man\Core\Lib\Config::get($this->workerName.'.access_log');
+        // 默认访问日志目录
+        if($default_access_log =  \Man\Core\Lib\Config::get($this->workerName.'.default_access_log'))
+        {
+            self::$defaultAccessLog = $default_access_log;
+        }
+    }
 
     /**
      * 确定数据是否接收完整
@@ -121,7 +150,10 @@ class WebServer extends Man\Core\SocketWorker
     {
          // http请求处理开始。解析http协议，生成$_POST $_GET $_COOKIE
         App\Common\Protocols\Http\http_start($recv_str);
-       
+        
+        // 记录访问日志
+        $this->logAccess($recv_str);
+        
         // 请求的文件
         $url_info = parse_url($_SERVER['REQUEST_URI']);
         if(!$url_info)
@@ -265,6 +297,24 @@ class WebServer extends Man\Core\SocketWorker
             // 404
             App\Common\Protocols\Http\header("HTTP/1.1 404 Not Found");
             return $this->sendToClient(App\Common\Protocols\Http\http_end('<html><head><title>页面不存在</title></head><body><center><h3>页面不存在</h3></center></body></html>'));
+        }
+    }
+    
+    /**
+     * 记录访问日志
+     * @param unknown_type $recv_str
+     */
+    public function logAccess($recv_str)
+    {
+        // 记录访问日志
+        $log_data = date('Y-m-d H:i:s') . "\t REMOTE:" . $this->getRemoteAddress()."\n$recv_str";
+        if(isset(self::$accessLog[$_SERVER['HTTP_HOST']]))
+        {
+            file_put_contents(self::$accessLog[$_SERVER['HTTP_HOST']], $log_data, FILE_APPEND);
+        }
+        else
+        {
+            file_put_contents(self::$defaultAccessLog, $log_data, FILE_APPEND);
         }
     }
 }
