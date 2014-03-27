@@ -151,12 +151,12 @@ class Master
      */
     public static function run()
     {
+        // 变成守护进程
+        self::daemonize();
         // 输出信息
         self::notice("Server is starting ...", true);
         // 初始化
         self::init();
-        // 变成守护进程
-        self::daemonize();
         // 检查环境
         self::checkEnv();
         // 保存进程pid
