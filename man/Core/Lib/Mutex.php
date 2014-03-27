@@ -9,7 +9,7 @@ class Mutex
      * 共享内存key
      * @var int
      */
-    const SEM_KEY = 0x5655656;
+    const SEM_KEY = IPC_KEY;
     
     /**
      * 信号量
