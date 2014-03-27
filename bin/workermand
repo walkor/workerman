@@ -49,7 +49,7 @@ define('WORKERMAN_LOG_DIR', $log_dir . '/');
 // ==ipc-key==
 if(!($ipc_key = Man\Core\Lib\Config::get('workerman.ipc_key')))
 {
-    $ipc_key = 0x70010a2e;
+    $ipc_key = fileinode(WORKERMAN_ROOT_DIR);
 }
 define('IPC_KEY', $ipc_key);
 
