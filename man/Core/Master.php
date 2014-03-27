@@ -152,7 +152,7 @@ class Master
     public static function run()
     {
         // 输出信息
-        self::notice("Server is starting ...", true);
+        self::notice("Workerman is starting ...", true);
         // 初始化
         self::init();
         // 检查环境
@@ -168,7 +168,7 @@ class Master
         // 创建worker进程
         self::createWorkers();
         // 输出信息
-        self::notice("Server start success ...", true);
+        self::notice("Workerman start success ...", true);
         // 标记sever状态为运行中...
         self::$serverStatus = self::STATUS_RUNNING;
         // 关闭标准输出
