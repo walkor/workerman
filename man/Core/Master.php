@@ -154,7 +154,7 @@ class Master
         // 变成守护进程
         self::daemonize();
         // 输出信息
-        self::notice("Server is starting ...", true);
+        self::notice("\nServer is starting ...", true);
         // 初始化
         self::init();
         // 检查环境
