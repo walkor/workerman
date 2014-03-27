@@ -155,10 +155,10 @@ class Master
         self::notice("Server is starting ...", true);
         // 初始化
         self::init();
-        // 检查环境
-        self::checkEnv();
         // 变成守护进程
         self::daemonize();
+        // 检查环境
+        self::checkEnv();
         // 保存进程pid
         self::savePid();
         // 安装信号
