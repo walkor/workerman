@@ -14,7 +14,7 @@ workerman 具有以下特性
  * 支持长连接
  * 支持以指定用户运行worker进程
 
- [更多请访问www.workerman.net](http://www.workerman.com/workerman)
+ [更多请访问www.workerman.net](http://www.workerman.net/workerman)
 
 所需环境
 ========
