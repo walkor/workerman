@@ -73,7 +73,7 @@ if($cmd != 'status' && is_file(WORKERMAN_PID_FILE))
                 exit("\n\033[31;40mWorkerman is started by user {$start_pwuid['name']}, {$current_pwuid['name']} can not $cmd Workerman, Permission denied\033[0m\n\n\033[31;40mWorkerman $cmd failed\033[0m\n\n");
             }
         }
-        exit("Can not $cmd Workerman, Permission denied\n");
+        exit("\033[31;40mCan not $cmd Workerman, Permission denied\033[0m\n");
     }
     //检查pid进程是否存在
     if($pid = @file_get_contents(WORKERMAN_PID_FILE))
@@ -82,7 +82,7 @@ if($cmd != 'status' && is_file(WORKERMAN_PID_FILE))
         {
             if(!unlink(WORKERMAN_PID_FILE))
             {
-                exit("Can not $cmd Workerman\n\n");
+                exit("\033[31;40mCan not $cmd Workerman\033[0m\n\n");
             }
         }
     }
@@ -98,7 +98,7 @@ switch($cmd)
         $pid = @file_get_contents(WORKERMAN_PID_FILE);
         if(empty($pid))
         {
-            exit("Workerman not running?\n");
+            exit("\033[33;40mWorkerman not running?\033[0m\n");
         }
         stop_and_wait();
         break;
@@ -111,7 +111,7 @@ switch($cmd)
         $pid = @file_get_contents(WORKERMAN_PID_FILE);
         if(empty($pid))
         {
-            exit("server not running?\n");
+            exit("\033[33;40mWorkerman not running?\033[0m\n");
         }
         posix_kill($pid, SIGHUP);
         echo "reload Workerman\n";

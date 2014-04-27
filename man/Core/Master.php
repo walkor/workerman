@@ -168,7 +168,7 @@ class Master
         // 创建worker进程
         self::createWorkers();
         // 输出信息
-        self::notice("Workerman start success ...", true);
+        self::notice("\033[1A\n\033[KWorkerman start success ...\033[0m", true);
         // 标记sever状态为运行中...
         self::$serverStatus = self::STATUS_RUNNING;
         // 关闭标准输出
@@ -315,7 +315,7 @@ class Master
                 if(!self::$listenedSockets[$worker_name])
                 {
                     Lib\Log::add("can not create socket {$config['listen']} info:{$error_no} {$error_msg}\tServer start fail");
-                    exit("\n\033[31;40mcan not create socket {{$config['listen']} info:{$error_no} {$error_msg}\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
+                    exit("\n\033[31;40mcan not create socket {$config['listen']} info:{$error_no} {$error_msg}\033[0m\n\n\033[31;40mServer start fail\033[0m\n\n");
                 }
             }
         }
