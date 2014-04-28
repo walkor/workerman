@@ -146,7 +146,7 @@ class Checker
         $total_worker_count = 0;
         // 检查worker 是否有语法错误
          echo "------------------------\033[47;30m WORKERS \033[0m-------------------------------\n";
-        echo "\033[47;30m",str_pad('user', self::$maxUserNameLength+2), str_pad('worker', self::$maxWorkerNameLength+2), str_pad('listen', self::$maxListenLength+2), str_pad('processes', self::$maxProcessCountLength+2),"status\033[0m\n";
+        echo "\033[47;30m",str_pad('user', self::$maxUserNameLength+2),"\033[0m", "\033[47;30m",str_pad('worker', self::$maxWorkerNameLength+2),"\033[0m", "\033[47;30m",str_pad('listen', self::$maxListenLength+2),"\033[0m", "\033[47;30m",str_pad('processes', self::$maxProcessCountLength+2),"\033[0m","\033[47;30m","status\033[0m\n";
         foreach (Config::getAllWorkers() as $worker_name=>$config)
         {
             if(isset($config['user']))
