@@ -1,15 +1,16 @@
 <?php 
 namespace Man\Core;
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Checker.php';
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Task.php';
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Log.php';
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Mutex.php';
 
 if(!defined('WORKERMAN_ROOT_DIR'))
 {
     define('WORKERMAN_ROOT_DIR', realpath(__DIR__."/../../")."/");
 }
+
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Checker.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Task.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Log.php';
+require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Mutex.php';
 
 /**
  * 
@@ -21,7 +22,7 @@ if(!defined('WORKERMAN_ROOT_DIR'))
  * <b>使用示例:</b>
  * <pre>
  * <code>
- * Master::run();
+ * Man\Core\Master::run();
  * <code>
  * </pre>
  * 
@@ -579,20 +580,16 @@ class Master
             }
     
             // 出错
-            if($pid == -1)
+            if($pid < 0)
             {
-                // 没有子进程了,可能是出现Fatal Err 了
-                if(pcntl_get_last_error() == 10)
-                {
-                    self::notice('Server has no workers now');
-                }
-                return -1;
+                self::notice('pcntl_waitpid return '.$pid.' and pcntl_get_last_error = ' . pcntl_get_last_error());
+                return $pid;
             }
     
             // 查找子进程对应的woker_name
             $pid_workname_map = self::getPidWorkerNameMap();
             $worker_name = isset($pid_workname_map[$pid]) ? $pid_workname_map[$pid] : '';
-            // 没找到worker_name说明出错了 哪里来的野孩子？
+            // 没找到worker_name说明出错了
             if(empty($worker_name))
             {
                 self::notice("child exist but not found worker_name pid:$pid");
@@ -602,7 +599,7 @@ class Master
             // 进程退出状态不是0，说明有问题了
             if($status !== 0)
             {
-                self::notice("worker exit status $status pid:$pid worker:$worker_name");
+                self::notice("worker[$pid:$worker_name] exit width status $status");
             }
             // 记录进程退出状态
             self::$serverStatusInfo['worker_exit_code'][$worker_name][$status] = isset(self::$serverStatusInfo['worker_exit_code'][$worker_name][$status]) ? self::$serverStatusInfo['worker_exit_code'][$worker_name][$status] + 1 : 1;
@@ -756,15 +753,15 @@ class Master
         // 获得所有pid
         $all_worker_pid = self::getPidWorkerNameMap();
     
-        // 强行杀死？
+        // 强行杀死
         if($force)
         {
             // 杀死所有子进程
             foreach($all_worker_pid as $pid=>$worker_name)
             {
-                // 发送kill信号
+                // 发送SIGKILL信号
                 self::forceKillWorker($pid);
-                self::notice("Kill workers($worker_name) force!");
+                self::notice("Kill workers[$worker_name] force");
             }
         }
         else
@@ -805,8 +802,7 @@ class Master
         // 尝试设置gid uid
         if(!posix_setgid($user_info['gid']) || !posix_setuid($user_info['uid']))
         {
-            $notice = 'Notice : Can not run woker as '.$worker_user." , You shuld be root\n";
-            self::notice($notice, true);
+            self::notice( 'Notice : Can not run woker as '.$worker_user." , You shuld be login as root\n", true);
         }
     }
     

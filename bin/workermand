@@ -7,7 +7,7 @@ date_default_timezone_set('Asia/Shanghai');
 
 if(empty($argv[1]))
 {
-    echo "Usage: serverd {start|stop|restart|reload|kill|status}".PHP_EOL;
+    echo "Usage: workermand {start|stop|restart|reload|kill|status}".PHP_EOL;
     exit;
 }
 
@@ -147,7 +147,7 @@ switch($cmd)
         }
         break;
     default:
-        echo "Usage: serverd {start|stop|restart|reload|kill|status}\n";
+        echo "Usage: workermand {start|stop|restart|reload|kill|status}\n";
         exit;
         
 }
@@ -155,7 +155,7 @@ switch($cmd)
 function force_kill()
 {
     $ret = $match = array();
-    exec("ps aux | grep -E '".Man\Core\Master::NAME.":|serverd' | grep -v grep", $ret);
+    exec("ps aux | grep -E '".Man\Core\Master::NAME.":|workermand' | grep -v grep", $ret);
     $this_pid = posix_getpid();
     $this_ppid = posix_getppid();
     foreach($ret as $line)

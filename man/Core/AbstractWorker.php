@@ -88,11 +88,6 @@ abstract class AbstractWorker
      */
     protected function installSignal()
     {
-        // 如果是由worker脚本启动则不安装信号
-        if(!defined('WORKERMAN_PID_FILE'))
-        {
-            return;
-        }
         // 报告进程状态
         pcntl_signal(SIGINT, array($this, 'signalHandler'));
         pcntl_signal(SIGHUP, array($this, 'signalHandler'));
