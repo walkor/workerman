@@ -67,9 +67,10 @@ class FileReceiverDemo extends Man\Core\SocketWorker
         // 获得文件二进制数据
         $file_bin_buffer = substr($buffer, $head_len, $message_len - $head_len);
         // 保存数据到/tmp/workerman.recv.xxxxx
-        file_put_contents('/tmp/workerman.recv.'.time().'.'.self::getExt($message_type), $file_bin_buffer);
+        $file_path = '/tmp/workerman.recv.'.time().'.'.self::getExt($message_type);
+        file_put_contents($file_path, $file_bin_buffer);
         // 回复客户端 成功
-        $response_message_body = "上传成功";
+        $response_message_body = "上传成功 位置：$file_path";
         // 255表示回包
         $response_message_type = 255;
         $this->sendToClient(pack("NC", $head_len+strlen($response_message_body), $response_message_type).$response_message_body);
