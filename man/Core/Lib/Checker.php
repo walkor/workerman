@@ -197,7 +197,7 @@ class Checker
             }
             if(0 != self::checkSyntaxError($worker_file, $class_name))
             {
-                unset(Config::instance()->config[$worker_name]);
+                //unset(Config::instance()->config[$worker_name]);
                 \Man\Core\Master::notice("$worker_name has Fatal Err");
                 echo"\033[31;40m [Fatal Err] \033[0m\n";
                 continue;
