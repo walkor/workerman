@@ -110,6 +110,10 @@ class Libevent implements BaseEvent
                     event_del($this->allEvents[$fd_key][$flag]);
                 }
                 unset($this->allEvents[$fd_key][$flag]);
+                if(empty($this->allEvents[$fd_key]))
+                {
+                    unset($this->allEvents[$fd_key]);
+                }
             case  \Man\Core\Events\BaseEvent::EV_SIGNAL:
                 if(isset($this->eventSignal[$fd_key]))
                 {
