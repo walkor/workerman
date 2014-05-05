@@ -530,7 +530,7 @@ abstract class SocketWorker extends AbstractWorker
             {
                 $this->sendBuffers[$this->currentDealFd] = $str_to_send;
             }
-            if(feof($this->sendBuffers[$this->currentDealFd]))
+            if(feof($this->connections[$this->currentDealFd]))
             {
                 return false;
             }
