@@ -530,6 +530,10 @@ abstract class SocketWorker extends AbstractWorker
             {
                 $this->sendBuffers[$this->currentDealFd] = $str_to_send;
             }
+            if(feof($this->sendBuffers[$this->currentDealFd]))
+            {
+                return false;
+            }
             $this->event->add($this->connections[$this->currentDealFd],  Events\BaseEvent::EV_WRITE, array($this, 'tcpWriteToClient'), array($this->currentDealFd));
             return null;
         }

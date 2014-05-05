@@ -17,18 +17,17 @@ define('WORKERMAN_ROOT_DIR', realpath(__DIR__."/../")."/");
 
 chdir(WORKERMAN_ROOT_DIR);
 
-require_once WORKERMAN_ROOT_DIR . "man/Core/Master.php";
-
 if(0 === strpos('win', strtolower(PHP_OS)))
 {
-    exit(Man\Core\Master::NAME . " can not run on Windows system\n");
+    exit("Workerman can not run on Windows operating system\n");
 }
 
 if (!version_compare(PHP_VERSION, '5.3.0', '>='))
 {
-    exit(Man\Core\Master::NAME . ' PHP >= 5.3.0 required.' . PHP_EOL);
+    exit('Workerman PHP >= 5.3.0 required."\n");
 }
 
+require_once WORKERMAN_ROOT_DIR . "man/Core/Master.php";
 
 // ==pid-file==
 require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
