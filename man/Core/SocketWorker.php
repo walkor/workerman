@@ -361,6 +361,7 @@ abstract class SocketWorker extends AbstractWorker
             // 如果该链接对应的buffer有数据，说明发生错误
             if(!empty($this->recvBuffers[$fd]['buf']))
             {
+                $this->statusInfo['send_fail']++;
                 $this->notice("CLIENT_CLOSE\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".var_export($this->recvBuffers[$fd]['buf'],true)."]\n");
             }
             
