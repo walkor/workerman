@@ -42,6 +42,10 @@ class FileReceiverDemo extends Man\Core\SocketWorker
         // 根据message_len判断当前数据是否接收完毕
         $message_data = unpack("Nmessage_len/Cmessage_type", $buffer);
         $message_len = $message_data['message_len'];
+        if($message_len > 102400)
+        {
+            return false;
+        }
         $message_type = $message_data['message_type'];
         // 数据没接收完，继续接收$message_len - $recv_len 字节
         if($message_len > $recv_len)
