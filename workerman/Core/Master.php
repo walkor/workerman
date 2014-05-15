@@ -6,11 +6,11 @@ if(!defined('WORKERMAN_ROOT_DIR'))
     define('WORKERMAN_ROOT_DIR', realpath(__DIR__."/../../")."/");
 }
 
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Checker.php';
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Task.php';
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Log.php';
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Mutex.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Checker.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Config.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Task.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Log.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Mutex.php';
 
 /**
  * 
@@ -624,7 +624,7 @@ class Master
                     // 删除共享内存
                     self::removeShmAndQueue();
                     // 发送提示
-                    self::notice("Server stoped");
+                    self::notice("Workerman stoped");
                     // 删除pid文件
                     @unlink(WORKERMAN_PID_FILE);
                     exit(0);

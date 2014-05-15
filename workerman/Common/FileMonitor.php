@@ -1,5 +1,5 @@
 <?php 
-require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
 /**
  * 
  * 用这个worker监控文件更新

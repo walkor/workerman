@@ -1,6 +1,6 @@
 <?php
-require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
-require_once WORKERMAN_ROOT_DIR . 'applications/Common/Protocols/Http/Http.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
+require_once WORKERMAN_ROOT_DIR . 'Common/Protocols/Http/Http.php';
 
 /**
  * 

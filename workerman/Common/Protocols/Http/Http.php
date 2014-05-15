@@ -1,5 +1,5 @@
 <?php 
-namespace  App\Common\Protocols\Http;
+namespace  Man\Common\Protocols\Http;
 
 /**
  * 判断http协议的数据包是否完整

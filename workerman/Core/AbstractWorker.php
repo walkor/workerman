@@ -1,6 +1,6 @@
 <?php 
 namespace Man\Core;
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Events/Select.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/Events/Select.php';
 
 /**
  * 抽象Worker类

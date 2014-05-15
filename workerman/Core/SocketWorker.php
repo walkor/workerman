@@ -2,9 +2,9 @@
 namespace Man\Core;
 use Man\Core\Events\BaseEvent;
 
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Events/Select.php';
-require_once WORKERMAN_ROOT_DIR . 'man/Core/AbstractWorker.php';
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Lib/Config.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/Events/Select.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/AbstractWorker.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Config.php';
 
 /**
  * SocketWorker 监听某个端口，对外提供网络服务的worker
@@ -275,7 +275,7 @@ abstract class SocketWorker extends AbstractWorker
     public function setEventLoopName($event_loop_name)
     {
         $this->eventLoopName = "\\Man\\Core\\Events\\".$event_loop_name;
-        require_once WORKERMAN_ROOT_DIR . 'man/Core/Events/'.ucfirst(str_replace('WORKERMAN', '', $event_loop_name)).'.php';
+        require_once WORKERMAN_ROOT_DIR . 'Core/Events/'.ucfirst(str_replace('WORKERMAN', '', $event_loop_name)).'.php';
     }
     
     /**
@@ -535,7 +535,7 @@ abstract class SocketWorker extends AbstractWorker
             {
                 return false;
             }
-            $this->event->add($this->connections[$this->currentDealFd],  Events\BaseEvent::EV_WRITE, array($this, 'tcpWriteToClient'), array($this->currentDealFd));
+            $this->event->add($this->connections[$this->currentDealFd],  Events\BaseEvent::EV_WRITE, array($this, 'tcpWriteToClient'));
             return null;
         }
         // udp 直接发送，要求数据包不能超过65515
@@ -549,6 +549,7 @@ abstract class SocketWorker extends AbstractWorker
      */
     public function tcpWriteToClient($fd)
     {
+        $fd = (int) $fd;
         if(empty($this->connections[$fd]))
         {
             $this->notice("tcpWriteToClient \$this->connections[$fd] is null");

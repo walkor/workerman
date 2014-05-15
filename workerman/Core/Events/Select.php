@@ -1,6 +1,6 @@
 <?php 
 namespace Man\Core\Events;
-require_once WORKERMAN_ROOT_DIR . 'man/Core/Events/interfaces.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/Events/interfaces.php';
 /**
  * 
  * select 轮询封装

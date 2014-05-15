@@ -32,7 +32,7 @@ class Config
      */
     private function __construct()
      {
-        $config_file = WORKERMAN_ROOT_DIR . 'conf/workerman.conf';
+        $config_file = WORKERMAN_ROOT_DIR . '/conf/workerman.conf';
         if (!file_exists($config_file)) 
         {
             throw new \Exception('Configuration file "' . $config_file . '" not found');

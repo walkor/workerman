@@ -1,5 +1,5 @@
 <?php 
-require_once WORKERMAN_ROOT_DIR . 'man/Core/SocketWorker.php';
+require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
 /**
  * 
  * 1、提供telnet接口，远程控制服务器查看服务状态
