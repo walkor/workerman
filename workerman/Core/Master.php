@@ -403,6 +403,8 @@ class Master
             // 尝试设置子进程进程名称
             self::setWorkerProcessTitle($worker_name);
     
+            require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
+            
             // 查找worker文件
             if($worker_file = \Man\Core\Lib\Config::get($worker_name.'.worker_file'))
             {

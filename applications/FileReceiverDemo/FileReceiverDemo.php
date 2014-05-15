@@ -1,5 +1,4 @@
 <?php 
-require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
 /**
  * 二进制协议，接收文件demo
  * @author walkor <worker-man@qq.com>

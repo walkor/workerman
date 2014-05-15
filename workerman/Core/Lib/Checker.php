@@ -234,6 +234,7 @@ class Checker
         elseif($pid == 0)
         {
             ini_set('display_errors', 'Off');
+            require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
             // 载入对应worker
             require_once $file;
             if($class_name && !class_exists($class_name))
