@@ -396,9 +396,9 @@ class Master
             {
                 self::setWorkerUser($worker_user);
             }
-    
+            
             // 关闭输出
-            self::resetStdFd();
+            self::resetStdFd(Lib\Config::get($worker_name.'.no_debug'));
     
             // 尝试设置子进程进程名称
             self::setWorkerProcessTitle($worker_name);
@@ -512,7 +512,18 @@ class Master
             case SIGHUP:
                 Lib\Config::reload();
                 self::notice("Server reloading");
-                self::addToRestartWorkers(array_keys(self::getPidWorkerNameMap()));
+                $pid_worker_name_map = self::getPidWorkerNameMap();
+                $pids_to_restart = array();
+                foreach($pid_worker_name_map as $pid=>$worker_name)
+                {
+                    // 如果对应进程配置了不热启动则不重启对应进程
+                    if(Lib\Config::get($worker_name.'.no_reload'))
+                    {
+                        continue;
+                    }
+                    $pids_to_restart[] = $pid;
+                }
+                self::addToRestartWorkers($pids_to_restart);
                 self::restartWorkers();
                 break;
         }
@@ -831,12 +842,16 @@ class Master
      * 关闭标准输入输出
      * @return void
      */
-    protected static function resetStdFd()
+    protected static function resetStdFd($force = false)
     {
-        // 开发环境不关闭标准输出，用于调试
-        if(Lib\Config::get('workerman.debug') == 1 && posix_ttyname(STDOUT))
+        // 如果此进程配置是no_debug，则关闭输出
+        if(!$force)
         {
-            return;
+            // 开发环境不关闭标准输出，用于调试
+            if(Lib\Config::get('workerman.debug') == 1 && posix_ttyname(STDOUT))
+            {
+                return;
+            }
         }
         global $STDOUT, $STDERR;
         @fclose(STDOUT);

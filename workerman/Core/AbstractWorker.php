@@ -91,12 +91,12 @@ abstract class AbstractWorker
         // 报告进程状态
         pcntl_signal(SIGINT, array($this, 'signalHandler'));
         pcntl_signal(SIGHUP, array($this, 'signalHandler'));
+        pcntl_signal(SIGTTOU, array($this, 'signalHandler'));
         // 设置忽略信号
         pcntl_signal(SIGALRM, SIG_IGN);
         pcntl_signal(SIGUSR1, SIG_IGN);
         pcntl_signal(SIGUSR2, SIG_IGN);
         pcntl_signal(SIGTTIN, SIG_IGN);
-        pcntl_signal(SIGTTOU, SIG_IGN);
         pcntl_signal(SIGQUIT, SIG_IGN);
         pcntl_signal(SIGPIPE, SIG_IGN);
         pcntl_signal(SIGCHLD, SIG_IGN);
@@ -116,6 +116,10 @@ abstract class AbstractWorker
                 // 平滑重启
             case SIGHUP:
                 $this->workerStatus = self::STATUS_SHUTDOWN;
+                break;
+                // 终端关闭
+            case SIGTTOU:
+                $this->resetFd();
                 break;
         }
     }
@@ -260,6 +264,20 @@ abstract class AbstractWorker
         {
             echo $str."\n";
         }
+    }
+    
+    /**
+     * 关闭标准输入输出
+     * @return void
+     */
+    protected function resetFd()
+    {
+        global $STDOUT, $STDERR;
+        @fclose(STDOUT);
+        @fclose(STDERR);
+        // 将标准输出重定向到/dev/null
+        $STDOUT = fopen('/dev/null',"rw+");
+        $STDERR = fopen('/dev/null',"rw+");
     }
     
 }

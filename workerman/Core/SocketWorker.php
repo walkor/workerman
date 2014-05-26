@@ -464,10 +464,11 @@ abstract class SocketWorker extends AbstractWorker
         $this->event->add(SIGUSR1, Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'));
         // 报告该进程使用的文件
         $this->event->add(SIGUSR2, Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'));
+        // 关闭标准输入输出
+        $this->event->add(SIGTTOU, Events\BaseEvent::EV_SIGNAL, array($this, 'signalHandler'));
         
         // 设置忽略信号
         pcntl_signal(SIGTTIN, SIG_IGN);
-        pcntl_signal(SIGTTOU, SIG_IGN);
         pcntl_signal(SIGQUIT, SIG_IGN);
         pcntl_signal(SIGPIPE, SIG_IGN);
         pcntl_signal(SIGCHLD, SIG_IGN);
@@ -492,8 +493,17 @@ abstract class SocketWorker extends AbstractWorker
                 break;
             // 停止该进程
             case SIGINT:
+                $this->stop();
+                // EXIT_WAIT_TIME秒后退出进程
+                pcntl_alarm(self::EXIT_WAIT_TIME);
+                break;
             // 平滑重启
             case SIGHUP:
+                // 如果配置了no_reload则不重启该进程
+                if(\Man\Core\Lib\Config::get($this->workerName.'.no_reload'))
+                {
+                    return;
+                }
                 $this->stop();
                 // EXIT_WAIT_TIME秒后退出进程
                 pcntl_alarm(self::EXIT_WAIT_TIME);
@@ -505,6 +515,10 @@ abstract class SocketWorker extends AbstractWorker
             // 报告进程使用的php文件
             case SIGUSR2:
                 $this->writeFilesListToQueue();
+                break;
+            // FileMonitor检测到终端已经关闭，向此进程发送SIGTTOU信号，关闭此进程的标准输入输出
+            case SIGTTOU:
+                $this->resetFd();
                 break;
         }
     }
