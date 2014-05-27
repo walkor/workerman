@@ -516,8 +516,8 @@ class Master
                     }
                     $pids_to_restart[] = $pid;
                 }
-                self::addToRestartWorkers($pids_to_restart);
-                self::restartWorkers();
+                self::addToRestartPids($pids_to_restart);
+                self::restartPids();
                 break;
         }
     }
@@ -582,7 +582,7 @@ class Master
             if(isset(self::$workerToRestart[$pid]) && self::$serviceStatus != self::STATUS_SHUTDOWN)
             {
                 unset(self::$workerToRestart[$pid]);
-                self::restartWorkers();
+                self::restartPids();
             }
     
             // 出错
@@ -661,11 +661,11 @@ class Master
      * @param array $restart_pids
      * @return void
      */
-    public static function addToRestartWorkers($restart_pids)
+    public static function addToRestartPids($restart_pids)
     {
         if(!is_array($restart_pids))
         {
-            self::notice("addToRestartWorkers(".var_export($restart_pids, true).") \$restart_pids not array");
+            self::notice("addToRestartPids(".var_export($restart_pids, true).") \$restart_pids not array");
             return false;
         }
     
@@ -684,7 +684,7 @@ class Master
      * 重启workers
      * @return void
      */
-    public static function restartWorkers()
+    public static function restartPids()
     {
         // 标记server状态
         if(self::$serviceStatus != self::STATUS_RESTARTING_WORKERS && self::$serviceStatus != self::STATUS_SHUTDOWN)
