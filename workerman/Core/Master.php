@@ -579,9 +579,9 @@ class Master
         while(($pid = pcntl_waitpid(-1, $status, WUNTRACED | WNOHANG)) != 0)
         {
             // 如果是重启的进程，则继续重启进程
-            if(isset(self::$workerToRestart[$pid]) && self::$serviceStatus != self::STATUS_SHUTDOWN)
+            if(isset(self::$pidsToRestart[$pid]) && self::$serviceStatus != self::STATUS_SHUTDOWN)
             {
-                unset(self::$workerToRestart[$pid]);
+                unset(self::$pidsToRestart[$pid]);
                 self::restartPids();
             }
     
@@ -672,10 +672,10 @@ class Master
         // 将pid放入重启队列
         foreach($restart_pids as $pid)
         {
-            if(!isset(self::$workerToRestart[$pid]))
+            if(!isset(self::$pidsToRestart[$pid]))
             {
                 // 重启时间=0
-                self::$workerToRestart[$pid] = 0;
+                self::$pidsToRestart[$pid] = 0;
             }
         }
     }
@@ -693,7 +693,7 @@ class Master
         }
     
         // 没有要重启的进程了
-        if(empty(self::$workerToRestart))
+        if(empty(self::$pidsToRestart))
         {
             self::$serviceStatus = self::STATUS_RUNNING;
             self::notice("\nWorker Restart Success");
@@ -705,7 +705,7 @@ class Master
         {
             if($stop_time == 0)
             {
-                self::$workerToRestart[$pid] = time();
+                self::$pidsToRestart[$pid] = time();
                 posix_kill($pid, SIGHUP);
                 Lib\Task::add(self::KILL_WORKER_TIME_LONG, array('\Man\Core\Master', 'forceKillWorker'), array($pid), false);
                 break;
@@ -722,7 +722,7 @@ class Master
     protected static function clearWorker($worker_name, $pid)
     {
         // 释放一些不用了的数据
-        unset(self::$workerToRestart[$pid], self::$workerPidMap[$worker_name][$pid]);
+        unset(self::$pidsToRestart[$pid], self::$workerPidMap[$worker_name][$pid]);
     }
     
     /**
