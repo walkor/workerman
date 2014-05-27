@@ -73,13 +73,8 @@ class Checker
                 exit(str_pad('* ' . $ext_name, $pad_length) . " \033[31;40m [NOT SUPORT BUT REQUIRED] \033[0m\n\n\033[31;40mYou have to enable {$ext_name} \033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n\n");
             }
     
-            // 支持扩展
-            if($suport)
-            {
-                echo str_pad('* ' . $ext_name, $pad_length), "\033[32;40m [OK] \033[0m\n";
-            }
             // 不支持
-            else
+            if(!$suport)
             {
                 // proctitle不是必须
                 if('proctitle' == $ext_name)
