@@ -159,7 +159,7 @@ class FileMonitor extends Man\Core\AbstractWorker
             // 日志
             $this->notice("terminal closed and restart worker");
             // worker重启时会检测终端是否关闭
-            $this->sendSignalToAllWorker(SIGHUP);
+            $this->sendSignalToAllWorker(SIGTTOU);
             // 设置标记
             $this->terminalClosed = true;
         }

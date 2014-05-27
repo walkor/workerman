@@ -61,7 +61,6 @@ class FileReceiverDemo extends Man\Core\SocketWorker
      */
     public function dealProcess($buffer)
     {
-        // unsigned int + unsigned char 共5字节
         $head_len = 5;
         // 解包
         $message_data = unpack("Nmessage_len/Cmessage_type", $buffer);
