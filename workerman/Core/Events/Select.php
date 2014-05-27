@@ -6,7 +6,7 @@ require_once WORKERMAN_ROOT_DIR . 'Core/Events/interfaces.php';
  * select 轮询封装
  * 如果没有其它可用库worker进程也会自动使用该库
  * 
-* @author walkor <worker-man@qq.com>
+* @author walkor <workerman.net>
  */
 
 class Select implements BaseEvent

@@ -8,7 +8,7 @@ require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
  * 4、定时清理log文件
  * 5、定时监控worker内存泄漏
  * 
-* @author walkor <worker-man@qq.com>
+* @author walkor <workerman.net>
  */
 class Monitor extends Man\Core\SocketWorker
 {

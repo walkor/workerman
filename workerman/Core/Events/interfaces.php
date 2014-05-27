@@ -5,7 +5,7 @@ namespace Man\Core\Events;
  * 事件轮询库的通用接口
  * 其它事件轮询库需要实现这些接口才能在这个server框架中使用
  * 
- * @author walkor <worker-man@qq.com>
+ * @author walkor <workerman.net>
  *
  */
 interface BaseEvent

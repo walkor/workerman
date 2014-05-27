@@ -3,7 +3,7 @@ namespace Man\Core\Lib;
 /**
  * 环境检查相关
  * 
-* @author walkor <worker-man@qq.com>
+* @author walkor <workerman.net>
  */
 class Checker
 {
@@ -53,24 +53,24 @@ class Checker
     {
         // 扩展名=>是否是必须
         $need_map = array(
-                        'posix'     => true,
-                        'pcntl'     => true,
-                        'sysvshm'   => false,
-                        'sysvmsg'   => false,
-                        'libevent'  => false,
-                        'proctitle' => false,
+                'posix'       => true,
+                'pcntl'       => true,
+                'sysvshm'  => false,
+                'sysvmsg'   => false,
+                'libevent'   => false,
+                'proctitle'   => false,
         );
     
         // 检查每个扩展支持情况
-        echo "-----------------------\033[47;30m EXTENSION \033[0m------------------------------\n";
         $pad_length = 26;
         foreach($need_map as $ext_name=>$must_required)
         {
             $suport = extension_loaded($ext_name);
             if($must_required && !$suport)
             {
-                \Man\Core\Master::notice($ext_name. " [NOT SUPORT BUT REQUIRED] \tYou have to compile CLI version of PHP with --enable-{$ext_name} \tWorkerman start fail");
-                exit('* ' . $ext_name. " \033[31;40m [NOT SUPORT BUT REQUIRED] \033[0m\n\n\033[31;40mYou have to compile CLI version of PHP with --enable-{$ext_name} \033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n\n");
+                echo "-----------------------\033[47;30m EXTENSION \033[0m------------------------------\n";
+                \Man\Core\Master::notice($ext_name. " [NOT SUPORT BUT REQUIRED] \tYou have to enable {$ext_name} \tWorkerman start fail");
+                exit(str_pad('* ' . $ext_name, $pad_length) . " \033[31;40m [NOT SUPORT BUT REQUIRED] \033[0m\n\n\033[31;40mYou have to enable {$ext_name} \033[0m\n\n\033[31;40mWorkerman start fail\033[0m\n\n");
             }
     
             // 支持扩展
@@ -81,10 +81,15 @@ class Checker
             // 不支持
             else
             {
-                // ev uv inotify不是必须
+                // proctitle不是必须
                 if('proctitle' == $ext_name)
                 {
                     continue;
+                }
+                if(!isset($had_print_ext_info))
+                {
+                    $had_print_ext_info = '';
+                    echo "-----------------------\033[47;30m EXTENSION \033[0m------------------------------\n";
                 }
                 echo '* ' , str_pad($ext_name, $pad_length), "\033[33;40m [NOT SUPORT] \033[0m\n";
             }
@@ -99,10 +104,11 @@ class Checker
     {
         // 可能禁用的函数
         $check_func_map = array(
-                        'stream_socket_server',
-                        'stream_socket_client',
-                        'pcntl_signal_dispatch',
+                'stream_socket_server',
+                'stream_socket_client',
+                'pcntl_signal_dispatch',
         );
+        // 获取php.ini中设置的禁用函数
         if($disable_func_string = ini_get("disable_functions"))
         {
             $disable_func_map = array_flip(explode(',', $disable_func_string));

@@ -1,7 +1,7 @@
 <?php 
 /**
  * 二进制协议，接收文件demo
- * @author walkor <worker-man@qq.com>
+ * @author walkor <workerman.net>
  */
 class FileReceiverDemo extends Man\Core\SocketWorker
 {

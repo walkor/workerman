@@ -12,7 +12,7 @@ class Config
      * 配置文件名称
      * @var string
      */
-    public static $filename;
+    public static $configFile;
     
     /**
      * 配置数据
@@ -21,7 +21,7 @@ class Config
     public static $config = array();
     
     /**
-     * 势力
+     * 实例
      * @var instance of Config
      */
     protected static $instances = null;
@@ -38,7 +38,7 @@ class Config
             throw new \Exception('Configuration file "' . $config_file . '" not found');
         }
         self::$config['workerman'] = self::parseFile($config_file);
-        self::$filename = realpath($config_file);
+        self::$configFile = realpath($config_file);
         foreach(glob(WORKERMAN_ROOT_DIR . 'conf/conf.d/*.conf') as $config_file)
         {
             $worker_name = basename($config_file, '.conf');

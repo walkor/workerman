@@ -9,7 +9,7 @@ require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Config.php';
 /**
  * SocketWorker 监听某个端口，对外提供网络服务的worker
  * 
-* @author walkor <worker-man@qq.com>
+* @author walkor <workerman.net>
 * 
  * <b>使用示例:</b>
  * <pre>
