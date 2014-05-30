@@ -344,6 +344,7 @@ class Master
                 if(self::createOneWorker($worker_name) == 0)
                 {
                     self::notice("Worker exit unexpected");
+                    exit(500);
                 }
             }
         }
