@@ -40,18 +40,18 @@ class GateWay
     * @param int $uid
     * @param string $message
     */
-   public static function sendToUid($uid, $message, $raw_data = false)
+   public static function sendToUid($uid, $message)
    {
-       return self::sendCmdAndMessageToUid($uid, GatewayProtocol::CMD_SEND_TO_ONE, $message, $raw_data);
+       return self::sendCmdAndMessageToUid($uid, GatewayProtocol::CMD_SEND_TO_ONE, $message);
    }
    
    /**
     * 向当前用户发送消息
     * @param string $message
     */
-   public static function sendToCurrentUid($message, $raw_data = false)
+   public static function sendToCurrentUid($message)
    {
-       return self::sendCmdAndMessageToUid(null, GatewayProtocol::CMD_SEND_TO_ONE, $message, $raw_data);
+       return self::sendCmdAndMessageToUid(null, GatewayProtocol::CMD_SEND_TO_ONE, $message);
    }
    
    /**
@@ -94,7 +94,7 @@ class GateWay
     * @param string $message
     * @return boolean
     */
-   public static function sendCmdAndMessageToUid($uid, $cmd , $message, $raw_data = false)
+   public static function sendCmdAndMessageToUid($uid, $cmd , $message)
    {
        $pack = new GatewayProtocol();
        $pack->header['cmd'] = $cmd;
