@@ -88,8 +88,27 @@ class FileMonitor extends Man\Core\AbstractWorker
         $flag = $block ? 0 : MSG_IPC_NOWAIT;
         if(msg_receive(\Man\Core\Master::getQueueId(), self::MSG_TYPE_FILE_MONITOR, $msg_type, 10000, $message, true, $flag))
         {
+            // 被排除的路径
+            $exclude_path = array();
+            // 因为配置可能会被更改，所以每次都会重新从配置中查找排除路径
+            $config_exclude_path = $this->getExcludeFiles();
+            foreach($config_exclude_path as $path)
+            {
+                if($real_path = realpath($path))
+                {
+                    $exclude_path[] = $real_path;
+                }
+            }
             foreach($message as $file)
             {
+                foreach($exclude_path as $path)
+                {
+                    // 是被排除的文件
+                    if(0  === strpos($file, $path))
+                    {
+                        continue;
+                    }
+                }
                 if(!isset($this->filesToInotify[$file]))
                 {
                     $stat = @stat($file);
@@ -163,6 +182,12 @@ class FileMonitor extends Man\Core\AbstractWorker
             // 设置标记
             $this->terminalClosed = true;
         }
+    }
+    
+    protected function getExcludeFiles()
+    {
+        $exclude_path = \Man\Core\Lib\Config::get($this->workerName.'.exclude_path');
+        return (array)$exclude_path;
     }
     
 } 
