@@ -101,15 +101,17 @@ class FileMonitor extends Man\Core\AbstractWorker
             }
             foreach($message as $file)
             {
+                $is_exclude_file = false;
                 foreach($exclude_path as $path)
                 {
                     // 是被排除的文件
                     if(0  === strpos($file, $path))
                     {
-                        continue;
+                        $is_exclude_file = true;
+                        break;
                     }
                 }
-                if(!isset($this->filesToInotify[$file]))
+                if(!$is_exclude_file && !isset($this->filesToInotify[$file]))
                 {
                     $stat = @stat($file);
                     $mtime = isset($stat['mtime']) ? $stat['mtime'] : 0;
