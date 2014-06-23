@@ -806,10 +806,13 @@ class Master
     protected static function setProcUser($worker_user)
     {
         $user_info = posix_getpwnam($worker_user);
-        // 尝试设置gid uid
-        if(!posix_setgid($user_info['gid']) || !posix_setuid($user_info['uid']))
+        if($user_info['uid'] != posix_getuid() || $user_info['gid'] != posix_getgid())
         {
-            self::notice( 'Notice : Can not run woker as '.$worker_user." , You shuld be root\n", true);
+            // 尝试设置gid uid
+            if(!posix_setgid($user_info['gid']) || !posix_setuid($user_info['uid']))
+            {
+                self::notice( 'Notice : Can not run woker as '.$worker_user." , You shuld be root\n", true);
+            }
         }
     }
     
