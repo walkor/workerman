@@ -172,6 +172,8 @@ class Master
         self::notice("\033[1A\n\033[KWorkerman start success ...\033[0m", true);
         // 标记服务状态为运行中
         self::$serviceStatus = self::STATUS_RUNNING;
+        // 初始化任务
+        \Man\Core\Lib\Task::init();
         // 关闭标准输出
         self::resetStdFd();
         // 主循环
@@ -556,9 +558,7 @@ class Master
         $siginfo = array();
         while(1)
         {
-            @pcntl_sigtimedwait(array(SIGCHLD), $siginfo, 1);
-            // 初始化任务系统
-            Lib\Task::tick();
+            sleep(1);
             // 检查是否有进程退出
             self::checkWorkerExit();
             // 触发信号处理

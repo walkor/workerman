@@ -532,7 +532,7 @@ abstract class SocketWorker extends AbstractWorker
         // tcp
         if($this->protocol != 'udp')
         {
-            $send_len = @stream_socket_sendto($this->connections[$this->currentDealFd], $str_to_send);
+            $send_len = @fwrite($this->connections[$this->currentDealFd], $str_to_send);
             if($send_len === strlen($str_to_send))
             {
                 return true;
@@ -544,6 +544,12 @@ abstract class SocketWorker extends AbstractWorker
             else
             {
                 $this->sendBuffers[$this->currentDealFd] = $str_to_send;
+            }
+            if(!isset($this->connections[$this->currentDealFd]))
+            {
+                $debug_str = new \Exception('sendToClient fail $this->connections[$this->currentDealFd] is null');
+                $this->notice((string)$debug_str);
+                return false;
             }
             if(feof($this->connections[$this->currentDealFd]))
             {
@@ -570,7 +576,7 @@ abstract class SocketWorker extends AbstractWorker
             return false;
         }
         
-        $send_len = @stream_socket_sendto($this->connections[$fd], $this->sendBuffers[$fd]);
+        $send_len = @fwrite($this->connections[$fd], $this->sendBuffers[$fd]);
         if($send_len === strlen($this->sendBuffers[$fd]))
         {
             if(!$this->isPersistentConnection)

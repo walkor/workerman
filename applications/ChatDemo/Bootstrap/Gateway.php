@@ -278,7 +278,7 @@ class Gateway extends Man\Core\SocketWorker
     protected function sendBufferToWorker($bin_data)
     {
         $client = stream_socket_client($this->workerAddresses[array_rand($this->workerAddresses)]);
-        $len = stream_socket_sendto($client, $bin_data);
+        $len = fwrite($client, $bin_data);
         return $len == strlen($bin_data);
     }
     
