@@ -30,7 +30,7 @@ class Benchmark extends Man\Core\SocketWorker
             return $this->sendToClient("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello");
         }
         // 是benchmark脚本
-        return $buffer;
+        return $this->sendToClient($buffer);
     }
     
 } 
