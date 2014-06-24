@@ -17,7 +17,11 @@ class Event
     */
    public static function onConnect($message)
    {
-       // 通过message验证用户，并获得uid
+       /*
+        * 通过message验证用户，并获得uid。
+        * 一般流程这里$message应该包含用户名 密码，然后根据用户名密码从数据库中获取uid
+        * 这里只是根据时间戳生成uid，高并发下会有小概率uid冲突
+        */ 
        $uid = self::checkUser($message);
        // 不合法踢掉
        if(!$uid)
