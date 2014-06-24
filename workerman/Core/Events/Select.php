@@ -77,7 +77,6 @@ class Select implements BaseEvent
             stream_set_blocking($this->channel[0], 0);
             $this->readFds[0] = $this->channel[0];
         }
-        fclose($this->channel[0]);
     }
    
     /**
