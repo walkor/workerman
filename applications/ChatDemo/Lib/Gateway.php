@@ -3,7 +3,7 @@
  * 
  * 数据发送相关
  * sendToAll sendToUid
- * @author walkor <worker-man@qq.com>
+ * @author walkor <workerman.net>
  * 
  */
 
@@ -28,7 +28,7 @@ class GateWay
        $pack->header['uid'] = Context::$uid;
        $pack->body = (string)$message;
        $buffer = $pack->getBuffer();
-       $all_addresses = Store::get('GLOBAL_GATEWAY_ADDRESS');
+       $all_addresses = Store::get('GLOBAL_GATEWAY_ADDRESS-' . Context::$protocol);
        foreach($all_addresses as $address)
        {
            self::sendToGateway($address, $buffer);
@@ -123,7 +123,7 @@ class GateWay
        $pack->header['uid'] = empty($uid) ? 0 : $uid;
        $pack->body = (string)$message;
         
-       return self::sendToGateway("udp://{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
+       return self::sendToGateway("{Context::$protocol}://{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
    }
    
    
@@ -151,7 +151,7 @@ class GateWay
        $pack->header['uid'] = $uid ? $uid : 0;
        $pack->body = (string)$message;
        
-       return self::sendToGateway("udp://{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
+       return self::sendToGateway("{Context::$protocol}://{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
    }
    
    /**

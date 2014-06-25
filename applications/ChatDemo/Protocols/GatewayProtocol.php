@@ -17,7 +17,7 @@
  * }
  * 
  * 
- * @author walkor <worker-man@qq.com>
+ * @author walkor <workerman.net>
  */
 
 class GatewayProtocol

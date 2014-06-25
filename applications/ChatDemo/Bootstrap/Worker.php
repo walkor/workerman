@@ -3,7 +3,7 @@
  * 
  * 处理具体逻辑
  * 
- * @author walkor <worker-man@qq.com>
+ * @author walkor <workerman.net>
  * 
  */
 define('ROOT_DIR', realpath(__DIR__.'/../'));
@@ -26,6 +26,7 @@ class Worker extends Man\Core\SocketWorker
         Context::$local_port = $pack->header['local_port'];
         Context::$socket_id = $pack->header['socket_id'];
         Context::$uid = $pack->header['uid'];
+        Context::$protocol = $this->protocol;
         switch($pack->header['cmd'])
         {
             case GatewayProtocol::CMD_ON_CONNECTION:
@@ -57,6 +58,7 @@ class Context
     public static $client_ip;
     public static $client_port;
     public static $uid;
+    public static $protocol;
     public static function clear()
     {
         self::$series_id = self::$local_ip = self::$local_port = self::$socket_id = self::$client_ip = self::$client_port = self::$uid = null;
