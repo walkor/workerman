@@ -177,6 +177,7 @@ class FileMonitor extends Man\Core\AbstractWorker
     {
         if(!$this->terminalClosed && !posix_ttyname(STDOUT))
         {
+            $this->resetFd();
             // 日志
             $this->notice("terminal closed and restart worker");
             // worker重启时会检测终端是否关闭
