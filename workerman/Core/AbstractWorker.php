@@ -205,7 +205,7 @@ abstract class AbstractWorker
                 $error_msg .= $this->getErrorType($errors['type']) . " {$errors['message']} in {$errors['file']} on line {$errors['line']}";
             }
             $e = new \Exception();
-            $this->notice($error_msg."\n" . $e->getTrace());
+            $this->notice($error_msg."\n" . $e->getTraceAsString());
         }
     }
     
