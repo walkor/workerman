@@ -179,7 +179,7 @@ class FileMonitor extends Man\Core\AbstractWorker
         {
             $this->resetFd();
             // 日志
-            $this->notice("terminal closed and restart worker");
+            $this->notice("terminal closed and reset workers fd");
             // worker重启时会检测终端是否关闭
             $this->sendSignalToAllWorker(SIGTTOU);
             // 设置标记
