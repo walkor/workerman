@@ -75,7 +75,7 @@ class Gateway extends Man\Core\SocketWorker
         $error_no_udp = $error_no_tcp = 0;
         $error_msg_udp = $error_msg_tcp = '';
         $this->innerMainSocket_udp = stream_socket_server("udp://".$this->lanIp.':'.$this->lanPort, $error_no_udp, $error_msg_udp, STREAM_SERVER_BIND);
-        $this->innerMainSocket_tcp = stream_socket_server("tcp://".$this->lanIp.':'.$this->lanPort, $error_no_tcp, $error_msg_tcp, STREAM_SERVER_BIND);
+        $this->innerMainSocket_tcp = stream_socket_server("tcp://".$this->lanIp.':'.$this->lanPort, $error_no_tcp, $error_msg_tcp, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN);
         if(!$this->innerMainSocket_udp || !$this->innerMainSocket_tcp)
         {
             $this->notice('create innerMainSocket udp or tcp fail and exit '.$error_msg_udp.$error_msg_tcp);
