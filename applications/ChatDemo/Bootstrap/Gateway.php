@@ -93,7 +93,7 @@ class Gateway extends Man\Core\SocketWorker
         
         // 添加读udp事件
         $this->event->add($this->innerMainSocket_udp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
-        $this->event->add($this->innerMainSocket_udp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'acceptTCP'));
+        $this->event->add($this->innerMainSocket_tcp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'acceptTCP'));
         
         // 初始化到worker的通信地址
         $this->initWorkerAddresses();
