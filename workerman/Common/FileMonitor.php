@@ -39,6 +39,7 @@ class FileMonitor extends Man\Core\AbstractWorker
                 }
                 else
                 {
+                    $this->workerStatus = self::STATUS_SHUTDOWN;
                     exit(0);
                 }
             }
