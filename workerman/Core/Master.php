@@ -515,6 +515,8 @@ class Master
                     // 如果对应进程配置了不热启动则不重启对应进程
                     if(Lib\Config::get($worker_name.'.no_reload'))
                     {
+                        // 发送reload信号，以便触发onReload方法
+                        posix_kill($pid, SIGHUP);
                         continue;
                     }
                     $pids_to_restart[] = $pid;

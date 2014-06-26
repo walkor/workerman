@@ -552,8 +552,15 @@ class Monitor extends Man\Core\SocketWorker
         }
     
         $ip = $this->getIp();
-    
-        $this->sendSms('告警消息 WorkerMan框架监控 '.$ip.' '.$worker_name.'进程频繁退出 退出次数'.$exit_count.' 退出状态码：'.$status);
+        
+        if(65280 == $status || 30720 == $status)
+        {
+            $this->sendSms('告警消息 Workerman框架监控 '.$ip.' '.$worker_name.'5分钟内出现 FatalError '.$exit_count.'次 时间:'.date('Y-m-d H:i:s'));
+        }
+        else
+        {
+            $this->sendSms('告警消息 Workerman框架监控 '.$ip.' '.$worker_name.' 进程频繁退出 退出次数'.$exit_count.' 退出状态码：'.$status .' 时间:'.date('Y-m-d H:i:s'));
+        }
     
         // 记录这次告警时间
         self::$lastWarningTimeMap[self::WARNING_TOO_MANY_WORKERS_EXIT] = $time_now;

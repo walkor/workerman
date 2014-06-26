@@ -25,9 +25,10 @@ class Benchmark extends Man\Core\SocketWorker
     public function dealProcess($buffer)
     {
         // 是HTTP协议
-        if('H' == $buffer[0] )
+        if('G' == $buffer[0] )
         {
-            return $this->sendToClient("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello");
+            $this->sendToClient("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello");
+            return $this->closeClient($this->currentDealFd);
         }
         // 是benchmark脚本
         return $this->sendToClient($buffer);

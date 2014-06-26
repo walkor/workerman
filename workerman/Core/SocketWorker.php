@@ -201,10 +201,7 @@ abstract class SocketWorker extends AbstractWorker
         $this->installSignal();
         
         // 触发该worker进程onStart事件，该进程整个生命周期只触发一次
-        if($this->onStart())
-        {
-            return;
-        }
+        $this->onStart();
 
         if($this->protocol == 'udp')
         {
@@ -230,11 +227,8 @@ abstract class SocketWorker extends AbstractWorker
     public function stop()
     {
         // 触发该worker进程onStop事件
-        if($this->onStop())
-        {
-            return;
-        }
-        
+        $this->onStop();
+       
         // 标记这个worker开始停止服务
         if($this->workerStatus != self::STATUS_SHUTDOWN)
         {
@@ -499,6 +493,7 @@ abstract class SocketWorker extends AbstractWorker
                 break;
             // 平滑重启
             case SIGHUP:
+                $this->onReload();
                 // 如果配置了no_reload则不重启该进程
                 if(\Man\Core\Lib\Config::get($this->workerName.'.no_reload'))
                 {
@@ -674,11 +669,6 @@ abstract class SocketWorker extends AbstractWorker
             $ip = $tmp[0];
         }
         
-        if(empty($ip) || '127.0.0.1' == $ip)
-        {
-            $ip = gethostbyname(trim(`hostname`));
-        }
-        
         return $ip;
     }
     
@@ -773,4 +763,17 @@ abstract class SocketWorker extends AbstractWorker
         return false;
     }
     
+    /**
+     * 该worker进程收到reload信号时触发
+     * 以下情况会收到reload信号
+     * 1、运行 workermand reload，全部进程都会收到reload信号
+     * 2、开启workerman.conf.debug=1，并且磁盘文件有更新，全部进程会收到reload信号
+     * 3、telnet远程控制workerman，运行 reload 命令，全部进程会收到reload信号
+     * 4、telnet远程控制workerman，运行 kill pid 命令，pid对应进程会收到reload信号
+     * 5、当前进程内存占用大于Monitor.conf.max_mem_limit 时当前进程会收到reload信号
+     */
+    protected function onReload()
+    {
+        return false;
+    }
 }

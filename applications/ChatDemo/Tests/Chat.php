@@ -42,7 +42,15 @@ while(1)
           {
               $ret = fgets($fd, 102400);
               if(!$ret){continue;exit("connection closed\n ");}
+              
+              // 是服务端发来的心跳，只是检测联通性，不用回复
+              if("#ping#" == $ret)
+              {
+                  continue;
+              }
+              
               $ret = json_decode(trim($ret),true);
+              
               if($ret['to_uid'] == $MYUID)
               {
                   echo $ret['from_uid'] , ' say to YOU:', $ret['message'], "\n";

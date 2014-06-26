@@ -15,10 +15,16 @@ require_once ROOT_DIR . '/Lib/Store.php';
 class Gateway extends Man\Core\SocketWorker
 {
     /**
-     * 内部通信socket
+     * 内部通信socket udp
      * @var resouce
      */
-    protected $innerMainSocket_udp = null;
+    protected $innerMainSocketUdp = null;
+    
+    /**
+     * 内部通信socket tcp
+     * @var resouce
+     */
+    protected $innerMainSocketTcp = null;
     
     /**
      * 内网ip
@@ -53,6 +59,21 @@ class Gateway extends Man\Core\SocketWorker
     protected $workerAddresses = array();
     
     /**
+     * gateway 发送心跳时间间隔 单位：秒 ,0表示不发送心跳，在配置中设置
+     * @var integer
+     */
+    protected $pingInterval = 0;
+    
+    /**
+     * 心跳数据
+     * 可以是字符串（在配置中直接设置字符串如 ping_data=ping），
+     * 可以是二进制数据(二进制数据保存在文件中，在配置中设置ping数据文件路径 如 ping_data=/yourpath/ping.bin)
+     * ping数据应该是客户端能够识别的数据格式，只是检测连接的连通性，客户端收到心跳数据可以选择忽略此数据包
+     * @var string
+     */
+    protected $pingData = '';
+    
+    /**
      * 进程启动
      */
     public function start()
@@ -74,9 +95,9 @@ class Gateway extends Man\Core\SocketWorker
         }
         $error_no_udp = $error_no_tcp = 0;
         $error_msg_udp = $error_msg_tcp = '';
-        $this->innerMainSocket_udp = stream_socket_server("udp://".$this->lanIp.':'.$this->lanPort, $error_no_udp, $error_msg_udp, STREAM_SERVER_BIND);
-        $this->innerMainSocket_tcp = stream_socket_server("tcp://".$this->lanIp.':'.$this->lanPort, $error_no_tcp, $error_msg_tcp, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN);
-        if(!$this->innerMainSocket_udp || !$this->innerMainSocket_tcp)
+        $this->innerMainSocketUdp = stream_socket_server("udp://".$this->lanIp.':'.$this->lanPort, $error_no_udp, $error_msg_udp, STREAM_SERVER_BIND);
+        $this->innerMainSocketTcp = stream_socket_server("tcp://".$this->lanIp.':'.$this->lanPort, $error_no_tcp, $error_msg_tcp, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN);
+        if(!$this->innerMainSocketUdp || !$this->innerMainSocketTcp)
         {
             $this->notice('create innerMainSocket udp or tcp fail and exit '.$error_msg_udp.$error_msg_tcp);
             sleep(1);
@@ -84,19 +105,45 @@ class Gateway extends Man\Core\SocketWorker
         }
         else
         {
-            stream_set_blocking($this->innerMainSocket_udp , 0);
-            stream_set_blocking($this->innerMainSocket_tcp , 0);
+            stream_set_blocking($this->innerMainSocketUdp , 0);
+            stream_set_blocking($this->innerMainSocketTcp , 0);
         }
         
+        // 注册套接字
         $this->registerAddress("udp://".$this->lanIp.':'.$this->lanPort, 'udp');
         $this->registerAddress("tcp://".$this->lanIp.':'.$this->lanPort, 'tcp');
         
         // 添加读udp事件
-        $this->event->add($this->innerMainSocket_udp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
-        $this->event->add($this->innerMainSocket_tcp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'acceptTCP'));
+        $this->event->add($this->innerMainSocketUdp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
+        $this->event->add($this->innerMainSocketTcp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'acceptTCP'));
         
         // 初始化到worker的通信地址
         $this->initWorkerAddresses();
+        
+        // 初始化心跳包时间间隔
+        $ping_interval = \Man\Core\Lib\Config::get($this->workerName.'.ping_interval');
+        if((int)$ping_interval > 0)
+        {
+            $this->pingInterval = (int)$ping_interval;
+        }
+        
+        // 获取心跳包数据
+        $ping_data_or_path = \Man\Core\Lib\Config::get($this->workerName.'.ping_data');
+        if(is_file($ping_data_or_path))
+        {
+            $this->pingData = file_get_contents($ping_data_or_path);
+        }
+        else
+        {
+            $this->pingData = $ping_data_or_path;
+        }
+        
+        // 设置定时任务，发送心跳
+        if($this->pingInterval > 0 && $this->pingData)
+        {
+            \Man\Core\Lib\Task::init($this->event);
+            \Man\Core\Lib\Task::add($this->pingInterval, array($this, 'ping'));
+        }
         
         // 主体循环,整个子进程会阻塞在这个函数上
         $ret = $this->event->loop();
@@ -118,6 +165,24 @@ class Gateway extends Man\Core\SocketWorker
             $addresses_list = array();
         }
         $addresses_list[$address] = $address;
+        Store::set($key, $addresses_list);
+        \Man\Core\Lib\Mutex::release();
+    }
+    
+    /**
+     * 删除全局的通信地址
+     * @param string $address
+     */
+    protected function unregisterAddress($address, $protocol)
+    {
+        \Man\Core\Lib\Mutex::get();
+        $key = 'GLOBAL_GATEWAY_ADDRESS-' . $protocol;
+        $addresses_list = Store::get($key);
+        if(empty($addresses_list))
+        {
+            $addresses_list = array();
+        }
+        unset($addresses_list[$address]);
         Store::set($key, $addresses_list);
         \Man\Core\Lib\Mutex::release();
     }
@@ -253,10 +318,10 @@ class Gateway extends Man\Core\SocketWorker
     
     protected function initWorkerAddresses()
     {
-        $this->workerAddresses = Man\Core\Lib\Config::get($this->workerName.'.game_worker');
+        $this->workerAddresses = Man\Core\Lib\Config::get($this->workerName.'.business_worker');
         if(!$this->workerAddresses)
         {
-            $this->notice($this->workerName.'game_worker not set');
+            $this->notice($this->workerName.'business_worker not set');
         }
     }
     
@@ -404,6 +469,16 @@ class Gateway extends Man\Core\SocketWorker
     
     public function onStop()
     {
-        Store::deleteAll();
+        $this->unregisterAddress("udp://".$this->lanIp.':'.$this->lanPort, 'udp');
+        $this->unregisterAddress("tcp://".$this->lanIp.':'.$this->lanPort, 'tcp');
+        foreach($this->connUidMap as $uid)
+        {
+            Store::delete($uid);
+        }
+    }
+    
+    public function ping()
+    {
+        $this->broadCast($this->pingData);
     }
 }

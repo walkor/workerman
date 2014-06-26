@@ -10,7 +10,7 @@ define('ROOT_DIR', realpath(__DIR__.'/../'));
 require_once ROOT_DIR . '/Protocols/GatewayProtocol.php';
 require_once ROOT_DIR . '/Event.php';
 
-class Worker extends Man\Core\SocketWorker
+class BusinessWorker extends Man\Core\SocketWorker
 {
     public function dealInput($recv_str)
     {

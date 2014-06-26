@@ -28,6 +28,10 @@ class GateWay
        $pack->header['uid'] = Context::$uid;
        $pack->body = (string)$message;
        $buffer = $pack->getBuffer();
+       if(empty(Context::$protocol))
+       {
+           Context::$protocol = 'tcp';
+       }
        $all_addresses = Store::get('GLOBAL_GATEWAY_ADDRESS-' . Context::$protocol);
        foreach($all_addresses as $address)
        {
@@ -122,6 +126,11 @@ class GateWay
        $pack->header['client_port'] = Context::$client_port;
        $pack->header['uid'] = empty($uid) ? 0 : $uid;
        $pack->body = (string)$message;
+       
+       if(empty(Context::$protocol))
+       {
+           Context::$protocol = 'tcp';
+       }
         
        return self::sendToGateway(Context::$protocol."://{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
    }
@@ -150,6 +159,11 @@ class GateWay
        }
        $pack->header['uid'] = $uid ? $uid : 0;
        $pack->body = (string)$message;
+       
+       if(empty(Context::$protocol))
+       {
+           Context::$protocol = 'tcp';
+       }
        
        return self::sendToGateway(Context::$protocol."://{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
    }
