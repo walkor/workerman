@@ -28,10 +28,15 @@ class GateWay
        $pack->header['uid'] = Context::$uid;
        $pack->body = (string)$message;
        $buffer = $pack->getBuffer();
-       $all_addresses = Store::get('GLOBAL_GATEWAY_ADDRESS');
+       /* $all_addresses = Store::get('GLOBAL_GATEWAY_ADDRESS');
        foreach($all_addresses as $address)
        {
            self::sendToGateway($address, $buffer);
+       } */
+       $worker_instance = BusinessWorker::getInstance();
+       foreach(BusinessWorker::getGatewayConnections() as $con)
+       {
+           $worker_instance->sendToClient($buffer, $con);
        }
    }
    
@@ -198,8 +203,17 @@ class GateWay
     */
    public static function sendToGateway($address, $buffer)
    {
-       $client = stream_socket_client($address, $errno, $errmsg, 1, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT);
-       $len = stream_socket_sendto($client, $buffer);
-       return $len == strlen($buffer);
+       $connections = BusinessWorker::getGatewayConnections();
+       if(!isset($connections[$address]))
+       {
+           $e = new \Exception("sendToGateway($address, $buffer) fail \$connections:".json_encode($connections));
+           APLog::add($e->__toString());
+           return false;
+       }
+       return BusinessWorker::getInstance()->sendToClient($buffer, $connections[$address]);
+       
+       //$client = stream_socket_client($address, $errno, $errmsg, 1, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT);
+       //$len = stream_socket_sendto($client, $buffer);
+       //return $len == strlen($buffer);
    }
 }

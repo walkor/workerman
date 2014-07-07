@@ -14,6 +14,12 @@ require_once ROOT_DIR . '/Lib/APLog.php';
 class BusinessWorker extends Man\Core\SocketWorker
 {
     /**
+     * BusinessWorker 实例
+     * @var BusinessWorker
+     */
+    protected static $instance = null;
+    
+    /**
      * 与gateway的连接
      * ['ip:port' => conn, 'ip:port' => conn, ...]
      * @var array
@@ -29,6 +35,23 @@ class BusinessWorker extends Man\Core\SocketWorker
         // 定时检查与gateway进程的连接
         \Man\Core\Lib\Task::init($this->event);
         \Man\Core\Lib\Task::add(1, array($this, 'checkGatewayConnections'));
+        self::$instance = $this;
+    }
+    
+    /**
+     * 获取实例
+     */
+    public static function getInstance()
+    {
+        return self::$instance;
+    }
+    
+    /**
+     * 获取与网关的连接
+     */
+    public static function getGatewayConnections()
+    {
+        return self::$gatewayConnections;
     }
     
     /**
@@ -100,6 +123,19 @@ class BusinessWorker extends Man\Core\SocketWorker
                 $this->event->add($this->connections[$fd], \Man\Core\Events\BaseEvent::EV_READ , array($this, 'dealInputBase'), $fd);
             }
         }
+    }
+    
+    /**
+     * 发送数据给客户端
+     * @see Man\Core.SocketWorker::sendToClient()
+     */
+    public function sendToClient($buffer, $con = null)
+    {
+        if($con)
+        {
+            $this->currentDealFd = (int) $con;
+        }
+        return parent::sendToClient($buffer);
     }
     
     /**
