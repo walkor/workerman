@@ -28,14 +28,9 @@ class GateWay
        $pack->header['uid'] = Context::$uid;
        $pack->body = (string)$message;
        $buffer = $pack->getBuffer();
-       if(empty(Context::$protocol))
+       foreach(BusinessWorker::getGatewayConnections() as $con)
        {
-           Context::$protocol = 'tcp';
-       }
-       $all_addresses = Store::get('GLOBAL_GATEWAY_ADDRESS-' . Context::$protocol);
-       foreach($all_addresses as $address)
-       {
-           self::sendToGateway($address, $buffer);
+           BusinessWorker::instance()->sendToClient($buffer, $con);
        }
    }
    
@@ -127,12 +122,7 @@ class GateWay
        $pack->header['uid'] = empty($uid) ? 0 : $uid;
        $pack->body = (string)$message;
        
-       if(empty(Context::$protocol))
-       {
-           Context::$protocol = 'tcp';
-       }
-        
-       return self::sendToGateway(Context::$protocol."://{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
+       return self::sendToGateway("{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
    }
    
    
@@ -160,12 +150,7 @@ class GateWay
        $pack->header['uid'] = $uid ? $uid : 0;
        $pack->body = (string)$message;
        
-       if(empty(Context::$protocol))
-       {
-           Context::$protocol = 'tcp';
-       }
-       
-       return self::sendToGateway(Context::$protocol."://{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
+       return self::sendToGateway("{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
    }
    
    /**
@@ -212,8 +197,13 @@ class GateWay
     */
    public static function sendToGateway($address, $buffer)
    {
-       $client = stream_socket_client($address);
-       $len = stream_socket_sendto($client, $buffer);
-       return $len == strlen($buffer);
+       $connections = BusinessWorker::instance()->getGatewayConnections();
+       if(!isset($connections[$address]))
+       {
+           $e = new \Exception("sendToGateway($address, $buffer) fail; getGatewayConnections:".json_encode($connections));
+           APLog::add($e->__toString());
+           return false;
+       }
+       return BusinessWorker::instance()->sendToClient($buffer, $connections[$address]);
    }
 }

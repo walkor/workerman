@@ -59,6 +59,13 @@ class Gateway extends Man\Core\SocketWorker
     protected $workerAddresses = array();
     
     /**
+     * 与worker的连接
+     * [fd=>fd, $fd=>fd, ..]
+     * @var array
+     */
+    protected $workerConnections = array();
+    
+    /**
      * gateway 发送心跳时间间隔 单位：秒 ,0表示不发送心跳，在配置中设置
      * @var integer
      */
@@ -110,10 +117,9 @@ class Gateway extends Man\Core\SocketWorker
         }
         
         // 注册套接字
-        $this->registerAddress("udp://".$this->lanIp.':'.$this->lanPort, 'udp');
-        $this->registerAddress("tcp://".$this->lanIp.':'.$this->lanPort, 'tcp');
+        $this->registerAddress($this->lanIp.':'.$this->lanPort);
         
-        // 添加读udp事件
+        // 添加读udp/tcp事件
         $this->event->add($this->innerMainSocketUdp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
         $this->event->add($this->innerMainSocketTcp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'acceptTcp'));
         
@@ -155,10 +161,10 @@ class Gateway extends Man\Core\SocketWorker
      * 存储全局的通信地址 
      * @param string $address
      */
-    protected function registerAddress($address, $protocol)
+    protected function registerAddress($address)
     {
         \Man\Core\Lib\Mutex::get();
-        $key = 'GLOBAL_GATEWAY_ADDRESS-' . $protocol;
+        $key = 'GLOBAL_GATEWAY_ADDRESS';
         $addresses_list = Store::get($key);
         if(empty($addresses_list))
         {
@@ -173,10 +179,10 @@ class Gateway extends Man\Core\SocketWorker
      * 删除全局的通信地址
      * @param string $address
      */
-    protected function unregisterAddress($address, $protocol)
+    protected function unregisterAddress($address)
     {
         \Man\Core\Lib\Mutex::get();
-        $key = 'GLOBAL_GATEWAY_ADDRESS-' . $protocol;
+        $key = 'GLOBAL_GATEWAY_ADDRESS';
         $addresses_list = Store::get($key);
         if(empty($addresses_list))
         {
@@ -228,6 +234,7 @@ class Gateway extends Man\Core\SocketWorker
         // 非阻塞
         stream_set_blocking($this->connections[$fd], 0);
         $this->event->add($this->connections[$fd], \Man\Core\Events\BaseEvent::EV_READ , array($this, 'recvTcp'), $fd);
+        $this->workerConnections[$fd] = $fd;
         return $new_connection;
     }
     
@@ -262,7 +269,7 @@ class Gateway extends Man\Core\SocketWorker
             }
     
             // 关闭链接
-            $this->closeClient($fd);
+            $this->closeInnerClient($fd);
             if($this->workerStatus == self::STATUS_SHUTDOWN)
             {
                 $this->stop();
@@ -286,12 +293,6 @@ class Gateway extends Man\Core\SocketWorker
                 $this->notice('CODE:' . $e->getCode() . ' MESSAGE:' . $e->getMessage()."\n".$e->getTraceAsString()."\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".var_export($this->recvBuffers[$fd]['buf'],true)."]\n");
                 $this->statusInfo['throw_exception'] ++;
             }
-    
-            // 关闭链接
-            if(empty($this->sendBuffers[$fd]))
-            {
-                $this->closeClient($fd);
-            }
         }
         // 出错
         else if(false === $remain_len)
@@ -299,7 +300,7 @@ class Gateway extends Man\Core\SocketWorker
             // 出错
             $this->statusInfo['packet_err']++;
             $this->notice("INNER_PACKET_ERROR\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".var_export($this->recvBuffers[$fd]['buf'],true)."]\n");
-            $this->closeClient($fd);
+            $this->closeInnerClient($fd);
         }
         else
         {
@@ -420,6 +421,12 @@ class Gateway extends Man\Core\SocketWorker
         parent::closeClient($fd);
     }
     
+    protected function closeInnerClient($fd)
+    {
+        unset($this->workerConnections[$fd]);
+        parent::closeClient($fd);
+    }
+    
     public function dealProcess($recv_str)
     {
         // 判断用户是否认证过
@@ -452,9 +459,8 @@ class Gateway extends Man\Core\SocketWorker
     
     protected function sendBufferToWorker($bin_data)
     {
-        $client = stream_socket_client($this->workerAddresses[array_rand($this->workerAddresses)]);
-        $len = fwrite($client, $bin_data);
-        return $len == strlen($bin_data);
+        $this->currentDealFd = array_rand($this->workerConnections);
+        return $this->sendToClient($bin_data);
     }
     
     protected function notice($str, $display=true)
@@ -469,8 +475,7 @@ class Gateway extends Man\Core\SocketWorker
     
     public function onStop()
     {
-        $this->unregisterAddress("udp://".$this->lanIp.':'.$this->lanPort, 'udp');
-        $this->unregisterAddress("tcp://".$this->lanIp.':'.$this->lanPort, 'tcp');
+        $this->unregisterAddress($this->lanIp.':'.$this->lanPort);
         foreach($this->connUidMap as $uid)
         {
             Store::delete($uid);
