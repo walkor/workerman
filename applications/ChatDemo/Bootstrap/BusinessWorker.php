@@ -44,7 +44,7 @@ class BusinessWorker extends Man\Core\SocketWorker
      */
     public static function instance()
     {
-        return $this;
+        return self::$instance;;
     }
     
     /**
