@@ -394,7 +394,7 @@ class Gateway extends Man\Core\SocketWorker
         $binded_uid = $this->getUidByFd($socket_id);
         if($binded_uid)
         {
-            $this->notice('notify connection success fail ' . $socket_id . ' already binded data:'.serialize($data));
+            $this->notice('notify connection success fail ' . $socket_id . ' already binded ');
             return;
         }
         $this->uidConnMap[$uid] = $socket_id;
