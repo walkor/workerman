@@ -244,7 +244,7 @@ class GateWay
                APLog::add($e->__toString());
                return false;
            }
-           return BusinessWorker::getInstance()->sendToClient($buffer, $connections[$address]);
+           return self::$businessWorker->sendToClient($buffer, $connections[$address]);
        }
        // 非workerman环境，使用udp发送数据
        $client = stream_socket_client("udp://$address", $errno, $errmsg);
