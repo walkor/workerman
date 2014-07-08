@@ -14,8 +14,8 @@ if(!defined('ROOT_DIR'))
 
 require_once ROOT_DIR . '/Lib/Store.php';
 require_once ROOT_DIR . '/Lib/Context.php';
+require_once ROOT_DIR . '/Lib/APLog.php';
 require_once ROOT_DIR . '/Protocols/GatewayProtocol.php';
-require_once ROOT_DIR . '/Protocols/APLog.php';
 
 class GateWay
 {
