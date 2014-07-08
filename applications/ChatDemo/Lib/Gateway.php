@@ -7,10 +7,34 @@
  * 
  */
 
+if(!defined('ROOT_DIR'))
+{
+    define('ROOT_DIR', __DIR__."/../");
+}
+
 require_once ROOT_DIR . '/Lib/Store.php';
+require_once ROOT_DIR . '/Lib/Context.php';
+require_once ROOT_DIR . '/Protocols/GatewayProtocol.php';
+require_once ROOT_DIR . '/Protocols/APLog.php';
 
 class GateWay
 {
+    
+    /**
+     * gateway实例
+     * @var object
+     */
+    protected static  $businessWorker = null;
+    
+    /**
+     * 设置gateway实例，用于与
+     * @param unknown_type $gateway_instance
+     */
+    public static function setBusinessWorker($business_worker_instance)
+    {
+        self::$businessWorker = $business_worker_instance;
+    }
+    
    /**
     * 向所有客户端广播消息
     * @param string $message
@@ -28,15 +52,22 @@ class GateWay
        $pack->header['uid'] = Context::$uid;
        $pack->body = (string)$message;
        $buffer = $pack->getBuffer();
-       /* $all_addresses = Store::get('GLOBAL_GATEWAY_ADDRESS');
-       foreach($all_addresses as $address)
+       // 如果有businessWorker实例，说明运行在workerman环境中，通过businessWorker中的长连接发送数据
+       if(self::$businessWorker)
        {
-           self::sendToGateway($address, $buffer);
-       } */
-       $worker_instance = BusinessWorker::getInstance();
-       foreach(BusinessWorker::getGatewayConnections() as $con)
+           foreach(self::$businessWorker->getGatewayConnections() as $con)
+           {
+               self::$businessWorker->sendToClient($buffer, $con);
+           }
+       }
+       // 运行在其它环境中，使用udp向worker发送数据
+       else
        {
-           $worker_instance->sendToClient($buffer, $con);
+           $all_addresses = Store::get('GLOBAL_GATEWAY_ADDRESS');
+           foreach($all_addresses as $address)
+           {
+               self::sendToGateway($address, $buffer);
+           }
        }
    }
    
@@ -203,17 +234,20 @@ class GateWay
     */
    public static function sendToGateway($address, $buffer)
    {
-       $connections = BusinessWorker::getGatewayConnections();
-       if(!isset($connections[$address]))
+       // 有$businessWorker说明是workerman环境，使用$businessWorker发送数据
+       if(self::$businessWorker)
        {
-           $e = new \Exception("sendToGateway($address, $buffer) fail \$connections:".json_encode($connections));
-           APLog::add($e->__toString());
-           return false;
+           $connections = self::$businessWorker->getGatewayConnections();
+           if(!isset($connections[$address]))
+           {
+               $e = new \Exception("sendToGateway($address, $buffer) fail \$connections:".json_encode($connections));
+               APLog::add($e->__toString());
+               return false;
+           }
+           return BusinessWorker::getInstance()->sendToClient($buffer, $connections[$address]);
        }
-       return BusinessWorker::getInstance()->sendToClient($buffer, $connections[$address]);
-       
-       //$client = stream_socket_client($address, $errno, $errmsg, 1, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT);
-       //$len = stream_socket_sendto($client, $buffer);
-       //return $len == strlen($buffer);
+       // 非workerman环境，使用udp发送数据
+       $client = stream_socket_client("udp://$address", $errno, $errmsg);
+       return strlen($buffer) == stream_socket_sendto($client, $buffer);
    }
 }

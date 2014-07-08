@@ -32,7 +32,6 @@ class Gateway extends Man\Core\SocketWorker
      */
     protected $lanIp = '127.0.0.1';
     
-    
     /**
      * 内部通信端口
      * @var int
@@ -50,13 +49,6 @@ class Gateway extends Man\Core\SocketWorker
      * @var array
      */
     protected $connUidMap = array();
-    
-    
-    /**
-     * 到Worker的通信地址
-     * @var array
-     */ 
-    protected $workerAddresses = array();
     
     /**
      * 与worker的连接
@@ -81,6 +73,35 @@ class Gateway extends Man\Core\SocketWorker
     protected $pingData = '';
     
     /**
+     * 由于网络延迟或者socket缓冲区大小的限制，客户端发来的数据可能不会都全部到达，需要根据协议判断数据是否完整
+     * @see Man\Core.SocketWorker::dealInput()
+     */
+    public function dealInput($recv_str)
+    {
+        // 这个聊天demo发送数据量都很小，一般都小于一个ip数据包，所以没有判断长度，直接返回了0，表示数据全部到达
+        // 其它应用应该根据客户端协议来判断数据是否完整
+        return 0;
+    }
+    
+    /**
+     * 用户客户端发来消息时处理
+     * @see Man\Core.SocketWorker::dealProcess()
+     */
+    public function dealProcess($recv_str)
+    {
+        // 判断用户是否认证过
+        $from_uid = $this->getUidByFd($this->currentDealFd);
+        // 触发ON_CONNECTION
+        if(!$from_uid)
+        {
+            return $this->sendToWorker(GatewayProtocol::CMD_ON_CONNECTION, $this->currentDealFd, $recv_str);
+        }
+    
+        // 认证过, 触发ON_MESSAGE
+        $this->sendToWorker(GatewayProtocol::CMD_ON_MESSAGE, $this->currentDealFd, $recv_str);
+    }
+    
+    /**
      * 进程启动
      */
     public function start()
@@ -91,8 +112,9 @@ class Gateway extends Man\Core\SocketWorker
         // 添加accept事件
         $ret = $this->event->add($this->mainSocket,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'accept'));
         
-        // 创建内部通信套接字
+        // 创建内部通信套接字，用于与BusinessWorker通讯
         $start_port = Man\Core\Lib\Config::get($this->workerName.'.lan_port_start');
+        // 计算本进程监听的ip端口
         $this->lanPort = $start_port - posix_getppid() + posix_getpid();
         $this->lanIp = Man\Core\Lib\Config::get($this->workerName.'.lan_ip');
         if(!$this->lanIp)
@@ -102,13 +124,14 @@ class Gateway extends Man\Core\SocketWorker
         }
         $error_no_udp = $error_no_tcp = 0;
         $error_msg_udp = $error_msg_tcp = '';
+        // 执行监听
         $this->innerMainSocketUdp = stream_socket_server("udp://".$this->lanIp.':'.$this->lanPort, $error_no_udp, $error_msg_udp, STREAM_SERVER_BIND);
         $this->innerMainSocketTcp = stream_socket_server("tcp://".$this->lanIp.':'.$this->lanPort, $error_no_tcp, $error_msg_tcp, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN);
+        // 出错，退出，下次会换个端口
         if(!$this->innerMainSocketUdp || !$this->innerMainSocketTcp)
         {
             $this->notice('create innerMainSocket udp or tcp fail and exit '.$error_msg_udp.$error_msg_tcp);
-            sleep(1);
-            exit(0);
+            $this->stop();
         }
         else
         {
@@ -122,9 +145,6 @@ class Gateway extends Man\Core\SocketWorker
         // 添加读udp/tcp事件
         $this->event->add($this->innerMainSocketUdp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
         $this->event->add($this->innerMainSocketTcp,  Man\Core\Events\BaseEvent::EV_READ, array($this, 'acceptTcp'));
-        
-        // 初始化到worker的通信地址
-        $this->initWorkerAddresses();
         
         // 初始化心跳包时间间隔
         $ping_interval = \Man\Core\Lib\Config::get($this->workerName.'.ping_interval');
@@ -153,7 +173,9 @@ class Gateway extends Man\Core\SocketWorker
         
         // 主体循环,整个子进程会阻塞在这个函数上
         $ret = $this->event->loop();
+        // 下面正常不会执行到
         $this->notice('worker loop exit');
+        // 执行到就退出
         exit(0);
     }
     
@@ -163,6 +185,7 @@ class Gateway extends Man\Core\SocketWorker
      */
     protected function registerAddress($address)
     {
+        // 这里使用了信号量只能实现单机互斥，分布式互斥需要借助于memcache incr 或者其他分布式存储
         \Man\Core\Lib\Mutex::get();
         $key = 'GLOBAL_GATEWAY_ADDRESS';
         $addresses_list = Store::get($key);
@@ -181,6 +204,7 @@ class Gateway extends Man\Core\SocketWorker
      */
     protected function unregisterAddress($address)
     {
+        // 这里使用了信号量只能实现单机互斥，分布式互斥需要借助于memcache incr 或者其他分布式存储
         \Man\Core\Lib\Mutex::get();
         $key = 'GLOBAL_GATEWAY_ADDRESS';
         $addresses_list = Store::get($key);
@@ -215,12 +239,16 @@ class Gateway extends Man\Core\SocketWorker
         $this->innerDealProcess($data);
     }
     
-    
+    /**
+     * 内部通讯端口接受BusinessWorker连接请求，以便建立起长连接
+     * @param resouce $socket
+     * @param null $null_one
+     * @param null $null_two
+     */
     public function acceptTcp($socket, $null_one = null, $null_two = null)
     {
         // 获得一个连接
         $new_connection = @stream_socket_accept($socket, 0);
-        // 可能是惊群效应
         if(false === $new_connection)
         {
             return false;
@@ -234,10 +262,15 @@ class Gateway extends Man\Core\SocketWorker
         // 非阻塞
         stream_set_blocking($this->connections[$fd], 0);
         $this->event->add($this->connections[$fd], \Man\Core\Events\BaseEvent::EV_READ , array($this, 'recvTcp'), $fd);
+        // 标记这个连接是内部通讯长连接，区别于客户端连接
         $this->workerConnections[$fd] = $fd;
         return $new_connection;
     }
     
+    /**
+     * 内部通讯判断数据是否全部到达
+     * @param string $buffer
+     */
     public function dealInnerInput($buffer)
     {
         return GatewayProtocol::input($buffer);
@@ -285,7 +318,7 @@ class Gateway extends Man\Core\SocketWorker
         {
             // 执行处理
             try{
-                // 业务处理
+                // 内部通讯业务处理
                 $this->innerDealProcess($this->recvBuffers[$fd]['buf']);
             }
             catch(\Exception $e)
@@ -317,21 +350,11 @@ class Gateway extends Man\Core\SocketWorker
             pcntl_alarm(self::EXIT_WAIT_TIME);
         }
     }
-    
-    protected function initWorkerAddresses()
-    {
-        $this->workerAddresses = Man\Core\Lib\Config::get($this->workerName.'.business_worker');
-        if(!$this->workerAddresses)
-        {
-            $this->notice($this->workerName.'business_worker not set');
-        }
-    }
-    
-    public function dealInput($recv_str)
-    {
-        return 0;
-    }
 
+    /**
+     * 内部通讯处理
+     * @param string $recv_str
+     */
     public function innerDealProcess($recv_str)
     {
         $pack = new GatewayProtocol($recv_str);
@@ -355,6 +378,10 @@ class Gateway extends Man\Core\SocketWorker
         }
     }
     
+    /**
+     * 广播数据
+     * @param string $bin_data
+     */
     protected function broadCast($bin_data)
     {
         foreach($this->uidConnMap as $uid=>$conn)
@@ -363,6 +390,10 @@ class Gateway extends Man\Core\SocketWorker
         }
     }
     
+    /**
+     * 根据socket_id关闭与客户端的连接，实际上是踢人操作
+     * @param int $socket_id
+     */
     protected function closeClientBySocketId($socket_id)
     {
         if($uid = $this->getUidByFd($socket_id))
@@ -372,6 +403,10 @@ class Gateway extends Man\Core\SocketWorker
         parent::closeClient($socket_id);
     }
     
+    /**
+     * 根据uid获取uid对应连接的id
+     * @param int $uid
+     */
     protected function getFdByUid($uid)
     {
         if(isset($this->uidConnMap[$uid]))
@@ -381,6 +416,10 @@ class Gateway extends Man\Core\SocketWorker
         return 0;
     }
     
+    /**
+     * 根据连接id获取用户uid
+     * @param int $fd
+     */
     protected function getUidByFd($fd)
     {
         if(isset($this->connUidMap[$fd]))
@@ -390,6 +429,12 @@ class Gateway extends Man\Core\SocketWorker
         return 0;
     }
     
+    /**
+     * BusinessWorker通知本Gateway进程$uid用户合法，绑定到$socket_id
+     * 后面这个socketid再有消息传来，会自动带上uid传递给BusinessWorker
+     * @param int $socket_id
+     * @param int $uid
+     */
     protected function connectSuccess($socket_id, $uid)
     {
         $binded_uid = $this->getUidByFd($socket_id);
@@ -402,6 +447,11 @@ class Gateway extends Man\Core\SocketWorker
         $this->connUidMap[$socket_id] = $uid;
     }
     
+    /**
+     * 向某个socketId的连接发送消息
+     * @param int $socket_id
+     * @param string $bin_data
+     */
     public function sendToSocketId($socket_id, $bin_data)
     {
         if(!isset($this->connections[$socket_id]))
@@ -412,6 +462,10 @@ class Gateway extends Man\Core\SocketWorker
         return $this->sendToClient($bin_data);
     }
 
+    /**
+     * 用户客户端主动关闭连接触发
+     * @see Man\Core.SocketWorker::closeClient()
+     */
     protected function closeClient($fd)
     {
         if($uid = $this->getUidByFd($fd))
@@ -422,26 +476,22 @@ class Gateway extends Man\Core\SocketWorker
         parent::closeClient($fd);
     }
     
+    /**
+     * 内部通讯socket在BusinessWorker主动关闭连接时触发
+     * @param int $fd
+     */
     protected function closeInnerClient($fd)
     {
         unset($this->workerConnections[$fd]);
         parent::closeClient($fd);
     }
     
-    public function dealProcess($recv_str)
-    {
-        // 判断用户是否认证过
-        $from_uid = $this->getUidByFd($this->currentDealFd);
-        // 触发ON_CONNECTION
-        if(!$from_uid)
-        {
-            return $this->sendToWorker(GatewayProtocol::CMD_ON_CONNECTION, $this->currentDealFd, $recv_str);
-        }
-        
-        // 认证过, 触发ON_MESSAGE
-        $this->sendToWorker(GatewayProtocol::CMD_ON_MESSAGE, $this->currentDealFd, $recv_str);
-    }
-    
+    /**
+     * 随机抽取一个与BusinessWorker的长连接，将数据发给一个BusinessWorker
+     * @param int $cmd
+     * @param int $socket_id
+     * @param string $body
+     */
     protected function sendToWorker($cmd, $socket_id, $body = '')
     {
         $address= $this->getRemoteAddress($socket_id);
@@ -458,12 +508,20 @@ class Gateway extends Man\Core\SocketWorker
         return $this->sendBufferToWorker($pack->getBuffer());
     }
     
+    /**
+     * 随机抽取一个与BusinessWorker的长连接，将数据发给一个BusinessWorker
+     * @param string $bin_data
+     */
     protected function sendBufferToWorker($bin_data)
     {
         $this->currentDealFd = array_rand($this->workerConnections);
         return $this->sendToClient($bin_data);
     }
     
+    /**
+     * 打印日志
+     * @see Man\Core.AbstractWorker::notice()
+     */
     protected function notice($str, $display=true)
     {
         $str = 'Worker['.get_class($this).']:'."$str ip:".$this->getRemoteIp();
@@ -474,6 +532,10 @@ class Gateway extends Man\Core\SocketWorker
         }
     }
     
+    /**
+     * 进程停止时，清除一些数据
+     * @see Man\Core.SocketWorker::onStop()
+     */
     public function onStop()
     {
         $this->unregisterAddress($this->lanIp.':'.$this->lanPort);
@@ -483,6 +545,9 @@ class Gateway extends Man\Core\SocketWorker
         }
     }
     
+    /**
+     * 向认证的用户发送心跳数据
+     */
     public function ping()
     {
         $this->broadCast($this->pingData);
