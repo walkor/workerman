@@ -34,7 +34,7 @@ class BusinessWorker extends Man\Core\SocketWorker
     /**
      * 获取与gateway的连接
      */
-    public static function getGatewayConnections()
+    public function getGatewayConnections()
     {
         return $this->gatewayConnections;
     }
