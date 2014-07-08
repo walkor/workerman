@@ -175,7 +175,7 @@ class FileMonitor extends Man\Core\AbstractWorker
      */
     public function checkTty()
     {
-        if(!$this->terminalClosed && !posix_ttyname(STDOUT))
+        if(!$this->terminalClosed && !@posix_ttyname(STDOUT))
         {
             $this->resetFd();
             // 日志
