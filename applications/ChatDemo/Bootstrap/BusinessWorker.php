@@ -28,6 +28,7 @@ class BusinessWorker extends Man\Core\SocketWorker
         // 定时检查与gateway进程的连接
         \Man\Core\Lib\Task::init($this->event);
         \Man\Core\Lib\Task::add(1, array($this, 'checkGatewayConnections'));
+        $this->checkGatewayConnections();
         GateWay::setBusinessWorker($this);
     }
     
