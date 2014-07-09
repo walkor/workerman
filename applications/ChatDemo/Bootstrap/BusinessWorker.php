@@ -8,7 +8,7 @@
  */
 define('ROOT_DIR', realpath(__DIR__.'/../'));
 require_once ROOT_DIR . '/Lib/Gateway.php';
-require_once ROOT_DIR . '/Lib/StatisticsClient.php';
+require_once ROOT_DIR . '/Lib/StatisticClient.php';
 require_once ROOT_DIR . '/Event.php';
 
 class BusinessWorker extends Man\Core\SocketWorker
