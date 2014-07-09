@@ -11,6 +11,7 @@
 define('ROOT_DIR', realpath(__DIR__.'/../'));
 require_once ROOT_DIR . '/Protocols/GatewayProtocol.php';
 require_once ROOT_DIR . '/Lib/Store.php';
+require_once ROOT_DIR . '/Lib/StatisticClient.php';
 
 class Gateway extends Man\Core\SocketWorker
 {
@@ -90,15 +91,37 @@ class Gateway extends Man\Core\SocketWorker
     public function dealProcess($recv_str)
     {
         // 判断用户是否认证过
+        StatisticClient::tick();
         $from_uid = $this->getUidByFd($this->currentDealFd);
+        $module = __CLASS__;
+        $success = 1;
+        $code = 0;
+        $msg = '';
         // 触发ON_CONNECTION
         if(!$from_uid)
         {
-            return $this->sendToWorker(GatewayProtocol::CMD_ON_CONNECTION, $this->currentDealFd, $recv_str);
+            $interface = 'ON_CONNECTION';
+            $ret = $this->sendToWorker(GatewayProtocol::CMD_ON_CONNECTION, $this->currentDealFd, $recv_str);
+            if($ret === false)
+            {
+                $success = 0;
+                $msg = 'sendToWorker(CMD_ON_CONNECTION, '.$this->currentDealFd.', strlen($recv_str) = '.strlen($recv_str).') fail ';
+                $code = 101;
+            }
         }
-    
-        // 认证过, 触发ON_MESSAGE
-        $this->sendToWorker(GatewayProtocol::CMD_ON_MESSAGE, $this->currentDealFd, $recv_str);
+        else
+        {
+            // 认证过, 触发ON_MESSAGE
+            $interface = 'ON_CONNECTION';
+            $ret =$this->sendToWorker(GatewayProtocol::CMD_ON_MESSAGE, $this->currentDealFd, $recv_str);
+            if($ret === false)
+            {
+                $success = 0;
+                $msg = 'sendToWorker(CMD_ON_MESSAGE, '.$this->currentDealFd.', strlen($recv_str) = '.strlen($recv_str).') fail ';
+                $code = 102;
+            }
+        }
+        StatisticClient::report($module, $interface, $success, $code, $msg);
     }
     
     /**
@@ -358,24 +381,46 @@ class Gateway extends Man\Core\SocketWorker
     public function innerDealProcess($recv_str)
     {
         $pack = new GatewayProtocol($recv_str);
-        
-        switch($pack->header['cmd'])
+        $interface_map = array(
+                GatewayProtocol::CMD_SEND_TO_ONE             => 'CMD_SEND_TO_ONE',
+                GatewayProtocol::CMD_KICK                              => 'CMD_KICK',
+                GatewayProtocol::CMD_SEND_TO_ALL               => 'CMD_SEND_TO_ALL',
+                GatewayProtocol::CMD_CONNECT_SUCCESS     => 'CMD_CONNECT_SUCCESS',
+        );
+        $cmd = $pack->header['cmd'];
+        StatisticClient::tick();
+        $module = __CLASS__;
+        $interface = isset($interface_map[$cmd]) ? $interface_map[$cmd] : 'null';
+        $success = 1;
+        $code = 0;
+        $msg = '';
+        try
         {
-            case GatewayProtocol::CMD_SEND_TO_ONE:
-                return $this->sendToSocketId($pack->header['socket_id'], $pack->body);
-            case GatewayProtocol::CMD_KICK:
-                if($pack->body)
-                {
-                    $this->sendToSocketId($pack->header['socket_id'], $pack->body);
-                }
-                return $this->closeClientBySocketId($pack->header['socket_id']);
-            case GatewayProtocol::CMD_SEND_TO_ALL:
-                return $this->broadCast($pack->body);
-            case GatewayProtocol::CMD_CONNECT_SUCCESS:
-                return $this->connectSuccess($pack->header['socket_id'], $pack->header['uid']);
-            default :
-                $this->notice('gateway inner pack cmd err data:' .$recv_str );
+            switch($cmd)
+            {
+                case GatewayProtocol::CMD_SEND_TO_ONE:
+                    return $this->sendToSocketId($pack->header['socket_id'], $pack->body);
+                case GatewayProtocol::CMD_KICK:
+                    if($pack->body)
+                    {
+                        $this->sendToSocketId($pack->header['socket_id'], $pack->body);
+                    }
+                    return $this->closeClientBySocketId($pack->header['socket_id']);
+                case GatewayProtocol::CMD_SEND_TO_ALL:
+                    return $this->broadCast($pack->body);
+                case GatewayProtocol::CMD_CONNECT_SUCCESS:
+                    return $this->connectSuccess($pack->header['socket_id'], $pack->header['uid']);
+                default :
+                    $this->notice('gateway inner pack cmd err data:' .$recv_str );
+            }
         }
+        catch(\Exception $e)
+        {
+            $success = 0;
+            $code = $e->getCode() > 0 ? $e->getCode() : 500; 
+            $msg = $e->__toString();
+        }
+        StatisticClient::report($module, $interface, $success, $code, $msg);
     }
     
     /**
@@ -468,12 +513,14 @@ class Gateway extends Man\Core\SocketWorker
      */
     protected function closeClient($fd)
     {
+        StatisticClient::tick();
         if($uid = $this->getUidByFd($fd))
         {
             $this->sendToWorker(GatewayProtocol::CMD_ON_CLOSE, $fd);
             unset($this->uidConnMap[$uid], $this->connUidMap[$fd]);
         }
         parent::closeClient($fd);
+        StatisticClient::report(__CLASS__, 'CMD_ON_CLOSE', 1, 0, '');
     }
     
     /**

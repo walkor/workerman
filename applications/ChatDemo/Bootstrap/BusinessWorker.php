@@ -8,6 +8,7 @@
  */
 define('ROOT_DIR', realpath(__DIR__.'/../'));
 require_once ROOT_DIR . '/Lib/Gateway.php';
+require_once ROOT_DIR . '/Lib/StatisticsClient.php';
 require_once ROOT_DIR . '/Event.php';
 
 class BusinessWorker extends Man\Core\SocketWorker
@@ -62,20 +63,43 @@ class BusinessWorker extends Man\Core\SocketWorker
         Context::$local_port = $pack->header['local_port'];
         Context::$socket_id = $pack->header['socket_id'];
         Context::$uid = $pack->header['uid'];
-        switch($pack->header['cmd'])
+        
+        $cmd = $pack->header['cmd'];
+        
+        $interface_map = array(
+                GatewayProtocol::CMD_ON_CONNECTION   => 'CMD_SEND_TO_ONE',
+                GatewayProtocol::CMD_ON_MESSAGE          => 'CMD_KICK',
+                GatewayProtocol::CMD_ON_CLOSE                => 'CMD_SEND_TO_ALL',
+        );
+        $cmd = $pack->header['cmd'];
+        StatisticClient::tick();
+        $module = __CLASS__;
+        $interface = isset($interface_map[$cmd]) ? $interface_map[$cmd] : 'null';
+        $success = 1;
+        $code = 0;
+        $msg = '';
+        try{
+            switch($cmd)
+            {
+                case GatewayProtocol::CMD_ON_CONNECTION:
+                    call_user_func_array(array('Event', 'onConnect'), array($pack->body));
+                    break;
+                case GatewayProtocol::CMD_ON_MESSAGE:
+                    call_user_func_array(array('Event', 'onMessage'), array(Context::$uid, $pack->body));
+                    break;
+                case GatewayProtocol::CMD_ON_CLOSE:
+                    call_user_func_array(array('Event', 'onClose'), array(Context::$uid));
+                    break;
+            }
+        }
+        catch(\Exception $e)
         {
-            case GatewayProtocol::CMD_ON_CONNECTION:
-                $ret = call_user_func_array(array('Event', 'onConnect'), array($pack->body));
-                break;
-            case GatewayProtocol::CMD_ON_MESSAGE:
-                $ret = call_user_func_array(array('Event', 'onMessage'), array(Context::$uid, $pack->body));
-                break;
-            case GatewayProtocol::CMD_ON_CLOSE:
-                $ret = call_user_func_array(array('Event', 'onClose'), array(Context::$uid));
-                break;
+            $success = 0;
+            $code = $e->getCode() > 0 ? $e->getCode() : 500;
+            $msg = 'uid:'.Context::$uid."\tclient_ip:".Context::$client_ip."\n".$e->__toString();
         }
         Context::clear();
-        return $ret;
+        StatisticClient::report($module, $interface, $success, $code, $msg);
     }
     
     /**
