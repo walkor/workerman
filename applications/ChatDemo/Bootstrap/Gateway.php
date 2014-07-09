@@ -112,7 +112,7 @@ class Gateway extends Man\Core\SocketWorker
         else
         {
             // 认证过, 触发ON_MESSAGE
-            $interface = 'ON_CONNECTION';
+            $interface = 'CMD_ON_MESSAGE';
             $ret =$this->sendToWorker(GatewayProtocol::CMD_ON_MESSAGE, $this->currentDealFd, $recv_str);
             if($ret === false)
             {

@@ -542,7 +542,7 @@ abstract class SocketWorker extends AbstractWorker
             }
             if(!isset($this->connections[$this->currentDealFd]))
             {
-                $debug_str = new \Exception('sendToClient fail $this->connections[$this->currentDealFd] is null');
+                $debug_str = new \Exception('sendToClient fail $this->connections['.var_export($this->currentDealFd, true).'] is null');
                 $this->notice((string)$debug_str);
                 return false;
             }
