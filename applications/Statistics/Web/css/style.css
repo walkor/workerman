@@ -10,12 +10,7 @@ body {margin: 10px 0px}
 {
 	margin: 8px auto 0 auto;
 	width: 100%;
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	overflow: hidden;
 	padding-bottom: 8px;
-	word-spacing: 3px;
 	color:#666;
 }
 
