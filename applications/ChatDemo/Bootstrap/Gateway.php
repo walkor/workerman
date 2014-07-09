@@ -326,7 +326,7 @@ class Gateway extends Man\Core\SocketWorker
                 $this->notice('CODE:' . $e->getCode() . ' MESSAGE:' . $e->getMessage()."\n".$e->getTraceAsString()."\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".var_export($this->recvBuffers[$fd]['buf'],true)."]\n");
                 $this->statusInfo['throw_exception'] ++;
             }
-            $this->recvBuffers[$fd] = array('buf'=>'', 'remain_len'=>$this->prereadLength);
+            $this->recvBuffers[$fd] = array('buf'=>'', 'remain_len'=>GatewayProtocol::HEAD_LEN);
         }
         // 出错
         else if(false === $remain_len)
