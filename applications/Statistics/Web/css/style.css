@@ -6,12 +6,12 @@ body {margin: 10px 0px}
 	height:400px
 }
 
-.footer
-{
+.footer {
 	margin: 8px auto 0 auto;
-	width: 100%;
 	padding-bottom: 8px;
-	color:#666;
+	color: #666;
+	font-size: 12px;
+	text-align: center;
 }
 
 .footer > a
