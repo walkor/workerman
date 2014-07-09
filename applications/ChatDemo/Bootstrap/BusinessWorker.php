@@ -133,7 +133,7 @@ class BusinessWorker extends Man\Core\SocketWorker
             if(!isset($this->gatewayConnections[$addr]))
             {
                 // 执行连接
-                $conn = @stream_socket_client("tcp://$addr", $errno, $errstr, 10);
+                $conn = @stream_socket_client("tcp://$addr", $errno, $errstr, 1);
                 if(!$conn)
                 {
                     if(!isset($this->badGatewayAddress[$addr]))
