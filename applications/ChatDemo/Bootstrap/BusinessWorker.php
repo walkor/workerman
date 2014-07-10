@@ -147,9 +147,7 @@ class BusinessWorker extends Man\Core\SocketWorker
                         unset($addresses_list[$addr]);
                         Store::set($key, $addresses_list);
                         $this->notice("tcp://$addr ".$errstr." del $addr from store", false);
-                        continue;
                     }
-                    $this->notice("tcp://$addr ".$errstr, false);
                     continue;
                 }
                 unset($this->badGatewayAddress[$addr]);

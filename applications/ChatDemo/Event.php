@@ -7,9 +7,18 @@
  */
 
 require_once ROOT_DIR . '/Lib/Gateway.php';
+require_once ROOT_DIR . '/Protocols/JsonProtocol.php';
 
 class Event
 {
+    /**
+     * 网关有消息时，判断消息是否完整
+     */
+    public static function onGatewayMessage($buffer)
+    {
+        return JsonProtocol::check($buffer);
+    }
+    
    /**
     * 用户连接gateway后第一次发包会触发此方法
     * @param string $message 一般是传递的账号密码等信息
@@ -26,8 +35,8 @@ class Event
        // 不合法踢掉
        if(!$uid)
        {
-           // 返回失败
-           return GateWay::kickCurrentUser('登录失败');
+           // 踢掉
+           return GateWay::kickCurrentUser();
        }
        
        // [这步是必须的]合法，记录uid到gateway通信地址的映射
@@ -37,10 +46,10 @@ class Event
        GateWay::notifyConnectionSuccess($uid);
        
        // 向当前用户发送uid
-       GateWay::sendToCurrentUid(json_encode(array('uid'=>$uid))."\n");
+       GateWay::sendToCurrentUid(JsonProtocol::encode(array('uid'=>$uid)));
        
        // 广播所有用户，xxx connected
-       GateWay::sendToAll(json_encode(array('from_uid'=>'SYSTEM', 'message'=>"$uid come \n", 'to_uid'=>'all'))."\n");
+       GateWay::sendToAll(JsonProtocol::encode(array('from_uid'=>'SYSTEM', 'message'=>"$uid come \n", 'to_uid'=>'all')));
    }
    
    /**
@@ -55,7 +64,7 @@ class Event
        GateWay::deleteUidAddress($uid);
        
        // 广播 xxx 退出了
-       GateWay::sendToAll(json_encode(array('from_uid'=>'SYSTEM', 'message'=>"$uid logout\n", 'to_uid'=>'all'))."\n");
+       GateWay::sendToAll(JsonProtocol::encode(array('from_uid'=>'SYSTEM', 'message'=>"$uid logout\n", 'to_uid'=>'all')));
    }
    
    /**
@@ -66,7 +75,7 @@ class Event
     */
    public static function onMessage($uid, $message)
    {
-        $message_data = json_decode($message, true);
+        $message_data = JsonProtocol::decode($message);
         
         // 向所有人发送
         if($message_data['to_uid'] == 'all')

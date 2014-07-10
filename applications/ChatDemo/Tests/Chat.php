@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../Protocols/JsonProtocol.php';
 ini_set('display_errors', 'on');
 error_reporting(E_ALL);
 
@@ -8,9 +9,9 @@ $sock = stream_socket_client("tcp://$ip:$port");
 if(!$sock)exit("can not create sock\n");
 
 
-fwrite($sock, 'connect');
+fwrite($sock, JsonProtocol::encode('connect'));
 $rsp_string = fgets($sock, 1024);
-$ret = json_decode($rsp_string, true);
+$ret = JsonProtocol::decode($rsp_string);
 if(isset($ret['uid']))
 {
     echo "chart room login success , your uid is [{$ret['uid']}]\n";
@@ -49,7 +50,7 @@ while(1)
                   continue;
               }
               
-              $ret = json_decode(trim($ret),true);
+              $ret = JsonProtocol::decode(trim($ret));
               
               if($ret['to_uid'] == $MYUID)
               {
@@ -69,11 +70,11 @@ while(1)
           {
              $uid = $match[1];
              $words = $match[2];
-             fwrite($sock, json_encode(array('from_uid'=>$MYUID, 'to_uid'=>$uid, 'message'=>$words))."\n");
+             fwrite($sock, JsonProtocol::encode(array('from_uid'=>$MYUID, 'to_uid'=>$uid, 'message'=>$words)));
              continue;
           }
           // 向所有用户发消息
-          fwrite($sock, json_encode(array('from_uid'=>$MYUID, 'to_uid'=>'all', 'message'=>$ret))."\n");
+          fwrite($sock, JsonProtocol::encode(array('from_uid'=>$MYUID, 'to_uid'=>'all', 'message'=>$ret)));
           continue;
 
        }

@@ -79,8 +79,11 @@ class Gateway extends Man\Core\SocketWorker
      */
     public function dealInput($recv_str)
     {
-        // 这个聊天demo发送数据量都很小，一般都小于一个ip数据包，所以没有判断长度，直接返回了0，表示数据全部到达
-        // 其它应用应该根据客户端协议来判断数据是否完整
+        // 如果有Event::onGatewayMessage方法通过这个方法检查数据是否接收完整
+        if(method_exists('Event','onGatewayMessage'))
+        {
+            return call_user_func_array(array('Event', 'onGatewayMessage'), array($recv_str));
+        }
         return 0;
     }
     
@@ -565,8 +568,10 @@ class Gateway extends Man\Core\SocketWorker
      */
     protected function sendBufferToWorker($bin_data)
     {
-        $this->currentDealFd = array_rand($this->workerConnections);
-        return $this->sendToClient($bin_data);
+        if($this->currentDealFd = array_rand($this->workerConnections))
+        {
+            $this->sendToClient($bin_data);
+        }
     }
     
     /**
