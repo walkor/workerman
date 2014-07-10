@@ -10,8 +10,9 @@ if(!$sock)exit("can not create sock\n");
 
 
 fwrite($sock, JsonProtocol::encode('connect'));
-$rsp_string = fgets($sock, 1024);
-$ret = JsonProtocol::decode($rsp_string);
+
+
+$ret = read_data($sock);
 if(isset($ret['uid']))
 {
     echo "chart room login success , your uid is [{$ret['uid']}]\n";
@@ -41,7 +42,7 @@ while(1)
           // 接收消息
           if((int)$fd === (int)$sock)
           {
-              $ret = fgets($fd, 102400);
+              $ret = read_data($fd);
               if(!$ret){continue;exit("connection closed\n ");}
               
               // 是服务端发来的心跳，只是检测联通性，不用回复
@@ -49,8 +50,6 @@ while(1)
               {
                   continue;
               }
-              
-              $ret = JsonProtocol::decode(trim($ret));
               
               if($ret['to_uid'] == $MYUID)
               {
@@ -79,4 +78,19 @@ while(1)
 
        }
     }
+}
+
+function read_data($socket)
+{
+   $buf = stream_socket_recvfrom($socket, 4);
+   if($buf == '')
+   {
+       return;
+   }
+   $remain_len = JsonProtoCol::check($buf);
+   //echo '$remain_len:'.$buf.':'.bin2hex($buf).":".$remain_len."\n";
+   $buf .= stream_socket_recvfrom($socket, $remain_len);
+   stream_set_blocking($socket, 0);
+   //echo '$buf:'.$buf."\n";
+   return JsonProtocol::decode($buf);
 }

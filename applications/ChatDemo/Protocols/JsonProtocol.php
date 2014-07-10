@@ -5,9 +5,9 @@ class JsonProtocol
     public static function check($buffer)
     {
         // 读取首部四个字节
-        $buffer_data = unpack(‘Ntotal_length’, $buffer);
+        $buffer_data = unpack('Ntotal_length', $buffer);
         // 得到这次数据的整体长度（字节）
-        $total_length = $buffer_data['total_len'];
+        $total_length = $buffer_data['total_length'];
         // 已经收到的长度（字节）
         $recv_length = strlen($buffer);
         if($total_length>$recv_length)
@@ -34,7 +34,7 @@ class JsonProtocol
     {
         $buffer_data = unpack('Ntotal_length', $buffer);
         // 得到这次数据的整体长度（字节）
-        $total_length = $buffer_data['total_len'];
+        $total_length = $buffer_data['total_length'];
         // json的数据
         $json_string = substr($buffer, 4);
         return json_decode($json_string, true);
