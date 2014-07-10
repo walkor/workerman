@@ -20,7 +20,8 @@ class Event
     }
     
    /**
-    * 用户连接gateway后第一次发包会触发此方法
+    * 此链接的用户没调用GateWay::notifyConnectionSuccess($uid);前（即没有得到验证），都触发onConnect
+    * 已经调用GateWay::notifyConnectionSuccess($uid);的用户有消息时，则触发onMessage
     * @param string $message 一般是传递的账号密码等信息
     * @return void
     */
