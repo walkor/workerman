@@ -29,9 +29,8 @@ function logger($module, $interface, $date, $start_time, $offset, $count)
             $_GET['ip'][] = $ip;
             $_GET['offset'][] = $log_data['offset'];
         }
-        
+        $log_str = nl2br(str_replace("\n", "\n\n", $log_str));
         $next_page_url = http_build_query($_GET);
-        $log_str = nl2br(htmlspecialchars($log_str));
         $log_str .= "</br><center><a href='/?fn=logger&$next_page_url'>下一页</a></center>";
 
         include ST_ROOT . '/Views/header.tpl.php';

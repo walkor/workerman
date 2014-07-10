@@ -399,17 +399,21 @@ class Gateway extends Man\Core\SocketWorker
             switch($cmd)
             {
                 case GatewayProtocol::CMD_SEND_TO_ONE:
-                    return $this->sendToSocketId($pack->header['socket_id'], $pack->body);
+                    $this->sendToSocketId($pack->header['socket_id'], $pack->body);
+                    break;
                 case GatewayProtocol::CMD_KICK:
                     if($pack->body)
                     {
                         $this->sendToSocketId($pack->header['socket_id'], $pack->body);
                     }
-                    return $this->closeClientBySocketId($pack->header['socket_id']);
+                    $this->closeClientBySocketId($pack->header['socket_id']);
+                    break;
                 case GatewayProtocol::CMD_SEND_TO_ALL:
-                    return $this->broadCast($pack->body);
+                    $this->broadCast($pack->body);
+                    break;
                 case GatewayProtocol::CMD_CONNECT_SUCCESS:
-                    return $this->connectSuccess($pack->header['socket_id'], $pack->header['uid']);
+                    $this->connectSuccess($pack->header['socket_id'], $pack->header['uid']);
+                    break;
                 default :
                     $this->notice('gateway inner pack cmd err data:' .$recv_str );
             }

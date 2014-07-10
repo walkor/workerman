@@ -80,9 +80,9 @@ class BusinessWorker extends Man\Core\SocketWorker
         $cmd = $pack->header['cmd'];
         
         $interface_map = array(
-                GatewayProtocol::CMD_ON_CONNECTION   => 'CMD_SEND_TO_ONE',
-                GatewayProtocol::CMD_ON_MESSAGE          => 'CMD_KICK',
-                GatewayProtocol::CMD_ON_CLOSE                => 'CMD_SEND_TO_ALL',
+                GatewayProtocol::CMD_ON_CONNECTION   => 'CMD_ON_CONNECTION',
+                GatewayProtocol::CMD_ON_MESSAGE          => 'CMD_ON_MESSAGE',
+                GatewayProtocol::CMD_ON_CLOSE                => 'CMD_ON_CLOSE',
         );
         $cmd = $pack->header['cmd'];
         StatisticClient::tick();
@@ -146,10 +146,10 @@ class BusinessWorker extends Man\Core\SocketWorker
                         $addresses_list = Store::get($key);
                         unset($addresses_list[$addr]);
                         Store::set($key, $addresses_list);
-                        $this->notice("tcp://$addr ".$errstr." del $addr from store");
+                        $this->notice("tcp://$addr ".$errstr." del $addr from store", false);
                         continue;
                     }
-                    $this->notice("tcp://$addr ".$errstr);
+                    $this->notice("tcp://$addr ".$errstr, false);
                     continue;
                 }
                 unset($this->badGatewayAddress[$addr]);
