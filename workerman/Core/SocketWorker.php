@@ -527,6 +527,11 @@ abstract class SocketWorker extends AbstractWorker
         // tcp
         if($this->protocol != 'udp')
         {
+            if(!empty($this->sendBuffers[$this->currentDealFd]))
+            {
+                $this->sendBuffers[$this->currentDealFd] .= $str_to_send;
+                return;
+            }
             $send_len = @fwrite($this->connections[$this->currentDealFd], $str_to_send);
             if($send_len === strlen($str_to_send))
             {
@@ -578,6 +583,7 @@ abstract class SocketWorker extends AbstractWorker
             {
                 return $this->closeClient($fd);
             }
+            $this->sendBuffers[$fd] = '';
             $this->event->del($this->connections[$fd], BaseEvent::EV_WRITE);
             return;
         }
