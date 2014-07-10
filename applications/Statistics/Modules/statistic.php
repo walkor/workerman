@@ -89,7 +89,7 @@ function statistic($module, $interface, $date, $start_time, $offset)
             <td> {$item['total_avg_time']}</td>
             <td>{$item['suc_count']}</td>
             <td>{$item['suc_avg_time']}</td>
-            <td>".($item['fail_count']>0?("<a href='/?fn=logger&$query&start_time=".strtotime($item['time'])."&end_time=".(strtotime($item['time'])+300)."'>{$item['fail_count']}</a>"):$item['fail_count'])."</td>
+            <td>".($item['fail_count']>0?("<a href='/?fn=logger&$query&start_time=".(strtotime($item['time'])-300)."&end_time=".(strtotime($item['time']))."'>{$item['fail_count']}</a>"):$item['fail_count'])."</td>
             <td>{$item['fail_avg_time']}</td>
             <td>{$item['precent']}%</td>
             </tr>
