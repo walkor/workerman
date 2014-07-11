@@ -395,6 +395,14 @@ abstract class SocketWorker extends AbstractWorker
         $this->recvBuffers[$fd]['buf'] .= $buffer;
         
         $remain_len = $this->dealInput($this->recvBuffers[$fd]['buf']);
+        
+        // 判断是否大于接收缓冲区最大值限制
+        if(strlen($this->recvBuffers[$fd]['buf']) + $remain_len > $this->maxRecvBufferSize)
+        {
+            $this->notice('client_ip:'.$this->getRemoteIp().' strlen(recvBuffers['.$this->currentDealFd.'])='.strlen($this->recvBuffers[$fd]['buf']).'+' . $remain_len . '>' . $this->maxRecvBufferSize.' and close connection');
+            return false;
+        }
+        
         // 包接收完毕
         if(0 === $remain_len)
         {
@@ -436,12 +444,6 @@ abstract class SocketWorker extends AbstractWorker
         }
         else 
         {
-            // 判断是否大于接收缓冲区最大值限制
-            if(strlen($this->recvBuffers[$fd]['buf']) + $remain_len > $this->maxRecvBufferSize)
-            {
-                $this->notice('client_ip:'.$this->getRemoteIp().' strlen(recvBuffers['.$this->currentDealFd.'])='.strlen($this->recvBuffers[$fd]['buf']).'+' . $remain_len . '>' . $this->maxRecvBufferSize.' and close connection');
-                return false;
-            }
             $this->recvBuffers[$fd]['remain_len'] = $remain_len;
         }
 
