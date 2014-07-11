@@ -186,13 +186,13 @@ abstract class SocketWorker extends AbstractWorker
         }
         
         // 接收缓冲区大小限制
-        if($max_recv_buffer_size = Lib\Config::get( $this->workerName . '.max_recv_buffer_size') && $max_recv_buffer_size > 0)
+        if(($max_recv_buffer_size = Lib\Config::get($this->workerName . '.max_recv_buffer_size')) && $max_recv_buffer_size > 0)
         {
             $this->maxRecvBufferSize = $max_recv_buffer_size;
         }
         
         // 发送缓冲区大小限制
-        if($max_send_buffer_size = Lib\Config::get( $this->workerName . '.max_send_buffer_size') && $max_send_buffer_size > 0)
+        if(($max_send_buffer_size = Lib\Config::get($this->workerName . '.max_send_buffer_size')) && $max_send_buffer_size > 0)
         {
             $this->maxSendBufferSize = $max_send_buffer_size;
         }
