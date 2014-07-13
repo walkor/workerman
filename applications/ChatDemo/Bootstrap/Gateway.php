@@ -10,7 +10,6 @@
  */
 define('ROOT_DIR', realpath(__DIR__.'/../'));
 require_once ROOT_DIR . '/Protocols/GatewayProtocol.php';
-require_once ROOT_DIR . '/Protocols/JsonProtocol.php';
 require_once ROOT_DIR . '/Lib/Store.php';
 require_once ROOT_DIR . '/Event.php';
 require_once ROOT_DIR . '/Lib/StatisticClient.php';

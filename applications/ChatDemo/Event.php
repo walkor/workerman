@@ -6,6 +6,7 @@
  * 
  */
 
+require_once ROOT_DIR . '/Protocols/JsonProtocol.php';
 class Event
 {
     /**
