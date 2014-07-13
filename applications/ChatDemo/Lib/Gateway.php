@@ -16,6 +16,7 @@ require_once ROOT_DIR . '/Lib/Store.php';
 require_once ROOT_DIR . '/Lib/Context.php';
 require_once ROOT_DIR . '/Lib/APLog.php';
 require_once ROOT_DIR . '/Protocols/GatewayProtocol.php';
+require_once ROOT_DIR . '/Protocols/JsonProtocol.php';
 
 class GateWay
 {
