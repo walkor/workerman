@@ -6,9 +6,6 @@
  * 
  */
 
-require_once ROOT_DIR . '/Lib/Gateway.php';
-require_once ROOT_DIR . '/Protocols/JsonProtocol.php';
-
 class Event
 {
     /**
