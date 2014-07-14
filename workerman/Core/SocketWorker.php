@@ -374,7 +374,7 @@ abstract class SocketWorker extends AbstractWorker
                 return;
             }
             
-            // 客户端提前断开链接
+            // 客户端断开链接
             $this->statusInfo['client_close']++;
             // 如果该链接对应的buffer有数据，说明发生错误
             if(!empty($this->recvBuffers[$fd]['buf']))
@@ -396,15 +396,16 @@ abstract class SocketWorker extends AbstractWorker
         
         $remain_len = $this->dealInput($this->recvBuffers[$fd]['buf']);
         
-        // 判断是否大于接收缓冲区最大值限制
-        if(strlen($this->recvBuffers[$fd]['buf']) + $remain_len > $this->maxRecvBufferSize)
+        if(false === $remain_len)
         {
-            $this->notice('client_ip:'.$this->getRemoteIp().' strlen(recvBuffers['.$this->currentDealFd.'])='.strlen($this->recvBuffers[$fd]['buf']).'+' . $remain_len . '>' . $this->maxRecvBufferSize.' and close connection');
-            return false;
+            // 出错
+            $this->statusInfo['packet_err']++;
+            $this->sendToClient('packet_err:'.$this->recvBuffers[$fd]['buf']);
+            $this->notice("PACKET_ERROR\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".var_export($this->recvBuffers[$fd]['buf'],true)."]\n");
+            $this->closeClient($fd);
         }
-        
         // 包接收完毕
-        if(0 === $remain_len)
+        elseif(0 === (int)$remain_len)
         {
             // 执行处理
             try{
@@ -415,7 +416,6 @@ abstract class SocketWorker extends AbstractWorker
             {
                 $this->notice('CODE:' . $e->getCode() . ' MESSAGE:' . $e->getMessage()."\n".$e->getTraceAsString()."\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".var_export($this->recvBuffers[$fd]['buf'],true)."]\n");
                 $this->statusInfo['throw_exception'] ++;
-                $this->sendToClient($e);
             }
             
             // 是否是长连接
@@ -433,18 +433,23 @@ abstract class SocketWorker extends AbstractWorker
                 }
             }
         }
-        // 出错
-        else if(false === $remain_len)
+        elseif($remain_len > 0) 
         {
-            // 出错
-            $this->statusInfo['packet_err']++;
-            $this->sendToClient('packet_err:'.$this->recvBuffers[$fd]['buf']);
-            $this->notice("PACKET_ERROR\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".var_export($this->recvBuffers[$fd]['buf'],true)."]\n");
-            $this->closeClient($fd);
+            // 判断是否大于接收缓冲区最大值限制
+            if(strlen($this->recvBuffers[$fd]['buf']) + $remain_len > $this->maxRecvBufferSize)
+            {
+                $this->notice('client_ip:'.$this->getRemoteIp().' strlen(recvBuffers['.$this->currentDealFd.'])='.strlen($this->recvBuffers[$fd]['buf']).'+' . $remain_len . '>' . $this->maxRecvBufferSize.' and close connection');
+                $this->closeClient($fd);
+            }
+            else
+            {
+                $this->recvBuffers[$fd]['remain_len'] = $remain_len;
+            }
         }
-        else 
+        else
         {
-            $this->recvBuffers[$fd]['remain_len'] = $remain_len;
+            $this->notice("dealInput return value($remain_len) is illegal illegal");
+            $this->closeClient($fd);
         }
 
         // 检查是否是关闭状态或者是否到达请求上限
