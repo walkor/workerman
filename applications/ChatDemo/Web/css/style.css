@@ -1,0 +1,21 @@
+body {margin: 10px 0px}
+.nav {
+    margin-bottom: 10px;
+}
+.height-400{
+	height:400px
+}
+
+.footer {
+	margin: 8px auto 0 auto;
+	padding-bottom: 8px;
+	color: #666;
+	font-size: 12px;
+	text-align: center;
+}
+
+.footer > a
+{
+	font-size:bold;
+	color:#333;
+}
