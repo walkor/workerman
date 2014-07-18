@@ -557,7 +557,7 @@ class Gateway extends Man\Core\SocketWorker
         $pack->header['local_port'] = $this->lanPort;
         $pack->header['socket_id'] = $socket_id;
         $pack->header['client_ip'] = $client_ip;
-        $pack->header['client_port'] = $client_ip;
+        $pack->header['client_port'] = $client_port;
         $pack->header['uid'] = $this->getUidByFd($socket_id);
         $pack->body = $body;
         return $this->sendBufferToWorker($pack->getBuffer());
