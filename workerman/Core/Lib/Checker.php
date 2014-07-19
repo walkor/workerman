@@ -286,7 +286,7 @@ class Checker
         $pid_dir = dirname(WORKERMAN_PID_FILE);
         if(!is_dir($pid_dir))
         {
-            if(!mkdir($pid_dir, true))
+            if(!mkdir($pid_dir, 0777, true))
             {
                 exit("Create dir $pid_dir fail\n");
             }
