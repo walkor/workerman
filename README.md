@@ -25,7 +25,7 @@ workerman 具有以下特性
 ========
 
 workerman需要PHP版本不低于5.3，只需要安装PHP的Cli即可，无需安装PHP-FPM、nginx、apache
-workerman不能运行在Window平台
+workerman不能运行在Windows平台
 
 安装
 =========
