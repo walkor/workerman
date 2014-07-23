@@ -27,10 +27,12 @@ class Benchmark extends Man\Core\SocketWorker
         // 是HTTP协议
         if('G' == $buffer[0] )
         {
-            $this->sendToClient("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello");
-            return $this->closeClient($this->currentDealFd);
+            // http 改成短链接
+            $this->isPersistentConnection = 0;
+            return $this->sendToClient("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello");
         }
-        // 是benchmark脚本
+        // 是benchmark脚本， 长链接
+        $this->isPersistentConnection = 1;
         return $this->sendToClient($buffer);
     }
     
