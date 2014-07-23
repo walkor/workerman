@@ -557,7 +557,6 @@ class Master
      */
     public static function loop()
     {
-        $siginfo = array();
         while(1)
         {
             sleep(1);
