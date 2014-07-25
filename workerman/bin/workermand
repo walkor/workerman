@@ -87,6 +87,15 @@ if($cmd != 'status' && is_file(WORKERMAN_PID_FILE))
     }
 }
 
+// 必须是root启动
+if($user_info = posix_getpwuid(posix_getuid()))
+{
+    if($user_info['name'] !== 'root')
+    {
+        exit("\033[31;40mYou should ran Workerman as root , Permission denied\033[0m\n");
+    }
+}
+
 switch($cmd)
 {
     case 'start':
