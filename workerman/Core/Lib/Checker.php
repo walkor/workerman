@@ -294,7 +294,7 @@ class Checker
         
         if(!is_writeable($pid_dir))
         {
-            exit("\n\033[31;40mYou should start the server as root\033[0m\n\n\033[31;40mWorkerman start failed\033[0m\n\n");
+            exit("\n\033[31;40m$pid_dir is not writeable, can't write pid file\033[0m\n\n\033[31;40mWorkerman start failed\033[0m\n\n");
         }
     }
 }

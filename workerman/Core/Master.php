@@ -557,7 +557,6 @@ class Master
      */
     public static function loop()
     {
-        $siginfo = array();
         while(1)
         {
             sleep(1);
@@ -608,7 +607,7 @@ class Master
             // 进程退出状态不是0，说明有问题了
             if($status !== 0)
             {
-                self::notice("worker[$pid:$worker_name] exit width status $status");
+                self::notice("worker[$pid:$worker_name] exit with status $status");
             }
             // 记录进程退出状态
             self::$serviceStatusInfo['worker_exit_code'][$worker_name][$status] = isset(self::$serviceStatusInfo['worker_exit_code'][$worker_name][$status]) ? self::$serviceStatusInfo['worker_exit_code'][$worker_name][$status] + 1 : 1;
