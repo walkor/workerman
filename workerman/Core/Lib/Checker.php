@@ -102,6 +102,7 @@ class Checker
                 'stream_socket_server',
                 'stream_socket_client',
                 'pcntl_signal_dispatch',
+                'exec',
         );
         // 获取php.ini中设置的禁用函数
         if($disable_func_string = ini_get("disable_functions"))
