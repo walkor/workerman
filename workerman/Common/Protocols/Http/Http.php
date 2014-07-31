@@ -246,6 +246,7 @@ function header($content, $replace = true, $http_response_code = 0)
             return \header($content, $replace);
         }
     }
+    
     if(strpos($content, 'HTTP') === 0)
     {
         $key = 'Http-Code';
@@ -259,9 +260,18 @@ function header($content, $replace = true, $http_response_code = 0)
         }
     }
     
+    if('location' == strtolower($key) && !$http_response_code)
+    {
+        return header($content, true, 302);
+    }
+    
     if(isset(HttpCache::$codes[$http_response_code]))
     {
-        HttpCache::$header['Http-Code'] = 'HTTP/1.1 ' .  HttpCache::$codes[$http_response_code];
+        HttpCache::$header['Http-Code'] = "HTTP/1.1 $http_response_code " .  HttpCache::$codes[$http_response_code];
+        if($key == 'Http-Code')
+        {
+            return true;
+        }
     }
     
     if($key == 'Set-Cookie')
@@ -272,10 +282,7 @@ function header($content, $replace = true, $http_response_code = 0)
     {
         HttpCache::$header[$key] = $content;
     }
-    if('location' == strtolower($key))
-    {
-        header('HTTP/1.1 302 Moved Temporarily');
-    }
+    
     return true;
 }
 
