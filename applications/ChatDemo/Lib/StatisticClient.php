@@ -1,4 +1,5 @@
 <?php
+namespace Lib;
 /**
  * 统计客户端
  * @author workerman.net

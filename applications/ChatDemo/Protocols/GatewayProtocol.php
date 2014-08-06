@@ -1,18 +1,20 @@
 <?php 
+namespace Protocols;
 /**
- * 二进制协议
+ * Gateway与Worker间通讯的二进制协议
  * 
  * struct GatewayProtocol
  * {
- *     unsigned short    series_id,//序列号 udp协议使用
+ *     unsigned int        pack_len,
  *     unsigned char     cmd,//命令字
- *     unsigned int      local_ip,
+ *     unsigned int        local_ip,
  *     unsigned short    local_port,
- *     unsigned int      socket_id,
- *     unsigned int      client_ip,
+ *     unsigned int        socket_id,
+ *     unsigned int        client_ip,
  *     unsigned short    client_port,
- *     unsigned int      pack_len,
- *     unsigned int      uid,
+ *     unsigned int        uid,
+ *     unsigned int        ext_len,
+ *     char[ext_len]        ext_data,
  *     char[pack_length-HEAD_LEN] body//包体
  * }
  * 
@@ -22,54 +24,69 @@
 
 class GatewayProtocol
 {
-    // 发给worker上的链接事件
-    const CMD_ON_CONNECTION = 1;
+    // 发给worker，gateway有一个新的连接
+    const CMD_ON_GATEWAY_CONNECTION = 1;
     
-    // 发给worker上的有消息可读事件
-    const CMD_ON_MESSAGE = 2;
+    // 发给worker的未绑定socket上有消息事件
+    const CMD_ON_CONNECTION = 2;
+    
+    // 发给worker的绑定socket上有消息事件
+    const CMD_ON_MESSAGE = 3;
     
     // 发给worker上的关闭链接事件
-    const CMD_ON_CLOSE = 3;
+    const CMD_ON_CLOSE = 4;
     
     // 发给gateway的向单个用户发送数据
-    const CMD_SEND_TO_ONE = 4;
+    const CMD_SEND_TO_ONE = 5;
     
     // 发给gateway的向所有用户发送数据
-    const CMD_SEND_TO_ALL = 5;
+    const CMD_SEND_TO_ALL = 6;
     
     // 发给gateway的踢出用户
-    const CMD_KICK = 6;
+    const CMD_KICK = 7;
     
-    // 发给gateway的通知用户（通过验证）链接成功
-    const CMD_CONNECT_SUCCESS = 7;
+    // 发给gateway的通知用户（通过验证）链接成功，绑定uid gid socketid
+    const CMD_CONNECT_SUCCESS = 8;
+    
+    // 发给gateway，通知用户session更改
+    const CMD_UPDATE_SESSION = 9;
+    
+    // 获取在线状态
+    const CMD_GET_ONLINE_STATUS = 10;
+    
+    // 判断是否在线
+    const CMD_IS_ONLINE = 11;
     
     /**
      * 包头长度
      * @var integer
      */
-    const HEAD_LEN = 27;
+    const HEAD_LEN = 29;
      
-    /**
-     * 序列号，防止串包
-     * @var integer
-     */
-    protected static $seriesId = 0;
-    
     /**
      * 协议头
      * @var array
      */
     public $header = array(
-        'cmd'            => 0,
-        'series_id'      => 0,
-        'local_ip'       => '',
+        'pack_len'       => self::HEAD_LEN,
+        'cmd'              => 0,
+        'local_ip'         => '',
         'local_port'     => 0,
         'socket_id'      => 0,
-        'client_ip'      => '',
+        'client_ip'        => '',
         'client_port'    => 0,
-        'uid'            => 0,
-        'pack_len'       => self::HEAD_LEN,
+        'uid'                => 0,
+        'ext_len'          => 0,
     );
+    
+    /**
+     * 扩展数据，
+     * gateway发往worker时这里存储的是session字符串
+     * worker发往gateway时，并且CMD_UPDATE_SESSION时存储的是session字符串
+     * worker发往gateway时，并且CMD_SEND_TO_ALL时存储的是接收的uid序列，可能是空（代表向所有人发）
+     * @var string
+     */
+    public $ext_data = '';
     
     /**
      * 包体
@@ -86,20 +103,10 @@ class GatewayProtocol
         if($buffer)
         {
             $data = self::decode($buffer);
+            $this->ext_data = $data['ext_data'];
             $this->body = $data['body'];
-            unset($data['body']);
+            unset($data['ext_data'], $data['body']);
             $this->header = $data;
-        }
-        else
-        {
-            if(self::$seriesId>=65535)
-            {
-                self::$seriesId = 0;
-            }
-            else
-            {
-                $this->header['series_id'] = self::$seriesId++;
-            }
         }
     }
     
@@ -111,28 +118,14 @@ class GatewayProtocol
     public static function input($buffer)
     {
         $len = strlen($buffer);
-        if($len < self::HEAD_LEN)
+        // 至少需要四字节才能解出包的长度
+        if($len < 4)
         {
-            return self::HEAD_LEN - $len;
+            return 4 - $len;
         }
         
-        $data = unpack("nseries_id/Ccmd/Nlocal_ip/nlocal_port/Nsocket_id/Nclient_ip/nclient_port/Nuid/Npack_len", $buffer);
-        if($data['pack_len'] > $len)
-        {
-            return $data['pack_len'] - $len;
-        }
-        return 0;
-    }
-    
-    
-    /**
-     * 设置包体
-     * @param string $body_str
-     * @return void
-     */
-    public function setBody($body_str)
-    {
-        $this->body = (string) $body_str;
+        $data = unpack("Npack_len", $buffer);
+        return $data['pack_len'] - $len;
     }
     
     /**
@@ -142,12 +135,14 @@ class GatewayProtocol
      */
     public function getBuffer()
     {
-        $this->header['pack_len'] = self::HEAD_LEN + strlen($this->body);
-        return pack("nCNnNNnNN", $this->header['series_id'], 
+        $this->header['ext_len'] = strlen($this->ext_data);
+        $this->header['pack_len'] = self::HEAD_LEN + $this->header['ext_len'] + strlen($this->body);
+        return pack("NCNnNNnNN",  $this->header['pack_len'],
                         $this->header['cmd'], ip2long($this->header['local_ip']), 
                         $this->header['local_port'], $this->header['socket_id'], 
                         ip2long($this->header['client_ip']), $this->header['client_port'], 
-                        $this->header['uid'], $this->header['pack_len']).$this->body;
+                        $this->header['uid'],
+                       $this->header['ext_len']) . $this->ext_data . $this->body;
     }
     
     /**
@@ -157,18 +152,21 @@ class GatewayProtocol
      */    
     protected static function decode($buffer)
     {
-        $data = unpack("nseries_id/Ccmd/Nlocal_ip/nlocal_port/Nsocket_id/Nclient_ip/nclient_port/Nuid/Npack_len", $buffer);
-        $data['body'] = '';
+        $data = unpack("Npack_len/Ccmd/Nlocal_ip/nlocal_port/Nsocket_id/Nclient_ip/nclient_port/Nuid/Next_len", $buffer);
         $data['local_ip'] = long2ip($data['local_ip']);
         $data['client_ip'] = long2ip($data['client_ip']);
-        $body_len = $data['pack_len'] - self::HEAD_LEN;
-        if($body_len > 0)
+        if($data['ext_len'] > 0)
         {
-            $data['body'] = substr($buffer, self::HEAD_LEN, $body_len);
+            $data['ext_data'] = substr($buffer, self::HEAD_LEN, $data['ext_len']);
+            $data['body'] = substr($buffer, self::HEAD_LEN + $data['ext_len']);
+        }
+        else
+        {
+            $data['ext_data'] = '';
+            $data['body'] = substr($buffer, self::HEAD_LEN);
         }
         return $data;
     }
-    
 }
 
 

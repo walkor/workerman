@@ -1,88 +1,52 @@
 <?php
+namespace Lib;
 /**
- * 
- * 这里用php数组文件来存储数据，
- * 为了获取高性能需要用类似memcache、redis的存储
+ * 存储类
+ * 这里用memcache实现
  * @author walkor <workerman.net>
- * 
  */
-
 class Store
 {
-    // 为了避免频繁读取磁盘，增加了缓存机制
-    protected static $dataCache = array();
-    // 上次缓存时间
-    protected static $lastCacheTime = 0;
-    // 保存数据的文件相对与WORKERMAN_LOG_DIR目录目录
-    protected static $dataFile = 'data.php';
-    // 打开文件的句柄
-    protected static $dataFileHandle = null;
+    /**
+     * 实例数组
+     * @var array
+     */
+    protected static $instance = array();
     
-    // 缓存过期时间
-    const CACHE_EXP_TIME = 1;
-    
-    public static function set($key, $value, $ttl = 0)
+    /**
+     * 获取实例
+     * @param string $config_name
+     * @throws \Exception
+     */
+    public static function instance($config_name)
     {
-        self::readDataFromDisk();
-        self::$dataCache[$key] = $value;
-        return self::writeToDisk();
-    }
-    
-    public static function get($key, $use_cache = true)
-    {
-        if(time() - self::$lastCacheTime > self::CACHE_EXP_TIME)
+        // memcache 驱动
+        if(\Config\Store::$driver == \Config\Store::DRIVER_MC)
         {
-            self::readDataFromDisk();
-        }
-        return isset(self::$dataCache[$key]) ? self::$dataCache[$key] : null;
-    }
-   
-    public static function delete($key)
-    {
-        self::readDataFromDisk();
-        unset(self::$dataCache[$key]);
-        return self::writeToDisk();
-    }
-    
-    public static function deleteAll()
-    {
-        self::$dataCache = array();
-        self::writeToDisk();
-    }
-   
-    protected static function writeToDisk()
-    {
-        $data_file = WORKERMAN_LOG_DIR . self::$dataFile;
-        if(!self::$dataFileHandle)
-        {
-            if(!is_file($data_file))
+            if(!isset(\Config\Store::$$config_name))
             {
-                touch($data_file);
+                throw new \Exception('\Config\Store::$config_name not set');
             }
-            self::$dataFileHandle = fopen($data_file, 'r+');
-            if(!self::$dataFileHandle)
+            
+            if(!isset(self::$instance[$config_name]))
             {
-                return false;
+                self::$instance[$config_name] = new \Memcache;
+                foreach(\Config\Store::$$config_name as $address)
+                {
+                    list($ip, $port) = explode(':', $address);
+                    self::$instance[$config_name] ->addServer($ip, $port);
+                }
             }
+            return self::$instance[$config_name];
         }
-        flock(self::$dataFileHandle, LOCK_EX);
-        $ret = file_put_contents($data_file, "<?php \n return " . var_export(self::$dataCache, true). ';');
-        flock(self::$dataFileHandle, LOCK_UN);
-        return $ret;
-    }
-    
-    protected static function readDataFromDisk()
-    {
-        $data_file = WORKERMAN_LOG_DIR . self::$dataFile;
-        if(!is_file($data_file))
+        // 文件驱动
+        else 
         {
-            touch($data_file);
+            if(!isset(self::$instance[$config_name]))
+            {
+                self::$instance[$config_name] = new \Lib\StoreDriver\File($config_name);
+            }
+            return self::$instance[$config_name];
         }
-        $cache = include WORKERMAN_LOG_DIR . self::$dataFile;
-        if(is_array($cache))
-        {
-            self::$dataCache = $cache;
-        }
-        self::$lastCacheTime = time();
     }
 }

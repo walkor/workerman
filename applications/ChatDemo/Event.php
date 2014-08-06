@@ -6,15 +6,30 @@
  * 
  */
 
-require_once ROOT_DIR . '/Protocols/JsonProtocol.php';
+use \Lib\Context;
+use \Lib\Gateway;
+use \Lib\StatisticClient;
+use \Lib\Store;
+use \Protocols\GatewayProtocol;
+use \Protocols\TextProtocol;
+
+
 class Event
 {
+    /**
+     * 当网关有客户端链接上来时触发，一般这里留空
+     */
+    public static function onGatewayConnect()
+    {
+        Gateway::sendToCurrentUid(TextProtocol::encode("type in your name:"));
+    }
+    
     /**
      * 网关有消息时，判断消息是否完整
      */
     public static function onGatewayMessage($buffer)
     {
-        return JsonProtocol::check($buffer);
+        return TextProtocol::check($buffer);
     }
     
    /**
@@ -35,8 +50,10 @@ class Event
        if(!$uid)
        {
            // 踢掉
-           return GateWay::kickCurrentUser();
+           return GateWay::kickCurrentUser(TextProtocol::encode('uid非法'));
        }
+       
+       $_SESSION['name'] = TextProtocol::decode($message);
        
        // [这步是必须的]合法，记录uid到gateway通信地址的映射
        GateWay::storeUid($uid);
@@ -44,11 +61,13 @@ class Event
        // [这步是必须的]发送数据包到address对应的gateway，确认connection成功
        GateWay::notifyConnectionSuccess($uid);
        
-       // 向当前用户发送uid
-       GateWay::sendToCurrentUid(JsonProtocol::encode(array('uid'=>$uid)));
+       Gateway::sendToCurrentUid("
+chart room login success, your uid is $uid, name is {$_SESSION['name']}
+use uid:words send message to one user
+use words send message to all\n");
        
-       // 广播所有用户，xxx connected
-       GateWay::sendToAll(JsonProtocol::encode(array('from_uid'=>'SYSTEM', 'message'=>"$uid come \n", 'to_uid'=>'all')));
+       // 广播所有用户，xxx come 
+       GateWay::sendToAll(TextProtocol::encode("{$_SESSION['name']}[$uid] come"));
    }
    
    /**
@@ -59,11 +78,11 @@ class Event
     */
    public static function onClose($uid)
    {
-       // [这步是必须的]删除这个用户的gateway通信地址
+       // 删除这个用户的gateway通信地址
        GateWay::deleteUidAddress($uid);
        
        // 广播 xxx 退出了
-       GateWay::sendToAll(JsonProtocol::encode(array('from_uid'=>'SYSTEM', 'message'=>"$uid logout\n", 'to_uid'=>'all')));
+       GateWay::sendToAll(TextProtocol::encode("{$_SESSION['name']}[$uid] logout"));
    }
    
    /**
@@ -74,24 +93,24 @@ class Event
     */
    public static function onMessage($uid, $message)
    {
-        $message_data = JsonProtocol::decode($message);
+        $message_data = TextProtocol::decode($message);
         
-        // 向所有人发送
-        if($message_data['to_uid'] == 'all')
+        // 判断是否是私聊，私聊数据格式 uid:xxxxx
+        $explode_array = explode(':', $message, 2);
+        if(count($explode_array) > 1)
         {
-            return GateWay::sendToAll($message);
+            $to_uid = (int)$explode_array[0];
+            GateWay::sendToUid($uid, TextProtocol::encode($_SESSION['name'] . "[$uid] said said to [$to_uid] :" . $explode_array[1]));
+            return GateWay::sendToUid($to_uid, TextProtocol::encode($_SESSION['name'] . "[$uid] said to You :" . $explode_array[1]));
         }
-        // 向某个人发送
-        else
-        {
-            return GateWay::sendToUid($message_data['to_uid'], $message);
-        }
+        // 群聊
+        return GateWay::sendToAll(TextProtocol::encode($_SESSION['name'] . "[$uid] said :" . $message));
    }
    
    
    /**
     * 用户第一次链接时，根据用户传递的消息（一般是用户名 密码）返回当前uid
-    * 这里只是返回了时间戳相关的一个数字
+    * 这里只是返回了时间戳相关的一个数字，高并发会有一定的几率uid冲突
     * @param string $message
     * @return number
     */

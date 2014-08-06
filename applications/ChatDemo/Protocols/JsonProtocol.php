@@ -1,4 +1,10 @@
 <?php 
+namespace Protocols;
+/**
+ * 以四字节int标记请求长度的json协议 
+ * 协议格式int+json
+ * @author walkor
+ */
 class JsonProtocol
 {
     // 根据首部四个字节（int）判断数据是否接收完毕

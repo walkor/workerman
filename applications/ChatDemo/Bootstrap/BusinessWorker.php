@@ -6,10 +6,13 @@
  * @author walkor <workerman.net>
  * 
  */
-define('ROOT_DIR', realpath(__DIR__.'/../'));
-require_once ROOT_DIR . '/Lib/Gateway.php';
-require_once ROOT_DIR . '/Lib/StatisticClient.php';
-require_once ROOT_DIR . '/Event.php';
+require_once __DIR__ . '/../Lib/Autoloader.php';
+
+use \Protocols\GatewayProtocol;
+use \Lib\Store;
+use \Lib\Gateway;
+use \Lib\StatisticClient;
+use \Lib\Context;
 
 class BusinessWorker extends Man\Core\SocketWorker
 {
@@ -34,6 +37,17 @@ class BusinessWorker extends Man\Core\SocketWorker
     const MAX_RETRY_COUNT = 5;
     
     /**
+     * 命令字映射 统计用到
+     * @var array
+     */
+    protected static $interfaceMap = array(
+        GatewayProtocol::CMD_ON_GATEWAY_CONNECTION => 'CMD_ON_GATEWAY_CONNECTION',
+        GatewayProtocol::CMD_ON_CONNECTION         => 'CMD_ON_CONNECTION',
+        GatewayProtocol::CMD_ON_MESSAGE            => 'CMD_ON_MESSAGE',
+        GatewayProtocol::CMD_ON_CLOSE              => 'CMD_ON_CLOSE',
+    );
+    
+    /**
      * 进程启动时初始化
      * @see Man\Core.SocketWorker::onStart()
      */
@@ -43,7 +57,7 @@ class BusinessWorker extends Man\Core\SocketWorker
         \Man\Core\Lib\Task::init($this->event);
         \Man\Core\Lib\Task::add(1, array($this, 'checkGatewayConnections'));
         $this->checkGatewayConnections();
-        GateWay::setBusinessWorker($this);
+        Gateway::setBusinessWorker($this);
     }
     
     /**
@@ -76,24 +90,37 @@ class BusinessWorker extends Man\Core\SocketWorker
         Context::$local_port = $pack->header['local_port'];
         Context::$socket_id = $pack->header['socket_id'];
         Context::$uid = $pack->header['uid'];
-        
-        $cmd = $pack->header['cmd'];
-        
-        $interface_map = array(
-                GatewayProtocol::CMD_ON_CONNECTION   => 'CMD_ON_CONNECTION',
-                GatewayProtocol::CMD_ON_MESSAGE          => 'CMD_ON_MESSAGE',
-                GatewayProtocol::CMD_ON_CLOSE                => 'CMD_ON_CLOSE',
+        $_SERVER = array(
+            'REMOTE_ADDR' => Context::$client_ip,
+            'REMOTE_PORT' => Context::$client_port,
+            'GATEWAY_ADDR' => Context::$local_ip,
+            'GATEWAY_PORT'  => Context::$local_port,
+            'GATEWAY_SOCKET_ID' => Context::$socket_id,
         );
+        if($pack->ext_data != '')
+        {
+            $_SESSION = Context::sessionDecode($pack->ext_data);
+        }
+        else
+        {
+            $_SESSION = null;
+        }
+        // 备份一次$pack->ext_data，请求处理完毕后判断session是否和备份相等
+        $session_str_copy = $pack->ext_data;
         $cmd = $pack->header['cmd'];
+        
         StatisticClient::tick();
         $module = __CLASS__;
-        $interface = isset($interface_map[$cmd]) ? $interface_map[$cmd] : 'null';
+        $interface = isset(self::$interfaceMap[$cmd]) ? self::$interfaceMap[$cmd] : 'null';
         $success = 1;
         $code = 0;
         $msg = '';
         try{
             switch($cmd)
             {
+                case GatewayProtocol::CMD_ON_GATEWAY_CONNECTION:
+                    call_user_func_array(array('Event', 'onGatewayConnect'), array());
+                    break;
                 case GatewayProtocol::CMD_ON_CONNECTION:
                     call_user_func_array(array('Event', 'onConnect'), array($pack->body));
                     break;
@@ -111,6 +138,13 @@ class BusinessWorker extends Man\Core\SocketWorker
             $code = $e->getCode() > 0 ? $e->getCode() : 500;
             $msg = 'uid:'.Context::$uid."\tclient_ip:".Context::$client_ip."\n".$e->__toString();
         }
+        
+        $session_str_now = $_SESSION !== null ? Context::sessionEncode($_SESSION) : '';
+        if($session_str_copy != $session_str_now)
+        {
+            Gateway::updateSocketSession(Context::$socket_id, $session_str_now);
+        }
+        
         Context::clear();
         StatisticClient::report($module, $interface, $success, $code, $msg);
     }
@@ -121,7 +155,7 @@ class BusinessWorker extends Man\Core\SocketWorker
     public function checkGatewayConnections()
     {
         $key = 'GLOBAL_GATEWAY_ADDRESS';
-        $addresses_list = Store::get($key);
+        $addresses_list = Store::instance('gateway')->get($key);
         if(empty($addresses_list))
         {
             return;
@@ -143,9 +177,9 @@ class BusinessWorker extends Man\Core\SocketWorker
                     // 删除连不上的端口
                     if($this->badGatewayAddress[$addr]++ > self::MAX_RETRY_COUNT)
                     {
-                        $addresses_list = Store::get($key);
+                        $addresses_list = Store::instance('gateway')->get($key);
                         unset($addresses_list[$addr]);
-                        Store::set($key, $addresses_list);
+                        Store::instance('gateway')->set($key, $addresses_list);
                         $this->notice("tcp://$addr ".$errstr." del $addr from store", false);
                     }
                     continue;

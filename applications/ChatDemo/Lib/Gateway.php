@@ -1,4 +1,5 @@
 <?php
+namespace Lib;
 /**
  * 
  * 数据发送相关
@@ -6,19 +7,12 @@
  * @author walkor <workerman.net>
  * 
  */
+require_once __DIR__ . '/Autoloader.php';
+use \Protocols\GatewayProtocol;
+use \Lib\Store;
+use \Lib\Context;
 
-if(!defined('ROOT_DIR'))
-{
-    define('ROOT_DIR', __DIR__."/../");
-}
-
-require_once ROOT_DIR . '/Lib/Store.php';
-require_once ROOT_DIR . '/Lib/Context.php';
-require_once ROOT_DIR . '/Lib/APLog.php';
-require_once ROOT_DIR . '/Protocols/GatewayProtocol.php';
-require_once ROOT_DIR . '/Protocols/JsonProtocol.php';
-
-class GateWay
+class Gateway
 {
     
     /**
@@ -40,11 +34,10 @@ class GateWay
     * 向所有客户端广播消息
     * @param string $message
     */
-   public static function sendToAll($message)
+   public static function sendToAll($message, $uid_array = array())
    {
        $pack = new GatewayProtocol();
        $pack->header['cmd'] = GatewayProtocol::CMD_SEND_TO_ALL;
-       $pack->header['series_id'] = 0;
        $pack->header['local_ip'] = Context::$local_ip;
        $pack->header['local_port'] = Context::$local_port;
        $pack->header['socket_id'] = Context::$socket_id;
@@ -52,6 +45,13 @@ class GateWay
        $pack->header['client_port'] = Context::$client_port;
        $pack->header['uid'] = Context::$uid;
        $pack->body = (string)$message;
+       
+       if($uid_array)
+       {
+           $params = array_merge(array('N*'), $uid_array);
+           $pack->ext_data = call_user_func_array('pack', $params);
+       }
+       
        $buffer = $pack->getBuffer();
        // 如果有businessWorker实例，说明运行在workerman环境中，通过businessWorker中的长连接发送数据
        if(self::$businessWorker)
@@ -64,7 +64,7 @@ class GateWay
        // 运行在其它环境中，使用udp向worker发送数据
        else
        {
-           $all_addresses = Store::get('GLOBAL_GATEWAY_ADDRESS');
+           $all_addresses = Store::instance('gateway')->get('GLOBAL_GATEWAY_ADDRESS');
            foreach($all_addresses as $address)
            {
                self::sendToGateway($address, $buffer);
@@ -89,6 +89,72 @@ class GateWay
    public static function sendToCurrentUid($message)
    {
        return self::sendCmdAndMessageToUid(null, GatewayProtocol::CMD_SEND_TO_ONE, $message);
+   }
+   
+   /**
+    * 判断是否在线
+    * @param int $uid
+    * @return 0/1
+    */
+   public static function isOnline($uid)
+   {
+       $pack = new GatewayProtocol();
+       $pack->header['cmd'] = \Protocols\GatewayProtocol::CMD_IS_ONLINE;;
+       $pack->header['uid'] = $uid;
+       $address = self::getAddressByUid($uid);
+       if(!$address)
+       {
+           return 0;
+       }
+       return self::sendUdpAndRecv($address['local_ip']. ':' .$address['local_port'], $pack->getBuffer());
+   }
+   
+   /**
+    * 获取在线状态，目前返回一个在线uid数组
+    * @return array
+    */
+   public static function getOnlineStatus()
+   {
+       $pack = new GatewayProtocol();
+       $pack->header['cmd'] = \Protocols\GatewayProtocol::CMD_GET_ONLINE_STATUS;
+       $buffer = $pack->getBuffer();
+       $all_addresses = Store::instance('gateway')->get('GLOBAL_GATEWAY_ADDRESS');
+       $client_array = $status_data = array();
+       // 批量向所有gateway进程发送CMD_GET_ONLINE_STATUS命令
+       foreach($all_addresses as $address)
+       {
+           $client = stream_socket_client("udp://$address", $errno, $errmsg);
+           if(strlen($buffer) == stream_socket_sendto($client, $buffer))
+           {
+               $client_id = (int) $client;
+               $client_array[$client_id] = $client;
+           }
+       }
+       // 超时2秒
+       $time_out = 2;
+       $time_start = microtime(true);
+       // 批量接收请求
+       while(count($client_array) > 0)
+       {
+           $write = $except = array();
+           $read = $client_array;
+           if(stream_select($read, $write, $except, 1))
+           {
+               foreach($read as $client)
+               {
+                   if($data = json_decode(fread($client, 655350), true))
+                   {
+                       $status_data = array_merge($status_data, $data);
+                   }
+                   unset($client_array[$client]);
+               }
+           }
+           if(microtime(true) - $time_start > $time_out)
+           {
+               break;
+           }
+       }
+       return $status_data;
    }
    
    /**
@@ -135,13 +201,13 @@ class GateWay
    {
        $pack = new GatewayProtocol();
        $pack->header['cmd'] = $cmd;
-       $pack->header['series_id'] = Context::$series_id > 0 ? Context::$series_id : 0;
        // 如果是发给当前用户则直接获取上下文中的地址
        if($uid === Context::$uid || $uid === null)
        {
            $pack->header['local_ip'] = Context::$local_ip;
            $pack->header['local_port'] = Context::$local_port;
            $pack->header['socket_id'] = Context::$socket_id;
+           $pack->header['uid'] = Context::$uid;
        }
        // 不是发给当前用户则使用存储中的地址
        else
@@ -154,13 +220,40 @@ class GateWay
            $pack->header['local_ip'] = $address['local_ip'];
            $pack->header['local_port'] = $address['local_port'];
            $pack->header['socket_id'] = $address['socket_id'];
+           $pack->header['uid'] = $uid;
        }
        $pack->header['client_ip'] = Context::$client_ip;
        $pack->header['client_port'] = Context::$client_port;
-       $pack->header['uid'] = empty($uid) ? 0 : $uid;
        $pack->body = (string)$message;
        
        return self::sendToGateway("{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
+   }
+   
+   /**
+    * 发送udp数据并返回
+    * @param int $address
+    * @param string $message
+    * @return boolean
+    */
+   protected static function sendUdpAndRecv($address , $buffer)
+   {
+       // 非workerman环境，使用udp发送数据
+       $client = stream_socket_client("udp://$address", $errno, $errmsg);
+       if(strlen($buffer) == stream_socket_sendto($client, $buffer))
+       {
+           // 阻塞读
+           stream_set_blocking($client, 1);
+           // 1秒超时
+           stream_set_timeout($client, 1);
+           // 读udp数据
+           $data = fread($client, 655350);
+           // 返回结果
+           return json_decode($data, true);
+       }
+       else
+       {
+           throw new \Exception("sendUdpAndRecv($address, \$bufer) fail ! Can not send UDP data!", 502);
+       }
    }
    
    
@@ -176,7 +269,6 @@ class GateWay
    {
        $pack = new GatewayProtocol();
        $pack->header['cmd'] = GatewayProtocol::CMD_KICK;
-       $pack->header['series_id'] = Context::$series_id > 0 ? Context::$series_id : 0;
        $pack->header['local_ip'] = $local_ip;
        $pack->header['local_port'] = $local_port;
        $pack->header['socket_id'] = $socket_id;
@@ -198,7 +290,7 @@ class GateWay
    public static function storeUid($uid)
    {
        $address = array('local_ip'=>Context::$local_ip, 'local_port'=>Context::$local_port, 'socket_id'=>Context::$socket_id);
-       Store::set($uid, $address);
+       Store::instance('gateway')->set($uid, $address);
    }
    
    /**
@@ -207,7 +299,7 @@ class GateWay
     */
    public static function getAddressByUid($uid)
    {
-       return Store::get($uid);
+       return Store::instance('gateway')->get($uid);
    }
    
    /**
@@ -216,7 +308,7 @@ class GateWay
     */
    public static function deleteUidAddress($uid)
    {
-       return Store::delete($uid);
+       return Store::instance('gateway')->delete($uid);
    }
    
    /**
@@ -229,11 +321,25 @@ class GateWay
    }
    
    /**
+    * 更新session
+    * @param int $uid
+    * @param string $session_str
+    */
+   public static function updateSocketSession($socket_id, $session_str)
+   {
+       $pack = new GatewayProtocol();
+       $pack->header['cmd'] = GatewayProtocol::CMD_UPDATE_SESSION;
+       $pack->header['socket_id'] = Context::$socket_id;
+       $pack->ext_data = (string)$session_str;
+       return self::sendToGateway(Context::$local_ip . ':' . Context::$local_port, $pack->getBuffer());
+   }
+   
+   /**
     * 发送数据到网关
     * @param string $address
     * @param string $buffer
     */
-   public static function sendToGateway($address, $buffer)
+   protected static function sendToGateway($address, $buffer)
    {
        // 有$businessWorker说明是workerman环境，使用$businessWorker发送数据
        if(self::$businessWorker)
@@ -242,7 +348,6 @@ class GateWay
            if(!isset($connections[$address]))
            {
                $e = new \Exception("sendToGateway($address, $buffer) fail \$connections:".json_encode($connections));
-               APLog::add($e->__toString());
                return false;
            }
            return self::$businessWorker->sendToClient($buffer, $connections[$address]);

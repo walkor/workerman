@@ -314,9 +314,6 @@ abstract class SocketWorker extends AbstractWorker
             return false;
         }
         
-        // 接受请求数加1
-        $this->statusInfo['total_request'] ++;
-        
         // 连接的fd序号
         $fd = (int) $new_connection;
         $this->connections[$fd] = $new_connection;
@@ -409,6 +406,8 @@ abstract class SocketWorker extends AbstractWorker
         {
             // 执行处理
             try{
+                // 接受请求数加1
+                $this->statusInfo['total_request'] ++;
                 // 业务处理
                 $this->dealProcess($this->recvBuffers[$fd]['buf']);
             }

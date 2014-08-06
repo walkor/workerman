@@ -19,9 +19,13 @@
 │   └── Gateway.php  // gateway进程，负责客户端连接，转发用户请求给BusinessWorker进程处理，并接收BusinessWorker进程的处理结果转发给用户
 │ 
 ├── Lib  // 通用的库
-│   ├── Gateway.php  // gateway进程的接口，BusinessWorker进程通过此文件的接口向gateway进程发送数据
+│   ├── Gateway.php    // gateway进程的接口，BusinessWorker进程通过此文件的接口向gateway进程发送数据
 │   │
-│   ├── Store.php    // 用户存储用户连接信息（存储于logs/data.php文件中，高并发应用请使用Store.php.for-memcache替换）
+│   ├── Store.php      // 用户存储用户连接信息（存储于logs/data.php文件中，高并发应用请使用Store.php.for-memcache替换）
+│   │
+│   ├── Autoloader.php // 自动加载逻辑
+│   │
+│   ├── Context.php    // Gateway与Worker通信时的上下文信息，开发者不要改动其中的内容
 │   │
 │   └── Store.php.for-memcache  // 使用memcache储存用户连接信息，功能等同Store.php，支持分布式，性能更高，可以替换Store.php
 │ 
