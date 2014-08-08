@@ -46,6 +46,8 @@
 │   │
 │   └── WebSocket.php        // WebSocket协议
 │ 
+├──Tests
+│   └── Chat.php // php测试客户端 
 │ 
 └── Event.php // 聊天所有的业务代码在此目录，群聊、私聊等
 </pre>
