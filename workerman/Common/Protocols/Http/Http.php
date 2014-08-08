@@ -21,7 +21,7 @@ function http_input($http_string)
     {
         // 找Content-Length
         $match = array();
-        if(preg_match("/\r\nContent-Length: ?(\d?)\r\n/", $http_string, $match))
+        if(preg_match("/\r\nContent-Length: ?(\d*)\r\n/", $http_string, $match))
         {
             $content_lenght = $match[1];
         }
