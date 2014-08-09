@@ -16,7 +16,7 @@ class Store
     public static $driver = self::DRIVER_FILE;
     
     // 如果使用文件存储，则在这里设置数据存储的目录，默认/tmp/下
-    public static $storePath = '/tmp/';
+    public static $storePath = '/tmp/workerman-Demo/';
     
     // 如果是memcache存储，则在这里设置memcache的ip端口，注意确保你安装了memcache扩展
     public static $gateway = array(

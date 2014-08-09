@@ -30,6 +30,10 @@ class File
     public function __construct($config_name)
     {
         $this->dataFile = \Config\Store::$storePath . "/$config_name.store.cache.php";
+        if(!is_dir(\Config\Store::$storePath) && !mkdir(\Config\Store::$storePath, 0777, true))
+        {
+            throw new \Exception('cant not mkdir('.\Config\Store::$storePath.')');
+        }
         if(!is_file($this->dataFile))
         {
             touch($this->dataFile);
@@ -37,8 +41,7 @@ class File
         $this->dataFileHandle = fopen($this->dataFile, 'r+');
         if(!$this->dataFileHandle)
         {
-            $error_msg = "can not fopen($this->dataFile, 'r+')";
-            throw new \Exception($error_msg);
+            throw new \Exception("can not fopen($this->dataFile, 'r+')");
         }
     }
     
