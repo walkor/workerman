@@ -112,7 +112,6 @@ switch($cmd)
         break;
     case 'restart':
         stop_and_wait();
-        $worker_user = isset($argv[2]) ? $argv[2] : '';
         Man\Core\Master::run();
         break;
     case 'reload':
