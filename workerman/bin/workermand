@@ -100,8 +100,7 @@ if($user_info = posix_getpwuid(posix_getuid()))
 switch($cmd)
 {
     case 'start':
-        $worker_user = isset($argv[2]) ? $argv[2] : '';
-        Man\Core\Master::run($worker_user);
+        Man\Core\Master::run();
         break;
     case 'stop':
         $pid = @file_get_contents(WORKERMAN_PID_FILE);
