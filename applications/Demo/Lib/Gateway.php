@@ -24,7 +24,7 @@ class Gateway
     * @param string $message 向客户端发送的消息（可以是二进制数据）
     * @param array $client_id_array 客户端id数组
     */
-   public static function sendToAll($message, $client_id_array = array())
+   public static function sendToAll($message, $client_id_array = null)
    {
        $pack = new GatewayProtocol();
        $pack->header['cmd'] = GatewayProtocol::CMD_SEND_TO_ALL;
@@ -40,6 +40,10 @@ class Gateway
        {
            $params = array_merge(array('N*'), $client_id_array);
            $pack->ext_data = call_user_func_array('pack', $params);
+       }
+       elseif(empty($client_id_array) && is_array($client_id_array))
+       {
+           return;
        }
        
        $buffer = $pack->getBuffer();

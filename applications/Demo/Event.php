@@ -34,18 +34,6 @@ class Event
         return TextProtocol::check($buffer);
     }
     
-   
-   /**
-    * 当用户断开连接时触发的方法
-    * @param integer $client_id 断开连接的用户id 
-    * @return void
-    */
-   public static function onClose($client_id)
-   {
-       // 广播 xxx 退出了
-       GateWay::sendToAll(TextProtocol::encode("{$_SESSION['name']}[$client_id] logout"));
-   }
-   
    /**
     * 有消息时触发该方法
     * @param int $client_id 发消息的client_id
@@ -67,9 +55,9 @@ class Event
         }
         
         // ********* 进入聊天逻辑 ****************
-        // 判断是否是私聊，私聊数据格式 client_id:xxxxx
+        // 判断是否是私聊
         $explode_array = explode(':', $message, 2);
-        // 私聊
+        // 私聊数据格式 client_id:xxxxx
         if(count($explode_array) > 1)
         {
             $to_client_id = (int)$explode_array[0];
@@ -80,4 +68,14 @@ class Event
         return GateWay::sendToAll(TextProtocol::encode($_SESSION['name'] . "[$client_id] said :" . $message));
    }
    
+   /**
+    * 当用户断开连接时触发的方法
+    * @param integer $client_id 断开连接的用户id
+    * @return void
+    */
+   public static function onClose($client_id)
+   {
+       // 广播 xxx 退出了
+       GateWay::sendToAll(TextProtocol::encode("{$_SESSION['name']}[$client_id] logout"));
+   }
 }
