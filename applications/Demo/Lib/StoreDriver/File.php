@@ -95,6 +95,26 @@ class File
     }
     
     /**
+     * 自增
+     * @param string $key
+     * @return boolean|multitype:
+     */
+    public function increment($key)
+    {
+        flock($this->dataFileHandle, LOCK_EX);
+        $this->readDataFromDisk();
+        if(!isset($this->dataCache[$key]))
+        {
+            flock($this->dataFileHandle, LOCK_UN);
+            return false;
+        }
+        $this->dataCache[$key] ++;
+        $this->writeToDisk();
+        flock($this->dataFileHandle, LOCK_UN);
+        return $this->dataCache[$key];
+    }
+    
+    /**
      * 写入磁盘
      * @return number
      */

@@ -12,7 +12,7 @@ namespace Protocols;
  *     unsigned int        socket_id,
  *     unsigned int        client_ip,
  *     unsigned short    client_port,
- *     unsigned int        uid,
+ *     unsigned int        client_id,
  *     unsigned int        ext_len,
  *     char[ext_len]        ext_data,
  *     char[pack_length-HEAD_LEN] body//包体
@@ -27,10 +27,7 @@ class GatewayProtocol
     // 发给worker，gateway有一个新的连接
     const CMD_ON_GATEWAY_CONNECTION = 1;
     
-    // 发给worker的未绑定socket上有消息事件
-    const CMD_ON_CONNECTION = 2;
-    
-    // 发给worker的绑定socket上有消息事件
+    // 发给worker的，客户端有消息
     const CMD_ON_MESSAGE = 3;
     
     // 发给worker上的关闭链接事件
@@ -44,9 +41,6 @@ class GatewayProtocol
     
     // 发给gateway的踢出用户
     const CMD_KICK = 7;
-    
-    // 发给gateway的通知用户（通过验证）链接成功，绑定uid gid socketid
-    const CMD_CONNECT_SUCCESS = 8;
     
     // 发给gateway，通知用户session更改
     const CMD_UPDATE_SESSION = 9;
@@ -75,7 +69,7 @@ class GatewayProtocol
         'socket_id'      => 0,
         'client_ip'        => '',
         'client_port'    => 0,
-        'uid'                => 0,
+        'client_id'        => 0,
         'ext_len'          => 0,
     );
     
@@ -83,7 +77,7 @@ class GatewayProtocol
      * 扩展数据，
      * gateway发往worker时这里存储的是session字符串
      * worker发往gateway时，并且CMD_UPDATE_SESSION时存储的是session字符串
-     * worker发往gateway时，并且CMD_SEND_TO_ALL时存储的是接收的uid序列，可能是空（代表向所有人发）
+     * worker发往gateway时，并且CMD_SEND_TO_ALL时存储的是接收的client_id序列，可能是空（代表向所有人发）
      * @var string
      */
     public $ext_data = '';
@@ -141,7 +135,7 @@ class GatewayProtocol
                         $this->header['cmd'], ip2long($this->header['local_ip']), 
                         $this->header['local_port'], $this->header['socket_id'], 
                         ip2long($this->header['client_ip']), $this->header['client_port'], 
-                        $this->header['uid'],
+                        $this->header['client_id'],
                        $this->header['ext_len']) . $this->ext_data . $this->body;
     }
     
@@ -152,7 +146,7 @@ class GatewayProtocol
      */    
     protected static function decode($buffer)
     {
-        $data = unpack("Npack_len/Ccmd/Nlocal_ip/nlocal_port/Nsocket_id/Nclient_ip/nclient_port/Nuid/Next_len", $buffer);
+        $data = unpack("Npack_len/Ccmd/Nlocal_ip/nlocal_port/Nsocket_id/Nclient_ip/nclient_port/Nclient_id/Next_len", $buffer);
         $data['local_ip'] = long2ip($data['local_ip']);
         $data['client_ip'] = long2ip($data['client_ip']);
         if($data['ext_len'] > 0)

@@ -159,7 +159,7 @@ class Monitor extends Man\Core\SocketWorker
      * 确定包是否完整
      * @see Worker::dealInput()
      */
-    public function dealInput($recv_str)
+    public function dealInput($recv_buffer)
     {
         return 0;
     }

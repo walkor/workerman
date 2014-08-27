@@ -64,7 +64,7 @@ class StatisticWorker extends Man\Core\SocketWorker
      * udp 默认全部接收完毕
      * @see Man\Core.SocketWorker::dealInput()
      */
-    public function dealInput($recv_str)
+    public function dealInput($recv_buffer)
     {
         return 0;
     }
@@ -73,10 +73,10 @@ class StatisticWorker extends Man\Core\SocketWorker
      * 业务处理
      * @see Man\Core.SocketWorker::dealProcess()
      */
-    public function dealProcess($recv_str)
+    public function dealProcess($recv_buffer)
     {
         // 解码
-        $unpack_data = StatisticProtocol::decode($recv_str);
+        $unpack_data = StatisticProtocol::decode($recv_buffer);
         $module = $unpack_data['module'];
         $interface = $unpack_data['interface'];
         $cost_time = $unpack_data['cost_time'];

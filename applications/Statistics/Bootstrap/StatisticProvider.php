@@ -106,18 +106,18 @@ class StatisticProvider extends Man\Core\SocketWorker
      * udp 默认全部接收完毕
      * @see Man\Core.SocketWorker::dealInput()
      */
-    public function dealInput($recv_str)
+    public function dealInput($recv_buffer)
     {
         return 0;
     }
     
     /**
      * 处理请求统计
-     * @param string $recv_str
+     * @param string $recv_buffer
      */
-    public function dealProcess($recv_str)
+    public function dealProcess($recv_buffer)
     {
-        $req_data = json_decode(trim($recv_str), true);
+        $req_data = json_decode(trim($recv_buffer), true);
         $module = $req_data['module'];
         $interface = $req_data['interface'];
         $cmd = $req_data['cmd'];

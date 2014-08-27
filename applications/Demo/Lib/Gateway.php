@@ -3,7 +3,6 @@ namespace Lib;
 /**
  * 
  * 数据发送相关
- * sendToAll sendToUid
  * @author walkor <workerman.net>
  * 
  */
@@ -14,27 +13,18 @@ use \Lib\Context;
 
 class Gateway
 {
-    
     /**
      * gateway实例
      * @var object
      */
     protected static  $businessWorker = null;
     
-    /**
-     * 设置gateway实例，用于与
-     * @param unknown_type $gateway_instance
-     */
-    public static function setBusinessWorker($business_worker_instance)
-    {
-        self::$businessWorker = $business_worker_instance;
-    }
-    
    /**
-    * 向所有客户端广播消息
-    * @param string $message
+    * 向所有客户端(或者client_id_array指定的客户端)广播消息
+    * @param string $message 向客户端发送的消息（可以是二进制数据）
+    * @param array $client_id_array 客户端id数组
     */
-   public static function sendToAll($message, $uid_array = array())
+   public static function sendToAll($message, $client_id_array = array())
    {
        $pack = new GatewayProtocol();
        $pack->header['cmd'] = GatewayProtocol::CMD_SEND_TO_ALL;
@@ -43,12 +33,12 @@ class Gateway
        $pack->header['socket_id'] = Context::$socket_id;
        $pack->header['client_ip'] = Context::$client_ip;
        $pack->header['client_port'] = Context::$client_port;
-       $pack->header['uid'] = Context::$uid;
+       $pack->header['client_id'] = Context::$client_id;
        $pack->body = (string)$message;
        
-       if($uid_array)
+       if($client_id_array)
        {
-           $params = array_merge(array('N*'), $uid_array);
+           $params = array_merge(array('N*'), $client_id_array);
            $pack->ext_data = call_user_func_array('pack', $params);
        }
        
@@ -73,35 +63,35 @@ class Gateway
    }
    
    /**
-    * 向某个用户发消息
-    * @param int $uid
+    * 向某个客户端发消息
+    * @param int $client_id 客户端通过Gateway::bindClientId($client_id)绑定的client_id
     * @param string $message
     */
-   public static function sendToUid($uid, $message)
+   public static function sendToClient($clinet_id, $message)
    {
-       return self::sendCmdAndMessageToUid($uid, GatewayProtocol::CMD_SEND_TO_ONE, $message);
+       return self::sendCmdAndMessageToClient($clinet_id, GatewayProtocol::CMD_SEND_TO_ONE, $message);
+   } 
+   
+   /**
+    * 向当前客户端发送消息
+    * @param string $message
+    */
+   public static function sendToCurrentClient($message)
+   {
+       return self::sendCmdAndMessageToClient(null, GatewayProtocol::CMD_SEND_TO_ONE, $message);
    }
    
    /**
-    * 向当前用户发送消息
-    * @param string $message
-    */
-   public static function sendToCurrentUid($message)
-   {
-       return self::sendCmdAndMessageToUid(null, GatewayProtocol::CMD_SEND_TO_ONE, $message);
-   }
-   
-   /**
-    * 判断是否在线
-    * @param int $uid
+    * 判断某个客户端是否在线
+    * @param int $client_id
     * @return 0/1
     */
-   public static function isOnline($uid)
+   public static function isOnline($client_id)
    {
        $pack = new GatewayProtocol();
        $pack->header['cmd'] = \Protocols\GatewayProtocol::CMD_IS_ONLINE;;
-       $pack->header['uid'] = $uid;
-       $address = self::getAddressByUid($uid);
+       $pack->header['client_id'] = $client_id;
+       $address = Store::instance('gateway')->get($client_id);
        if(!$address)
        {
            return 0;
@@ -110,7 +100,7 @@ class Gateway
    }
    
    /**
-    * 获取在线状态，目前返回一个在线uid数组
+    * 获取在线状态，目前返回一个在线client_id数组
     * @return array
     */
    public static function getOnlineStatus()
@@ -142,6 +132,7 @@ class Gateway
            {
                foreach($read as $client)
                {
+                   // udp
                    if($data = json_decode(fread($client, 655350), true))
                    {
                        $status_data = array_merge($status_data, $data);
@@ -158,61 +149,74 @@ class Gateway
    }
    
    /**
-    * 将某个用户踢出
-    * @param int $uid
+    * 将某个客户端踢出
+    * @param int $client_id
     * @param string $message
     */
-   public static function kickUid($uid, $message)
+   public static function kickClient($client_id)
    {
-       if($uid === Context::$uid)
+       if($client_id === Context::$client_id)
        {
-           return self::kickCurrentUser($message);
+           return self::kickCurrentClient();
        }
        // 不是发给当前用户则使用存储中的地址
        else
        {
-           $address = self::getAddressByUid($uid);
+           $address = Store::instance('gateway')->get($client_id);
            if(!$address)
            {
                return false;
            }
-           return self::kickAddress($address['local_ip'], $address['local_port'], $address['socket_id'], $message);
+           return self::kickAddress($address['local_ip'], $address['local_port'], $address['socket_id']);
        }
    }
    
    /**
-    * 踢掉当前用户
+    * 踢掉当前客户端
     * @param string $message
     */
-   public static function kickCurrentUser($message)
+   public static function kickCurrentClient()
    {
-       return self::kickAddress(Context::$local_ip, Context::$local_port, Context::$socket_id, $message);
+       return self::kickAddress(Context::$local_ip, Context::$local_port, Context::$socket_id);
    }
    
-
+   /**
+    * 更新session,框架自动调用，开发者不要调用
+    * @param int $client_id
+    * @param string $session_str
+    */
+   public static function updateSocketSession($socket_id, $session_str)
+   {
+       $pack = new GatewayProtocol();
+       $pack->header['cmd'] = GatewayProtocol::CMD_UPDATE_SESSION;
+       $pack->header['socket_id'] = Context::$socket_id;
+       $pack->ext_data = (string)$session_str;
+       return self::sendToGateway(Context::$local_ip . ':' . Context::$local_port, $pack->getBuffer());
+   }
+   
    /**
     * 想某个用户网关发送命令和消息
-    * @param int $uid
+    * @param int $client_id
     * @param int $cmd
     * @param string $message
     * @return boolean
     */
-   public static function sendCmdAndMessageToUid($uid, $cmd , $message)
+   protected static function sendCmdAndMessageToClient($client_id, $cmd , $message)
    {
        $pack = new GatewayProtocol();
        $pack->header['cmd'] = $cmd;
        // 如果是发给当前用户则直接获取上下文中的地址
-       if($uid === Context::$uid || $uid === null)
+       if($client_id === Context::$client_id || $client_id === null)
        {
            $pack->header['local_ip'] = Context::$local_ip;
            $pack->header['local_port'] = Context::$local_port;
            $pack->header['socket_id'] = Context::$socket_id;
-           $pack->header['uid'] = Context::$uid;
+           $pack->header['client_id'] = Context::$client_id;
        }
        // 不是发给当前用户则使用存储中的地址
        else
        {
-           $address = self::getAddressByUid($uid);
+           $address = Store::instance('gateway')->get($client_id);
            if(!$address)
            {
                return false;
@@ -220,7 +224,7 @@ class Gateway
            $pack->header['local_ip'] = $address['local_ip'];
            $pack->header['local_port'] = $address['local_port'];
            $pack->header['socket_id'] = $address['socket_id'];
-           $pack->header['uid'] = $uid;
+           $pack->header['client_id'] = $client_id;
        }
        $pack->header['client_ip'] = Context::$client_ip;
        $pack->header['client_port'] = Context::$client_port;
@@ -256,84 +260,6 @@ class Gateway
        }
    }
    
-   
-   /**
-    * 踢掉某个网关的socket
-    * @param string $local_ip
-    * @param int $local_port
-    * @param int $socket_id
-    * @param string $message
-    * @param int $uid
-    */
-   public static function kickAddress($local_ip, $local_port, $socket_id, $message, $uid = null)
-   {
-       $pack = new GatewayProtocol();
-       $pack->header['cmd'] = GatewayProtocol::CMD_KICK;
-       $pack->header['local_ip'] = $local_ip;
-       $pack->header['local_port'] = $local_port;
-       $pack->header['socket_id'] = $socket_id;
-       if(null !== Context::$client_ip)
-       {
-           $pack->header['client_ip'] = Context::$client_ip;
-           $pack->header['client_port'] = Context::$client_port;
-       }
-       $pack->header['uid'] = $uid ? $uid : 0;
-       $pack->body = (string)$message;
-       
-       return self::sendToGateway("{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
-   }
-   
-   /**
-    * 存储uid的网关地址
-    * @param int $uid
-    */
-   public static function storeUid($uid)
-   {
-       $address = array('local_ip'=>Context::$local_ip, 'local_port'=>Context::$local_port, 'socket_id'=>Context::$socket_id);
-       Store::instance('gateway')->set($uid, $address);
-   }
-   
-   /**
-    * 获取用户的网关地址
-    * @param int $uid
-    */
-   public static function getAddressByUid($uid)
-   {
-       return Store::instance('gateway')->get($uid);
-   }
-   
-   /**
-    * 删除用户的网关地址
-    * @param int $uid
-    */
-   public static function deleteUidAddress($uid)
-   {
-       return Store::instance('gateway')->delete($uid);
-   }
-   
-   /**
-    * 通知网关uid链接成功（通过验证）
-    * @param int $uid
-    */
-   public static function notifyConnectionSuccess($uid)
-   {
-       return self::sendCmdAndMessageToUid($uid, GatewayProtocol::CMD_CONNECT_SUCCESS, '');
-   }
-   
-   /**
-    * 更新session
-    * @param int $uid
-    * @param string $session_str
-    */
-   public static function updateSocketSession($socket_id, $session_str)
-   {
-       $pack = new GatewayProtocol();
-       $pack->header['cmd'] = GatewayProtocol::CMD_UPDATE_SESSION;
-       $pack->header['socket_id'] = Context::$socket_id;
-       $pack->ext_data = (string)$session_str;
-       return self::sendToGateway(Context::$local_ip . ':' . Context::$local_port, $pack->getBuffer());
-   }
-   
    /**
     * 发送数据到网关
     * @param string $address
@@ -356,4 +282,40 @@ class Gateway
        $client = stream_socket_client("udp://$address", $errno, $errmsg);
        return strlen($buffer) == stream_socket_sendto($client, $buffer);
    }
+   
+   /**
+    * 踢掉某个网关的socket
+    * @param string $local_ip
+    * @param int $local_port
+    * @param int $socket_id
+    * @param string $message
+    * @param int $client_id
+    */
+   protected  static function kickAddress($local_ip, $local_port, $socket_id)
+   {
+       $pack = new GatewayProtocol();
+       $pack->header['cmd'] = GatewayProtocol::CMD_KICK;
+       $pack->header['local_ip'] = $local_ip;
+       $pack->header['local_port'] = $local_port;
+       $pack->header['socket_id'] = $socket_id;
+       if(null !== Context::$client_ip)
+       {
+           $pack->header['client_ip'] = Context::$client_ip;
+           $pack->header['client_port'] = Context::$client_port;
+       }
+       $pack->header['client_id'] =  0;
+       $pack->body = '';
+        
+       return self::sendToGateway("{$pack->header['local_ip']}:{$pack->header['local_port']}", $pack->getBuffer());
+   }
+   
+   /**
+    * 设置gateway实例
+    * @param Bootstrap/Gateway $gateway_instance
+    */
+   public static function setBusinessWorker($business_worker_instance)
+   {
+       self::$businessWorker = $business_worker_instance;
+   }
+ 
 }

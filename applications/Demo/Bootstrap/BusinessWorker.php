@@ -42,7 +42,6 @@ class BusinessWorker extends Man\Core\SocketWorker
      */
     protected static $interfaceMap = array(
         GatewayProtocol::CMD_ON_GATEWAY_CONNECTION => 'CMD_ON_GATEWAY_CONNECTION',
-        GatewayProtocol::CMD_ON_CONNECTION         => 'CMD_ON_CONNECTION',
         GatewayProtocol::CMD_ON_MESSAGE            => 'CMD_ON_MESSAGE',
         GatewayProtocol::CMD_ON_CLOSE              => 'CMD_ON_CLOSE',
     );
@@ -53,6 +52,8 @@ class BusinessWorker extends Man\Core\SocketWorker
      */
     protected function onStart()
     {
+        // 强制设置成长链接
+        $this->isPersistentConnection = true;
         // 定时检查与gateway进程的连接
         \Man\Core\Lib\Task::init($this->event);
         \Man\Core\Lib\Task::add(1, array($this, 'checkGatewayConnections'));
@@ -72,30 +73,30 @@ class BusinessWorker extends Man\Core\SocketWorker
      * 检查gateway转发来的用户请求是否完整
      * @see Man\Core.SocketWorker::dealInput()
      */
-    public function dealInput($recv_str)
+    public function dealInput($recv_buffer)
     {
-        return GatewayProtocol::input($recv_str); 
+        return GatewayProtocol::input($recv_buffer); 
     }
 
     /**
      * 处理请求
      * @see Man\Core.SocketWorker::dealProcess()
      */
-    public function dealProcess($recv_str)
+    public function dealProcess($recv_buffer)
     {
-        $pack = new GatewayProtocol($recv_str);
+        $pack = new GatewayProtocol($recv_buffer);
         Context::$client_ip = $pack->header['client_ip'];
         Context::$client_port = $pack->header['client_port'];
         Context::$local_ip = $pack->header['local_ip'];
         Context::$local_port = $pack->header['local_port'];
         Context::$socket_id = $pack->header['socket_id'];
-        Context::$uid = $pack->header['uid'];
+        Context::$client_id = $pack->header['client_id'];
         $_SERVER = array(
             'REMOTE_ADDR' => Context::$client_ip,
             'REMOTE_PORT' => Context::$client_port,
             'GATEWAY_ADDR' => Context::$local_ip,
             'GATEWAY_PORT'  => Context::$local_port,
-            'GATEWAY_SOCKET_ID' => Context::$socket_id,
+            'GATEWAY_CLIENT_ID' => Context::$client_id,
         );
         if($pack->ext_data != '')
         {
@@ -105,13 +106,13 @@ class BusinessWorker extends Man\Core\SocketWorker
         {
             $_SESSION = null;
         }
-        // 备份一次$pack->ext_data，请求处理完毕后判断session是否和备份相等
+        // 备份一次$pack->ext_data，请求处理完毕后判断session是否和备份相等，不相等就更新session
         $session_str_copy = $pack->ext_data;
         $cmd = $pack->header['cmd'];
         
         StatisticClient::tick();
         $module = __CLASS__;
-        $interface = isset(self::$interfaceMap[$cmd]) ? self::$interfaceMap[$cmd] : 'null';
+        $interface = isset(self::$interfaceMap[$cmd]) ? self::$interfaceMap[$cmd] : $cmd;
         $success = 1;
         $code = 0;
         $msg = '';
@@ -121,14 +122,11 @@ class BusinessWorker extends Man\Core\SocketWorker
                 case GatewayProtocol::CMD_ON_GATEWAY_CONNECTION:
                     call_user_func_array(array('Event', 'onGatewayConnect'), array());
                     break;
-                case GatewayProtocol::CMD_ON_CONNECTION:
-                    call_user_func_array(array('Event', 'onConnect'), array($pack->body));
-                    break;
                 case GatewayProtocol::CMD_ON_MESSAGE:
-                    call_user_func_array(array('Event', 'onMessage'), array(Context::$uid, $pack->body));
+                    call_user_func_array(array('Event', 'onMessage'), array(Context::$client_id, $pack->body));
                     break;
                 case GatewayProtocol::CMD_ON_CLOSE:
-                    call_user_func_array(array('Event', 'onClose'), array(Context::$uid));
+                    call_user_func_array(array('Event', 'onClose'), array(Context::$client_id));
                     break;
             }
         }
@@ -136,7 +134,7 @@ class BusinessWorker extends Man\Core\SocketWorker
         {
             $success = 0;
             $code = $e->getCode() > 0 ? $e->getCode() : 500;
-            $msg = 'uid:'.Context::$uid."\tclient_ip:".Context::$client_ip."\n".$e->__toString();
+            $msg = 'uid:'.Context::$client_id."\tclient_ip:".Context::$client_ip."\n".$e->__toString();
         }
         
         $session_str_now = $_SESSION !== null ? Context::sessionEncode($_SESSION) : '';
@@ -177,10 +175,12 @@ class BusinessWorker extends Man\Core\SocketWorker
                     // 删除连不上的端口
                     if($this->badGatewayAddress[$addr]++ > self::MAX_RETRY_COUNT)
                     {
+                        \Man\Core\Lib\Mutex::get();
                         $addresses_list = Store::instance('gateway')->get($key);
                         unset($addresses_list[$addr]);
                         Store::instance('gateway')->set($key, $addresses_list);
                         $this->notice("tcp://$addr ".$errstr." del $addr from store", false);
+                        \Man\Core\Lib\Mutex::release();
                     }
                     continue;
                 }
@@ -223,7 +223,7 @@ class BusinessWorker extends Man\Core\SocketWorker
             $the_fd = (int) $con;
             if($the_fd == $fd)
             {
-                unset($this->gatewayConnections[$addr]);
+                unset($this->gatewayConnections[$addr], $this->badGatewayAddress[$addr]);
             }
         }
         parent::closeClient($fd);
