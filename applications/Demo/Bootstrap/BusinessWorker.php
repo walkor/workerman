@@ -120,7 +120,7 @@ class BusinessWorker extends Man\Core\SocketWorker
             switch($cmd)
             {
                 case GatewayProtocol::CMD_ON_GATEWAY_CONNECTION:
-                    call_user_func_array(array('Event', 'onGatewayConnect'), array());
+                    call_user_func_array(array('Event', 'onGatewayConnect'), array(Context::$client_id));
                     break;
                 case GatewayProtocol::CMD_ON_MESSAGE:
                     call_user_func_array(array('Event', 'onMessage'), array(Context::$client_id, $pack->body));

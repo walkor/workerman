@@ -6,6 +6,7 @@
  * 可以开启多个telnet窗口，窗口间可以互相聊天
  * 
  * websocket协议的聊天室见workerman-chat及workerman-todpole
+ * 
  * @author walkor <workerman.net>
  */
 
@@ -19,9 +20,10 @@ use \Protocols\TextProtocol;
 class Event
 {
     /**
-     * 当网关有客户端链接上来时触发，一般这里留空
+     * 当网关有客户端链接上来时触发，每个客户端只触发一次，如果不许要任何操作可以不实现此方法
+     * 这里当客户端一连上来就给客户端发送输入名字的提示
      */
-    public static function onGatewayConnect()
+    public static function onGatewayConnect($client_id)
     {
         Gateway::sendToCurrentClient(TextProtocol::encode("type in your name:"));
     }
