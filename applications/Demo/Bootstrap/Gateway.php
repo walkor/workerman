@@ -71,6 +71,12 @@ class Gateway extends Man\Core\SocketWorker
     protected $workerConnections = array();
     
     /**
+     * 客户端心跳信息
+     * [client_id=>not_response_count, client_id=>not_response_count, ..]
+     */
+    protected $pingInfo = array();
+    
+    /**
      * gateway 发送心跳时间间隔 单位：秒 ,0表示不发送心跳，在配置中设置
      * @var integer
      */
@@ -79,10 +85,15 @@ class Gateway extends Man\Core\SocketWorker
     /**
      * 心跳数据
      * 可以是二进制数据(二进制数据保存在文件中，在配置中设置ping数据文件路径 如 ping_data=/yourpath/ping.bin)
-     * ping数据应该是客户端能够识别的数据格式，只是检测连接的连通性，客户端收到心跳数据可以选择忽略此数据包
+     * ping数据应该是客户端能够识别的数据格式，客户端必须回复心跳，不然链接会断开
      * @var string
      */
     protected $pingData = '';
+    
+    /**
+     * 客户端连续$pingNotResponseLimit次不回应心跳则断开链接
+     */
+    protected $pingNotResponseLimit = 1;
     
     /**
      * 命令字，统计用到
@@ -103,6 +114,12 @@ class Gateway extends Man\Core\SocketWorker
      */
     public function dealInput($recv_buffer)
     {
+        // 只要客户端有回应就是没掉线
+        if(!empty($this->pingInfo[$this->connClientMap[$this->currentDealFd]]))
+        {
+            $this->pingInfo[$this->connClientMap[$this->currentDealFd]] = 0;
+        }
+        // 处理粘包
         return call_user_func_array(array('Event', 'onGatewayMessage'), array($recv_buffer));
     }
     
@@ -193,6 +210,13 @@ class Gateway extends Man\Core\SocketWorker
             $this->pingData = $ping_data_or_path;
         }
         
+        // 不返回心跳回应的限定值
+        $ping_not_response_limit = (int)\Man\Core\Lib\Config::get($this->workerName.'.ping_not_response_limit');
+        if($ping_not_response_limit > 0)
+        {
+            $this->pingNotResponseLimit = $ping_not_response_limit;
+        }
+        
         // 设置定时任务，发送心跳
         if($this->pingInterval > 0 && $this->pingData)
         {
@@ -207,6 +231,7 @@ class Gateway extends Man\Core\SocketWorker
         // 执行到就退出
         exit(0);
     }
+    
     
     /**
      * 接受一个链接
@@ -684,9 +709,37 @@ class Gateway extends Man\Core\SocketWorker
     
     /**
      * 向客户端发送心跳数据
+     * 并把没回应心跳的客户端踢掉
      */
     public function ping()
     {
-        $this->broadCast($this->pingData);
+        // 清理下线的链接
+        foreach($this->pingInfo as $client_id=>$not_response_count)
+        {
+            // 已经下线的忽略
+            if(!isset($this->clientConnMap[$client_id]))
+            {
+                unset($this->pingInfo[$client_id]);
+                continue;
+            }
+            // 上次发送的心跳还没有回复次数大于限定值就断开
+            if($not_response_count >= $this->pingNotResponseLimit)
+            {
+                $this->closeClient($this->clientConnMap[$client_id]);
+            }
+        }
+        // 向所有链接发送心跳数据
+        foreach($this->clientConnMap as $client_id=>$conn)
+        {
+            $this->sendToSocketId($conn, $this->pingData);
+            if(isset($this->pingInfo[$client_id]))
+            {
+                $this->pingInfo[$client_id]++;
+            }
+            else
+            {
+                $this->pingInfo[$client_id] = 1;
+            }
+        }
     }
 }

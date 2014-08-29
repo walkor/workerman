@@ -50,7 +50,7 @@ class Event
         if(empty($_SESSION['name']))
         {
             $_SESSION['name'] = TextProtocol::decode($message);
-            Gateway::sendToCurrentClient("chart room login success, your client_id is $client_id, name is {$_SESSION['name']}\nuse client_id:words send message to one user\nuse words send message to all\n");
+            Gateway::sendToCurrentClient("chat room login success, your client_id is $client_id, name is {$_SESSION['name']}\nuse client_id:words send message to one user\nuse words send message to all\n");
              
             // 广播所有用户，xxx come
             return GateWay::sendToAll(TextProtocol::encode("{$_SESSION['name']}[$client_id] come"));
