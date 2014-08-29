@@ -200,9 +200,13 @@ class WebServer extends Man\Core\SocketWorker
                 return $this->sendToClient(Man\Common\Protocols\Http\http_end('<h1>400 Bad Request</h1>'));
             }
             
+            $file = realpath($file);
+            
             // 如果请求的是php文件
             if($extension == 'php')
             {
+                $cwd = getcwd();
+                chdir($root_dir);
                 ini_set('display_errors', 'off');
                 // 缓冲输出
                 ob_start();
@@ -232,6 +236,7 @@ class WebServer extends Man\Core\SocketWorker
                 $this->sendToClient($buffer);
                 // 执行php每执行一次就退出(原因是有的业务使用了require_once类似的语句，不能重复加载业务逻辑)
                 //return $this->stop();
+                chdir($cwd);
                 return ;
             }
             
@@ -288,7 +293,6 @@ class WebServer extends Man\Core\SocketWorker
             {
                 Man\Common\Protocols\Http\header("Last-Modified: $modified_time");
             }
-            
             // 发送给客户端
            return $this->sendToClient(Man\Common\Protocols\Http\http_end($file_content));
         }
