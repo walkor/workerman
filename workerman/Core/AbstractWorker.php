@@ -144,7 +144,7 @@ abstract class AbstractWorker
         {
             return array();
         }
-        return shm_get_var(Master::getShmId(), Master::STATUS_VAR_ID);
+        return @shm_get_var(Master::getShmId(), Master::STATUS_VAR_ID);
     }
     
     /**
