@@ -30,7 +30,19 @@ class Store
             
             if(!isset(self::$instance[$config_name]))
             {
-                self::$instance[$config_name] = new \Memcache;
+                if(extension_loaded('Memcached'))
+                {
+                    self::$instance[$config_name] = new \Memcached;
+                }
+                elseif(extension_loaded('Memcache'))
+                {
+                    self::$instance[$config_name] = new \Memcache;
+                }
+                else
+                {
+                    sleep(2);
+                    exit("extension memcached is not installed\n");
+                }
                 foreach(\Config\Store::$$config_name as $address)
                 {
                     list($ip, $port) = explode(':', $address);
