@@ -469,13 +469,13 @@ abstract class SocketWorker extends AbstractWorker
     protected function closeClient($fd)
     {
         // udp忽略
-        if($this->protocol != 'udp')
+        if($this->protocol != 'udp' && isset($this->connections[$fd]))
         {
             $this->event->del($this->connections[$fd], Events\BaseEvent::EV_READ);
             $this->event->del($this->connections[$fd], Events\BaseEvent::EV_WRITE);
             fclose($this->connections[$fd]);
-            unset($this->connections[$fd], $this->recvBuffers[$fd], $this->sendBuffers[$fd]);
         }
+        unset($this->connections[$fd], $this->recvBuffers[$fd], $this->sendBuffers[$fd]);
     }
     
     /**

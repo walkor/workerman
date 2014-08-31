@@ -478,6 +478,7 @@ class Master
         pcntl_signal(SIGALRM, SIG_IGN);
         pcntl_signal(SIGINT, SIG_IGN);
         pcntl_signal(SIGUSR1, SIG_IGN);
+        pcntl_signal(SIGUSR2, SIG_IGN);
         pcntl_signal(SIGHUP, SIG_IGN);
     }
     
