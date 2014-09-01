@@ -277,7 +277,7 @@ class Gateway
            $connections = self::$businessWorker->getGatewayConnections();
            if(!isset($connections[$address]))
            {
-               $e = new \Exception("sendToGateway($address, $buffer) fail \$connections:".json_encode($connections));
+               $e = new \Exception("sendToGateway($address, $buffer) fail \$connections:".var_export($connections, true));
                return false;
            }
            return self::$businessWorker->sendToClient($buffer, $connections[$address]);
