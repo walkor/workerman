@@ -93,7 +93,7 @@ class Gateway extends Man\Core\SocketWorker
     /**
      * 客户端连续$pingNotResponseLimit次不回应心跳则断开链接
      */
-    protected $pingNotResponseLimit = 1;
+    protected $pingNotResponseLimit = 0;
     
     /**
      * 命令字，统计用到
@@ -211,11 +211,7 @@ class Gateway extends Man\Core\SocketWorker
         }
         
         // 不返回心跳回应的限定值
-        $ping_not_response_limit = (int)\Man\Core\Lib\Config::get($this->workerName.'.ping_not_response_limit');
-        if($ping_not_response_limit > 0)
-        {
-            $this->pingNotResponseLimit = $ping_not_response_limit;
-        }
+        $this->pingNotResponseLimit = (int)\Man\Core\Lib\Config::get($this->workerName.'.ping_not_response_limit');
         
         // 设置定时任务，发送心跳
         if($this->pingInterval > 0 && $this->pingData)
@@ -723,7 +719,7 @@ class Gateway extends Man\Core\SocketWorker
                 continue;
             }
             // 上次发送的心跳还没有回复次数大于限定值就断开
-            if($not_response_count >= $this->pingNotResponseLimit)
+            if($this->pingNotResponseLimit > 0 && $not_response_count >= $this->pingNotResponseLimit)
             {
                 $this->closeClient($this->clientConnMap[$client_id]);
             }
