@@ -1,7 +1,7 @@
 <?php 
 /**
  * 
-* @author walkor <worker-man@qq.com>
+* @author walkor <workerman.net>
  */
 class StatisticProvider extends Man\Core\SocketWorker
 {
