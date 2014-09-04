@@ -10,12 +10,17 @@ class JsonProtocol
     // 根据首部四个字节（int）判断数据是否接收完毕
     public static function check($buffer)
     {
-        // 读取首部四个字节
+        // 已经收到的长度（字节）
+        $recv_length = strlen($buffer);
+        // 接收到的数据长度不够？
+        if($recv_length<4)
+        {
+            return 4 - $recv_length;
+        }
+        // 读取首部4个字节，网络字节序int
         $buffer_data = unpack('Ntotal_length', $buffer);
         // 得到这次数据的整体长度（字节）
         $total_length = $buffer_data['total_length'];
-        // 已经收到的长度（字节）
-        $recv_length = strlen($buffer);
         if($total_length>$recv_length)
         {
             // 还有这么多字节要接收
