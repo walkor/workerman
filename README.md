@@ -21,24 +21,24 @@ workerman 具有以下特性
  * 服务端心跳支持
 
  [更多请访问www.workerman.net](http://www.workerman.net)  
- [文档](http://doc.workerman.net)  
+ [文档doc.workerman.net](http://doc.workerman.net)  
 
 applications/Demo测试方法
 ===============
   * 运行 telnet ip 8480
   * 首先输入昵称 回车
   * 后面直接打字回车是向所有人发消息
-  * $uid:xxxxxx 是向$uid用户发送消息  
+  * uid:聊天内容 是向uid用户发送消息  
 
 可以开多个telnet窗口，窗口间可以实时聊天
 
 关于applications/Demo
 =================
- * applications/Demo的业务逻辑全部在applications/Demo/Event.php中
- * 开发者看懂applications/Demo/Event.php的代码基本上就知道如何开发了
- * applications/Demo使用的是及其简单的文本协议，适合非浏览器类的应用参考。例如移动通讯、手游、硬件通讯、智能家居等
- * 如果是浏览器类的即时应用，可以参考[workerman-chat](http://www.workerman.net/workerman-chat) 同样只需要看懂applications/Chat/Event.phpj即可
- * 长连接类的应用 applications/Demo  workerman-chat workerman-todpole workerman-flapbird 它们的代码结构完全相同，只是applications/Chat/Event.php实现不同
+ * [applications/Demo](https://github.com/walkor/workerman/tree/master/applications/Demo) 的业务逻辑全部在[applications/Demo/Event.php](https://github.com/walkor/workerman/blob/master/applications/Demo/Event.php) 中
+ * 开发者看懂[applications/Demo/Event.php](https://github.com/walkor/workerman/blob/master/applications/Demo/Event.php) 的代码基本上就知道如何开发了
+ * [applications/Demo](https://github.com/walkor/workerman/tree/master/applications/Demo) 使用的是及其简单的文本协议，适合非浏览器类的应用参考。例如移动通讯、手游、硬件通讯、智能家居等
+ * 如果是浏览器类的即时应用，可以参考[workerman-chat](http://www.workerman.net/workerman-chat) ，使用的是websocket协议（支持各种浏览器），同样只需要看懂[applications/Chat/Event.php](https://github.com/walkor/workerman-chat/blob/master/applications/Chat/Event.php) 即可
+ * 长连接类的应用 [applications/Demo](https://github.com/walkor/workerman/tree/master/applications/Demo)  [workerman-chat](http://www.workerman.net/workerman-chat)  [workerman-todpole](https://github.com/walkor/workerman-todpole) [workerman-flappy-bird](https://github.com/walkor/workerman-flappy-bird) 它们的代码结构完全相同，只是applications/XXX/Event.php实现不同
 
 一些demo连接
 ==================
