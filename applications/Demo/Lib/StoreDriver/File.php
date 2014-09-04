@@ -32,7 +32,14 @@ class File
         $this->dataFile = \Config\Store::$storePath . "/$config_name.store.cache.php";
         if(!is_dir(\Config\Store::$storePath) && !mkdir(\Config\Store::$storePath, 0777, true))
         {
-            throw new \Exception('cant not mkdir('.\Config\Store::$storePath.')');
+            // 可能目录已经被其它进程创建
+            clearstatcache();
+            if(!is_dir(\Config\Store::$storePath))
+            {
+                // 避免狂刷日志
+                sleep(1);
+                throw new \Exception('cant not mkdir('.\Config\Store::$storePath.')');
+            }
         }
         if(!is_file($this->dataFile))
         {

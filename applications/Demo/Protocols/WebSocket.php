@@ -13,6 +13,14 @@ class WebSocket
      */
     public static function check($buffer)
     {
+        // 数据长度
+        $recv_len = strlen($buffer);
+        // 长度不够
+        if($recv_len < 6)
+        {
+            return 6-$recv_len;
+        }
+        
         // 握手阶段客户端发送HTTP协议
         if(0 === strpos($buffer, 'GET'))
         {
@@ -34,7 +42,6 @@ class WebSocket
         }
         
         // websocket二进制数据
-        $recv_len = strlen($buffer);
         $data_len = ord($buffer[1]) & 127;
         $head_len = 6;
         if ($data_len === 126) {
