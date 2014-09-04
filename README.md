@@ -19,6 +19,7 @@ workerman 具有以下特性
  * 支持以指定用户运行worker进程
  * 支持请求数上限配置
  * 服务端心跳支持
+ * 支持多服务器部署
 
  [更多请访问www.workerman.net](http://www.workerman.net)  
  [文档doc.workerman.net](http://doc.workerman.net)  
