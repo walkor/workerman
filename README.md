@@ -53,7 +53,8 @@ applications/Demo测试方法
 
 短链开发demo
 ============
-```
+
+```php
 <?php
 class EchoService extends \Man\Core\SocketWorker
 {
@@ -99,7 +100,7 @@ class EchoService extends \Man\Core\SocketWorker
 长链接应用开发demo
 =============
 
-```
+``php
 // 协议为 文本+回车
 class Event
 {
