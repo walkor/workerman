@@ -3,11 +3,11 @@
 
 注意：强烈建议生产环境包括压测环境使用memcache，配置方法如下：
 ========
-安装memcahced服务，例如 ubuntu 运行sudo apt-get install memcached  
-启动memcached ，例如 ubuntu 运行 memcached -m 256 -p 22322 -u memcache -l 127.0.0.1 -d  
-安装memcache扩展，例如 ubuntu 运行 sudo apt-get install php5-memcached  
-设置 applications/XXX/Config/Store.php 中的 public static $driver = self::DRIVER_MC；public static $gateway = array('127.0.0.1:22322');   
-重启workerman  
+ * 安装memcahced服务，例如 ubuntu 运行sudo apt-get install memcached  
+ * 启动memcached ，例如 ubuntu 运行 memcached -m 256 -p 22322 -u memcache -l 127.0.0.1 -d  
+ * 安装memcache扩展，例如 ubuntu 运行 sudo apt-get install php5-memcached  
+ * 设置 applications/XXX/Config/Store.php 中的 public static $driver = self::DRIVER_MC；public static $gateway = array('127.0.0.1:22322');   
+ * 重启workerman  
 
 ### Demo测试方法 
   * 运行 telnet ip 8480
