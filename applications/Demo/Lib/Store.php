@@ -25,7 +25,8 @@ class Store
         {
             if(!isset(\Config\Store::$$config_name))
             {
-                throw new \Exception('\Config\Store::$config_name not set');
+                echo "\\Config\\Store::$config_name not set\n";
+                throw new \Exception("\\Config\\Store::$config_name not set\n");
             }
             
             if(!isset(self::$instance[$config_name]))
