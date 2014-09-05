@@ -50,6 +50,111 @@ applications/Demo测试方法
 [thrift-rpc](http://www.workerman.net/workerman-thrift)  
 [统计监控系统](http://www.workerman.net/workerman-statistics)  
 
+
+短链开发demo
+============
+```
+<?php
+class EchoService extends \Man\Core\SocketWorker
+{
+   /**
+    * 判断telnet客户端发来的数据是否接收完整
+    */
+   public function dealInput($recv_buffer)
+   {
+        // 根据协议,判断最后一个字符是不是回车 \n
+        if($recv_buffer[strlen($recv_buffer)-1] != "\n")
+        {
+            // 不是回车返回1告诉workerman我还需要再读一个字符
+            return 1;
+        }
+        // 告诉workerman数据完整了
+        return 0;
+   }
+
+   /**
+    * 处理业务逻辑，这里只是按照telnet客户端发来的命令返回对应的数据
+    */
+   public function dealProcess($recv_buffer)
+   {
+        // 判断telnet客户端发来的是什么
+        $cmd = trim($recv_buffer);
+        switch($cmd)
+        {
+            // 获得服务器的日期
+            case 'date':
+            return $this->sendToClient(date('Y-m-d H:i:s')."\n");
+            // 获得服务器的负载
+            case 'load':
+            return $this->sendToClient(var_export(sys_getloadavg(), true)."\n");
+            case 'quit':
+            return $this->closeClient($this->currentDealFd);
+            default:
+            return $this->sendToClient("unknown cmd\n");
+        }
+   }
+}
+```
+
+长链接应用开发demo
+=============
+
+```
+// 协议为 文本+回车
+class Event
+{
+    /**
+     * 网关有消息时，区分请求边界，分包
+     */
+    public static function onGatewayMessage($buffer)
+    {
+        // 判断最后一个字符是否是回车("\n")
+        if($buffer[strlen($buffer)-1] === "\n")
+        {
+            return 0;
+        }
+
+        // 说明还有请求数据没收到，但是由于不知道还有多少数据没收到，所以只能返回1，因为有可能下一个字符就是回车（"\n"）
+        return 1;
+    }
+
+   /**
+    * 有消息时触发该方法
+    * @param int $client_id 发消息的client_id
+    * @param string $message 消息
+    * @return void
+    */
+   public static function onMessage($client_id, $message)
+   {
+        // 获得客户端来发的消息具体内容，trim去掉了请求末尾的回车
+        $message_data = trim($message);
+
+        // ****如果没有$_SESSION['not_first_time']说明是第一次发消息****
+        if(empty($_SESSION['not_first_time']))
+        {
+            $_SESSION['not_first_time'] = true;
+
+            // 广播所有用户，xxx come
+            GateWay::sendToAll("client_id:$client_id come\n");
+        }
+
+        // 向所有人转发消息
+        return GateWay::sendToAll("client[$client_id] said :" . $message));
+   }
+
+   /**
+    * 当用户断开连接时触发的方法
+    * @param integer $client_id 断开连接的用户id
+    * @return void
+    */
+   public static function onClose($client_id)
+   {
+       // 广播 xxx logout
+       GateWay::sendToAll("client[$client_id] logout\n");
+   }
+}
+```
+
  
 性能测试
 =============
