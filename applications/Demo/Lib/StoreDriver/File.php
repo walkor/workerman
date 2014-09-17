@@ -30,7 +30,7 @@ class File
     public function __construct($config_name)
     {
         $this->dataFile = \Config\Store::$storePath . "/$config_name.store.cache.php";
-        if(!is_dir(\Config\Store::$storePath) && !mkdir(\Config\Store::$storePath, 0777, true))
+        if(!is_dir(\Config\Store::$storePath) && !@mkdir(\Config\Store::$storePath, 0777, true))
         {
             // 可能目录已经被其它进程创建
             clearstatcache();
@@ -119,6 +119,14 @@ class File
         $this->writeToDisk();
         flock($this->dataFileHandle, LOCK_UN);
         return $this->dataCache[$key];
+    }
+    
+    /**
+     * 清零销毁存储数据
+     */
+    public function destroy()
+    {
+        @unlink($this->dataFile);
     }
     
     /**

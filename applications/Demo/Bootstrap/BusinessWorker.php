@@ -110,31 +110,27 @@ class BusinessWorker extends Man\Core\SocketWorker
         $session_str_copy = $pack->ext_data;
         $cmd = $pack->header['cmd'];
         
-        StatisticClient::tick();
-        $module = __CLASS__;
         $interface = isset(self::$interfaceMap[$cmd]) ? self::$interfaceMap[$cmd] : $cmd;
-        $success = 1;
-        $code = 0;
-        $msg = '';
+        StatisticClient::tick(__CLASS__, $interface);
         try{
             switch($cmd)
             {
                 case GatewayProtocol::CMD_ON_GATEWAY_CONNECTION:
-                    call_user_func_array(array('Event', 'onGatewayConnect'), array(Context::$client_id));
+                    Event::onGatewayConnect(Context::$client_id);
                     break;
                 case GatewayProtocol::CMD_ON_MESSAGE:
-                    call_user_func_array(array('Event', 'onMessage'), array(Context::$client_id, $pack->body));
+                    Event::onMessage(Context::$client_id, $pack->body);
                     break;
                 case GatewayProtocol::CMD_ON_CLOSE:
-                    call_user_func_array(array('Event', 'onClose'), array(Context::$client_id));
+                    Event::onClose(Context::$client_id);
                     break;
             }
+            StatisticClient::report(__CLASS__, $interface, 1, 0, '');
         }
         catch(\Exception $e)
         {
-            $success = 0;
-            $code = $e->getCode() > 0 ? $e->getCode() : 500;
-            $msg = 'uid:'.Context::$client_id."\tclient_ip:".Context::$client_ip."\n".$e->__toString();
+            $msg = 'client_id:'.Context::$client_id."\tclient_ip:".Context::$client_ip."\n".$e->__toString();
+            StatisticClient::report(__CLASS__, $interface, 0, $e->getCode() > 0 ? $e->getCode() : 201, $msg);
         }
         
         $session_str_now = $_SESSION !== null ? Context::sessionEncode($_SESSION) : '';
@@ -144,7 +140,6 @@ class BusinessWorker extends Man\Core\SocketWorker
         }
         
         Context::clear();
-        StatisticClient::report($module, $interface, $success, $code, $msg);
     }
     
     /**

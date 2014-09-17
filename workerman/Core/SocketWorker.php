@@ -398,7 +398,7 @@ abstract class SocketWorker extends AbstractWorker
             // 出错
             $this->statusInfo['packet_err']++;
             $this->sendToClient('packet_err:'.$this->recvBuffers[$fd]['buf']);
-            $this->notice("PACKET_ERROR\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".var_export($this->recvBuffers[$fd]['buf'],true)."]\n");
+            $this->notice("PACKET_ERROR\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".bin2hex($this->recvBuffers[$fd]['buf'])."]\n");
             $this->closeClient($fd);
         }
         // 包接收完毕
@@ -413,7 +413,7 @@ abstract class SocketWorker extends AbstractWorker
             }
             catch(\Exception $e)
             {
-                $this->notice('CODE:' . $e->getCode() . ' MESSAGE:' . $e->getMessage()."\n".$e->getTraceAsString()."\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".var_export($this->recvBuffers[$fd]['buf'],true)."]\n");
+                $this->notice('CODE:' . $e->getCode() . ' MESSAGE:' . $e->getMessage()."\n".$e->getTraceAsString()."\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".bin2hex($this->recvBuffers[$fd]['buf'])."]\n");
                 $this->statusInfo['throw_exception'] ++;
             }
             
@@ -437,7 +437,7 @@ abstract class SocketWorker extends AbstractWorker
             // 判断是否大于接收缓冲区最大值限制
             if(strlen($this->recvBuffers[$fd]['buf']) + $remain_len > $this->maxRecvBufferSize)
             {
-                $this->notice('client_ip:'.$this->getRemoteIp().' strlen(recvBuffers['.$this->currentDealFd.'])='.strlen($this->recvBuffers[$fd]['buf']).'+' . $remain_len . '>' . $this->maxRecvBufferSize.' and close connection');
+                $this->notice('client_ip:'.$this->getRemoteIp().' send a packet which length greater than conf.max_recv_buffer_size:' . $this->maxRecvBufferSize.' .May be an attack so close connection');
                 $this->closeClient($fd);
             }
             else
@@ -567,10 +567,10 @@ abstract class SocketWorker extends AbstractWorker
             {
                 // 获得将要发送的buffer的长度
                 $total_send_buffer_len = strlen($this->sendBuffers[$this->currentDealFd]) + strlen($buffer_to_send);
-                // 如果大于最大限制值则丢弃这儿包
+                // 如果大于最大限制值则丢弃这个包
                 if($total_send_buffer_len > $this->maxSendBufferSize)
                 {
-                    $this->notice('client_ip:'.$this->getRemoteIp().' strlen(sendBuffer['.$this->currentDealFd.'])='.$total_send_buffer_len.'>' . $this->maxSendBufferSize.' and droped');
+                    $this->notice('sendToClient fail. The send buffer\'s length of client_ip:'.$this->getRemoteIp().' is '.$total_send_buffer_len.' greater than conf.d.max_send_buffer_size:' . $this->maxSendBufferSize.', so discard the packet');
                     return false;
                 }
                 // 将数据放入发送缓冲区中，等待发送
@@ -596,7 +596,7 @@ abstract class SocketWorker extends AbstractWorker
             
             if(!isset($this->connections[$this->currentDealFd]))
             {
-                $debug_str = new \Exception('sendToClient fail $this->connections['.var_export($this->currentDealFd, true).'] is null');
+                $debug_str = new \Exception('sendToClient fail. Connections of '. $this->currentDealFd.' does not exist');
                 $this->notice((string)$debug_str);
                 return false;
             }

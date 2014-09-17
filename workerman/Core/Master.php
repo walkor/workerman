@@ -33,7 +33,7 @@ class Master
      * 版本
      * @var string
      */
-    const VERSION = '2.1.3';
+    const VERSION = '2.1.4';
     
     /**
      * 服务名
@@ -916,10 +916,10 @@ class Master
      */
     public static function notice($msg, $display = false)
     {
-        Lib\Log::add("Server:".$msg);
+        Lib\Log::add("Server:".trim($msg));
         if($display)
         {
-            if(self::$serviceStatus == self::STATUS_STARTING)
+            if(self::$serviceStatus == self::STATUS_STARTING && @posix_ttyname(STDOUT))
             {
                 echo($msg."\n");
             }

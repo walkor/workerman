@@ -244,19 +244,19 @@ function formatSt($str, $date, &$code_map)
         $data[$time_line] = array(
                 'time'          => date('Y-m-d H:i:s', $time_line),
                 'total_count'   => $item['suc_count']+$item['fail_count'],
-                'total_avg_time'=> $item['suc_count']+$item['fail_count'] == 0 ? 0 : round(($item['suc_cost_time']+$item['fail_cost_time'])/($item['suc_count']+$item['fail_count']), 4),
+                'total_avg_time'=> $item['suc_count']+$item['fail_count'] == 0 ? 0 : round(($item['suc_cost_time']+$item['fail_cost_time'])/($item['suc_count']+$item['fail_count']), 6),
                 'suc_count'     => $item['suc_count'],
-                'suc_avg_time'  => $item['suc_count'] == 0 ? $item['suc_count'] : round($item['suc_cost_time']/$item['suc_count'], 4),
+                'suc_avg_time'  => $item['suc_count'] == 0 ? $item['suc_count'] : round($item['suc_cost_time']/$item['suc_count'], 6),
                 'fail_count'    => $item['fail_count'],
-                'fail_avg_time' => $item['fail_count'] == 0 ? 0 : round($item['fail_cost_time']/$item['fail_count'], 4),
+                'fail_avg_time' => $item['fail_count'] == 0 ? 0 : round($item['fail_cost_time']/$item['fail_count'], 6),
                 'precent'       => $item['suc_count']+$item['fail_count'] == 0 ? 0 : round(($item['suc_count']*100/($item['suc_count']+$item['fail_count'])), 4),
         );
     }
     $time_point =  strtotime($date);
     for($i=0;$i<288;$i++)
     {
-    $data[$time_point] = isset($data[$time_point]) ? $data[$time_point] :
-    array(
+        $data[$time_point] = isset($data[$time_point]) ? $data[$time_point] :
+        array(
             'time' => date('Y-m-d H:i:s', $time_point),
             'total_count'   => 0,
             'total_avg_time'=> 0,
@@ -265,8 +265,8 @@ function formatSt($str, $date, &$code_map)
             'fail_count'    => 0,
             'fail_avg_time' => 0,
             'precent'       => 100,
-            );
-            $time_point +=300;
+        );
+        $time_point +=300;
     }
     ksort($data);
     return $data;
