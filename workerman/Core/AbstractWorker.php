@@ -260,7 +260,7 @@ abstract class AbstractWorker
     {
         $str = 'Worker['.get_class($this).']:'.$str;
         Lib\Log::add($str);
-        if($display && Lib\Config::get('workerman.debug') == 1 && @posix_ttyname(STDOUT))
+        if($display && Lib\Config::get('workerman.debug') == 1)
         {
             echo $str."\n";
         }

@@ -1,6 +1,9 @@
 <?php
 require_once  __DIR__.'/_init.php';
 
+// 检查是否登录
+check_auth();
+
 $func = isset($_GET['fn']) ? $_GET['fn'] : 'main';
 $func = "\\Statistics\\Modules\\".$func;
 if(!function_exists($func))
