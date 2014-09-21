@@ -5,7 +5,7 @@ ini_set('display_errors', 'on');
 ini_set('limit_memory','512M');
 ini_set('opcache.enable', false);
 date_default_timezone_set('Asia/Shanghai');
-
+ 
 if(empty($argv[1]))
 {
     echo "Usage: workermand {start|stop|restart|reload|kill|status}".PHP_EOL;
