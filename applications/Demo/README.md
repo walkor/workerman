@@ -34,7 +34,11 @@
 │   │
 │   ├── Gateway.php          // gateway进程的接口，BusinessWorker进程通过此文件的接口向gateway进程发送数据
 │   │
-│   ├── Store.php            // 用户存储用户连接信息（存储于logs/data.php文件中，高并发应用请使用Store.php.for-memcache替换）
+│   ├── Store.php            // 存储类，默认使用文件存储，配置在Config/Store.php，生产环境请使用memcache作为存储
+│   │
+│   ├── Db.php                //  Db类，用于管理数据库连接
+│   │
+│   ├── DbConnection.php       // 数据库连接类，只支持pdo
 │   │
 │   ├── Autoloader.php       // 自动加载逻辑
 │   │
@@ -43,6 +47,8 @@
 │   └── StatisticClient.php  // 统计模块客户端
 │ 
 ├── Config  // 配置
+│   │
+│   ├── Db.php          // 数据库配置
 │   │
 │   └── Store.php            // 存储配置，分为两种，一种是文件存储（无法支持分布式，开发测试用），另外一种是memcache存储，支持分布式
 │ 
@@ -72,3 +78,93 @@ gateway进程因为要维持用户链接，这要求gateway进程一定要非常
 由于gateway进程没有业务逻辑，所以geteway进程极少有代码更新。而worker进程由于负责业务逻辑，会有经常性的代码更新。这样看来我们每次代码更新，只要重启worker进程就可以实现运行新的业务代码。实际上也是这样，当更新程序逻辑时，我们只需要重启worker进程就可以了，这样就不会导致更新代码的时候用户链接会断开，达到不影响用户的情况下热更新后台程序。
 ###4、扩展容易
 当worker进程不够用的时候，我们可以水平扩展它，可增加worker的进程数量，甚至可以增加服务器专门运行worker进程，达到水平扩展的目的，以支持更大的用户量。gateway进程也是同样的道理。
+
+数据库类的使用方法
+=========
+
+## 配置
+在Config/Db.php中配置数据库信息，如果有多个数据库，可以按照one_demo的配置在Db.php中配置多个实例  
+例如下面配置了两个数据库实例
+
+```
+class Db
+{
+    // 数据库实例1
+    public static $db1 = array(
+        'host'    => '127.0.0.1',
+        'port'    => 3306,
+        'user'    => 'mysql_user',
+        'password' => 'mysql_password',
+        'dbname'  => 'db1',
+        'charset'    => 'utf8',
+    );
+  
+    // 数据库实例2
+    public static $db2 = array array(
+        'host'    => '127.0.0.1',
+        'port'    => 3306,
+        'user'    => 'mysql_user',
+        'password' => 'mysql_password',
+        'dbname'  => 'db2',
+        'charset'    => 'utf8',
+    );
+}
+```
+2、使用方法
+
+```php
+$db1 = \Lib\Db::instance('db1');  
+$db2 = \Lib\Db::instance('db2');  
+
+// 获取所有数据
+$db1->select('ID,Sex')->from('Persons')->where('sex= :sex')->bindValues(array('sex'=>'M'))->query();  
+//等价于  
+$db1->select('ID,Sex')->from('Persons')->where("sex= 'F' ")->query(); 
+//等价于  
+$db1->query("SELECT ID,Sex FROM `Persons` WHERE sex=‘M’");  
+
+
+// 获取一行数据
+$db1->select('ID,Sex')->from('Persons')->where('sex= :sex')->bindValues(array('sex'=>'M'))->row();  
+//等价于  
+$db1->select('ID,Sex')->from('Persons')->where("sex= 'F' ")->row(); 
+//等价于  
+$db1->row("SELECT ID,Sex FROM `Persons` WHERE sex=‘M’");  
+
+
+// 获取一列数据
+$db1->select('ID,Sex')->from('Persons')->where('sex= :sex')->bindValues(array('sex'=>'M'))->column();  
+//等价于  
+$db1->select('ID,Sex')->from('Persons')->where("sex= 'F' ")->column(); 
+//等价于  
+$db1->column("SELECT ID,Sex FROM `Persons` WHERE sex=‘M’");  
+
+// 获取单个值
+$db1->select('ID,Sex')->from('Persons')->where('sex= :sex')->bindValues(array('sex'=>'M'))->single();  
+//等价于  
+$db1->select('ID,Sex')->from('Persons')->where("sex= 'F' ")->single(); 
+//等价于  
+$db1->single("SELECT ID,Sex FROM `Persons` WHERE sex=‘M’");  
+
+// 复杂查询
+$db1->select('*')->from('table1')->innerJoin('table2','table1.uid = table2.uid')->where('age > :age')->groupBy(array('aid'))->having('foo="foo"')->orderBy(array('did'))->limit(10)->offset(20)->bindValues(arra
+y('age' => 13));
+// 等价于
+$db1->query(SELECT * FROM `table1` INNER JOIN `table2` ON `table1`.`uid` = `table2`.`uid` WHERE age > 13 GROUP BY aid HAVING foo="foo" ORDER BY did LIMIT 10 OFFSET 20“);
+
+// 插入
+$insert_id = $db1->insert('Persons')->cols(array('Firstname'=>'abc', 'Lastname'=>'efg', 'Sex'=>'M', 'Age'=>13))->query();
+等价于
+$insert_id = $db1->query("INSERT INTO `Persons` ( `Firstname`,`Lastname`,`Sex`,`Age`) VALUES ( 'abc', 'efg', 'M', 13)");
+
+// 更新
+$row_count = $db1->update('Persons')->cols(array('sex'=>'O'))->where('ID=1')->bindValue('sex', 'F')->query();
+// 等价于
+$row_count = $db1->query("UPDATE `Persons` SET `sex` = 'F' WHERE ID=1");
+
+// 删除
+$row_count = $db1->delete('Persons')->where('ID=9')->query();
+// 等价于
+$row_count = $db1->query("DELETE FROM `Persons` WHERE ID=9");
+
+```
