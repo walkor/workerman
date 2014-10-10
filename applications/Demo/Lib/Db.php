@@ -19,15 +19,15 @@ class Db
      */
     public static function instance($config_name)
     {
-        if(!isset(\Config\Store::$$config_name))
+        if(!isset(\Config\Db::$$config_name))
         {
-            echo "\\Config\\Store::$config_name not set\n";
-            throw new \Exception("\\Config\\Store::$config_name not set\n");
+            echo "\\Config\\Db::$config_name not set\n";
+            throw new \Exception("\\Config\\Db::$config_name not set\n");
         }
         
         if(empty(self::$instance[$config_name]))
         {
-            $config = \Config\Store::$$config_name;
+            $config = \Config\Db::$$config_name;
             self::$instance[$config_name] = new \Lib\DbConnection($config['host'], $config['port'], $config['user'], $config['password'], $config['db_name']);
         }
         return self::$instance[$config_name];
