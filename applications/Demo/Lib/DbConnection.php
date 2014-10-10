@@ -1550,9 +1550,9 @@ class DbConnection
     protected function connect()
     {
         $dsn = 'mysql:dbname='.$this->settings["dbname"].';host='.$this->settings["host"].';port='.$this->settings['port'];
-        $this->pdo = new PDO($dsn, $this->settings["user"], $this->settings["password"], array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . (!empty($this->settings['charset']) ? $this->settings['charset'] : 'utf8')));
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+        $this->pdo = new \PDO($dsn, $this->settings["user"], $this->settings["password"], array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . (!empty($this->settings['charset']) ? $this->settings['charset'] : 'utf8')));
+        $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $this->pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
     }
     /*
     *   关闭连接
@@ -1645,7 +1645,7 @@ class DbConnection
      * @param  int    $fetchmode
      * @return mixed
      */
-    public function query($query = '',$params = null, $fetchmode = PDO::FETCH_ASSOC)
+    public function query($query = '',$params = null, $fetchmode = \PDO::FETCH_ASSOC)
     {
         $query = trim($query);
         if(empty($query))
@@ -1696,7 +1696,7 @@ class DbConnection
         $this->lastSql = $query;
         
         $this->execute($query,$params);
-        $columns = $this->sQuery->fetchAll(PDO::FETCH_NUM);
+        $columns = $this->sQuery->fetchAll(\PDO::FETCH_NUM);
         $column = null;
         foreach($columns as $cells) {
             $column[] = $cells[0];
@@ -1711,7 +1711,7 @@ class DbConnection
     * @param  int    $fetchmode
     * @return array
     */
-    public function row($query = '',$params = null, $fetchmode = PDO::FETCH_ASSOC)
+    public function row($query = '',$params = null, $fetchmode = \PDO::FETCH_ASSOC)
     {
         $query = trim($query);
         if(empty($query))
