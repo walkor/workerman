@@ -55,6 +55,11 @@ class StatisticClient
         
         $bin_data = StatisticProtocol::encode($module, $interface, $cost_time, $success, $code, $msg);
         
+        if(!$success)
+        {
+            echo $msg;
+        }
+        
         return self::sendData($report_address, $bin_data);
     }
     
