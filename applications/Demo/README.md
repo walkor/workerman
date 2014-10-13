@@ -82,11 +82,15 @@ gateway进程因为要维持用户链接，这要求gateway进程一定要非常
 数据库类的使用方法
 =========
 
+##注意这个数据库类需要mysql_pdo扩展
+
 ## 配置
 在Config/Db.php中配置数据库信息，如果有多个数据库，可以按照one_demo的配置在Db.php中配置多个实例  
 例如下面配置了两个数据库实例
 
-```
+```php
+<?php
+namespace Config;
 class Db
 {
     // 数据库实例1
