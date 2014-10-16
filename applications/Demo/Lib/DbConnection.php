@@ -1,6 +1,10 @@
 <?php
 namespace Lib;
 
+/**
+ * 数据库连接类，依赖mysql_pdo扩展
+ * 在https://github.com/auraphp/Aura.SqlQuery的基础上修改而成
+ */
 class DbConnection 
 {
     /**
@@ -1651,11 +1655,12 @@ class DbConnection
         if(empty($query))
         {
             $query = $this->build();
+            if(!$params)
+            {
+                $params = $this->getBindValues();
+            }
         }
-        if(!$params)
-        {
-            $params = $this->getBindValues();
-        }
+        
         $this->resetAll();
         $this->lastSql = $query;
         
@@ -1687,11 +1692,12 @@ class DbConnection
         if(empty($query))
         {
             $query = $this->build();
+            if(!$params)
+            {
+                $params = $this->getBindValues();
+            }
         }
-        if(!$params)
-        {
-            $params = $this->getBindValues();
-        }
+        
         $this->resetAll();
         $this->lastSql = $query;
         
@@ -1717,11 +1723,12 @@ class DbConnection
         if(empty($query))
         {
             $query = $this->build();
+            if(!$params)
+            {
+                $params = $this->getBindValues();
+            }
         }
-        if(!$params)
-        {
-            $params = $this->getBindValues();
-        }
+        
         $this->resetAll();
         $this->lastSql = $query;
         
@@ -1741,11 +1748,12 @@ class DbConnection
         if(empty($query))
         {
             $query = $this->build();
+            if(!$params)
+            {
+                $params = $this->getBindValues();
+            }
         }
-        if(!$params)
-        {
-            $params = $this->getBindValues();
-        }
+        
         $this->resetAll();
         $this->lastSql = $query;
         
