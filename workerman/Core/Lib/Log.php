@@ -4,7 +4,7 @@ namespace Man\Core\Lib;
  * 
  * 日志类
  * 
-* @author walkor <workerman.net>
+* @author walkor <walkor@workerman.net>
  */
 class Log 
 {

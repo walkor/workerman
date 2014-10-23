@@ -3,7 +3,7 @@ namespace Man\Core\Lib;
 /**
  * 环境检查相关
  * 
-* @author walkor <workerman.net>
+* @author walkor <walkor@workerman.net>
  */
 class Checker
 {

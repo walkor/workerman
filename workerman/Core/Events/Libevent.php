@@ -5,7 +5,7 @@ require_once WORKERMAN_ROOT_DIR . 'Core/Events/interfaces.php';
  * 
  * libevent事件轮询库的封装
  * 
- * @author walkor <workerman.net>
+ * @author walkor <walkor@workerman.net>
  */
 class Libevent implements BaseEvent
 {

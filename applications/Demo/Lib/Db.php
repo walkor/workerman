@@ -2,7 +2,7 @@
 namespace Lib;
 /**
  * 数据库类
- * @author walkor <workerman.net>
+ * @author walkor <walkor@workerman.net>
  */
 class Db
 {

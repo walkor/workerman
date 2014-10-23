@@ -19,7 +19,7 @@ namespace Protocols;
  * }
  * 
  * 
- * @author walkor <workerman.net>
+ * @author walkor <walkor@workerman.net>
  */
 
 class GatewayProtocol

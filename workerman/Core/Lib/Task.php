@@ -11,7 +11,7 @@ namespace Man\Core\Lib;
  * \Man\Core\Lib\Task::add(5, array('class', 'method'), array($arg1, $arg2..));
  * <code>
  * </pre>
-* @author walkor <workerman.net>
+* @author walkor <walkor@workerman.net>
  */
 class Task 
 {

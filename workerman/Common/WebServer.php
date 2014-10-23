@@ -7,7 +7,7 @@ require_once WORKERMAN_ROOT_DIR . 'Common/Protocols/Http/Http.php';
  *  WebServer
  *  HTTP协议
  *  
- * @author walkor <workerman.net>
+ * @author walkor <walkor@workerman.net>
  */
 class WebServer extends Man\Core\SocketWorker
 {

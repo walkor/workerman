@@ -18,7 +18,7 @@ require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Mutex.php';
  * 
  * @package Core
  * 
-* @author walkor <workerman.net>
+* @author walkor <walkor@workerman.net>
  * <b>使用示例:</b>
  * <pre>
  * <code>

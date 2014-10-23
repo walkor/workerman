@@ -3,7 +3,7 @@ namespace Lib;
 /**
  * 
  * 数据发送相关
- * @author walkor <workerman.net>
+ * @author walkor <walkor@workerman.net>
  * 
  */
 require_once __DIR__ . '/Autoloader.php';

@@ -7,7 +7,7 @@
  * 
  * websocket协议的聊天室见workerman-chat及workerman-todpole
  * 
- * @author walkor <workerman.net>
+ * @author walkor <walkor@workerman.net>
  */
 
 use \Lib\Context;

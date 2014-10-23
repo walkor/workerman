@@ -6,7 +6,7 @@ require_once WORKERMAN_ROOT_DIR . 'Core/SocketWorker.php';
  * 当文件更新后会给每个worker进程发送平滑重启信号
  * 做到文件更新自动加载到内存
  * 
-* @author walkor <workerman.net>
+* @author walkor <walkor@workerman.net>
  */
 class FileMonitor extends Man\Core\AbstractWorker
 {

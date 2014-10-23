@@ -3,7 +3,7 @@ namespace Lib;
 /**
  * 存储类
  * 这里用memcache实现
- * @author walkor <workerman.net>
+ * @author walkor <walkor@workerman.net>
  */
 class Store
 {

@@ -2,7 +2,7 @@
 namespace Protocols;
 /**
  * WebSocket 协议解包和打包
- * @author walkor <workerman.net>
+ * @author walkor <walkor@workerman.net>
  */
 
 class WebSocket

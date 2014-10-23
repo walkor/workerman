@@ -5,7 +5,7 @@ require_once WORKERMAN_ROOT_DIR . 'Core/Events/Select.php';
 /**
  * 抽象Worker类
  * 必须实现start方法
-* @author walkor <workerman.net>
+* @author walkor <walkor@workerman.net>
 */
 abstract class AbstractWorker
 {

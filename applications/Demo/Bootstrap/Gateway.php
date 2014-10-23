@@ -5,7 +5,7 @@
  * 1、监听客户端连接
  * 2、监听后端回应并转发回应给前端
  * 
- * @author walkor <workerman.net>
+ * @author walkor <walkor@workerman.net>
  * 
  */
 require_once __DIR__ . '/../Lib/Autoloader.php';
