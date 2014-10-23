@@ -93,6 +93,9 @@ Highcharts.setOptions({
 				}
 			}
 		},
+		credits: {
+			enabled: false,
+		},
 		series: [{
 			type: 'pie',
 			name: '可用性',
@@ -137,6 +140,9 @@ Highcharts.setOptions({
 					format: '<b>{point.name}</b>: {point.percentage:.1f} %'
 				}
 			}
+		},
+		credits: {
+			enabled: false,
 		},
 		series: [{
 			type: 'pie',
@@ -236,8 +242,6 @@ Highcharts.setOptions({
 		},
 		credits: {
 			enabled: false,
-			text: "jumei.com",
-			href: "http://www.jumei.com"
 		},
 		series: [		{
 			name: '成功曲线',

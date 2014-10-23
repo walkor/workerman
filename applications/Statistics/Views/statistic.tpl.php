@@ -153,8 +153,6 @@
 					},
 					credits: {
 						enabled: false,
-						text: "jumei.com",
-						href: "http://www.jumei.com"
 					},
 					series: [{
 						name: '成功曲线',
