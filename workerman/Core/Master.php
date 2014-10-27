@@ -927,7 +927,7 @@ class Master
      * @param string $worker_name
      * @return resource
      */
-    protected function getSocketContext($worker_name)
+    protected static function getSocketContext($worker_name)
     {
         $context = null;
         // 根据手册5.3.3之前版本stream_socket_server 不支持 backlog 选项
