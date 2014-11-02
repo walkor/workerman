@@ -45,10 +45,10 @@ class File
         {
             touch($this->dataFile);
         }
-        $this->dataFileHandle = fopen($this->dataFile, 'r+');
+        $this->dataFileHandle = fopen(__FILE__, 'r');
         if(!$this->dataFileHandle)
         {
-            throw new \Exception("can not fopen($this->dataFile, 'r+')");
+            throw new \Exception("can not fopen($this->dataFile, 'r')");
         }
     }
     

@@ -154,7 +154,14 @@ class Gateway extends Man\Core\SocketWorker
         // 创建内部通信套接字，用于与BusinessWorker通讯
         $start_port = Man\Core\Lib\Config::get($this->workerName.'.lan_port_start');
         // 计算本进程监听的ip端口
-        $this->lanPort = $start_port - posix_getppid() + posix_getpid();
+        if(function_exists('posix_getppid'))
+        {
+            $this->lanPort = $start_port - posix_getppid() + posix_getpid();
+        }
+        else 
+        {
+            $this->lanPort = $start_port + \Thread::getCurrentThreadId()%100;
+        }
         // 如果端口不在合法范围
         if($this->lanPort<0 || $this->lanPort >=65535)
         {

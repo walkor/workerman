@@ -27,5 +27,5 @@ class Store
      * 注意：如果修改了storePath，要将storePath加入到conf/conf.d/FileMonitor.conf的忽略目录中 
      * 例如 $storePath = '/home/data/',则需要在conf/conf.d/FileMonitor.conf加一行 exclude_path[]=/home/data/
      */
-    public static $storePath = '/tmp/workerman-Demo/';
+    public static $storePath = './logs/workerman-demo/';
 }
