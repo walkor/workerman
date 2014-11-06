@@ -55,6 +55,7 @@ class Checker
         $need_map = array(
                 'posix'       => true,
                 'pcntl'       => true,
+                'sockets'   => true,
                 'sysvshm'  => false,
                 'sysvmsg'   => false,
                 'libevent'   => false,
@@ -102,7 +103,6 @@ class Checker
                 'stream_socket_server',
                 'stream_socket_client',
                 'pcntl_signal_dispatch',
-                'exec',
         );
         // 获取php.ini中设置的禁用函数
         if($disable_func_string = ini_get("disable_functions"))
