@@ -374,10 +374,9 @@ abstract class SocketWorker extends AbstractWorker
             // 客户端断开链接
             $this->statusInfo['client_close']++;
             // 如果该链接对应的buffer有数据，说明发生错误
-            if(!empty($this->recvBuffers[$fd]['buf']))
+            if(!empty($this->sendBuffers[$fd]['buf']))
             {
                 $this->statusInfo['send_fail']++;
-                $this->notice("CLIENT_CLOSE\nCLIENT_IP:".$this->getRemoteIp()."\nBUFFER:[".bin2hex($this->recvBuffers[$fd]['buf'])."]\n");
             }
             
             // 关闭链接
@@ -466,8 +465,12 @@ abstract class SocketWorker extends AbstractWorker
      * @param int $fd
      * @return void
      */
-    protected function closeClient($fd)
+    protected function closeClient($fd=null)
     {
+        if(empty($fd))
+        {
+            $fd = $this->currentDealFd;
+        }
         // udp忽略
         if($this->protocol != 'udp' && isset($this->connections[$fd]))
         {
