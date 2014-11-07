@@ -667,7 +667,7 @@ class Gateway extends Man\Core\SocketWorker
      * 用户客户端关闭连接时触发
      * @see Man\Core.SocketWorker::closeClient()
      */
-    protected function closeClient($fd)
+    protected function closeClient($fd = null)
     {
         if($client_id = $this->getClientIdByFd($fd))
         {
