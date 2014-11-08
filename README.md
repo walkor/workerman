@@ -29,7 +29,9 @@ applications/Demo测试方法
   * 运行 telnet ip 8480
   * 首先输入昵称 回车
   * 后面直接打字回车是向所有人发消息
-  * uid:聊天内容 是向uid用户发送消息  
+  * uid:聊天内容 是向uid用户发送消息    
+如下图：  
+![telnet-chat](http://www.workerman.net/img/gif/telnet-chat.gif)  
 
 可以开多个telnet窗口，窗口间可以实时聊天
 
