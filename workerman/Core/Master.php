@@ -260,7 +260,7 @@ class Master
             exit("Setsid fail");
         }
     
-        // 再fork一次
+        // 再fork一次，防止在符合SVR4标准的系统下进程再次获得终端
         $pid2 = pcntl_fork();
         if(-1 == $pid2)
         {
