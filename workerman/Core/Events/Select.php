@@ -54,18 +54,6 @@ class Select implements BaseEvent
     protected $writeTimeout = 1000;
     
     /**
-     * 超时触发的事件
-     * @var array
-     */
-    protected $selectTimeOutEvent = array();
-    
-    /**
-     * 系统调用被打断触发的事件，一般是收到信号
-     * @var array
-     */
-    protected $selectInterruptEvent = array();
-    
-    /**
      * 构造函数 创建一个管道，避免select空fd
      * @return void
      */
@@ -191,7 +179,7 @@ class Select implements BaseEvent
                 }
             }
             
-            // 检查可写描述符，没用到，暂不实现
+            // 检查可写描述符
             foreach($write as $fd)
             {
                 $fd_key = (int) $fd;
