@@ -54,7 +54,7 @@ class Db
         foreach(self::$instance as $connection)
         {
             $connection->closeConnection();
-            self::$instance = array();
         }
+        self::$instance = array();
     }
 }
