@@ -279,34 +279,53 @@ class Monitor extends Man\Core\SocketWorker
                 }
                 
                 $this->sendToClient("---------------------------------------PROCESS STATUS-------------------------------------------\n");
-                $this->sendToClient("pid\tmemory  ".str_pad('    listening', $this->maxAddressLength)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total\n");
+                $this->sendToClient("pid\tmemory  ".str_pad('    listening', $this->maxAddressLength)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total status\n");
                 if(!\Man\Core\Master::getQueueId())
                 {
                     return;
                 }
                 
-                $time_start = time();
+                $time_start = microtime(true);
                 unset($pid_worker_name_map[posix_getpid()]);
                 $total_worker_count = count($pid_worker_name_map);
                 foreach($pid_worker_name_map as $pid=>$worker_name)
                 {
                     posix_kill($pid, SIGUSR1);
-                    if($this->getStatusFromQueue())
+                    if($response_pid = $this->getStatusFromQueue())
                     {
+                        unset($pid_worker_name_map[$response_pid]);
                         $total_worker_count--;
                     }
                 }
                 
-                while($total_worker_count > 0)
+                while(count($pid_worker_name_map) > 0)
                 {
-                    if($this->getStatusFromQueue())
+                    if($response_pid = $this->getStatusFromQueue())
                     {
+                        unset($pid_worker_name_map[$response_pid]);
                         $total_worker_count--;
                     }
-                    if(time() - $time_start > 1)
+                    if(microtime(true) - $time_start > 0.1)
                     {
                         break;
                     }
+                }
+                
+                foreach($pid_worker_name_map as $pid=>$worker_name)
+                {
+                    if('FileMonitor' == $worker_name)
+                    {
+                        continue;
+                    }
+                    
+                    $address = \Man\Core\Lib\Config::get($worker_name . '.listen');
+                    if(!$address)
+                    {
+                        $address = 'none';
+                    }
+                    $str = "$pid\t".str_pad("N/A", 7)." " .str_pad($address,$this->maxAddressLength) ." N/A        ".str_pad($worker_name, $this->maxWorkerNameLength)." ";
+                    $str = $str . str_pad("N/A", 14)." ".str_pad("N/A",10)." ".str_pad("N/A",12)." ".str_pad("N/A", 12)." ".str_pad("N/A",9)." ".str_pad("N/A",15)." N/A       \033[33;33mbusy\033[0m";
+                    $this->sendToClient($str."\n");
                 }
                 break;
                 // 停止server
@@ -376,14 +395,14 @@ class Monitor extends Man\Core\SocketWorker
             $str = "$pid\t".str_pad(round($message['memory']/(1024*1024),2)."M", 7)." " .str_pad($address,$this->maxAddressLength) ." ". $message['start_time'] ." ".str_pad($worker_name, $this->maxWorkerNameLength)." ";
             if($message)
             {
-                $str = $str . str_pad($message['total_request'], 14)." ".str_pad($message['packet_err'],10)." ".str_pad($message['thunder_herd'],12)." ".str_pad($message['client_close'], 12)." ".str_pad($message['send_fail'],9)." ".str_pad($message['throw_exception'],15)." ".($message['total_request'] == 0 ? 100 : (round(($message['total_request']-($message['packet_err']+$message['send_fail']))/$message['total_request'], 6)*100))."%";
+                $str = $str . str_pad($message['total_request'], 14)." ".str_pad($message['packet_err'],10)." ".str_pad($message['thunder_herd'],12)." ".str_pad($message['client_close'], 12)." ".str_pad($message['send_fail'],9)." ".str_pad($message['throw_exception'],15)." ".str_pad(($message['total_request'] == 0 ? 100 : (round(($message['total_request']-($message['packet_err']+$message['send_fail']))/$message['total_request'], 6)*100))."%", 9) . " \033[32;40midle\033[0m";
             }
             else
             {
                 $str .= var_export($message, true);
             }
             $this->sendToClient($str."\n");
-            return true;
+            return $pid;
         }
         return false;
     }
