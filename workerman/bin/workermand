@@ -60,6 +60,13 @@ if(!($shm_size = Man\Core\Lib\Config::get('workerman.shm_size')))
 }
 define('DEFAULT_SHM_SIZE', $shm_size);
 
+// ==msg-qbytes==
+if(!($msg_qbytes = Man\Core\Lib\Config::get('workerman.msg_qbytes')))
+{
+    $msg_qbytes = 65535;
+}
+define('DEFAULT_MSG_QBYTES', $msg_qbytes);
+
 //检查pid对应的进程是否存在，不存在删除PID文件
 if($cmd != 'status' && is_file(WORKERMAN_PID_FILE))
 {
@@ -85,15 +92,6 @@ if($cmd != 'status' && is_file(WORKERMAN_PID_FILE))
                 exit("\033[31;40mCan not $cmd Workerman\033[0m\n\n");
             }
         }
-    }
-}
-
-// 必须是root启动
-if($user_info = posix_getpwuid(posix_getuid()))
-{
-    if($user_info['name'] !== 'root')
-    {
-        exit("\033[31;40mYou should ran Workerman as root , Permission denied\033[0m\n");
     }
 }
 

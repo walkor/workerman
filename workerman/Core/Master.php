@@ -160,10 +160,10 @@ class Master
     {
         // 输出信息
         self::notice("Workerman is starting ...", true);
-        // 初始化
-        self::init();
         // 检查环境
         self::checkEnv();
+        // 初始化
+        self::init();
         // 变成守护进程
         self::daemonize();
         // 保存进程pid
@@ -193,6 +193,15 @@ class Master
      */
     public static function init()
     {
+        // 因为子进程要更换用户、开低端口等，必须是root启动
+        if($user_info = posix_getpwuid(posix_getuid()))
+        {
+            if($user_info['name'] !== 'root')
+            {
+                exit("\033[31;40mYou should run workerman as root . Permission denied\033[0m\n");
+            }
+        }
+        
         // 获取配置文件
         $config_path = Lib\Config::$configFile;
     
@@ -202,9 +211,9 @@ class Master
         // 初始化共享内存消息队列
         if(extension_loaded('sysvmsg') && extension_loaded('sysvshm'))
         {
-            self::$shmId = shm_attach(IPC_KEY, DEFAULT_SHM_SIZE, 0666);
-            self::$queueId = msg_get_queue(IPC_KEY, 0666);
-            msg_set_queue(self::$queueId,array('msg_qbytes'=>65535));
+            self::$shmId = shm_attach(IPC_KEY, DEFAULT_SHM_SIZE);
+            self::$queueId = msg_get_queue(IPC_KEY);
+            msg_set_queue(self::$queueId,array('msg_qbytes'=>DEFAULT_MSG_QBYTES));
         }
     }
     
