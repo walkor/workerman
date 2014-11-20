@@ -227,15 +227,19 @@ abstract class SocketWorker extends AbstractWorker
         // 触发该worker进程onStart事件，该进程整个生命周期只触发一次
         $this->onStart();
 
-        if($this->protocol == 'udp')
+        // 监听事件
+        if($this->mainSocket)
         {
-            // 添加读udp事件
-            $this->event->add($this->mainSocket,  Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
-        }
-        else
-        {
-            // 添加accept事件
-            $ret = $this->event->add($this->mainSocket,  Events\BaseEvent::EV_READ, array($this, 'accept'));
+            if($this->protocol == 'udp')
+            {
+                // 添加读udp事件
+                $this->event->add($this->mainSocket,  Events\BaseEvent::EV_READ, array($this, 'recvUdp'));
+            }
+            else
+            {
+                // 添加accept事件
+                $ret = $this->event->add($this->mainSocket,  Events\BaseEvent::EV_READ, array($this, 'accept'));
+            }
         }
         
         // 主体循环,整个子进程会阻塞在这个函数上
