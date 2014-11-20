@@ -371,7 +371,7 @@ class Monitor extends Man\Core\SocketWorker
             $address = \Man\Core\Lib\Config::get($worker_name . '.listen');
             if(!$address)
             {
-                $address = '';
+                $address = 'none';
             }
             $str = "$pid\t".str_pad(round($message['memory']/(1024*1024),2)."M", 7)." " .str_pad($address,$this->maxAddressLength) ." ". $message['start_time'] ." ".str_pad($worker_name, $this->maxWorkerNameLength)." ";
             if($message)

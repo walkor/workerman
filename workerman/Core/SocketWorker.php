@@ -261,8 +261,11 @@ abstract class SocketWorker extends AbstractWorker
         if($this->workerStatus != self::STATUS_SHUTDOWN)
         {
             // 停止接收连接
-            $this->event->del($this->mainSocket, Events\BaseEvent::EV_READ);
-            fclose($this->mainSocket);
+            if($this->mainSocket)
+            {
+                $this->event->del($this->mainSocket, Events\BaseEvent::EV_READ);
+                fclose($this->mainSocket);
+            }
             $this->workerStatus = self::STATUS_SHUTDOWN;
         }
         
@@ -714,9 +717,13 @@ abstract class SocketWorker extends AbstractWorker
      */
     public function getLocalIp()
     {
+        if(!$this->mainSocket && !isset($this->connections[$this->currentDealFd]))
+        {
+            return '';
+        }
         $ip = '';
         $sock_name = '';
-        if($this->protocol == 'udp' || !isset($this->connections[$this->currentDealFd]))
+        if($this->protocol === 'udp' || !isset($this->connections[$this->currentDealFd]))
         {
             $sock_name = stream_socket_get_name($this->mainSocket, false);
         }
