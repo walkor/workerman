@@ -31,5 +31,6 @@
 		"ext-sysvshm":  "Really it's a requirement for normal work.",
 		"ext-sysvmsg":  "Really it's a requirement for normal work."
     },
-    "bin": ["workerman/bin/workermand"]
+    "bin": ["workerman/bin/workermand"],
+    "minimum-stability":"dev"
 }
