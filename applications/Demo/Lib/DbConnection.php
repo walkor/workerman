@@ -857,7 +857,7 @@ class DbConnection
     
     /**
      * where
-     * @param string $cond 
+     * @param string/array $cond 
      * @param mixed ...$bind
      * @return self
      */
@@ -886,7 +886,7 @@ class DbConnection
     
     /**
      * or where
-     * @param string $cond 
+     * @param string/array $cond 
      * @param mixed ...$bind
      * @return self
      */
