@@ -211,6 +211,9 @@ abstract class SocketWorker extends AbstractWorker
         
         // 初始化事件轮询库
         $this->event = new $this->eventLoopName();
+        
+        // 初始化任务系统
+        \Man\Core\Lib\Task::init($this->event);
     }
     
     

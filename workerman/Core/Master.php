@@ -614,7 +614,8 @@ class Master
             // 出错
             if($pid < 0)
             {
-                self::notice('pcntl_waitpid return '.$pid.' and pcntl_get_last_error = ' . pcntl_get_last_error());
+                $last_error = function_exists('pcntl_get_last_error') ? pcntl_get_last_error() : 'function pcntl_get_last_error not exists';
+                self::notice('pcntl_waitpid return '.$pid.' and pcntl_get_last_error = ' . $last_error);
                 return $pid;
             }
     

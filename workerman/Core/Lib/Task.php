@@ -50,8 +50,8 @@ class Task
      */
     public static function signalHandle()
     {
-        self::tick();
         pcntl_alarm(1);
+        self::tick();
     }
     
     
