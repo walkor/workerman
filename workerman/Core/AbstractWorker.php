@@ -125,7 +125,7 @@ abstract class AbstractWorker
     }
     
     /**
-     * 判断该进程是否收到退出信号,收到信号后要马上退出，否则稍后会被住进成强行杀死
+     * 判断该进程是否收到退出信号,收到信号后要马上退出，否则稍后会被主进程强行杀死
      * @return boolean
      */
     public function hasShutDown()
