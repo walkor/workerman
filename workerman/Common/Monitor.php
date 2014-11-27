@@ -279,7 +279,7 @@ class Monitor extends Man\Core\SocketWorker
                 }
                 
                 $this->sendToClient("---------------------------------------PROCESS STATUS-------------------------------------------\n");
-                $this->sendToClient("pid\tmemory  ".str_pad('    listening', $this->maxAddressLength)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total status\n");
+                $this->sendToClient("pid\tmemory  ".str_pad('listening', $this->maxAddressLength)." timestamp  ".str_pad('worker_name', $this->maxWorkerNameLength)." ".str_pad('total_request', 13)." ".str_pad('packet_err', 10)." ".str_pad('thunder_herd', 12)." ".str_pad('client_close', 12)." ".str_pad('send_fail', 9)." ".str_pad('throw_exception', 15)." suc/total status\n");
                 if(!\Man\Core\Master::getQueueId())
                 {
                     return;
