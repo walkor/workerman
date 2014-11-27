@@ -258,7 +258,7 @@ class Monitor extends Man\Core\SocketWorker
                 }
                 $loadavg = sys_getloadavg();
                 $this->sendToClient("---------------------------------------GLOBAL STATUS--------------------------------------------\n");
-                $this->sendToClient(\Man\Core\Master::NAME.' version:' . \Man\Core\Master::VERSION . "\n");
+                $this->sendToClient(\Man\Core\Master::NAME.' version:' . \Man\Core\Master::VERSION . "          PHP version:".PHP_VERSION."\n");
                 $this->sendToClient('start time:'. date('Y-m-d H:i:s', $status['start_time']).'   run ' . floor((time()-$status['start_time'])/(24*60*60)). ' days ' . floor(((time()-$status['start_time'])%(24*60*60))/(60*60)) . " hours   \n");
                 $this->sendToClient('load average: ' . implode(", ", $loadavg) . "\n");
                 $this->sendToClient(count($this->connections) . ' users          ' . count($worker_pids) . ' workers       ' . count($pid_worker_name_map)." processes\n");
