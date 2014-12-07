@@ -70,7 +70,7 @@ class Monitor extends Man\Core\SocketWorker
      * worker占用内存限制 单位KB
      * @var integer
      */
-    const DEFAULT_MEM_LIMIT = 83886;
+    const DEFAULT_MEM_LIMIT = 124000;
     
     /**
      * 上次获得的主进程信息 
@@ -121,7 +121,7 @@ class Monitor extends Man\Core\SocketWorker
         \Man\Core\Lib\Task::add(self::CHECK_MASTER_PROCESS_TIME_LONG, array($this, 'checkMasterProcess'));
         \Man\Core\Lib\Task::add(self::CHECK_MASTER_STATUS_TIME_LONG, array($this, 'checkMasterStatus'));
         \Man\Core\Lib\Task::add(self::CHECK_MASTER_STATUS_TIME_LONG, array($this, 'checkMemUsage'));
-        
+
         // 添加accept事件
         $this->event->add($this->mainSocket,  \Man\Core\Events\BaseEvent::EV_READ, array($this, 'onAccept'));
         
@@ -142,7 +142,7 @@ class Monitor extends Man\Core\SocketWorker
         if($fd)
         {
             $this->currentDealFd = (int)$fd;
-            if($this->getRemoteIp() != '127.0.0.1')
+            if($this->protocol != 'unix' && $this->getRemoteIp() != '127.0.0.1' )
             {
                 $this->sendToClient("Password\n");
             }
@@ -231,6 +231,10 @@ class Monitor extends Man\Core\SocketWorker
                 $pid_worker_name_map = $this->getPidWorkerMap();
                 foreach($worker_pids as $worker_name=>$pid_array)
                 {
+                    if('Monitor' === $worker_name)
+                    {
+                        continue;
+                    }
                     if($this->maxWorkerNameLength < strlen($worker_name))
                     {
                         $this->maxWorkerNameLength = strlen($worker_name);
@@ -631,5 +635,4 @@ class Monitor extends Man\Core\SocketWorker
     {
         return is_file($path) ? unlink($path) : array_map(array($this, 'recursiveDelete'),glob($path.'/*')) == rmdir($path);
     }
-    
 } 

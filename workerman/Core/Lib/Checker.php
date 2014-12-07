@@ -151,6 +151,10 @@ class Checker
         echo "\033[47;30muser\033[0m",str_pad('', self::$maxUserNameLength+2-strlen('user')), "\033[47;30mworker\033[0m",str_pad('', self::$maxWorkerNameLength+2-strlen('worker')), "\033[47;30mlisten\033[0m",str_pad('', self::$maxListenLength+2-strlen('listen')), "\033[47;30mprocesses\033[0m",str_pad('', self::$maxProcessCountLength+2-strlen('processes')),"\033[47;30m","status\033[0m\n";
         foreach (Config::getAllWorkers() as $worker_name=>$config)
         {
+            if($worker_name == 'Monitor')
+            {
+                continue;
+            }
             if(isset($config['user']))
             {
                 $worker_user = $config['user'];

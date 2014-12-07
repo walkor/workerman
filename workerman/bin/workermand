@@ -5,7 +5,7 @@ ini_set('display_errors', 'on');
 ini_set('limit_memory','512M');
 ini_set('opcache.enable', false);
 date_default_timezone_set('Asia/Shanghai');
- 
+
 if(empty($argv[1]))
 {
     echo "Usage: workermand {start|stop|restart|reload|kill|status}".PHP_EOL;
@@ -31,19 +31,15 @@ if (version_compare(PHP_VERSION,'5.3.0','<'))
 require_once WORKERMAN_ROOT_DIR . 'Core/Master.php';
 
 // ==pid-file==
-require_once WORKERMAN_ROOT_DIR . 'Core/Lib/Config.php';
 Man\Core\Lib\Config::instance();
 if(!($pid_file = Man\Core\Lib\Config::get('workerman.pid_file')))
 {
-    $pid_file = '/var/run/workerman.pid';
+    $pid_file = './bin/pid';
 }
 define('WORKERMAN_PID_FILE', $pid_file);
 
 // ==log-dir==
-if(!($log_dir = Man\Core\Lib\Config::get('workerman.log_dir')))
-{
-    $log_dir = WORKERMAN_ROOT_DIR . 'logs/';
-}
+$log_dir = Man\Core\Lib\Config::get('workerman.log_dir');
 define('WORKERMAN_LOG_DIR', $log_dir . '/');
 
 // ==ipc-key==
@@ -98,6 +94,7 @@ if($cmd != 'status' && is_file(WORKERMAN_PID_FILE))
 switch($cmd)
 {
     case 'start':
+        remove_monitor_sock_file();
         Man\Core\Master::run();
         break;
     case 'stop':
@@ -110,6 +107,7 @@ switch($cmd)
         break;
     case 'restart':
         stop_and_wait();
+        remove_monitor_sock_file();
         Man\Core\Master::run();
         break;
     case 'reload':
@@ -159,6 +157,7 @@ switch($cmd)
 
 function force_kill()
 {
+    remove_monitor_sock_file();
     $ret = $match = array();
     exec("ps aux | grep -E '".Man\Core\Master::NAME.":|workermand' | grep -v grep", $ret);
     $this_pid = posix_getpid();
@@ -178,6 +177,7 @@ function force_kill()
 
 function stop_and_wait($wait_time = 6)
 {
+    remove_monitor_sock_file();
     $pid = @file_get_contents(WORKERMAN_PID_FILE);
     if(empty($pid))
     {
@@ -204,4 +204,15 @@ function stop_and_wait($wait_time = 6)
     }
 }
 
-
+function remove_monitor_sock_file()
+{
+    $monitor_listen = \Man\Core\Lib\Config::get('Monitor.listen');
+    if(strpos($monitor_listen, 'unix') === 0)
+    {
+        $sock_file =  str_replace('unix://', '', $monitor_listen);
+        if(is_writeable($sock_file))
+        {
+            unlink($sock_file);
+        }
+    }
+}
