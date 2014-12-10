@@ -263,7 +263,7 @@ class Checker
             {
                 echo "Notice : Soft open files now is {$limit_info['soft openfiles']},  We recommend greater than " . \Man\Core\Master::MIN_SOFT_OPEN_FILES . "\n";
             }
-            if('unlimited' != $limit_info['hard filesize'] && $limit_info['hard filesize'] < \Man\Core\Master::MIN_SOFT_OPEN_FILES)
+            if('unlimited' != $limit_info['hard filesize'] && $limit_info['hard filesize'] < \Man\Core\Master::MIN_HARD_OPEN_FILES)
             {
                 echo "Notice : Hard open files now is {$limit_info['hard filesize']},  We recommend greater than " . \Man\Core\Master::MIN_HARD_OPEN_FILES . "\n";
             }
