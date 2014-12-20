@@ -83,7 +83,7 @@ class Config
         self::$config['Monitor']['exclude_path'][] = self::$config['workerman']['log_dir'];
         if(!isset(self::$config['Monitor']['listen']))
         {
-            $socket_file = WORKERMAN_ROOT_DIR.'bin/unixsock';
+            $socket_file = '/tmp/workerman.'.fileinode(__FILE__).'.sock';
             self::$config['Monitor']['listen'] = 'unix://' . $socket_file;
         }
         // 支持 WORKERMAN_ROOT_DIR 配置
