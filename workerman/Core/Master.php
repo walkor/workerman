@@ -423,6 +423,11 @@ class Master
         // 子进程
         elseif($pid === 0)
         {
+            if($chdir = Config::get($worker_name.".chdir"))
+            {
+                chdir($chdir);
+            }
+            
             // 忽略信号
             self::ignoreSignal();
             

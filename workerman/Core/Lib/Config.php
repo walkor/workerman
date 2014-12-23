@@ -70,6 +70,10 @@ class Config
             {
                 self::$config[$worker_name]['worker_file'] =dirname($config_file).'/'.self::$config[$worker_name]['worker_file'];
             }
+            if(!isset(self::$config[$worker_name]['chdir']))
+            {
+                self::$config[$worker_name]['chdir'] = dirname($config_file);
+            }
         }
         // 整理Monitor配置
         self::$config['Monitor'] = self::$config['workerman']['Monitor'];
