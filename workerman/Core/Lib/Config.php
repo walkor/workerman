@@ -50,10 +50,15 @@ class Config
         self::$configFile = realpath($config_file);
         // 寻找应用配置
         $conf_d = isset(self::$config['workerman']['include']) ? self::$config['workerman']['include'] : self::DEFAULT_CONFD_PATH;
+        $index = 1;
         foreach(glob($conf_d) as $config_file)
         {
             $worker_name = basename($config_file, '.conf');
             $config_data = self::parseFile($config_file);
+            if(isset(self::$config[$worker_name]))
+            {
+                $worker_name = $worker_name . '-' . ($index++);
+            }
             if(!isset($config_data['enable']) || $config_data['enable'] )
             {
                 self::$config[$worker_name] = self::parseFile($config_file);
