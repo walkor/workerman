@@ -74,7 +74,7 @@ class Config
         // 整理Monitor配置
         self::$config['Monitor'] = self::$config['workerman']['Monitor'];
         unset(self::$config['workerman']['Monitor']);
-        self::$config['Monitor']['worker_file']= 'Common/Monitor.php';
+        self::$config['Monitor']['worker_file']= '../Common/Monitor.php';
         self::$config['Monitor']['persistent_connection'] = 1;
         self::$config['Monitor']['start_workers'] = 1;
         self::$config['Monitor']['user'] = 'root';
