@@ -65,7 +65,11 @@ class Config
             // 支持 WORKERMAN_ROOT_DIR 配置
             array_walk_recursive(self::$config[$worker_name], array('\Man\Core\Lib\Config', 'replaceWORKERMAN_ROOT_DIR'));
             // 找出绝对路径
-            self::$config[$worker_name]['worker_file'] =dirname($config_file).'/'.self::$config[$worker_name]['worker_file'];
+            $config_file = realpath($config_file);
+            if(self::$config[$worker_name]['worker_file'][0] !== '/')
+            {
+                self::$config[$worker_name]['worker_file'] =dirname($config_file).'/'.self::$config[$worker_name]['worker_file'];
+            }
             if(!isset(self::$config[$worker_name]['chdir']))
             {
                 self::$config[$worker_name]['chdir'] = dirname($config_file);
