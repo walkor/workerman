@@ -64,15 +64,8 @@ class Config
             }
             // 支持 WORKERMAN_ROOT_DIR 配置
             array_walk_recursive(self::$config[$worker_name], array('\Man\Core\Lib\Config', 'replaceWORKERMAN_ROOT_DIR'));
-            // 不是以 / 开头代表相对路径，相对于配置文件的路径，找出绝对路径
-            if($real_path = realpath(self::$config[$worker_name]['worker_file']))
-            {
-                self::$config[$worker_name]['worker_file'] = $real_path;
-            }
-            else
-            {
-                self::$config[$worker_name]['worker_file'] =dirname($config_file).'/'.self::$config[$worker_name]['worker_file'];
-            }
+            // 找出绝对路径
+            self::$config[$worker_name]['worker_file'] =dirname($config_file).'/'.self::$config[$worker_name]['worker_file'];
             if(!isset(self::$config[$worker_name]['chdir']))
             {
                 self::$config[$worker_name]['chdir'] = dirname($config_file);
