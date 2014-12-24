@@ -45,7 +45,7 @@ class WebServer extends Man\Core\SocketWorker
      * 默认访问日志目录
      * @var string
      */
-    protected static $defaultAccessLog = './logs/access.log';
+    protected static $defaultAccessLog = '';
     
     /**
      * 访问日志存储路径
@@ -129,7 +129,7 @@ class WebServer extends Man\Core\SocketWorker
         // 默认访问日志目录
         if($default_access_log =  \Man\Core\Lib\Config::get($this->workerName.'.default_access_log'))
         {
-            self::$defaultAccessLog = $default_access_log;
+              self::$defaultAccessLog = $default_access_log;
         }
     }
 
@@ -318,7 +318,10 @@ class WebServer extends Man\Core\SocketWorker
         }
         else
         {
-            file_put_contents(self::$defaultAccessLog, $log_data, FILE_APPEND);
+            if(self::$defaultAccessLog)
+            {
+                file_put_contents(self::$defaultAccessLog, $log_data, FILE_APPEND);
+            }
         }
     }
 }

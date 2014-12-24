@@ -12,7 +12,7 @@ class Config
      * 默认应用配置匹配路径
      * @var string
      */
-    const DEFAULT_CONFD_PATH = './conf/conf.d/*.conf';
+    const DEFAULT_CONFD_PATH = '../applications/*/conf.d/*.conf';
     
     /**
      * 配置文件名称
@@ -50,7 +50,6 @@ class Config
         self::$configFile = realpath($config_file);
         // 寻找应用配置
         $conf_d = isset(self::$config['workerman']['include']) ? self::$config['workerman']['include'] : self::DEFAULT_CONFD_PATH;
-        $conf_d = WORKERMAN_ROOT_DIR . self::$config['workerman']['include'];
         foreach(glob($conf_d) as $config_file)
         {
             $worker_name = basename($config_file, '.conf');
@@ -66,7 +65,11 @@ class Config
             // 支持 WORKERMAN_ROOT_DIR 配置
             array_walk_recursive(self::$config[$worker_name], array('\Man\Core\Lib\Config', 'replaceWORKERMAN_ROOT_DIR'));
             // 不是以 / 开头代表相对路径，相对于配置文件的路径，找出绝对路径
-            if(0 !== strpos(self::$config[$worker_name]['worker_file'], '/'))
+            if($real_path = realpath(self::$config[$worker_name]['worker_file']))
+            {
+                self::$config[$worker_name]['worker_file'] = $real_path;
+            }
+            else
             {
                 self::$config[$worker_name]['worker_file'] =dirname($config_file).'/'.self::$config[$worker_name]['worker_file'];
             }
@@ -85,6 +88,7 @@ class Config
         self::$config['Monitor']['preread_length'] = 8192;
         self::$config['Monitor']['exclude_path'] = isset(self::$config['Monitor']['exclude_path']) ?  array_merge(self::$config['Monitor']['exclude_path'], get_included_files()) : get_included_files();
         self::$config['Monitor']['exclude_path'][] = self::$config['workerman']['log_dir'];
+        self::$config['Monitor']['exclude_path'][] =sys_get_temp_dir();
         if(!isset(self::$config['Monitor']['listen']))
         {
             $socket_file = '/tmp/workerman.'.fileinode(__FILE__).'.sock';

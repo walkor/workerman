@@ -16,7 +16,7 @@ $cmd = $argv[1];
 
 define('WORKERMAN_ROOT_DIR', realpath(__DIR__."/../")."/");
 
-chdir(WORKERMAN_ROOT_DIR);
+chdir(WORKERMAN_ROOT_DIR.'/conf');
 
 if(0 === strpos(strtolower(PHP_OS), 'win'))
 {
@@ -125,10 +125,10 @@ switch($cmd)
         break;
     case 'status':
         $address = Man\Core\Lib\Config::get('Monitor.listen');
-        $sock = @stream_socket_client($address);
+        $sock = @stream_socket_client($address, $err_no, $err_msg);
         if(!$sock)
         {
-            exit("\n\033[31;40mcan not connect to $address \033[0m\n\n\033[31;40mWorkerman not running\033[0m\n\n");
+            exit("\n\033[31;40mcan not connect to $address : $err_msg \033[0m\n\n\033[31;40mWorkerman not running\033[0m\n\n");
         }
         fwrite($sock, 'status');
         $read_fds = array($sock);
