@@ -12,7 +12,7 @@ class Config
      * 默认应用配置匹配路径
      * @var string
      */
-    const DEFAULT_CONFD_PATH = '../applications/*/conf.d/*.conf';
+    const DEFAULT_CONFD_PATH = '../../applications/*/conf.d/*.conf';
     
     /**
      * 配置文件名称
