@@ -29,4 +29,5 @@ class Store
     public static $storePath = '';
 }
 
+// 默认系统临时目录下
 Store::$storePath = sys_get_temp_dir().'/workerman-demo/';
