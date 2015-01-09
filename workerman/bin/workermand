@@ -8,7 +8,7 @@ date_default_timezone_set('Asia/Shanghai');
 
 if(empty($argv[1]))
 {
-    echo "Usage: workermand {start|stop|restart|reload|kill|status}".PHP_EOL;
+    echo "Usage: workermand {start|stop|restart|reload|kill|status|systemd}\n";
     exit;
 }
 
@@ -64,7 +64,7 @@ if(!($msg_qbytes = Man\Core\Lib\Config::get('workerman.msg_qbytes')))
 define('DEFAULT_MSG_QBYTES', $msg_qbytes);
 
 //检查pid对应的进程是否存在，不存在删除PID文件
-if($cmd != 'status' && is_file(WORKERMAN_PID_FILE))
+if(!in_array($cmd, array('status', 'systemd')) && is_file(WORKERMAN_PID_FILE))
 {
     //检查权限
     if(!posix_access(WORKERMAN_PID_FILE, POSIX_W_OK))
@@ -149,8 +149,97 @@ switch($cmd)
             }
         }
         break;
+        case 'systemd':  // 安装 systemd 服务，用于系统启动或重启时自动启动 workerman
+            // 使用说明： workermand systemd [service_name]
+            // "[service_name]" 可选，指服务名，例如： 
+            // workermand systemd my_socket_server
+            // 未指定时，以项目代码的目录名作为服务名
+
+            // 检查系统是否支持 systemd
+            $systemctl = exec('which systemctl', $output, $status);
+            if ($status !== 0)  // 非0值代表出错
+            {
+                exit("\033[31;40mThis operating system does not support systemd!\033[0m\n");
+            }
+
+            // 检查是否为 root 用户
+            $username = exec('whoami');
+            if ($username !== 'root')  // sudo 方式运行时，获取到的也是 root
+            {
+                exit("\033[31;40mPlease run as root user!\033[0m\n");
+            }
+
+            // 检查安装目录是否存在
+            $install_dir = '/usr/lib/systemd/system';
+            if (!is_dir($install_dir))
+            {
+                exit("\033[31;40mSystemd direcotry $install_dir does not exist!\033[0m\n");
+            }
+
+            // 确定服务名
+            if (isset($_SERVER['argv'][2]))  // 执行时有提供 service_name 参数
+            {
+                $service_name = $_SERVER['argv'][2];
+            }
+            else  // 采用项目代码的目录名作为服务名
+            {
+                $service_name = basename(dirname(dirname(__DIR__)));
+            }
+
+            // 检查服务名是否合法
+            if (preg_match('/^[\w-]+$/', $service_name) !== 1)
+            {
+                exit("\033[31;40mInvalid service name $service_name!\033[0m\n");
+            }
+
+            // 避免覆盖已经存在的 service 文件
+            $install_path = "$install_dir/$service_name.service";
+            if (is_file($install_path))
+            {
+                exit("\033[31;40mSystemd service $service_name already exists!\033[0m\n");
+            }
+
+            $project_dir = realpath(dirname(dirname(__DIR__)));
+            $service_description = str_replace('_', ' ', $service_name);
+
+            // service 文件内容
+            $service_content = <<<EOCONTENT
+[Unit]
+Description=$service_description
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=$project_dir/workerman/conf/bin/pid
+ExecStart=$project_dir/workerman/bin/workermand start
+ExecReload=$project_dir/workerman/bin/workermand reload
+ExecStop=$project_dir/workerman/bin/workermand stop
+LimitNOFILE=102400
+LimitNPROC=102400
+PrivateTmp=false
+
+[Install]
+WantedBy=multi-user.target
+EOCONTENT;
+
+            // 保存 service 文件
+            $install_result = file_put_contents($install_path, $service_content);
+            if ($install_result === false)
+            {
+                exit("\033[31;40mInstalling systemd service $service_name failed!\033[0m\n");
+            }
+            else
+            {
+                echo "\033[32;40mInstalling systemd service $service_name succeeded.\033[0m\n\n";
+                echo "    Enable service:\tsystemctl enable $service_name\n";
+                echo "    Start service:\tsystemctl start $service_name\n";
+                echo "\n";
+                exit;
+            }
+
+            break;
     default:
-        echo "Usage: workermand {start|stop|restart|reload|kill|status}\n";
+        echo "Usage: workermand {start|stop|restart|reload|kill|status|systemd}\n";
         exit;
         
 }
