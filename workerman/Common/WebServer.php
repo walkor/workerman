@@ -162,7 +162,7 @@ class WebServer extends Man\Core\SocketWorker
             return $this->sendToClient(Man\Common\Protocols\Http\http_end('<h1>400 Bad Request</h1>'));
         }
         
-        $path = $url_info['path'];
+        $path = isset($url_info['path']) ? $url_info['path'] : '/';
         
         $path_info = pathinfo($path);
         $extension = isset($path_info['extension']) ? $path_info['extension'] : '' ;
