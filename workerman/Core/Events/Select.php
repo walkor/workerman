@@ -1,6 +1,5 @@
 <?php 
 namespace Man\Core\Events;
-require_once WORKERMAN_ROOT_DIR . 'Core/Events/interfaces.php';
 /**
  * 
  * select 轮询封装
@@ -35,50 +34,6 @@ class Select implements BaseEvent
      */
     public $writeFds = array();
     
-    /**
-     * 搞个fd，避免 $readFds $writeFds 都为空时select 失败
-     * @var resource
-     */
-    public $channel = null;
-    
-    /**
-     *  读超时 毫秒
-     * @var integer
-     */
-    protected $readTimeout = 1000;
-    
-    /**
-     * 写超时 毫秒
-     * @var integer
-     */
-    protected $writeTimeout = 1000;
-    
-    /**
-     * 超时触发的事件
-     * @var array
-     */
-    protected $selectTimeOutEvent = array();
-    
-    /**
-     * 系统调用被打断触发的事件，一般是收到信号
-     * @var array
-     */
-    protected $selectInterruptEvent = array();
-    
-    /**
-     * 构造函数 创建一个管道，避免select空fd
-     * @return void
-     */
-    public function __construct()
-    {
-        $this->channel = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
-        if($this->channel)
-        {
-            stream_set_blocking($this->channel[0], 0);
-            $this->readFds[0] = $this->channel[0];
-        }
-    }
-   
     /**
      * 添加事件
      * @see \Man\Core\Events\BaseEvent::add()
@@ -163,14 +118,16 @@ class Select implements BaseEvent
         {
             $read = $this->readFds;
             $write = $this->writeFds;
-            // stream_select false：出错 0：超时
-            if(!($ret = @stream_select($read, $write, $e, 1)))
+            // 触发信号处理函数
+            pcntl_signal_dispatch();
+            // stream_select false：出错 ; 0：超时
+            if(!($ret = @stream_select($read, $write, $e, PHP_INT_MAX)))
             {
                 // 超时
                 if($ret === 0)
                 {
                 }
-                // 被系统调用或者信号打断
+                // 被信号打断
                 elseif($ret === false)
                 {
                 }
@@ -178,8 +135,6 @@ class Select implements BaseEvent
                 pcntl_signal_dispatch();
                 continue;
             }
-            // 触发信号处理函数
-            pcntl_signal_dispatch();
             
             // 检查所有可读描述符
             foreach($read as $fd)
@@ -191,7 +146,7 @@ class Select implements BaseEvent
                 }
             }
             
-            // 检查可写描述符，没用到，暂不实现
+            // 检查可写描述符
             foreach($write as $fd)
             {
                 $fd_key = (int) $fd;

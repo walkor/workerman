@@ -153,7 +153,7 @@ class BusinessWorker extends Man\Core\SocketWorker
         {
             return;
         }
-       
+        $addresses_list = array_reverse($addresses_list, true);
         // 循环遍历，查找未连接的gateway ip 端口
         foreach($addresses_list as $addr)
         {
@@ -210,7 +210,7 @@ class BusinessWorker extends Man\Core\SocketWorker
      * 关闭连接
      * @see Man\Core.SocketWorker::closeClient()
      */
-    protected function closeClient($fd)
+    protected function closeClient($fd = null)
     {
         // 清理$this->gatewayConnections对应项
         foreach($this->gatewayConnections as $addr => $con)

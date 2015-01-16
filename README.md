@@ -1,9 +1,9 @@
 workerman
 =========
 
-workerman 是一个高性能的PHP socket服务框架，开发者可以在这个框架下开发各种网络应用,例如移动通讯、手游服务端、网络游戏服务器、聊天室服务器、硬件通讯服务器、智能家居等
+workerman 是一个高性能的PHP socket服务框架，开发者可以在这个框架下开发各种网络应用的服务端,例如移动通讯、手游服务端、网络游戏服务器、聊天室服务器、硬件通讯服务器、智能家居等
 workerman 具有以下特性
- * 支持HHVM，将PHP性能提高9倍左右
+ * 支持HHVM，极大的提升应用程序性能
  * 多进程/多线程(多线程版本)
  * 支持TCP/UDP
  * 支持多端口监听
@@ -21,6 +21,7 @@ workerman 具有以下特性
  * 服务端心跳支持
  * 支持多服务器部署
 
+
  [更多请访问www.workerman.net](http://www.workerman.net)  
  [文档doc.workerman.net](http://doc.workerman.net)  
 
@@ -29,7 +30,9 @@ applications/Demo测试方法
   * 运行 telnet ip 8480
   * 首先输入昵称 回车
   * 后面直接打字回车是向所有人发消息
-  * uid:聊天内容 是向uid用户发送消息  
+  * uid:聊天内容 是向uid用户发送消息    
+如下图：  
+![telnet-chat](http://www.workerman.net/img/gif/telnet-chat.gif)  
 
 可以开多个telnet窗口，窗口间可以实时聊天
 

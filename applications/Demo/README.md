@@ -162,7 +162,9 @@ $insert_id = $db1->insert('Persons')->cols(array('Firstname'=>'abc', 'Lastname'=
 $insert_id = $db1->query("INSERT INTO `Persons` ( `Firstname`,`Lastname`,`Sex`,`Age`) VALUES ( 'abc', 'efg', 'M', 13)");
 
 // 更新
-$row_count = $db1->update('Persons')->cols(array('sex'=>'O'))->where('ID=1')->bindValue('sex', 'F')->query();
+$row_count = $db1->update('Persons')->cols(array('sex'))->where('ID=1')->bindValue('sex', 'F')->query();
+// 等价于
+$row_count = $db1->update('Persons')->cols(array('sex'=>'F'))->where('ID=1')->query();
 // 等价于
 $row_count = $db1->query("UPDATE `Persons` SET `sex` = 'F' WHERE ID=1");
 

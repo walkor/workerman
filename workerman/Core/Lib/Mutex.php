@@ -6,25 +6,23 @@ namespace Man\Core\Lib;
 class Mutex
 {
     /**
-     * 共享内存key
-     * @var int
-     */
-    const SEM_KEY = IPC_KEY;
-    
-    /**
-     * 信号量
+     * handle
      * @var resource
      */
-    private static $semFd = null;
+    private static $fileHandle = null;
     
     /**
      * 获取写锁
      * @return true
      */
-    public static function get()
+    public static function get($block=true)
     {
-        self::getSemFd() && sem_acquire(self::getSemFd());
-        return true;
+        $operation = $block ? LOCK_EX : LOCK_EX | LOCK_NB;
+        if(self::getHandle())
+        {
+            return flock(self::$fileHandle, $operation);
+        }
+        return false;
     }
     
     /**
@@ -33,19 +31,23 @@ class Mutex
      */
     public static function release()
     {
-        self::getSemFd() && sem_release(self::getSemFd());
-        return true;
+        if(self::getHandle())
+        {
+            return flock(self::$fileHandle, LOCK_UN);
+        }
+        return false;
     }
     
     /**
-     * 获得SemFd
+     * 获得handle
+     * @return resource
      */
-    protected static function getSemFd()
+    protected static function getHandle()
     {
-        if(!self::$semFd && extension_loaded('sysvsem'))
+        if(!self::$fileHandle)
         {
-            self::$semFd = sem_get(self::SEM_KEY);
+            self::$fileHandle = fopen(__FILE__, 'r+');
         }
-        return self::$semFd;
+        return self::$fileHandle;
     }
 }

@@ -55,6 +55,7 @@ class Checker
         $need_map = array(
                 'posix'       => true,
                 'pcntl'       => true,
+                'sockets'   => true,
                 'sysvshm'  => false,
                 'sysvmsg'   => false,
                 'libevent'   => false,
@@ -102,7 +103,6 @@ class Checker
                 'stream_socket_server',
                 'stream_socket_client',
                 'pcntl_signal_dispatch',
-                'exec',
         );
         // 获取php.ini中设置的禁用函数
         if($disable_func_string = ini_get("disable_functions"))
@@ -151,6 +151,10 @@ class Checker
         echo "\033[47;30muser\033[0m",str_pad('', self::$maxUserNameLength+2-strlen('user')), "\033[47;30mworker\033[0m",str_pad('', self::$maxWorkerNameLength+2-strlen('worker')), "\033[47;30mlisten\033[0m",str_pad('', self::$maxListenLength+2-strlen('listen')), "\033[47;30mprocesses\033[0m",str_pad('', self::$maxProcessCountLength+2-strlen('processes')),"\033[47;30m","status\033[0m\n";
         foreach (Config::getAllWorkers() as $worker_name=>$config)
         {
+            if($worker_name == 'Monitor')
+            {
+                continue;
+            }
             if(isset($config['user']))
             {
                 $worker_user = $config['user'];
@@ -259,7 +263,7 @@ class Checker
             {
                 echo "Notice : Soft open files now is {$limit_info['soft openfiles']},  We recommend greater than " . \Man\Core\Master::MIN_SOFT_OPEN_FILES . "\n";
             }
-            if('unlimited' != $limit_info['hard filesize'] && $limit_info['hard filesize'] < \Man\Core\Master::MIN_SOFT_OPEN_FILES)
+            if('unlimited' != $limit_info['hard filesize'] && $limit_info['hard filesize'] < \Man\Core\Master::MIN_HARD_OPEN_FILES)
             {
                 echo "Notice : Hard open files now is {$limit_info['hard filesize']},  We recommend greater than " . \Man\Core\Master::MIN_HARD_OPEN_FILES . "\n";
             }

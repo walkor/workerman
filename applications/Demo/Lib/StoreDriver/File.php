@@ -20,9 +20,6 @@ class File
     // 打开文件的句柄
     protected $dataFileHandle = null;
     
-    // 缓存过期时间
-    const CACHE_EXP_TIME = 1;
-    
     /**
      * 构造函数
      * @param 配置名 $config_name
@@ -45,10 +42,10 @@ class File
         {
             touch($this->dataFile);
         }
-        $this->dataFileHandle = fopen($this->dataFile, 'r+');
+        $this->dataFileHandle = fopen(__FILE__, 'r');
         if(!$this->dataFileHandle)
         {
-            throw new \Exception("can not fopen($this->dataFile, 'r+')");
+            throw new \Exception("can not fopen($this->dataFile, 'r')");
         }
     }
     
@@ -77,12 +74,9 @@ class File
      */
     public function get($key, $use_cache = true)
     {
-        if(!$use_cache || time() - $this->lastCacheTime > self::CACHE_EXP_TIME)
-        {
-            flock($this->dataFileHandle, LOCK_EX);
-            $this->readDataFromDisk();
-            flock($this->dataFileHandle, LOCK_UN);
-        }
+        flock($this->dataFileHandle, LOCK_EX);
+        $this->readDataFromDisk();
+        flock($this->dataFileHandle, LOCK_UN);
         return isset($this->dataCache[$key]) ? $this->dataCache[$key] : null;
     }
    

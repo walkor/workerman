@@ -1,6 +1,8 @@
 <?php 
 namespace Man\Core;
-require_once WORKERMAN_ROOT_DIR . 'Core/Events/Select.php';
+
+use \Man\Core\Lib\Config;
+use \Man\Core\Lib\Log;
 
 /**
  * 抽象Worker类
@@ -125,7 +127,7 @@ abstract class AbstractWorker
     }
     
     /**
-     * 判断该进程是否收到退出信号,收到信号后要马上退出，否则稍后会被住进成强行杀死
+     * 判断该进程是否收到退出信号,收到信号后要马上退出，否则稍后会被主进程强行杀死
      * @return boolean
      */
     public function hasShutDown()
@@ -258,9 +260,9 @@ abstract class AbstractWorker
      */
     protected function notice($str, $display = true)
     {
-        $str = 'Worker['.get_class($this).']:'.$str;
-        Lib\Log::add($str);
-        if($display && Lib\Config::get('workerman.debug') == 1)
+        $str = 'Worker['.get_class($this).':' . posix_getpid() . ']:'.$str;
+        Log::add($str);
+        if($display && Config::get('workerman.debug') == 1)
         {
             echo $str."\n";
         }
@@ -272,12 +274,15 @@ abstract class AbstractWorker
      */
     protected function resetFd()
     {
+        if(\Man\Core\Master::hasResetFd())
+        {
+            return;
+        }
         global $STDOUT, $STDERR;
         @fclose(STDOUT);
         @fclose(STDERR);
-        // 将标准输出重定向到/dev/null
-        $STDOUT = fopen('/dev/null',"rw+");
-        $STDERR = fopen('/dev/null',"rw+");
+        $STDOUT = fopen('/dev/null',"a");
+        $STDERR = fopen('/dev/null',"a");
     }
     
 }

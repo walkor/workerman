@@ -13,11 +13,11 @@ function http_input($http_string)
     
     if(!strpos($http_string, "\r\n\r\n"))
     {
-        return 1;
+        return 65535;
     }
     
     // POST请求还要读包体
-    if(strpos($http_string, "POST"))
+    if(0 === strpos($http_string, "POST"))
     {
         // 找Content-Length
         $match = array();
@@ -45,7 +45,7 @@ function http_input($http_string)
 function http_start($http_string, $SERVER = array())
 {
     // 初始化
-    $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION =  array();
+    $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES =  array();
     $GLOBALS['HTTP_RAW_POST_DATA'] = '';
     // 清空上次的数据
     HttpCache::$header = array();
@@ -78,19 +78,10 @@ function http_start($http_string, $SERVER = array())
        );
     
     // 将header分割成数组
-    $header_data = explode("\r\n", $http_string);
+    list($http_header, $http_body) = explode("\r\n\r\n", $http_string, 2);
+    $header_data = explode("\r\n", $http_header);
     
     list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(' ', $header_data[0]);
-    // 需要解析$_POST
-    if($_SERVER['REQUEST_METHOD'] == 'POST')
-    {
-        $tmp = explode("\r\n\r\n", $http_string, 2);
-        parse_str($tmp[1], $_POST);
-    
-        // $GLOBALS['HTTP_RAW_POST_DATA']
-        $GLOBALS['HTTP_RAW_POST_DATA'] = $tmp[1];
-        unset($header_data[count($header_data) - 1]);
-    }
     
     unset($header_data[0]);
     foreach($header_data as $content)
@@ -151,6 +142,32 @@ function http_start($http_string, $SERVER = array())
             case 'if-none-match':
                 $_SERVER['HTTP_IF_NONE_MATCH'] = $value;
                 break;
+            case 'content-type':
+                if(!preg_match("/boundary=(\S+)/", $value, $match))
+                {
+                    $_SERVER['CONTENT_TYPE'] = $value;
+                }
+                else
+                {
+                    $_SERVER['CONTENT_TYPE'] = 'multipart/form-data';
+                    $http_post_boundary = '--'.$match[1];
+                }
+                break;
+        }
+    }
+    
+    // 需要解析$_POST
+    if($_SERVER['REQUEST_METHOD'] == 'POST')
+    {
+        if($_SERVER['CONTENT_TYPE'] == 'multipart/form-data')
+        {
+            parse_upload_files($http_body, $http_post_boundary);
+        }
+        else
+        {
+            parse_str($http_body, $_POST);
+            // $GLOBALS['HTTP_RAW_POST_DATA']
+            $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
         }
     }
     
@@ -411,6 +428,53 @@ function jump_exit($msg = '')
         echo $msg;
     }
     throw new \Exception('jump_exit');
+}
+
+/**
+ * 解析$_FILES
+ */
+function parse_upload_files($http_body, $http_post_boundary)
+{
+    $http_body = substr($http_body, 0, strlen($http_body) - (strlen($http_post_boundary) + 4));
+    $boundary_data_array = explode($http_post_boundary."\r\n", $http_body);
+    if($boundary_data_array[0] === '')
+    {
+        unset($boundary_data_array[0]);
+    }
+    foreach($boundary_data_array as $boundary_data_buffer)
+    {
+        list($boundary_header_buffer, $boundary_value) = explode("\r\n\r\n", $boundary_data_buffer, 2);
+        // 去掉末尾\r\n
+        $boundary_value = substr($boundary_value, 0, -2);
+        foreach (explode("\r\n", $boundary_header_buffer) as $item)
+        {
+            list($header_key, $header_value) = explode(": ", $item);
+            switch ($header_key)
+            {
+                case "Content-Disposition":
+                    // 是文件
+                    if(preg_match('/name=".*?"; filename="(.*?)"$/', $header_value, $match))
+                    {
+                        $_FILES[] = array(
+                            'file_name' => $match[1],
+                            'file_data' => $boundary_value,
+                            'file_size' => strlen($boundary_value),
+                        );
+                        continue;
+                    }
+                    // 是post field
+                    else
+                    {
+                        // 收集post
+                        if(preg_match('/name="(.*?)"$/', $header_value, $match))
+                        {
+                            $_POST[$match[1]] = $boundary_value;
+                        }
+                    }
+                    break;
+            }
+        }
+    }
 }
 
 /**

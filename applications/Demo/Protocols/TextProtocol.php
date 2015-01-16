@@ -3,7 +3,7 @@ namespace Protocols;
 /**
  * 以回车为请求结束标记的 文本协议 
  * 协议格式 文本+回车
- * 由于是逐字节读取，效率会有些影响，相比JsonProtocol效率会高一些
+ * 由于是逐字节读取，效率会有些影响，与JsonProtocol相比JsonProtocol效率会高一些
  * @author walkor
  */
 class TextProtocol 

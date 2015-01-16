@@ -166,7 +166,7 @@ class StatisticProvider extends Man\Core\SocketWorker
                     {
                         continue;
                     }
-                    list($interface, $date) = explode("|", basename($file));
+                    list($interface, $date) = explode(".", basename($file));
                     $all_interface[$interface] = $interface;
                 }
                 $modules_name_array[$module] = $all_interface;
@@ -189,7 +189,7 @@ class StatisticProvider extends Man\Core\SocketWorker
             return '';
         }
         // log文件
-        $log_file = WORKERMAN_LOG_DIR . $this->statisticDir."{$module}/{$interface}|{$date}";
+        $log_file = WORKERMAN_LOG_DIR . $this->statisticDir."{$module}/{$interface}.{$date}";
         
         $handle = @fopen($log_file, 'r');
         if(!$handle)
@@ -455,7 +455,7 @@ class StatisticProtocol
      * 包头长度
      * @var integer
      */
-    const PACKEGE_FIXED_LENGTH = 17;
+    const PACKAGE_FIXED_LENGTH = 17;
 
     /**
      * udp 包最大长度
@@ -502,7 +502,7 @@ class StatisticProtocol
         // 防止msg过长
         $module_name_length = strlen($module);
         $interface_name_length = strlen($interface);
-        $avalible_size = self::MAX_UDP_PACKGE_SIZE - self::PACKEGE_FIXED_LENGTH - $module_name_length - $interface_name_length;
+        $avalible_size = self::MAX_UDP_PACKGE_SIZE - self::PACKAGE_FIXED_LENGTH - $module_name_length - $interface_name_length;
         if(strlen($msg) > $avalible_size)
         {
             $msg = substr($msg, 0, $avalible_size);
@@ -521,9 +521,9 @@ class StatisticProtocol
     {
         // 解包
         $data = unpack("Cmodule_name_len/Cinterface_name_len/fcost_time/Csuccess/Ncode/nmsg_len/Ntime", $bin_data);
-        $module = substr($bin_data, self::PACKEGE_FIXED_LENGTH, $data['module_name_len']);
-        $interface = substr($bin_data, self::PACKEGE_FIXED_LENGTH + $data['module_name_len'], $data['interface_name_len']);
-        $msg = substr($bin_data, self::PACKEGE_FIXED_LENGTH + $data['module_name_len'] + $data['interface_name_len']);
+        $module = substr($bin_data, self::PACKAGE_FIXED_LENGTH, $data['module_name_len']);
+        $interface = substr($bin_data, self::PACKAGE_FIXED_LENGTH + $data['module_name_len'], $data['interface_name_len']);
+        $msg = substr($bin_data, self::PACKAGE_FIXED_LENGTH + $data['module_name_len'] + $data['interface_name_len']);
         return array(
                 'module'          => $module,
                 'interface'        => $interface,

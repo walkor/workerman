@@ -75,7 +75,7 @@ class Log
         }
         
         $log_file = $log_dir . "/server.log";
-        file_put_contents($log_file, date('Y-m-d H:i:s') . " " . $msg . "\n", FILE_APPEND);
+        file_put_contents($log_file, date('Y-m-d H:i:s') . " " . $msg . "\n", FILE_APPEND|LOCK_EX);
     }
     
     /**

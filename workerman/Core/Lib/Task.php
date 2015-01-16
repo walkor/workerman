@@ -33,7 +33,6 @@ class Task
      */
     public static function init($event = null)
     {
-        pcntl_alarm(1);
         if($event)
         {
             $event->add(SIGALRM, \Man\Core\Events\BaseEvent::EV_SIGNAL, array('\Man\Core\Lib\Task', 'signalHandle'));
@@ -50,8 +49,8 @@ class Task
      */
     public static function signalHandle()
     {
-        self::tick();
         pcntl_alarm(1);
+        self::tick();
     }
     
     
@@ -70,11 +69,21 @@ class Task
         {
             return false;
         }
-        if(!is_callable($func) && class_exists('Log'))
+        if(!is_callable($func))
         {
-            \Man\Core\Lib\Log::add(var_export($func, true). "not callable\n");
+            if(class_exists('\Man\Core\Lib\Log'))
+            {
+                \Man\Core\Lib\Log::add(var_export($func, true). "not callable\n");
+            }
             return false;
         }
+        
+        // 有任务时才出发计时器
+        if(empty(self::$tasks))
+        {
+            pcntl_alarm(1);
+        }
+        
         $time_now = time();
         $run_time = $time_now + $time_long;
         if(!isset(self::$tasks[$run_time]))
@@ -111,7 +120,14 @@ class Task
                     $task_args = $one_task[1];
                     $persistent = $one_task[2];
                     $time_long = $one_task[3];
-                    call_user_func_array($task_func, $task_args);
+                    try 
+                    {
+                        call_user_func_array($task_func, $task_args);
+                    }
+                    catch(\Exception $e)
+                    {
+                        echo $e;
+                    }
                     // 持久的放入下一个任务队列
                     if($persistent)
                     {

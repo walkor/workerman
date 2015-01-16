@@ -531,7 +531,7 @@ class DbConnection
     protected function joinInternal($join, $table, $cond = null)
     {
         if (! $this->from) {
-            throw new Exception('Cannot join() without from()');
+            throw new \Exception('Cannot join() without from()');
         }
     
         $join = strtoupper(ltrim("$join JOIN"));
@@ -614,7 +614,7 @@ class DbConnection
     public function joinSubSelect($join, $spec, $name, $cond = null)
     {
         if (! $this->from) {
-            throw new Exception('Cannot join() without from() first.');
+            throw new \Exception('Cannot join() without from() first.');
         }
     
         $join = strtoupper(ltrim("$join JOIN"));
@@ -787,7 +787,7 @@ class DbConnection
     protected function buildCols()
     {
         if (! $this->cols) {
-            throw new Exception('No columns in the SELECT.');
+            throw new \Exception('No columns in the SELECT.');
         }
     
         $cols = array();
@@ -857,7 +857,7 @@ class DbConnection
     
     /**
      * where
-     * @param string $cond 
+     * @param string/array $cond 
      * @param mixed ...$bind
      * @return self
      */
@@ -886,15 +886,15 @@ class DbConnection
     
     /**
      * or where
-     * @param string $cond 
+     * @param string/array $cond 
      * @param mixed ...$bind
      * @return self
      */
     public function orWhere($cond)
     {
-    	if(is_array($con))
+    	if(is_array($cond))
     	{
-    		foreach($con as $key=>$val)
+    		foreach($cond as $key=>$val)
     		{
     			if(is_string($key))
     			{

@@ -68,7 +68,7 @@ class Gateway
    
    /**
     * 向某个客户端发消息
-    * @param int $client_id 客户端通过Gateway::bindClientId($client_id)绑定的client_id
+    * @param int $client_id 
     * @param string $message
     */
    public static function sendToClient($clinet_id, $message)
