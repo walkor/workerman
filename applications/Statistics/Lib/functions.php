@@ -31,7 +31,7 @@ function multiRequest($request_buffer_array)
     // 轮询处理数据
     while(count($read) > 0)
     {
-        if(stream_select($read, $write, $except, 0, 200000))
+        if(@stream_select($read, $write, $except, 0, 200000))
         {
             foreach($read as $socket)
             {

@@ -35,6 +35,20 @@ class Select implements BaseEvent
     public $writeFds = array();
     
     /**
+     * 构造函数 创建一个管道，避免select空fd
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->channel = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        if($this->channel)
+        {
+            stream_set_blocking($this->channel[0], 0);
+            $this->readFds[0] = $this->channel[0];
+        }
+    }
+    
+    /**
      * 添加事件
      * @see \Man\Core\Events\BaseEvent::add()
      */
@@ -121,7 +135,7 @@ class Select implements BaseEvent
             // 触发信号处理函数
             pcntl_signal_dispatch();
             // stream_select false：出错 ; 0：超时
-            if(!($ret = @stream_select($read, $write, $e, PHP_INT_MAX)))
+            if(!($ret = @stream_select($read, $write, $e, 60)))
             {
                 // 超时
                 if($ret === 0)

@@ -159,7 +159,7 @@ function http_start($http_string, $SERVER = array())
     // 需要解析$_POST
     if($_SERVER['REQUEST_METHOD'] == 'POST')
     {
-        if($_SERVER['CONTENT_TYPE'] == 'multipart/form-data')
+        if(isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] == 'multipart/form-data')
         {
             parse_upload_files($http_body, $http_post_boundary);
         }
