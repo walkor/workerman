@@ -104,7 +104,7 @@ class Db
     );
   
     // 数据库实例2
-    public static $db2 = array array(
+    public static $db2 = array(
         'host'    => '127.0.0.1',
         'port'    => 3306,
         'user'    => 'mysql_user',
