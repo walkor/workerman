@@ -1672,8 +1672,13 @@ class DbConnection
         if ($statement === 'select' || $statement === 'show') {
             return $this->sQuery->fetchAll($fetchmode);
         }
-        elseif ( $statement === 'insert' ||  $statement === 'update' || $statement === 'delete' ) {
+        elseif ( $statement === 'update' || $statement === 'delete' ) {
             return $this->sQuery->rowCount();
+        }
+        elseif( $statement === 'insert' ){
+            if( $this->sQuery->rowCount() > 0 ){
+                return $this->lastInsertId();
+            }
         }
         else {
             return NULL;
