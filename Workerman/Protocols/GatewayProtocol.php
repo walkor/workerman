@@ -12,6 +12,7 @@ namespace Workerman\Protocols;
  *     unsigned int        client_ip,
  *     unsigned short    client_port,
  *     unsigned int        client_id,
+ *     unsigned char      flag,
  *     unsigned int        ext_len,
  *     char[ext_len]        ext_data,
  *     char[pack_length-HEAD_LEN] body//包体
@@ -50,11 +51,14 @@ class GatewayProtocol
     // 判断是否在线
     const CMD_IS_ONLINE = 11;
     
+    // 包体是标量
+    const FLAG_BODY_IS_SCALAR = 0x01;
+    
     /**
      * 包头长度
      * @var integer
      */
-    const HEAD_LEN = 25;
+    const HEAD_LEN = 26;
     
     public static $empty = array(
         'cmd' => 0,
@@ -63,6 +67,7 @@ class GatewayProtocol
         'client_ip' => '0.0.0.0',
         'client_port' => 0,
         'client_id' => 0,
+        'flag' => 0,
         'ext_data' => '',
         'body' => '',
     );
@@ -90,13 +95,18 @@ class GatewayProtocol
      */
     public static function encode($data)
     {
+        $flag = (int)is_scalar($data['body']);
+        if(!$flag)
+        {
+            $data['body'] = serialize($data['body']);
+        }
         $ext_len = strlen($data['ext_data']);
         $package_len = self::HEAD_LEN + $ext_len + strlen($data['body']);
-        return pack("NCNnNnNN",  $package_len,
+        return pack("NCNnNnNNC",  $package_len,
                         $data['cmd'], ip2long($data['local_ip']), 
                         $data['local_port'], ip2long($data['client_ip']), 
                         $data['client_port'], $data['client_id'],
-                       $ext_len) . $data['ext_data'] . $data['body'];
+                       $ext_len, $flag) . $data['ext_data'] . $data['body'];
     }
     
     /**
@@ -106,18 +116,32 @@ class GatewayProtocol
      */    
     public static function decode($buffer)
     {
-        $data = unpack("Npack_len/Ccmd/Nlocal_ip/nlocal_port/Nclient_ip/nclient_port/Nclient_id/Next_len", $buffer);
+        $data = unpack("Npack_len/Ccmd/Nlocal_ip/nlocal_port/Nclient_ip/nclient_port/Nclient_id/Next_len/Cflag", $buffer);
         $data['local_ip'] = long2ip($data['local_ip']);
         $data['client_ip'] = long2ip($data['client_ip']);
         if($data['ext_len'] > 0)
         {
             $data['ext_data'] = substr($buffer, self::HEAD_LEN, $data['ext_len']);
-            $data['body'] = substr($buffer, self::HEAD_LEN + $data['ext_len']);
+            if($data['flag'] & self::FLAG_BODY_IS_SCALAR)
+            {
+                $data['body'] = substr($buffer, self::HEAD_LEN + $data['ext_len']);
+            }
+            else
+            {
+                $data['body'] = unserialize(substr($buffer, self::HEAD_LEN + $data['ext_len']));
+            }
         }
         else
         {
             $data['ext_data'] = '';
-            $data['body'] = substr($buffer, self::HEAD_LEN);
+            if($data['flag'] & self::FLAG_BODY_IS_SCALAR)
+            {
+                $data['body'] = substr($buffer, self::HEAD_LEN);
+            }
+            else
+            {
+                $data['body'] = unserialize(substr($buffer, self::HEAD_LEN));
+            }
         }
         return $data;
     }
