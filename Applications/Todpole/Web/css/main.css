@@ -1,0 +1,239 @@
+/*
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
+Code licensed under the BSD License:
+http://developer.yahoo.com/yui/license.html
+version: 3.2.0
+build: 2676
+*/
+html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,img{border:0;}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym{border:0;font-variant:normal;}sup{vertical-align:text-top;}sub{vertical-align:text-bottom;}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;}input,textarea,select{*font-size:100%;}legend{color:#000;}
+
+html {
+	-webkit-user-select: none;
+	cursor: caret;
+	background: #000;
+}
+
+body {
+	font-family: "Microsoft YaHei","proxima-nova-1","proxima-nova-2", arial, sans-serif;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	font-size: 62.5%;
+}
+
+h1 {
+	display: block;
+	position: absolute;
+	top: 30px;
+	left: 30px;
+	width: 268px;
+	height: 30px;
+	background: url(images/logo.png);
+	overflow: hidden;
+	text-indent: 300px;
+}
+
+h2 {
+	color: #fff;
+	font-size: 1.3em;
+	margin-bottom: 0.2em;
+	font-weight: bold;
+}
+
+a {
+	color: #c0fdf7;
+	text-decoration: none;
+}
+
+
+
+	a:hover {
+		color: #fff;
+		text-decoration: underline;
+	}
+
+p {
+	color: #999999;
+	font-size: 1.3em;
+	margin-bottom:0.5em;
+}
+
+strong {
+	font-weight:bold;
+}
+
+/*#ui {
+	display: none;
+}*/
+
+#fps {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index:2;
+}
+
+#chatText
+{
+	display:inline-block;	
+}
+#chatText,#chat
+{
+	font-size:3em;
+	font-weight: bold;
+	max-width: 70%;
+}
+#chat {
+	/*font-family: "Arial Rounded MT Bold";*/
+	display: block;
+	position: absolute;
+	top: 60%;
+	left: 50%;
+	padding: 10px 20px;
+	background: rgba(255,255,255,.1);
+	border-radius: 20px;
+	color: #fff;
+	text-align: center;
+	border-style:none;
+	outline-style:none;
+	height:30px;
+	opacity:0;
+	transition: opacity .2s linear;
+	-o-transition: opacity .2s linear;
+	-moz-transition: opacity .2s linear;
+	-webkit-transition: opacity .2s linear;
+	-ms-transition: opacity .2s linear;
+}
+
+
+#cant-connect {
+	/*font-family: "Arial Rounded MT Bold";*/
+	display: none;
+	position: absolute;
+	top: 200px;
+	left: 10px;
+	padding: 10px 20px;
+	color: rgba(249,136,119,0.9);
+	width: 400px;
+	font-size: 2em;
+	font-weight: bold;
+}
+
+#cant-connect a:link {
+	color: #c0fdf7;
+	text-decoration: underline;
+}
+
+#unsupported-browser {
+  display: none;  
+	position: absolute;
+	z-index:2;	
+	background-color: #fff;
+	background-image: linear-gradient(top, #fff, #e2e2e2);
+	background-image: -o-linear-gradient(top, #fff, #e2e2e2);
+	background-image: -moz-linear-gradient(top, #fff, #e2e2e2);
+	background-image: -ms-linear-gradient(top, #fff, #e2e2e2);
+	background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #fff),color-stop(1, #e2e2e2));
+
+	border-radius: 10px;
+	box-shadow: 1px 1px 5px #000;
+	
+	top: 55%;
+	left: 50%;
+	width:420px;
+	margin:-200px;
+	padding:35px;
+	font-size: 1.5em;
+	border: 1px solid #fff;
+}
+
+#unsupported-browser p {
+	color: #000;
+	text-shadow: white 1px 1px 0;
+	line-height: 1.4em;
+}
+
+a#force-init-button {
+	font-size: .6em;
+	color: #e47c6c;
+	text-align: center;
+	font-weight: bold;
+	text-decoration: underline;
+}
+a#force-init-button:hover {
+  color: #999;  
+}
+
+
+#unsupported-browser ul li  {
+	display: inline;
+	list-style-type: none;
+	padding-right: 10px;
+	font-weight: bold;
+	padding: 4px 10px 4px 10px;
+	background-color: #606061;
+	border-radius: 100px;
+	box-shadow:inset -1px -1px -5px #000;
+	text-shadow: none;
+	font-size: .8em;
+}
+
+#unsupported-browser ul   {
+	margin: 20px 0px 20px 0px;
+}
+
+
+
+#info {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	background: rgba(0,0,0,0.2);
+}
+	#info section {
+		float: left;
+		margin: 20px 40px 20px 20px;
+		margin-right: 40px;
+	}
+		#info #wtf {
+			float: left;
+			margin-left: 30px;
+			margin-right: 40px;
+		}
+		
+		#info #share {
+			float: right;
+			margin-right: 40px;
+		}
+		
+		#info section ul {
+		
+		}
+			#info section ul li {
+				float: left;
+				margin-right: 10px;
+			}
+				#info section ul li a {
+					font-size: 1.3em;
+				}
+	
+	#info #settings .edit {
+		display: none;
+	}
+	
+
+#instructions {
+	position: absolute;
+	top: 30px;
+	right: 60px;
+}
+
+#fwa {
+	display: none; /*remove on 27th November 2010*/
+	position: absolute;
+	top: 0px;
+	right: 0px;
+}
+
+
