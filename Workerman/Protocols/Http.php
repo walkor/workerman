@@ -222,7 +222,7 @@ class Http implements \Workerman\Protocols\ProtocolInterface
      * 设置http头
      * @return bool
      */
-    function header($content, $replace = true, $http_response_code = 0)
+    public static function header($content, $replace = true, $http_response_code = 0)
     {
         if(strpos($content, 'HTTP') === 0)
         {
@@ -268,7 +268,7 @@ class Http implements \Workerman\Protocols\ProtocolInterface
      * @param string $name
      * @return void
      */
-    function headerRemove($name)
+    public static function headerRemove($name)
     {
         unset( HttpCache::$header[$name]);
     }
@@ -283,7 +283,7 @@ class Http implements \Workerman\Protocols\ProtocolInterface
      * @param bool $secure
      * @param bool $HTTPOnly
      */
-    function setcookie($name, $value = '', $maxage = 0, $path = '', $domain = '', $secure = false, $HTTPOnly = false) {
+    public static function setcookie($name, $value = '', $maxage = 0, $path = '', $domain = '', $secure = false, $HTTPOnly = false) {
         header(
                 'Set-Cookie: ' . $name . '=' . rawurlencode($value)
                 . (empty($domain) ? '' : '; Domain=' . $domain)
@@ -297,7 +297,7 @@ class Http implements \Workerman\Protocols\ProtocolInterface
      * sessionStart
      *
      */
-    function sessionStart()
+    public static function sessionStart()
     {
         if(HttpCache::$instance->sessionStarted)
         {
