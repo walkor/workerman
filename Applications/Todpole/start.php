@@ -30,8 +30,6 @@ $worker->count = 4;
 // WebServer
 $web = new WebServer("http://0.0.0.0:8686");
 
-$web->user = 'www-data';
-
 $web->count = 2;
 
 $web->addRoot('www.your_domain.com', __DIR__.'/Web');
