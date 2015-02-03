@@ -1,12 +1,12 @@
 <?php 
 namespace Workerman\Protocols;
 /**
- * telnet协议
+ * Text协议
  * 以换行为请求结束标记
  * @author walkor <walkor@workerman.net>
  */
 
-class Telnet
+class Text
 {
     /**
      * 检查包的完整性
