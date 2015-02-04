@@ -28,6 +28,20 @@ class Select implements EventInterface
     protected $_writeFds = array();
     
     /**
+     * construct
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->channel = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        if($this->channel)
+        {
+            stream_set_blocking($this->channel[0], 0);
+            $this->_readFds[0] = $this->channel[0];
+        }
+    }
+    
+    /**
      * add
      * @see Events\EventInterface::add()
      */
@@ -108,7 +122,7 @@ class Select implements EventInterface
             $read = $this->_readFds;
             $write = $this->_writeFds;
             // waits for $read and $write to change status
-            if(!@stream_select($read, $write, $e, PHP_INT_MAX))
+            if(!@stream_select($read, $write, $e, 60))
             {
                 // maybe interrupt by sianals, so calls signal handlers for pending signals
                 pcntl_signal_dispatch();
