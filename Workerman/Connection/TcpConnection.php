@@ -68,12 +68,6 @@ class TcpConnection extends ConnectionInterface
     public $protocol = '';
     
     /**
-     * eventloop
-     * @var EventInterface
-     */
-    protected $_event = null;
-    
-    /**
      * max send buffer size (Bytes)
      * @var int
      */
@@ -138,12 +132,11 @@ class TcpConnection extends ConnectionInterface
      * @param resource $socket
      * @param EventInterface $event
      */
-    public function __construct($socket, EventInterface $event)
+    public function __construct($socket)
     {
         $this->_socket = $socket;
         stream_set_blocking($this->_socket, 0);
-        $this->_event = $event;
-        $this->_event->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
+        Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
     }
     
     /**
@@ -191,7 +184,7 @@ class TcpConnection extends ConnectionInterface
                 $this->_sendBuffer = $send_buffer;
             }
             
-            $this->_event->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+            Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             return null;
         }
         else
@@ -349,7 +342,7 @@ class TcpConnection extends ConnectionInterface
         $len = @fwrite($this->_socket, $this->_sendBuffer);
         if($len === strlen($this->_sendBuffer))
         {
-            $this->_event->del($this->_socket, EventInterface::EV_WRITE);
+            Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
             $this->_sendBuffer = '';
             if($this->_status == self::STATUS_CLOSING)
             {
@@ -425,8 +418,8 @@ class TcpConnection extends ConnectionInterface
                echo $e;
            }
        }
-       $this->_event->del($this->_socket, EventInterface::EV_READ);
-       $this->_event->del($this->_socket, EventInterface::EV_WRITE);
+       Worker::$globalEvent->del($this->_socket, EventInterface::EV_READ);
+       Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
        @fclose($this->_socket);
        $this->_status = self::STATUS_CLOSED;
     }

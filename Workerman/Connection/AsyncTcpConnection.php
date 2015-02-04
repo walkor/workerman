@@ -30,7 +30,7 @@ class AsyncTcpConnection extends TcpConnection
      * @param resource $socket
      * @param EventInterface $event
      */
-    public function __construct($remote_address, EventInterface $event)
+    public function __construct($remote_address)
     {
         list($scheme, $address) = explode(':', $remote_address, 2);
         if($scheme != 'tcp')
@@ -46,7 +46,6 @@ class AsyncTcpConnection extends TcpConnection
                 }
             }
         }
-        $this->_event = $event;
         $this->_socket = stream_socket_client("tcp:$address", $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT);
         if(!$this->_socket)
         {
@@ -54,7 +53,7 @@ class AsyncTcpConnection extends TcpConnection
             return;
         }
         
-        $this->_event->add($this->_socket, EventInterface::EV_WRITE, array($this, 'checkConnection'));
+        Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'checkConnection'));
     }
     
     protected function emitError($code, $msg)
@@ -73,15 +72,15 @@ class AsyncTcpConnection extends TcpConnection
     
     public function checkConnection($socket)
     {
-        $this->_event->del($this->_socket, EventInterface::EV_WRITE);
+        Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
         // php bug ?
         if(!feof($this->_socket) && !feof($this->_socket))
         {
             stream_set_blocking($this->_socket, 0);
-            $this->_event->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
+            Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
             if($this->_sendBuffer)
             {
-                $this->_event->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+                Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             }
             $this->_status = self::STATUS_ESTABLISH;
             if($this->onConnect)
@@ -153,7 +152,7 @@ class AsyncTcpConnection extends TcpConnection
                 $this->_sendBuffer = $send_buffer;
             }
             
-            $this->_event->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+            Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             return null;
         }
         else
