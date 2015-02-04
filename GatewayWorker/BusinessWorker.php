@@ -109,7 +109,7 @@ class BusinessWorker extends Worker
         {
             if(!isset($this->gatewayConnections[$addr]))
             {
-                $gateway_connection = new AsyncTcpConnection("GatewayProtocol://$addr", self::$_globalEvent);
+                $gateway_connection = new AsyncTcpConnection("GatewayProtocol://$addr");
                 $gateway_connection->remoteAddress = $addr;
                 $gateway_connection->onConnect = array($this, 'onConnectGateway');
                 $gateway_connection->onMessage = array($this, 'onGatewayMessage');
