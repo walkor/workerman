@@ -1169,6 +1169,7 @@ class Worker
             $parser = $this->_protocol;
             try
             {
+               ConnectionInterface::$statistics['total_request']++;
                call_user_func($this->onMessage, $connection, $parser::decode($recv_buffer, $connection));
             }
             catch(Exception $e)
