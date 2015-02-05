@@ -45,3 +45,13 @@ php test.php restart
 php test.php status  
 php test.php reload  
 
+## demos
+(tadpole)[http://kedou.workerman.net/]
+(chat root)[http://chat.workerman.net/]
+(statistics)[http://monitor.workerman.net/]
+(flappybird)[http://flap.workerman.net/]
+(jsonRpc)[https://github.com/walkor/workerman-JsonRpc]
+(thriftRpc)[https://github.com/walkor/workerman-thrift]
+(web-msg-sender)[https://github.com/walkor/web-msg-sender]
+
+
