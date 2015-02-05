@@ -126,7 +126,7 @@ class Gateway
        {
            $write = $except = array();
            $read = $client_array;
-           if(stream_select($read, $write, $except, 1))
+           if(@stream_select($read, $write, $except, 1))
            {
                foreach($read as $client)
                {
