@@ -285,6 +285,7 @@ class Worker
      */
     public static function init()
     {
+        ini_set('opcache.enable', false);
         if(empty(self::$pidFile))
         {
             $backtrace = debug_backtrace();
