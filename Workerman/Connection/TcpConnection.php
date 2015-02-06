@@ -311,6 +311,11 @@ class TcpConnection extends ConnectionInterface
                        echo $e;
                    }
                }
+               if(feof($socket))
+               {
+                   $this->destroy();
+                   return;
+               }
                return;
            }
            self::$statistics['total_request']++;
@@ -325,6 +330,11 @@ class TcpConnection extends ConnectionInterface
                echo $e;
            }
            $this->_recvBuffer = '';
+           if(feof($socket))
+           {
+               $this->destroy();
+               return;
+           }
        }
        else if(feof($socket))
        {
