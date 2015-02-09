@@ -4,6 +4,9 @@ homepage:[http://www.workerman.net](http://www.workerman.net)
 
 manual:[http://doc3.workerman.net](http://doc3.workerman.net)
 
+## 
+Workerman is a library for event-driven programming in PHP. It has a huge number of features. Each worker is able to handle thousands of connections.
+
 ## usage
 
 create test.php
