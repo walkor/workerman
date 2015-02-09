@@ -311,7 +311,7 @@ class TcpConnection extends ConnectionInterface
                        echo $e;
                    }
                }
-               if(feof($socket))
+               if($this->_status !== self::STATUS_CLOSED && feof($socket))
                {
                    $this->destroy();
                    return;
@@ -330,7 +330,7 @@ class TcpConnection extends ConnectionInterface
                echo $e;
            }
            $this->_recvBuffer = '';
-           if(feof($socket))
+           if($this->_status !== self::STATUS_CLOSED && feof($socket))
            {
                $this->destroy();
                return;
