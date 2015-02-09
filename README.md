@@ -1,13 +1,13 @@
-## workerman 3.0 
+## Workerman 3.0 
 
 homepage:[http://www.workerman.net](http://www.workerman.net)
 
 manual:[http://doc3.workerman.net](http://doc3.workerman.net)
 
-## 
+## What is it
 Workerman is a library for event-driven programming in PHP. It has a huge number of features. Each worker is able to handle thousands of connections.
 
-## usage
+## Usage
 
 create test.php
 ```php
@@ -49,13 +49,13 @@ Worker::runAll();
 run width
 php test.php start
 
-## available commands
+## Available commands
 php test.php stop  
 php test.php restart  
 php test.php status  
 php test.php reload  
 
-## demos
+## Demos
 [tadpole](http://kedou.workerman.net/)  
 [chat room](http://chat.workerman.net/)  
 [statistics](http://monitor.workerman.net/)  
