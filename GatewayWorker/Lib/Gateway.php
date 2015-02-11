@@ -118,15 +118,15 @@ class Gateway
                $client_array[$client_id] = $client;
            }
        }
-       // 超时2秒
-       $time_out = 2;
+       // 超时1秒
+       $time_out = 1;
        $time_start = microtime(true);
        // 批量接收请求
        while(count($client_array) > 0)
        {
            $write = $except = array();
            $read = $client_array;
-           if(@stream_select($read, $write, $except, 1))
+           if(@stream_select($read, $write, $except, $time_out))
            {
                foreach($read as $client)
                {
