@@ -71,7 +71,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         }
         
         // close package
-        if(ord($buffer[0]) & 0xf == 8)
+        if((ord($buffer[0]) & 0xf) == 8)
         {
             $connection->close();
             return 0;
