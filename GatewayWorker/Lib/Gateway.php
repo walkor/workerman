@@ -6,7 +6,6 @@ namespace GatewayWorker\Lib;
  * @author walkor <walkor@workerman.net>
  * 
  */
-require_once __DIR__ . '/Autoloader.php';
 use \Workerman\Protocols\GatewayProtocol;
 use \GatewayWorker\Lib\Store;
 use \GatewayWorker\Lib\Context;
