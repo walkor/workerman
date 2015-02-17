@@ -1,4 +1,6 @@
 <?php
+namespace Workerman;
+
 if(!defined('WORKERMAN_ROOT_DIR'))
 {
     define('WORKERMAN_ROOT_DIR', realpath(__DIR__  . '/../'));
@@ -6,18 +8,32 @@ if(!defined('WORKERMAN_ROOT_DIR'))
 
 require_once WORKERMAN_ROOT_DIR.'/Workerman/Lib/Constants.php';
 
-function workerman_loader($name)
+class Autoloader
 {
-    $class_path = str_replace('\\', DIRECTORY_SEPARATOR ,$name);
-    $class_file = WORKERMAN_ROOT_DIR . DIRECTORY_SEPARATOR . "$class_path.php";
-    if(is_file($class_file))
+    protected static $_appInitPath = '';
+
+    public static function setRootPath($root_path)
     {
-        require_once($class_file);
-        if(class_exists($name, false))
-        {
-            return true;
-        }
+        self::$_appInitPath = $root_path;
+        spl_autoload_register('\GatewayWorker\Lib\Autoloader::loadByNamespace');
     }
-    return false;
+
+    public static function loadByNamespace($name)
+    {
+        $class_path = str_replace('\\', DIRECTORY_SEPARATOR ,$name);
+        $class_file = self::$_appInitPath . '/' . $class_path.'.php';
+        if(is_file($class_file))
+        {
+            $class_file = WORKERMAN_ROOT_DIR . DIRECTORY_SEPARATOR . "$class_path.php";
+        }
+        if(is_file($class_file))
+        {
+            require_once($class_file);
+            if(class_exists($name, false))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }
-spl_autoload_register('workerman_loader');

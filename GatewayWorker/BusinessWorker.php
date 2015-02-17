@@ -8,7 +8,6 @@ use \Workerman\Lib\Timer;
 use \GatewayWorker\Lib\Lock;
 use \GatewayWorker\Lib\Store;
 use \GatewayWorker\Lib\Context;
-use \GatewayWorker\Lib\Autoloader;
 use \Event;
 
 class BusinessWorker extends Worker
@@ -19,19 +18,14 @@ class BusinessWorker extends Worker
     
     public $badGatewayAddress = array();
     
-    protected $_rootPath = '';
-    
     public function __construct($socket_name = '', $context_option = array())
     {
         $this->onWorkerStart = array($this, 'onWorkerStart');
-        $backrace = debug_backtrace();
-        $this->_rootPath = dirname($backrace[0]['file']);
         parent::__construct($socket_name, $context_option);
     }
     
     protected function onWorkerStart()
     {
-        Autoloader::setRootPath($this->_rootPath);
         Timer::add(1, array($this, 'checkGatewayConnections'));
         $this->checkGatewayConnections();
         \GatewayWorker\Lib\Gateway::setBusinessWorker($this);

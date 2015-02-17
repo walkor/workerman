@@ -6,7 +6,6 @@ use \Workerman\Lib\Timer;
 use \Workerman\Protocols\GatewayProtocol;
 use \GatewayWorker\Lib\Lock;
 use \GatewayWorker\Lib\Store;
-use \GatewayWorker\Lib\Autoloader;
 
 class Gateway extends Worker
 {
@@ -30,8 +29,6 @@ class Gateway extends Worker
     
     protected $_innerUdpWorker = null;
     
-    protected $_rootPath = '';
-    
     public function __construct($socket_name, $context_option = array())
     {
         $this->onWorkerStart = array($this, 'onWorkerStart');
@@ -39,8 +36,6 @@ class Gateway extends Worker
         $this->onMessage = array($this, 'onClientMessage');
         $this->onClose = array($this, 'onClientClose');
         $this->onWorkerStop = array($this, 'onWorkerStop');
-        $backrace = debug_backtrace();
-        $this->_rootPath = dirname($backrace[0]['file']);
         parent::__construct($socket_name, $context_option);
     }
     
@@ -153,8 +148,6 @@ class Gateway extends Worker
     
     public function onWorkerStart()
     {
-        Autoloader::setRootPath($this->_rootPath);
-        
         $this->lanPort = $this->startPort - posix_getppid() + posix_getpid();
     
         if($this->lanPort<0 || $this->lanPort >=65535)

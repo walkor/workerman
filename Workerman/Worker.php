@@ -8,6 +8,7 @@ use \Workerman\Connection\ConnectionInterface;
 use \Workerman\Connection\TcpConnection;
 use \Workerman\Connection\UdpConnection;
 use \Workerman\Lib\Timer;
+use \Workerman\Autoloader;
 use \Exception;
 
 /**
@@ -20,7 +21,7 @@ class Worker
      * workerman version
      * @var string
      */
-    const VERSION = '3.0.1';
+    const VERSION = '3.0.2';
     
     /**
      * status starting
@@ -137,6 +138,12 @@ class Worker
      * @var string
      */
     protected $_protocol = '';
+    
+    /**
+     * app init path
+     * @var string
+     */
+    protected $_appInitPath = '';
     
     /**
      * if run as daemon
@@ -957,6 +964,9 @@ class Worker
         self::$_workers[$this->workerId] = $this;
         self::$_pidMap[$this->workerId] = array();
         
+        $backrace = debug_backtrace();
+        $this->_appInitPath = dirname($backrace[0]['file']);
+        
         if($socket_name)
         {
             $this->_socketName = $socket_name;
@@ -1068,6 +1078,7 @@ class Worker
         
         if($this->onWorkerStart)
         {
+            Autoloader::setRootPath($this->_appInitPath);
             call_user_func($this->onWorkerStart, $this);
         }
         self::$globalEvent->loop();
