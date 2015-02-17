@@ -15,7 +15,6 @@ class Autoloader
     public static function setRootPath($root_path)
     {
         self::$_appInitPath = $root_path;
-        spl_autoload_register('\GatewayWorker\Lib\Autoloader::loadByNamespace');
     }
 
     public static function loadByNamespace($name)
@@ -37,3 +36,5 @@ class Autoloader
         return false;
     }
 }
+
+spl_autoload_register('\Workerman\Autoloader::loadByNamespace');
