@@ -21,19 +21,15 @@ class Http implements \Workerman\Protocols\ProtocolInterface
         {
             // find Content-Length
             $match = array();
-            if(preg_match("/\r\nContent-Length: ?(\d*)\r\n/", $header, $match))
+            if(preg_match("/\r\nContent-Length: ?(\d+)/", $header, $match))
             {
                 $content_lenght = $match[1];
+                return $content_lenght;
             }
             else
             {
                 return 0;
             }
-            if($content_lenght <= strlen($body))
-            {
-                return strlen($header)+4+$content_lenght;
-            }
-            return 0;
         }
         else
         {
@@ -45,7 +41,7 @@ class Http implements \Workerman\Protocols\ProtocolInterface
     public static function decode($recv_buffer, ConnectionInterface $connection)
     {
         // 初始化
-        $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION =  array();
+        $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES =  array();
         $GLOBALS['HTTP_RAW_POST_DATA'] = '';
         // 清空上次的数据
         HttpCache::$header = array();
@@ -65,25 +61,15 @@ class Http implements \Workerman\Protocols\ProtocolInterface
               'HTTP_ACCEPT_ENCODING' => '',
               'HTTP_COOKIE' => '',
               'HTTP_CONNECTION' => '',
-              'REQUEST_TIME' => 0,
               'REMOTE_ADDR' => '',
               'REMOTE_PORT' => '0',
            );
         
         // 将header分割成数组
-        $header_data = explode("\r\n", $recv_buffer);
+        list($http_header, $http_body) = explode("\r\n\r\n", $recv_buffer, 2);
+        $header_data = explode("\r\n", $http_header);
         
         list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(' ', $header_data[0]);
-        // 需要解析$_POST
-        if($_SERVER['REQUEST_METHOD'] == 'POST')
-        {
-            $tmp = explode("\r\n\r\n", $recv_buffer, 2);
-            parse_str($tmp[1], $_POST);
-        
-            // $GLOBALS['HTTP_RAW_POST_DATA']
-            $GLOBALS['HTTP_RAW_POST_DATA'] = $tmp[1];
-            unset($header_data[count($header_data) - 1]);
-        }
         
         unset($header_data[0]);
         foreach($header_data as $content)
@@ -105,7 +91,7 @@ class Http implements \Workerman\Protocols\ProtocolInterface
                     $_SERVER['SERVER_NAME'] = $tmp[0];
                     if(isset($tmp[1]))
                     {
-                        $_SERVER['SERVER_PORT'] = (int)$tmp[1];
+                        $_SERVER['SERVER_PORT'] = $tmp[1];
                     }
                     break;
                 // cookie
@@ -134,14 +120,6 @@ class Http implements \Workerman\Protocols\ProtocolInterface
                 // connection
                 case 'connection':
                     $_SERVER['HTTP_CONNECTION'] = $value;
-                    if(strtolower($value) === 'keep-alive')
-                    {
-                        HttpCache::$header['Connection'] = 'Connection: Keep-Alive';
-                    }
-                    else
-                    {
-                        HttpCache::$header['Connection'] = 'Connection: Closed';
-                    }
                     break;
                 case 'referer':
                     $_SERVER['HTTP_REFERER'] = $value;
@@ -152,12 +130,34 @@ class Http implements \Workerman\Protocols\ProtocolInterface
                 case 'if-none-match':
                     $_SERVER['HTTP_IF_NONE_MATCH'] = $value;
                     break;
+                case 'content-type':
+                    if(!preg_match('/boundary="?(\S+)"?/', $value, $match))
+                    {
+                        $_SERVER['CONTENT_TYPE'] = $value;
+                    }
+                    else
+                    {
+                        $_SERVER['CONTENT_TYPE'] = 'multipart/form-data';
+                        $http_post_boundary = '--'.$match[1];
+                    }
+                    break;
             }
         }
         
-        // 'REQUEST_TIME_FLOAT' => 1375774613.237,
-        $_SERVER['REQUEST_TIME_FLOAT'] = microtime(true);
-        $_SERVER['REQUEST_TIME'] = intval($_SERVER['REQUEST_TIME_FLOAT']);
+        // 需要解析$_POST
+        if($_SERVER['REQUEST_METHOD'] == 'POST')
+        {
+            if(isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] == 'multipart/form-data')
+            {
+                self::parseUploadFiles($http_body, $http_post_boundary);
+            }
+            else
+            {
+                parse_str($http_body, $_POST);
+                // $GLOBALS['HTTP_RAW_POST_DATA']
+                $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
+            }
+        }
         
         // QUERY_STRING
         $_SERVER['QUERY_STRING'] = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
@@ -376,6 +376,54 @@ class Http implements \Workerman\Protocols\ProtocolInterface
     public static function getMimeTypesFile()
     {
         return __DIR__.'/Http/mime.types';
+    }
+    
+     /**
+     * 解析$_FILES
+     */
+    protected function parseUploadFiles($http_body, $http_post_boundary)
+    {
+        $http_body = substr($http_body, 0, strlen($http_body) - (strlen($http_post_boundary) + 4));
+        $boundary_data_array = explode($http_post_boundary."\r\n", $http_body);
+        if($boundary_data_array[0] === '')
+        {
+            unset($boundary_data_array[0]);
+        }
+        foreach($boundary_data_array as $boundary_data_buffer)
+        {
+            list($boundary_header_buffer, $boundary_value) = explode("\r\n\r\n", $boundary_data_buffer, 2);
+            // 去掉末尾\r\n
+            $boundary_value = substr($boundary_value, 0, -2);
+            foreach (explode("\r\n", $boundary_header_buffer) as $item)
+            {
+                list($header_key, $header_value) = explode(": ", $item);
+                $header_key = strtolower($header_key);
+                switch ($header_key)
+                {
+                    case "content-disposition":
+                        // 是文件
+                        if(preg_match('/name=".*?"; filename="(.*?)"$/', $header_value, $match))
+                        {
+                            $_FILES[] = array(
+                                'file_name' => $match[1],
+                                'file_data' => $boundary_value,
+                                'file_size' => strlen($boundary_value),
+                            );
+                            continue;
+                        }
+                        // 是post field
+                        else
+                        {
+                            // 收集post
+                            if(preg_match('/name="(.*?)"$/', $header_value, $match))
+                            {
+                                $_POST[$match[1]] = $boundary_value;
+                            }
+                        }
+                        break;
+                }
+            }
+        }
     }
 }
 
