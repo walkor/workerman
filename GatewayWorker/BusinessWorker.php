@@ -22,6 +22,8 @@ class BusinessWorker extends Worker
     {
         $this->onWorkerStart = array($this, 'onWorkerStart');
         parent::__construct($socket_name, $context_option);
+        $backrace = debug_backtrace();
+        $this->_appInitPath = dirname($backrace[0]['file']);
     }
     
     protected function onWorkerStart()

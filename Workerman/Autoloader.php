@@ -14,7 +14,7 @@ class Autoloader
 
     public static function setRootPath($root_path)
     {
-        self::$_appInitPath = $root_path;
+          self::$_appInitPath = $root_path;
     }
 
     public static function loadByNamespace($name)
