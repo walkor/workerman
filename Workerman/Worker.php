@@ -1076,9 +1076,9 @@ class Worker
         
         Timer::init(self::$globalEvent);
         
+        Autoloader::setRootPath($this->_appInitPath);
         if($this->onWorkerStart)
         {
-            Autoloader::setRootPath($this->_appInitPath);
             call_user_func($this->onWorkerStart, $this);
         }
         self::$globalEvent->loop();
