@@ -21,7 +21,7 @@ class Autoloader
     {
         $class_path = str_replace('\\', DIRECTORY_SEPARATOR ,$name);
         $class_file = self::$_appInitPath . '/' . $class_path.'.php';
-        if(is_file($class_file))
+        if(!is_file($class_file))
         {
             $class_file = WORKERMAN_ROOT_DIR . DIRECTORY_SEPARATOR . "$class_path.php";
         }
