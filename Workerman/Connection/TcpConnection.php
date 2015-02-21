@@ -416,6 +416,7 @@ class TcpConnection extends ConnectionInterface
      */
     protected function destroy()
     {
+       self::$statistics['connection_count']--;
        if($this->onClose)
        {
            try

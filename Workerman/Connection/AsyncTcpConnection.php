@@ -83,6 +83,7 @@ class AsyncTcpConnection extends TcpConnection
                 Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             }
             $this->_status = self::STATUS_ESTABLISH;
+            ConnectionInterface::$statistics['connection_count']++;
             if($this->onConnect)
             {
                 try 
@@ -160,5 +161,4 @@ class AsyncTcpConnection extends TcpConnection
             $this->_sendBuffer .= $send_buffer;
         }
     }
-    
 }
