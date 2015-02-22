@@ -7,13 +7,13 @@ use Workerman\Worker;
 use \Exception;
 
 /**
- * connection 
+ * connection类的接口 
  * @author walkor<walkor@workerman.net>
  */
 abstract class  ConnectionInterface
 {
     /**
-     * statistics for status
+     * status命令的统计数据
      * @var array
      */
     public static $statistics = array(
@@ -24,43 +24,44 @@ abstract class  ConnectionInterface
     );
     
     /**
-     * when receive data, onMessage will be run 
+     * 当收到数据时，如果有设置$onMessage回调，则执行
      * @var callback
      */
     public $onMessage = null;
     
     /**
-     * when connection close, onClose will be run
+     * 当连接关闭时，如果设置了$onClose回调，则执行
      * @var callback
      */
     public $onClose = null;
     
     /**
-     * when something wrong ,onError will be run
+     * 当出现错误时，如果设置了$onError回调，则执行
      * @var callback
      */
     public $onError = null;
     
     /**
-     * send buffer to client
+     * 发送数据给对端
      * @param string $send_buffer
      * @return void|boolean
      */
     abstract public function send($send_buffer);
     
     /**
-     * get remote ip
+     * 获得远端ip
      * @return string
      */
     abstract public function getRemoteIp();
     
     /**
-     * get remote port
+     * 获得远端端口
+     * @return int
      */
     abstract public function getRemotePort();
 
     /**
-     * close the connection
+     * 关闭连接，为了保持接口一致，udp保留了此方法，当是udp时调用此方法无任何作用
      * @void
      */
     abstract public function close($data = null);

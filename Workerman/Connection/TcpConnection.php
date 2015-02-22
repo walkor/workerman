@@ -8,127 +8,136 @@ use Workerman\Worker;
 use \Exception;
 
 /**
- * connection 
+ * Tcp连接类 
  * @author walkor<walkor@workerman.net>
  */
 class TcpConnection extends ConnectionInterface
 {
     /**
-     * when recv data from client ,how much bytes to read
-     * @var unknown_type
+     * 当数据可读时，从socket缓冲区读取多少字节数据
+     * @var int
      */
     const READ_BUFFER_SIZE = 8192;
 
     /**
-     * connection status connecting
+     * 连接状态 连接中
      * @var int
      */
     const STATUS_CONNECTING = 1;
     
     /**
-     * connection status establish
+     * 连接状态 已经建立连接
      * @var int
      */
     const STATUS_ESTABLISH = 2;
 
     /**
-     * connection status closing
+     * 连接状态 连接关闭中，标识调用了close方法，但是发送缓冲区中任然有数据
+     * 等待发送缓冲区的数据发送完毕（写入到socket写缓冲区）后执行关闭
      * @var int
      */
     const STATUS_CLOSING = 4;
     
     /**
-     * connection status closed
+     * 连接状态 已经关闭
      * @var int
      */
     const STATUS_CLOSED = 8;
     
     /**
-     * when receive data, onMessage will be run 
+     * 当对端发来数据时，如果设置了$onMessage回调，则执行
      * @var callback
      */
     public $onMessage = null;
     
     /**
-     * when connection close, onClose will be run
+     * 当连接关闭时，如果设置了$onClose回调，则执行
      * @var callback
      */
     public $onClose = null;
     
     /**
-     * when some thing wrong ,onError will be run
+     * 当出现错误是，如果设置了$onError回调，则执行
      * @var callback
      */
     public $onError = null;
     
     /**
-     * protocol
+     * 使用的应用层协议，是协议类的名称
+     * 值类似于 Workerman\\Protocols\\Http
      * @var string
      */
     public $protocol = '';
     
     /**
-     * max send buffer size (Bytes)
+     * 发送缓冲区大小，当发送缓冲区满时，会尝试触发onError回调（如果有设置的话）
+     * 如果没设置onError回调，发送缓冲区满，则后续发送的数据将被丢弃，
+     * 直到发送缓冲区有空的位置
+     * 注意 此值可以动态设置
+     * 例如 Workerman\Connection\TcpConnection::$maxSendBufferSize=1024000;
      * @var int
      */
     public static $maxSendBufferSize = 1048576;
     
     /**
-     * max package size (Bytes)
+     * 能接受的最大数据包，为了防止恶意攻击，当数据包的大小大于此值时执行断开
+     * 注意 此值可以动态设置
+     * 例如 Workerman\Connection\TcpConnection::$maxPackageSize=1024000;
      * @var int
      */
     public static $maxPackageSize = 10485760;
     
     /**
-     * the socket
+     * 实际的socket资源
      * @var resource
      */
     protected $_socket = null;
 
     /**
-     * the buffer to send
+     * 发送缓冲区
      * @var string
      */
     protected $_sendBuffer = '';
     
     /**
-     * the buffer read from socket
+     * 接收缓冲区
      * @var string
      */
     protected $_recvBuffer = '';
     
     /**
-     * current package length
+     * 当前正在处理的数据包的包长（此值是协议的intput方法的返回值）
      * @var int
      */
     protected $_currentPackageLength = 0;
 
     /**
-     * connection status
+     * 当前的连接状态
      * @var int
      */
     protected $_status = self::STATUS_ESTABLISH;
     
     /**
-     * remote ip
+     * 对端ip
      * @var string
      */
     protected $_remoteIp = '';
     
     /**
-     * remote port
+     * 对端端口
      * @var int
      */
     protected $_remotePort = 0;
     
     /**
-     * remote address
+     * 对端的地址 ip+port
+     * 值类似于 192.168.1.100:3698
      * @var string
      */
     protected $_remoteAddress = '';
 
     /**
-     * create a connection
+     * 构造函数
      * @param resource $socket
      * @param EventInterface $event
      */
@@ -140,65 +149,78 @@ class TcpConnection extends ConnectionInterface
     }
     
     /**
-     * send buffer to client
+     * 发送数据给对端
      * @param string $send_buffer
      * @param bool $raw
      * @return void|boolean
      */
     public function send($send_buffer, $raw = false)
     {
+        // 如果连接已经关闭，则返回false
         if($this->_status == self::STATUS_CLOSED)
         {
             return false;
         }
+        // 如果没有设置以原始数据发送，并且有设置协议。只协议编码
         if(false === $raw && $this->protocol)
         {
             $parser = $this->protocol;
             $send_buffer = $parser::encode($send_buffer, $this);
         }
-        
+        // 如果发送缓冲区为空，尝试直接发送
         if($this->_sendBuffer === '')
         {
+            // 直接发送
             $len = @fwrite($this->_socket, $send_buffer);
+            // 所有数据都发送完毕
             if($len === strlen($send_buffer))
             {
                 return true;
             }
-            
+            // 只有部分数据发送成功
             if($len > 0)
             {
+                // 未发送成功部分放入发送缓冲区
                 $this->_sendBuffer = substr($send_buffer, $len);
             }
             else
             {
+                // 如果连接断开
                 if(feof($this->_socket))
                 {
+                    // status统计发送失败次数
                     self::$statistics['send_fail']++;
+                    // 如果有设置失败回调，则执行
                     if($this->onError)
                     {
                         call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'client closed');
                     }
+                    // 销毁连接
                     $this->destroy();
                     return false;
                 }
+                // 连接未断开，发送失败，则把所有数据放入发送缓冲区
                 $this->_sendBuffer = $send_buffer;
             }
-            
+            // 监听对端可写事件
             Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             return null;
         }
         else
         {
-            // check send buffer size
+            // 检查发送缓冲区是否已满
             if(self::$maxSendBufferSize <= strlen($this->_sendBuffer) + strlen($send_buffer))
             {
+                // 为status命令统计发送失败次数
                 self::$statistics['send_fail']++;
+                // 如果有设置失败回调，则执行
                 if($this->onError)
                 {
                     call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'send buffer full');
                 }
                 return false;
             }
+            // 将数据放入放缓冲区
             $this->_sendBuffer .= $send_buffer;
         }
     }
