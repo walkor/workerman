@@ -4,35 +4,36 @@ namespace Workerman\Events;
 class Select implements EventInterface
 {
     /**
-     * all events
+     * 所有的事件
      * @var array
      */
     public $_allEvents = array();
     
     /**
-     * all signal events
+     * 所有信号事件
      * @var array
      */
     public $_signalEvents = array();
     
     /**
-     * read fds
+     * 监听这些描述符的读事件
      * @var array
      */
     protected $_readFds = array();
     
     /**
-     * write fds
+     * 监听这些描述符的写事件
      * @var array
      */
     protected $_writeFds = array();
     
     /**
-     * construct
+     * 构造函数
      * @return void
      */
     public function __construct()
     {
+        // 创建一个管道，放入监听读的描述符集合中，避免空轮询
         $this->channel = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
         if($this->channel)
         {
@@ -42,7 +43,7 @@ class Select implements EventInterface
     }
     
     /**
-     * add
+     * 添加事件及处理函数
      * @see Events\EventInterface::add()
      */
     public function add($fd, $flag, $func)
@@ -69,7 +70,7 @@ class Select implements EventInterface
     }
     
     /**
-     * signal handler
+     * 信号处理函数
      * @param int $signal
      */
     public function signalHandler($signal)
@@ -78,7 +79,7 @@ class Select implements EventInterface
     }
     
     /**
-     * del
+     * 删除某个描述符的某类事件的监听
      * @see Events\EventInterface::del()
      */
     public function del($fd ,$flag)
@@ -108,7 +109,7 @@ class Select implements EventInterface
         return true;
     }
     /**
-     * main loop
+     * 主循环
      * @see Events\EventInterface::loop()
      */
     public function loop()
@@ -116,20 +117,20 @@ class Select implements EventInterface
         $e = null;
         while (1)
         {
-            // calls signal handlers for pending signals
+            // 如果有信号，尝试执行信号处理函数
             pcntl_signal_dispatch();
-            // 
+            
             $read = $this->_readFds;
             $write = $this->_writeFds;
-            // waits for $read and $write to change status
+            // 等待可读或者可写事件
             if(!@stream_select($read, $write, $e, 60))
             {
-                // maybe interrupt by sianals, so calls signal handlers for pending signals
+                // 可能是被信号打断，尝试执行信号处理函数
                 pcntl_signal_dispatch();
                 continue;
             }
             
-            // read
+            // 这些描述符可读，执行对应描述符的读回调函数
             if($read)
             {
                 foreach($read as $fd)
@@ -142,7 +143,7 @@ class Select implements EventInterface
                 }
             }
             
-            // write
+            // 这些描述符可写，执行对应描述符的写回调函数
             if($write)
             {
                 foreach($write as $fd)

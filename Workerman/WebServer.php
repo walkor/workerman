@@ -7,7 +7,7 @@ use \Workerman\Protocols\HttpCache;
 
 /**
  * 
- *  WebServer
+ *  基于Worker实现的一个简单的WebServer
  *  HTTP协议
  *  
  * @author walkor <walkor@workerman.net>
@@ -34,7 +34,10 @@ class WebServer extends Worker
     
     
     /**
-     * add server root
+     * 添加站点域名与站点目录的对应关系，类似nginx的
+     * @param string $domain
+     * @param string $root_path
+     * @return void
      */
     public  function addRoot($domain, $root_path)
     {
@@ -42,7 +45,7 @@ class WebServer extends Worker
     }
     
     /**
-     * 
+     * 构造函数
      * @param string $socket_name
      * @param array $context_option
      */
@@ -57,6 +60,7 @@ class WebServer extends Worker
     
     /**
      * 进程启动的时候一些初始化工作
+     * @throws \Exception
      */
     public function onWorkerStart()
     {
@@ -104,7 +108,14 @@ class WebServer extends Worker
     }
     
     /**
-     * 数据接收完整后处理业务逻辑
+     * 当接收到完整的http请求后的处理逻辑
+     * 1、如果请求的是以php为后缀的文件，则尝试加载
+     * 2、如果请求的url没有后缀，则尝试加载对应目录的index.php
+     * 3、如果请求的是非php为后缀的文件，尝试读取原始数据并发送
+     * 4、如果请求的文件不存在，则返回404
+     * @param TcpConnection $connection
+     * @param mixed $data
+     * @return void
      */
     public function onMessage($connection, $data)
     {

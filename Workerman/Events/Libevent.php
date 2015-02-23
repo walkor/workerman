@@ -13,19 +13,19 @@ class Libevent implements EventInterface
     protected $eventBase = null;
     
     /**
-     * all events
+     * 所有的事件
      * @var array
      */
     protected $allEvents = array();
     
     /**
-     * all signal events
+     * 所有的信号事件
      * @var array
      */
     protected $eventSignal = array();
     
     /**
-     * create event base
+     * 构造函数
      * @return void
      */
     public function __construct()
@@ -82,7 +82,7 @@ class Libevent implements EventInterface
     }
     
     /**
-     * del
+     * 删除事件
      * @see Events\EventInterface::del()
      */
     public function del($fd ,$flag)
@@ -112,7 +112,7 @@ class Libevent implements EventInterface
     }
 
     /**
-     * loop
+     * 事件循环
      * @see EventInterface::loop()
      */
     public function loop()

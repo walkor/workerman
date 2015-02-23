@@ -20,7 +20,7 @@ class Store
      */
     public static function instance($config_name)
     {
-        // memcache 驱动
+        // memcached 驱动
         if(\Config\Store::$driver == \Config\Store::DRIVER_MC)
         {
             if(!isset(\Config\Store::$$config_name))

@@ -10,14 +10,38 @@ use \GatewayWorker\Lib\Store;
 use \GatewayWorker\Lib\Context;
 use \Event;
 
+/**
+ * 
+ * BusinessWorker 用于处理Gateway转发来的数据
+ * 
+ * @author walkor<walkor@workerman.net>
+ *
+ */
 class BusinessWorker extends Worker
 {
+    /**
+     * 如果连接gateway通讯端口失败，尝试重试多少次
+     * @var int
+     */
     const MAX_RETRY_COUNT = 5;
     
+    /**
+     * 保存与gateway的连接connection对象
+     * @var array
+     */
     public $gatewayConnections = array();
     
+    /**
+     * 连接失败gateway内部通讯地址
+     * @var array
+     */
     public $badGatewayAddress = array();
     
+    /**
+     * 构造函数
+     * @param string $socket_name
+     * @param array $context_option
+     */
     public function __construct($socket_name = '', $context_option = array())
     {
         $this->onWorkerStart = array($this, 'onWorkerStart');
@@ -26,6 +50,10 @@ class BusinessWorker extends Worker
         $this->_appInitPath = dirname($backrace[0]['file']);
     }
     
+    /**
+     * 当进程启动时一些初始化工作
+     * @return void
+     */
     protected function onWorkerStart()
     {
         Timer::add(1, array($this, 'checkGatewayConnections'));
@@ -33,13 +61,20 @@ class BusinessWorker extends Worker
         \GatewayWorker\Lib\Gateway::setBusinessWorker($this);
     }
     
+    /**
+     * 当gateway转发来数据时
+     * @param TcpConnection $connection
+     * @param mixed $data
+     */
     public function onGatewayMessage($connection, $data)
     {
+        // 上下文数据
         Context::$client_ip = $data['client_ip'];
         Context::$client_port = $data['client_port'];
         Context::$local_ip = $data['local_ip'];
         Context::$local_port = $data['local_port'];
         Context::$client_id = $data['client_id'];
+        // $_SERVER变量
         $_SERVER = array(
                 'REMOTE_ADDR' => Context::$client_ip,
                 'REMOTE_PORT' => Context::$client_port,
@@ -47,6 +82,7 @@ class BusinessWorker extends Worker
                 'GATEWAY_PORT'  => Context::$local_port,
                 'GATEWAY_CLIENT_ID' => Context::$client_id,
         );
+        // 尝试解析session
         if($data['ext_data'] != '')
         {
             $_SESSION = Context::sessionDecode($data['ext_data']);
@@ -59,6 +95,7 @@ class BusinessWorker extends Worker
         $session_str_copy = $data['ext_data'];
         $cmd = $data['cmd'];
     
+        // 尝试执行Event::onConnection、Event::onMessage、Event::onClose
         try{
             switch($cmd)
             {
@@ -79,6 +116,7 @@ class BusinessWorker extends Worker
             $this->log($msg);
         }
     
+        // 判断session是否被更改
         $session_str_now = $_SESSION !== null ? Context::sessionEncode($_SESSION) : '';
         if($session_str_copy != $session_str_now)
         {
@@ -88,11 +126,21 @@ class BusinessWorker extends Worker
         Context::clear();
     }
     
+    /**
+     * 当与Gateway的连接断开时触发
+     * @param TcpConnection $connection
+     * @return  void
+     */
     public function onClose($connection)
     {
         unset($this->gatewayConnections[$connection->remoteAddress]);
     }
-    
+
+    /**
+     * 检查gateway的通信端口是否都已经连
+     * 如果有未连接的端口，则尝试连接
+     * @return void
+     */
     public function checkGatewayConnections()
     {
         $key = 'GLOBAL_GATEWAY_ADDRESS';
@@ -115,17 +163,34 @@ class BusinessWorker extends Worker
         }
     }
     
+    /**
+     * 当连接上gateway的通讯端口时触发
+     * 将连接connection对象保存起来
+     * @param TcpConnection $connection
+     * @return void
+     */
     public function onConnectGateway($connection)
     {
         $this->gatewayConnections[$connection->remoteAddress] = $connection;
         unset($this->badGatewayAddress[$connection->remoteAddress]);
     }
     
+    /**
+     * 当与gateway的连接出现错误时触发
+     * @param TcpConnection $connection
+     * @param int $error_no
+     * @param string $error_msg
+     */
     public function onError($connection, $error_no, $error_msg)
     {
          $this->tryToDeleteGatewayAddress($connection->remoteAddress, $error_msg);
     }
     
+    /**
+     * 从存储中删除删除连不上的gateway通讯端口
+     * @param string $addr
+     * @param string $errstr
+     */
     public function tryToDeleteGatewayAddress($addr, $errstr)
     {
         $key = 'GLOBAL_GATEWAY_ADDRESS';

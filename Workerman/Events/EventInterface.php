@@ -4,25 +4,25 @@ namespace Workerman\Events;
 interface EventInterface
 {
     /**
-     * read event
+     * 读事件
      * @var int
      */
     const EV_READ = 1;
     
     /**
-     * write event
+     * 写事件
      * @var int
      */
     const EV_WRITE = 2;
     
     /**
-     * signal
+     * 信号事件
      * @var int
      */
     const EV_SIGNAL = 4;
     
     /**
-     * add 
+     * 添加事件回调 
      * @param resource $fd
      * @param int $flag
      * @param callable $func
@@ -31,7 +31,7 @@ interface EventInterface
     public function add($fd, $flag, $func);
     
     /**
-     * del
+     * 删除事件回调
      * @param resource $fd
      * @param int $flag
      * @return bool
@@ -39,7 +39,7 @@ interface EventInterface
     public function del($fd, $flag);
     
     /**
-     * loop
+     * 事件循环
      * @return void
      */
     public function loop();

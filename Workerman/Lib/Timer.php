@@ -5,7 +5,7 @@ use \Exception;
 
 /**
  * 
- * timer
+ * 定时器
  * 
  * <b>example:</b>
  * <pre>
@@ -30,7 +30,7 @@ class Timer
     
     
     /**
-     * init
+     * 初始化
      * @return void
      */
     public static function init($event = null)
@@ -46,7 +46,7 @@ class Timer
     }
     
     /**
-     * signal handler
+     * 信号处理函数，只处理ALARM事件
      * @return void
      */
     public static function signalHandle()
@@ -57,7 +57,7 @@ class Timer
     
     
     /**
-     * add a timer
+     * 添加一个定时器
      * @param int $time_interval
      * @param callback $func
      * @param mix $args
@@ -92,7 +92,7 @@ class Timer
     
     
     /**
-     * tick
+     * 尝试触发定时回调
      * @return void
      */
     public static function tick()
@@ -133,7 +133,7 @@ class Timer
     }
     
     /**
-     * del all
+     * 删除所有定时
      */
     public static function delAll()
     {

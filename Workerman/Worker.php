@@ -1008,7 +1008,7 @@ class Worker
         {
             echo $msg;
         }
-        file_put_contents(self::$logFile, date('Y-m-d H:i:s') . " " . $msg, FILE_APPEND);
+        file_put_contents(self::$logFile, date('Y-m-d H:i:s') . " " . $msg, FILE_APPEND | LOCK_EX);
     }
     
     /**
@@ -1078,11 +1078,12 @@ class Worker
             throw new Exception($errmsg);
         }
         
-        // 尝试打开tcp的keepalive
+        // 尝试打开tcp的keepalive，关闭TCP Nagle算法
         if(function_exists('socket_import_stream'))
         {
             $socket   = socket_import_stream($this->_mainSocket );
             socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
+            socket_set_option($socket, SOL_SOCKET, TCP_NODELAY, 1);
         }
         
         // 设置非阻塞

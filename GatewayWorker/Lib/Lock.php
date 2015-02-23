@@ -1,7 +1,8 @@
 <?php
 namespace GatewayWorker\Lib;
 /**
- * lock
+ * 锁
+ * 基于文件锁实现
  */
 class Lock
 {
@@ -12,7 +13,7 @@ class Lock
     private static $fileHandle = null;
     
     /**
-     * get lock
+     * 获取锁
      * @param bool block
      * @return bool
      */
@@ -27,7 +28,7 @@ class Lock
     }
     
     /**
-     * release lock
+     * 释放锁
      * @return true
      */
     public static function release()
@@ -40,7 +41,7 @@ class Lock
     }
     
     /**
-     * get handle
+     * 获得文件句柄
      * @return resource
      */
     protected static function getHandle()
