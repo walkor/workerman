@@ -19,13 +19,13 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      * websocket blob类型
      * @var char
      */
-    const BINARY_TYPE_BLOB = 0x81;
+    const BINARY_TYPE_BLOB = "\x81";
 
     /**
      * websocket arraybuffer类型
      * @var char
      */
-    const BINARY_TYPE_ARRAYBUFFER = 0x82;
+    const BINARY_TYPE_ARRAYBUFFER = "\x82";
     
     /**
      * 检查包的完整性
