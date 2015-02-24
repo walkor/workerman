@@ -115,8 +115,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 // 如果有设置onWebSocketClose回调，尝试执行
                 if(isset($connection->onWebSocketClose))
                 {
-                    $func = $connection->onWebSocketClose;
-                    call_user_func($func, $connection);
+                    call_user_func($connection->onWebSocketClose, $connection);
                 }
                 // 默认行为是关闭连接
                 else
@@ -129,8 +128,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 // 如果有设置onWebSocketPing回调，尝试执行
                 if(isset($connection->onWebSocketPing))
                 {
-                    $func = $connection->onWebSocketPing;
-                    call_user_func($func, $connection);
+                    call_user_func($connection->onWebSocketPing, $connection);
                 }
                 // 默认发送pong
                 else 
@@ -149,8 +147,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 // 如果有设置onWebSocketPong回调，尝试执行
                 if(isset($connection->onWebSocketPong))
                 {
-                    $func = $connection->onWebSocketPong;
-                    call_user_func($func, $connection);
+                    call_user_func($connection->onWebSocketPong, $connection);
                 }
                 // 从接受缓冲区中消费掉该数据包
                 if(!$data_len)
