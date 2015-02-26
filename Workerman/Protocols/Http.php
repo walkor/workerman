@@ -30,7 +30,7 @@ class Http implements \Workerman\Protocols\ProtocolInterface
             if(preg_match("/\r\nContent-Length: ?(\d+)/", $header, $match))
             {
                 $content_lenght = $match[1];
-                return $content_lenght;
+                return $content_lenght + strlen($header) + 4;
             }
             else
             {
