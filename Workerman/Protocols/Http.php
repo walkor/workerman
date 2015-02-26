@@ -9,6 +9,12 @@ use Workerman\Connection\ConnectionInterface;
  */
 class Http implements \Workerman\Protocols\ProtocolInterface
 {
+    /**
+     * 判断包长
+     * @param string $recv_buffer
+     * @param ConnectionInterface $connection
+     * @return int
+     */
     public static function input($recv_buffer, ConnectionInterface $connection)
     {
         if(!strpos($recv_buffer, "\r\n\r\n"))
@@ -35,9 +41,14 @@ class Http implements \Workerman\Protocols\ProtocolInterface
         {
             return strlen($header)+4;
         }
-        return;
     }
     
+    /**
+     * 从http数据包中解析$_POST、$_GET、$_COOKIE等 
+     * @param string $recv_buffer
+     * @param ConnectionInterface $connection
+     * @return void
+     */
     public static function decode($recv_buffer, ConnectionInterface $connection)
     {
         // 初始化
@@ -96,10 +107,8 @@ class Http implements \Workerman\Protocols\ProtocolInterface
                     break;
                 // cookie
                 case 'cookie':
-                    {
-                        $_SERVER['HTTP_COOKIE'] = $value;
-                        parse_str(str_replace('; ', '&', $_SERVER['HTTP_COOKIE']), $_COOKIE);
-                    }
+                    $_SERVER['HTTP_COOKIE'] = $value;
+                    parse_str(str_replace('; ', '&', $_SERVER['HTTP_COOKIE']), $_COOKIE);
                     break;
                 // user-agent
                 case 'user-agent':
@@ -173,6 +182,12 @@ class Http implements \Workerman\Protocols\ProtocolInterface
         $_SERVER['REMOTE_PORT'] = $connection->getRemotePort();
     }
     
+    /**
+     * 编码，增加HTTP头
+     * @param string $content
+     * @param ConnectionInterface $connection
+     * @return string
+     */
     public static function encode($content, ConnectionInterface $connection)
     {
         // 没有http-code默认给个
@@ -224,6 +239,10 @@ class Http implements \Workerman\Protocols\ProtocolInterface
      */
     public static function header($content, $replace = true, $http_response_code = 0)
     {
+        if(PHP_SAPI != 'cli')
+        {
+            return $http_response_code ? header($content, $replace, $http_response_code) : header($content, $replace);
+        }
         if(strpos($content, 'HTTP') === 0)
         {
             $key = 'Http-Code';
@@ -239,7 +258,7 @@ class Http implements \Workerman\Protocols\ProtocolInterface
     
         if('location' == strtolower($key) && !$http_response_code)
         {
-            return header($content, true, 302);
+            return self::header($content, true, 302);
         }
     
         if(isset(HttpCache::$codes[$http_response_code]))
@@ -270,6 +289,10 @@ class Http implements \Workerman\Protocols\ProtocolInterface
      */
     public static function headerRemove($name)
     {
+        if(PHP_SAPI != 'cli')
+        {
+            return header_remove($name);
+        }
         unset( HttpCache::$header[$name]);
     }
     
@@ -284,7 +307,11 @@ class Http implements \Workerman\Protocols\ProtocolInterface
      * @param bool $HTTPOnly
      */
     public static function setcookie($name, $value = '', $maxage = 0, $path = '', $domain = '', $secure = false, $HTTPOnly = false) {
-        header(
+        if(PHP_SAPI != 'cli')
+        {
+            return setcookie($name, $value, $maxage, $path, $domain, $secure, $HTTPOnly);
+        }
+        return self::header(
                 'Set-Cookie: ' . $name . '=' . rawurlencode($value)
                 . (empty($domain) ? '' : '; Domain=' . $domain)
                 . (empty($maxage) ? '' : '; Max-Age=' . $maxage)
@@ -295,10 +322,14 @@ class Http implements \Workerman\Protocols\ProtocolInterface
     
     /**
      * sessionStart
-     *
+     * @return bool
      */
     public static function sessionStart()
     {
+        if(PHP_SAPI != 'cli')
+        {
+            return session_start();
+        }
         if(HttpCache::$instance->sessionStarted)
         {
             echo "already sessionStarted\nn";
@@ -315,7 +346,7 @@ class Http implements \Workerman\Protocols\ProtocolInterface
             }
             HttpCache::$instance->sessionFile = $file_name;
             $session_id = substr(basename($file_name), strlen('sess_'));
-            return setcookie(
+            return self::setcookie(
                     HttpCache::$sessionName
                     , $session_id
                     , ini_get('session.cookie_lifetime')
@@ -342,9 +373,14 @@ class Http implements \Workerman\Protocols\ProtocolInterface
     
     /**
      * 保存session
+     * @return bool
      */
     public static function sessionWriteClose()
     {
+        if(PHP_SAPI != 'cli')
+        {
+            return session_write_close();
+        }
         if(!empty(HttpCache::$instance->sessionStarted) && !empty($_SESSION))
         {
             $session_str = session_encode();
@@ -363,6 +399,10 @@ class Http implements \Workerman\Protocols\ProtocolInterface
      */
     public static function end($msg = '')
     {
+        if(PHP_SAPI != 'cli')
+        {
+            exit($msg);
+        }
         if($msg)
         {
             echo $msg;
