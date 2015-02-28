@@ -47,9 +47,12 @@ Worker::runAll();
 ```
 
 run width
-php test.php start
+
+```php test.php start```
 
 ## Available commands
+php test.php start  
+php test.php start -d  
 php test.php stop  
 php test.php restart  
 php test.php status  
