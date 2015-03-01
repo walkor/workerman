@@ -78,21 +78,71 @@ class Gateway extends Worker
     protected $_innerUdpWorker = null;
     
     /**
+     * 当worker启动时
+     * @var callback
+     */
+    protected $_onWorkerStart = null;
+    
+    /**
+     * 当有客户端连接时
+     * @var callback
+     */
+    protected $_onConnect = null;
+    
+    /**
+     * 当客户端发来消息时
+     * @var callback
+     */
+    protected $_onMessage = null;
+    
+    /**
+     * 当客户端连接关闭时
+     * @var callback
+     */
+    protected $_onClose = null;
+    
+    /**
+     * 当worker停止时
+     * @var callback
+     */
+    protected $_onWorkerStop = null;
+    
+    /**
      * 构造函数
      * @param string $socket_name
      * @param array $context_option
      */
     public function __construct($socket_name, $context_option = array())
     {
-        $this->onWorkerStart = array($this, 'onWorkerStart');
-        $this->onConnect = array($this, 'onClientConnect');
-        $this->onMessage = array($this, 'onClientMessage');
-        $this->onClose = array($this, 'onClientClose');
-        $this->onWorkerStop = array($this, 'onWorkerStop');
         parent::__construct($socket_name, $context_option);
         
         $backrace = debug_backtrace();
         $this->_appInitPath = dirname($backrace[0]['file']);
+    }
+    
+    /**
+     * 运行
+     * @see Workerman.Worker::run()
+     */
+    public function run()
+    {
+        // 保存用户的回调，当对应的事件发生时触发
+        $this->_onWorkerStart = $this->onWorkerStart;
+        $this->onWorkerStart = array($this, 'onWorkerStart');
+        // 保存用户的回调，当对应的事件发生时触发
+        $this->_onConnect = $this->onConnect;
+        $this->onConnect = array($this, 'onClientConnect');
+        
+        // onMessage禁止用户设置回调
+        $this->onMessage = array($this, 'onClientMessage');
+        
+        // 保存用户的回调，当对应的事件发生时触发
+        $this->_onClose = $this->onClose;
+        $this->onClose = array($this, 'onClientClose');
+        // 保存用户的回调，当对应的事件发生时触发
+        $this->_onWorkerStop = $this->onWorkerStop;
+        $this->onWorkerStop = array($this, 'onWorkerStop');
+        parent::run();
     }
     
     /**
@@ -132,6 +182,13 @@ class Gateway extends Worker
         // 保存该连接的内部gateway通讯地址
         $address = $this->lanIp.':'.$this->lanPort;
         $this->storeClientAddress($connection->globalClientId, $address);
+        
+        // 如果用户有自定义onConnect回调，则执行
+        if($this->_onConnect)
+        {
+            call_user_func($this->_onConnect, $connection);
+        }
+        
         // 如果设置了Event::onConnect，则通知worker进程，让worker执行onConnect
         if(method_exists('Event','onConnect'))
         {
@@ -217,6 +274,10 @@ class Gateway extends Worker
         // 清理连接的数据
         $this->delClientAddress($connection->globalClientId);
         unset($this->_clientConnections[$connection->globalClientId]);
+        if($this->_onClose)
+        {
+            call_user_func($this->_onClose, $connection);
+        }
     }
     
     /**
@@ -285,6 +346,11 @@ class Gateway extends Worker
         {
             $this->log('registerAddress fail and exit');
             Worker::stopAll();
+        }
+        
+        if($this->_onWorkerStart)
+        {
+            call_user_func($this->_onWorkerStart, $this);
         }
     }
     
@@ -491,6 +557,11 @@ class Gateway extends Worker
         foreach($this->_clientConnections as $connection)
         {
             $this->delClientAddress($connection->globalClientId);
+        }
+        // 尝试触发用户设置的回调
+        if($this->_onWorkerStop)
+        {
+            call_user_func($this->_onWorkerStop, $this);
         }
     }
 }

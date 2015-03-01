@@ -44,56 +44,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         // 还没有握手
         if(empty($connection->handshake))
         {
-            // 握手阶段客户端发送HTTP协议
-            if(0 === strpos($buffer, 'GET'))
-            {
-                // 判断\r\n\r\n边界
-                $heder_end_pos = strpos($buffer, "\r\n\r\n");
-                if(!$heder_end_pos)
-                {
-                    return 0;
-                }
-                // 解析Sec-WebSocket-Key
-                $Sec_WebSocket_Key = '';
-                if(preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/", $buffer, $match))
-                {
-                    $Sec_WebSocket_Key = $match[1];
-                }
-                $new_key = base64_encode(sha1($Sec_WebSocket_Key."258EAFA5-E914-47DA-95CA-C5AB0DC85B11",true));
-                // 握手返回的数据
-                $new_message = "HTTP/1.1 101 Switching Protocols\r\n";
-                $new_message .= "Upgrade: websocket\r\n";
-                $new_message .= "Sec-WebSocket-Version: 13\r\n";
-                $new_message .= "Connection: Upgrade\r\n";
-                $new_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n\r\n";
-                $connection->handshake = true;
-                $connection->consumeRecvBuffer(strlen($buffer));
-                $connection->send($new_message, true);
-                $connection->protocolData = array(
-                    'binaryType' => self::BINARY_TYPE_BLOB, // blob or arraybuffer
-                );
-                // 如果有设置onWebSocketConnect回调，尝试执行
-                if(isset($connection->onWebSocketConnect))
-                {
-                    call_user_func(array($connection, 'onWebSocketConnect'), $connection);
-                }
-                return 0;
-            }
-            // 如果是flash的policy-file-request
-            elseif(0 === strpos($buffer,'<polic'))
-            {
-                if('>' != $buffer[strlen($buffer) - 1])
-                {
-                    return 0;
-                }
-                $policy_xml = '<?xml version="1.0"?><cross-domain-policy><site-control permitted-cross-domain-policies="all"/><allow-access-from domain="*" to-ports="*"/></cross-domain-policy>'."\0";
-                $connection->send($policy_xml, true);
-                $connection->consumeRecvBuffer(strlen($buffer));
-                return 0;
-            }
-            // 出错
-            $connection->close();
-            return 0;
+            return self::dealHandshake($buffer, $connection);
         }
         
         $data_len = ord($buffer[1]) & 127;
@@ -222,5 +173,137 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $decoded .= $data[$index] ^ $masks[$index % 4];
         }
         return $decoded;
+    }
+    
+    /**
+     * 处理websocket握手
+     * @param string $buffer
+     * @param TcpConnection $connection
+     * @return int
+     */
+    protected static function dealHandshake($buffer, $connection)
+    {
+        // 握手阶段客户端发送HTTP协议
+        if(0 === strpos($buffer, 'GET'))
+        {
+            // 判断\r\n\r\n边界
+            $heder_end_pos = strpos($buffer, "\r\n\r\n");
+            if(!$heder_end_pos)
+            {
+                return 0;
+            }
+            
+            // 解析Sec-WebSocket-Key
+            $Sec_WebSocket_Key = '';
+            if(preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/", $buffer, $match))
+            {
+                $Sec_WebSocket_Key = $match[1];
+            }
+            $new_key = base64_encode(sha1($Sec_WebSocket_Key."258EAFA5-E914-47DA-95CA-C5AB0DC85B11",true));
+            // 握手返回的数据
+            $new_message = "HTTP/1.1 101 Switching Protocols\r\n";
+            $new_message .= "Upgrade: websocket\r\n";
+            $new_message .= "Sec-WebSocket-Version: 13\r\n";
+            $new_message .= "Connection: Upgrade\r\n";
+            $new_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n\r\n";
+            $connection->handshake = true;
+            $connection->consumeRecvBuffer(strlen($buffer));
+            $connection->send($new_message, true);
+            $connection->protocolData = array(
+                    'binaryType' => self::BINARY_TYPE_BLOB, // blob or arraybuffer
+            );
+            // 如果有设置onWebSocketConnect回调，尝试执行
+            if(isset($connection->onWebSocketConnect))
+            {
+                self::parseHttpHeader($buffer);
+                try
+                {
+                    call_user_func($connection->onWebSocketConnect, $connection, $buffer);
+                }
+                catch(\Exception $e)
+                {
+                    echo $e;
+                }
+                $_GET = $_COOKIE = $_SERVER = array();
+            }
+            return 0;
+        }
+        // 如果是flash的policy-file-request
+        elseif(0 === strpos($buffer,'<polic'))
+        {
+            if('>' != $buffer[strlen($buffer) - 1])
+            {
+                return 0;
+            }
+            $policy_xml = '<?xml version="1.0"?><cross-domain-policy><site-control permitted-cross-domain-policies="all"/><allow-access-from domain="*" to-ports="*"/></cross-domain-policy>'."\0";
+            $connection->send($policy_xml, true);
+            $connection->consumeRecvBuffer(strlen($buffer));
+            return 0;
+        }
+        // 出错
+        $connection->close();
+        return 0;
+    }
+    
+    /**
+     * 从header中获取
+     * @param string $buffer
+     * @return void
+     */
+    protected function parseHttpHeader($buffer)
+    {
+        $header_data = explode("\r\n", $buffer);
+        $_SERVER = array();
+        list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(' ', $header_data[0]);
+        unset($header_data[0]);
+        foreach($header_data as $content)
+        {
+            // \r\n\r\n
+            if(empty($content))
+            {
+                continue;
+            }
+            list($key, $value) = explode(':', $content, 2);
+            $key = strtolower($key);
+            $value = trim($value);
+            switch($key)
+            {
+                // HTTP_HOST
+                case 'host':
+                    $_SERVER['HTTP_HOST'] = $value;
+                    $tmp = explode(':', $value);
+                    $_SERVER['SERVER_NAME'] = $tmp[0];
+                    if(isset($tmp[1]))
+                    {
+                        $_SERVER['SERVER_PORT'] = $tmp[1];
+                    }
+                    break;
+                // HTTP_COOKIE
+                case 'cookie':
+                    $_SERVER['HTTP_COOKIE'] = $value;
+                    parse_str(str_replace('; ', '&', $_SERVER['HTTP_COOKIE']), $_COOKIE);
+                    break;
+                // HTTP_USER_AGENT
+                case 'user-agent':
+                    $_SERVER['HTTP_USER_AGENT'] = $value;
+                    break;
+                // HTTP_REFERER
+                case 'referer':
+                    $_SERVER['HTTP_REFERER'] = $value;
+                    break;
+            }
+        }
+        
+        // QUERY_STRING
+        $_SERVER['QUERY_STRING'] = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+        if($_SERVER['QUERY_STRING'])
+        {
+            // $GET
+            parse_str($_SERVER['QUERY_STRING'], $_GET);
+        }
+        else
+        {
+            $_SERVER['QUERY_STRING'] = '';
+        }
     }
 }

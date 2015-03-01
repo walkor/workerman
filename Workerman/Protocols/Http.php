@@ -170,9 +170,15 @@ class Http implements \Workerman\Protocols\ProtocolInterface
         
         // QUERY_STRING
         $_SERVER['QUERY_STRING'] = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
-        
-        // GET
-        parse_str($_SERVER['QUERY_STRING'], $_GET);
+        if($_SERVER['QUERY_STRING'])
+        {
+            // $GET
+            parse_str($_SERVER['QUERY_STRING'], $_GET);
+        }
+        else
+        {
+            $_SERVER['QUERY_STRING'] = '';
+        }
         
         // REQUEST
         $_REQUEST = array_merge($_GET, $_POST);
@@ -180,6 +186,8 @@ class Http implements \Workerman\Protocols\ProtocolInterface
         // REMOTE_ADDR REMOTE_PORT
         $_SERVER['REMOTE_ADDR'] = $connection->getRemoteIp();
         $_SERVER['REMOTE_PORT'] = $connection->getRemotePort();
+        
+        return $recv_buffer;
     }
     
     /**

@@ -35,7 +35,13 @@ class BusinessWorker extends Worker
      * 连接失败gateway内部通讯地址
      * @var array
      */
-    public $badGatewayAddress = array();
+    protected $_badGatewayAddress = array();
+    
+    /**
+     * 保存用户设置的worker启动回调
+     * @var callback
+     */
+    protected $_onWorkerStart = null;
     
     /**
      * 构造函数
@@ -44,10 +50,20 @@ class BusinessWorker extends Worker
      */
     public function __construct($socket_name = '', $context_option = array())
     {
-        $this->onWorkerStart = array($this, 'onWorkerStart');
         parent::__construct($socket_name, $context_option);
         $backrace = debug_backtrace();
         $this->_appInitPath = dirname($backrace[0]['file']);
+    }
+    
+    /**
+     * 运行
+     * @see Workerman.Worker::run()
+     */
+    public function run()
+    {
+        $this->_onWorkerStart = $this->onWorkerStart;
+        $this->onWorkerStart = array($this, 'onWorkerStart');
+        parent::run();
     }
     
     /**
@@ -59,6 +75,10 @@ class BusinessWorker extends Worker
         Timer::add(1, array($this, 'checkGatewayConnections'));
         $this->checkGatewayConnections();
         \GatewayWorker\Lib\Gateway::setBusinessWorker($this);
+        if($this->_onWorkerStart)
+        {
+            call_user_func($this->_onWorkerStart, $this);
+        }
     }
     
     /**
@@ -172,7 +192,7 @@ class BusinessWorker extends Worker
     public function onConnectGateway($connection)
     {
         $this->gatewayConnections[$connection->remoteAddress] = $connection;
-        unset($this->badGatewayAddress[$connection->remoteAddress]);
+        unset($this->_badGatewayAddress[$connection->remoteAddress]);
     }
     
     /**
@@ -194,12 +214,12 @@ class BusinessWorker extends Worker
     public function tryToDeleteGatewayAddress($addr, $errstr)
     {
         $key = 'GLOBAL_GATEWAY_ADDRESS';
-        if(!isset($this->badGatewayAddress[$addr]))
+        if(!isset($this->_badGatewayAddress[$addr]))
         {
-            $this->badGatewayAddress[$addr] = 0;
+            $this->_badGatewayAddress[$addr] = 0;
         }
         // 删除连不上的端口
-        if($this->badGatewayAddress[$addr]++ > self::MAX_RETRY_COUNT)
+        if($this->_badGatewayAddress[$addr]++ > self::MAX_RETRY_COUNT)
         {
             Lock::get();
             $addresses_list = Store::instance('gateway')->get($key);
