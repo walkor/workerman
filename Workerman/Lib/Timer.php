@@ -19,14 +19,21 @@ use \Exception;
 class Timer 
 {
     /**
+     * 基于ALARM信号的任务
      * [
-     *   run_time => [[$func, $args, $persistent, timelong],[$func, $args, $persistent, timelong],..]],
-     *   run_time => [[$func, $args, $persistent, timelong],[$func, $args, $persistent, timelong],..]],
+     *   run_time => [[$func, $args, $persistent, time_interval],[$func, $args, $persistent, time_interval],..]],
+     *   run_time => [[$func, $args, $persistent, time_interval],[$func, $args, $persistent, time_interval],..]],
      *   .. 
      * ]
      * @var array
      */
-    protected static $tasks = array();
+    protected static $_tasks = array();
+    
+    /**
+     * event
+     * @var event
+     */
+    protected static $_event = null;
     
     
     /**
@@ -37,7 +44,7 @@ class Timer
     {
         if($event)
         {
-            $event->add(SIGALRM, EventInterface::EV_SIGNAL, array('\Workerman\Lib\Timer', 'signalHandle'));
+            self::$_event = $event;
         }
         else 
         {
@@ -51,8 +58,11 @@ class Timer
      */
     public static function signalHandle()
     {
-        pcntl_alarm(1);
-        self::tick();
+        if(!self::$_event)
+        {
+            pcntl_alarm(1);
+            self::tick();
+        }
     }
     
     
@@ -67,26 +77,33 @@ class Timer
     {
         if($time_interval <= 0)
         {
+            echo new Exception("bad time_interval");
             return false;
         }
+        
+        if(self::$_event)
+        {
+            return self::$_event->add($time_interval, $persistent ? EventInterface::EV_TIMER : EventInterface::EV_TIMER_ONCE , $func, $args);
+        }
+        
         if(!is_callable($func))
         {
             echo new Exception("not callable");
             return false;
         }
         
-        if(empty(self::$tasks))
+        if(empty(self::$_tasks))
         {
             pcntl_alarm(1);
         }
         
         $time_now = time();
         $run_time = $time_now + $time_interval;
-        if(!isset(self::$tasks[$run_time]))
+        if(!isset(self::$_tasks[$run_time]))
         {
-            self::$tasks[$run_time] = array();
+            self::$_tasks[$run_time] = array();
         }
-        self::$tasks[$run_time][] = array($func, $args, $persistent, $time_interval);
+        self::$_tasks[$run_time][] = array($func, $args, $persistent, $time_interval);
         return true;
     }
     
@@ -97,14 +114,14 @@ class Timer
      */
     public static function tick()
     {
-        if(empty(self::$tasks))
+        if(empty(self::$_tasks))
         {
             pcntl_alarm(0);
             return;
         }
         
         $time_now = time();
-        foreach (self::$tasks as $run_time=>$task_data)
+        foreach (self::$_tasks as $run_time=>$task_data)
         {
             if($time_now >= $run_time)
             {
@@ -127,8 +144,20 @@ class Timer
                         self::add($time_interval, $task_func, $task_args);
                     }
                 }
-                unset(self::$tasks[$run_time]);
+                unset(self::$_tasks[$run_time]);
             }
+        }
+    }
+    
+    /**
+     * 删除定时器
+     * @param $timer_id
+     */
+    public static function del($timer_id)
+    {
+        if(self::$_event)
+        {
+            return self::$_event->del($timer_id, EventInterface::EV_TIMER);
         }
     }
     
@@ -137,7 +166,11 @@ class Timer
      */
     public static function delAll()
     {
-        self::$tasks = array();
+        self::$_tasks = array();
         pcntl_alarm(0);
+        if(self::$_event)
+        {
+            self::$_event->clearAllTimer();
+        }
     }
 }

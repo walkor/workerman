@@ -28,6 +28,32 @@ class Select implements EventInterface
     protected $_writeFds = array();
     
     /**
+     * 任务调度器，最大堆
+     * {['data':timer_id, 'priority':run_timestamp], ..}
+     * @var SplPriorityQueue
+     */
+    protected $_scheduler = null;
+    
+    /**
+     * 定时任务
+     * [[func, args, flag, timer_interval], ..]
+     * @var array
+     */
+    protected $_task = array();
+    
+    /**
+     * 定时器id
+     * @var int
+     */
+    protected $_timerId = 1;
+    
+    /**
+     * select超时时间，单位：微妙
+     * @var int
+     */
+    protected $_selectTimeout = 100000000;
+    
+    /**
      * 构造函数
      * @return void
      */
@@ -40,13 +66,16 @@ class Select implements EventInterface
             stream_set_blocking($this->channel[0], 0);
             $this->_readFds[0] = $this->channel[0];
         }
+        // 初始化优先队列(最大堆)
+        $this->_scheduler = new \SplPriorityQueue();
+        $this->_scheduler->setExtractFlags(\SplPriorityQueue::EXTR_BOTH);
     }
     
     /**
      * 添加事件及处理函数
      * @see Events\EventInterface::add()
      */
-    public function add($fd, $flag, $func)
+    public function add($fd, $flag, $func, $args = null)
     {
         // key
         $fd_key = (int)$fd;
@@ -64,6 +93,14 @@ class Select implements EventInterface
                 $this->_signalEvents[$fd_key][$flag] = array($func, $fd);
                 pcntl_signal($fd, array($this, 'signalHandler'));
                 break;
+            case self::EV_TIMER:
+            case self::EV_TIMER_ONCE:
+                // $fd 为 定时的时间间隔，单位为秒，支持小数，能精确到0.001秒
+                $run_time = microtime(true)+$fd_key;
+                $this->_scheduler->insert($this->_timerId, -$run_time);
+                $this->_task[$this->_timerId] = array($func, $args, $flag, $fd_key);
+                $this->tick();
+                return $this->_timerId++;
         }
         
         return true;
@@ -93,21 +130,89 @@ class Select implements EventInterface
                 {
                     unset($this->_allEvents[$fd_key]);
                 }
-                break;
+                return true;
             case self::EV_WRITE:
                 unset($this->_allEvents[$fd_key][$flag], $this->_writeFds[$fd_key]);
                 if(empty($this->_allEvents[$fd_key]))
                 {
                     unset($this->_allEvents[$fd_key]);
                 }
-                break;
+                return true;
             case self::EV_SIGNAL:
                 unset($this->_signalEvents[$fd_key]);
                 pcntl_signal($fd, SIG_IGN);
                 break;
+            case self::EV_TIMER:
+            case self::EV_TIMER_ONCE;
+                // $fd_key为要删除的定时器id，即timerId
+                unset($this->_task[$fd_key]);
+                return true;
         }
-        return true;
+        return false;;
     }
+    
+    /**
+     * 检查是否有可执行的定时任务，有的话执行
+     * @return void
+     */
+    protected function tick()
+    {
+        while(!$this->_scheduler->isEmpty())
+        {
+            $scheduler_data = $this->_scheduler->top();
+            $timer_id = $scheduler_data['data'];
+            $next_run_time = -$scheduler_data['priority'];
+            $time_now = microtime(true);
+            if($time_now >= $next_run_time)
+            {
+                $this->_scheduler->extract();
+                
+                // 如果任务不存在，则是对应的定时器已经删除
+                if(!isset($this->_task[$timer_id]))
+                {
+                    continue;
+                }
+                
+                // 任务数据[func, args, flag, timer_interval]
+                $task_data = $this->_task[$timer_id];
+                // 如果是持续的定时任务，再把任务加到定时队列
+                if($task_data[2] == self::EV_TIMER)
+                {
+                    $next_run_time = $time_now+$task_data[3];
+                    $this->_scheduler->insert($timer_id, -$next_run_time);
+                }
+                // 尝试执行任务
+                try
+                {
+                    call_user_func($task_data[0], $task_data[1]);
+                }
+                catch(\Exception $e)
+                {
+                    echo $e;
+                }
+                continue;
+            }
+            else
+            {
+                // 设定超时时间
+                $this->_selectTimeout = ($next_run_time - $time_now)*1000000;
+                return;
+            }
+        }
+        $this->_selectTimeout = 100000000;
+    }
+    
+    /**
+     * 删除所有定时器
+     * @return void
+     */
+    public function clearAllTimer()
+    {
+        $this->_scheduler = new \SplPriorityQueue();
+        $this->_scheduler->setExtractFlags(\SplPriorityQueue::EXTR_BOTH);
+        $this->_task = array();
+    }
+    
     /**
      * 主循环
      * @see Events\EventInterface::loop()
@@ -123,12 +228,7 @@ class Select implements EventInterface
             $read = $this->_readFds;
             $write = $this->_writeFds;
             // 等待可读或者可写事件
-            if(!@stream_select($read, $write, $e, 60))
-            {
-                // 可能是被信号打断，尝试执行信号处理函数
-                pcntl_signal_dispatch();
-                continue;
-            }
+            @stream_select($read, $write, $e, 0, $this->_selectTimeout);
             
             // 这些描述符可读，执行对应描述符的读回调函数
             if($read)
@@ -154,6 +254,12 @@ class Select implements EventInterface
                         call_user_func_array($this->_allEvents[$fd_key][self::EV_WRITE][0], array($this->_allEvents[$fd_key][self::EV_WRITE][1]));
                     }
                 }
+            }
+            
+            // 尝试执行定时任务
+            if(!$this->_scheduler->isEmpty())
+            {
+                $this->tick();
             }
         }
     }
