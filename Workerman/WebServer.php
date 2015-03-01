@@ -8,6 +8,7 @@ use \Workerman\Protocols\HttpCache;
 /**
  * 
  *  基于Worker实现的一个简单的WebServer
+ *  支持静态文件、支持文件上传、支持POST
  *  HTTP协议
  *  
  * @author walkor <walkor@workerman.net>
@@ -34,6 +35,12 @@ class WebServer extends Worker
     
     
     /**
+     * 用来保存用户设置的onWorkerStart回调
+     * @var callback
+     */
+    protected $_onWorkerStart = null;
+    
+    /**
      * 添加站点域名与站点目录的对应关系，类似nginx的
      * @param string $domain
      * @param string $root_path
@@ -51,11 +58,21 @@ class WebServer extends Worker
      */
     public function __construct($socket_name, $context_option = array())
     {
-        $this->onWorkerStart = array($this, 'onWorkerStart');
-        $this->onMessage = array($this, 'onMessage');
-        $this->name = 'WebServer';
         list($scheme, $address) = explode(':', $socket_name, 2);
         parent::__construct('http:'.$address, $context_option);
+        $this->name = 'WebServer';
+    }
+    
+    /**
+     * 运行
+     * @see Workerman.Worker::run()
+     */
+    public function run()
+    {
+        $this->_onWorkerStart = $this->onWorkerStart;
+        $this->onWorkerStart = array($this, 'onWorkerStart');
+        $this->onMessage = array($this, 'onMessage');
+        parent::run();
     }
     
     /**
@@ -72,6 +89,12 @@ class WebServer extends Worker
         HttpCache::init();
         // 初始化mimeMap
         $this->initMimeTypeMap();
+        
+        // 尝试执行开发者设定的onWorkerStart回调
+        if($this->_onWorkerStart)
+        {
+            call_user_func($this->_onWorkerStart, $this);
+        }
     }
     
     /**
