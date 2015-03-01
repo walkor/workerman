@@ -77,28 +77,29 @@ class Select implements EventInterface
      */
     public function add($fd, $flag, $func, $args = null)
     {
-        // key
-        $fd_key = (int)$fd;
         switch ($flag)
         {
             case self::EV_READ:
+                $fd_key = (int)$fd;
                 $this->_allEvents[$fd_key][$flag] = array($func, $fd);
                 $this->_readFds[$fd_key] = $fd;
                 break;
             case self::EV_WRITE:
+                $fd_key = (int)$fd;
                 $this->_allEvents[$fd_key][$flag] = array($func, $fd);
                 $this->_writeFds[$fd_key] = $fd;
                 break;
             case self::EV_SIGNAL:
+                $fd_key = (int)$fd;
                 $this->_signalEvents[$fd_key][$flag] = array($func, $fd);
                 pcntl_signal($fd, array($this, 'signalHandler'));
                 break;
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
                 // $fd 为 定时的时间间隔，单位为秒，支持小数，能精确到0.001秒
-                $run_time = microtime(true)+$fd_key;
+                $run_time = microtime(true)+$fd;
                 $this->_scheduler->insert($this->_timerId, -$run_time);
-                $this->_task[$this->_timerId] = array($func, $args, $flag, $fd_key);
+                $this->_task[$this->_timerId] = array($func, $args, $flag, $fd);
                 $this->tick();
                 return $this->_timerId++;
         }

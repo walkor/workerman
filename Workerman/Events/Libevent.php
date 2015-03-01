@@ -46,11 +46,10 @@ class Libevent implements EventInterface
      */
     public function add($fd, $flag, $func, $args=null)
     {
-        $fd_key = (int)$fd;
-        
         switch($flag)
         {
             case self::EV_SIGNAL:
+                $fd_key = (int)$fd;
                 $real_flag = EV_SIGNAL | EV_PERSIST;
                 $this->_eventSignal[$fd_key] = event_new();
                 if(!event_set($this->_eventSignal[$fd_key], $fd, $real_flag, $func, null))
@@ -80,7 +79,7 @@ class Libevent implements EventInterface
                     return false;
                 }
                 
-                $time_interval = $fd_key*1000000;
+                $time_interval = $fd*1000000;
                 if(!event_add($event, $time_interval))
                 {
                     return false;
@@ -89,6 +88,7 @@ class Libevent implements EventInterface
                 return $timer_id;
                 
             default :
+                $fd_key = (int)$fd;
                 $real_flag = $flag == self::EV_READ ? EV_READ | EV_PERSIST : EV_WRITE | EV_PERSIST;
                 
                 $event = event_new();
@@ -121,11 +121,11 @@ class Libevent implements EventInterface
      */
     public function del($fd ,$flag)
     {
-        $fd_key = (int)$fd;
         switch($flag)
         {
             case self::EV_READ:
             case self::EV_WRITE:
+                $fd_key = (int)$fd;
                 if(isset($this->_allEvents[$fd_key][$flag]))
                 {
                     event_del($this->_allEvents[$fd_key][$flag]);
@@ -137,6 +137,7 @@ class Libevent implements EventInterface
                 }
                 break;
             case  self::EV_SIGNAL:
+                $fd_key = (int)$fd;
                 if(isset($this->_eventSignal[$fd_key]))
                 {
                     event_del($this->_eventSignal[$fd_key]);
@@ -145,10 +146,11 @@ class Libevent implements EventInterface
                 break;
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
-                if(isset($this->_eventTimer[$fd_key]))
+                // 这里 fd 为timerid 
+                if(isset($this->_eventTimer[$fd]))
                 {
-                    event_del($this->_eventTimer[$fd_key][2]);
-                    unset($this->_eventTimer[$fd_key]);
+                    event_del($this->_eventTimer[$fd][2]);
+                    unset($this->_eventTimer[$fd]);
                 }
                 break;
         }
