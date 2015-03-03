@@ -6,6 +6,7 @@ use \Workerman\Lib\Timer;
 use \Workerman\Protocols\GatewayProtocol;
 use \GatewayWorker\Lib\Lock;
 use \GatewayWorker\Lib\Store;
+use \Workerman\Autoloader;
 
 /**
  * 
@@ -334,6 +335,9 @@ class Gateway extends Worker
         $this->_innerUdpWorker->transport = 'udp';
         $this->_innerUdpWorker->listen();
     
+        // 重新设置自动加载根目录
+        Autoloader::setRootPath($this->_appInitPath);
+        
         // 设置内部监听的相关回调
         $this->_innerTcpWorker->onMessage = array($this, 'onWorkerMessage');
         $this->_innerUdpWorker->onMessage = array($this, 'onWorkerMessage');

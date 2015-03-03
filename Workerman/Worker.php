@@ -1045,6 +1045,9 @@ class Worker
      */
     public function listen()
     {
+        // 设置自动加载根目录
+        Autoloader::setRootPath($this->_appInitPath);
+        
         if(!$this->_socketName)
         {
             return;
@@ -1082,8 +1085,8 @@ class Worker
         if(function_exists('socket_import_stream'))
         {
             $socket   = socket_import_stream($this->_mainSocket );
-            socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
-            socket_set_option($socket, SOL_SOCKET, TCP_NODELAY, 1);
+            @socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
+            @socket_set_option($socket, SOL_SOCKET, TCP_NODELAY, 1);
         }
         
         // 设置非阻塞
@@ -1117,6 +1120,9 @@ class Worker
      */
     public function run()
     {
+        // 设置自动加载根目录
+        Autoloader::setRootPath($this->_appInitPath);
+        
         // 如果没有全局事件轮询，则创建一个
         if(!self::$globalEvent)
         {
@@ -1147,9 +1153,6 @@ class Worker
         
         // 用全局事件轮询初始化定时器
         Timer::init(self::$globalEvent);
-        
-        // 设置自动加载根目录
-        Autoloader::setRootPath($this->_appInitPath);
         
         // 如果有设置进程启动回调，则执行
         if($this->onWorkerStart)
