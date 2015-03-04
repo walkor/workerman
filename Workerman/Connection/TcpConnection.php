@@ -317,6 +317,7 @@ class TcpConnection extends ConnectionInterface
         {
             Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
             $this->_isPaused = false;
+            $this->baseRead($this->_socket);
         }
     }
 
