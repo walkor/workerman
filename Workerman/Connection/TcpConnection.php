@@ -200,8 +200,6 @@ class TcpConnection extends ConnectionInterface
             {
                 // 未发送成功部分放入发送缓冲区
                 $this->_sendBuffer = substr($send_buffer, $len);
-                // 检查发送缓冲区是否已满，如果满了尝试触发onBufferFull回调
-                $this->checkBufferIsFull();
             }
             else
             {
@@ -231,6 +229,8 @@ class TcpConnection extends ConnectionInterface
             }
             // 监听对端可写事件
             Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+            // 检查发送缓冲区是否已满，如果满了尝试触发onBufferFull回调
+            $this->checkBufferIsFull();
             return null;
         }
         else
