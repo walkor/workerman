@@ -49,7 +49,8 @@ Worker::runAll();
 ```
 
 
-###  websocket server 
+### A websocket server 
+test.php
 ```
 require_once './Workerman/Autoloader.php';
 use Workerman\Worker
@@ -70,12 +71,12 @@ run width
 ```php test.php start```
 
 ## Available commands
-php test.php start  
-php test.php start -d  
-php test.php stop  
-php test.php restart  
-php test.php status  
-php test.php reload  
+```php test.php start  ```
+```php test.php start -d  ```
+```php test.php stop  ```
+```php test.php restart  ```
+```php test.php status  ```
+```php test.php reload  ```
 
 ## Demos
 [tadpole](http://kedou.workerman.net/)  
