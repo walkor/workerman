@@ -7,7 +7,7 @@ use Workerman\Connection\TcpConnection;
  * http protocol
  * @author walkor<walkor@workerman.net>
  */
-class Http implements \Workerman\Protocols\ProtocolInterface
+class Http
 {
     /**
      * 判断包长
