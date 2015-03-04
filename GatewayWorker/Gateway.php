@@ -215,7 +215,7 @@ class Gateway extends Worker
         {
             if(false === $this->_workerConnections[$key]->send($gateway_data))
             {
-                $msg = "sendBufferToWorker fail. May be the send buffer are overflow";
+                $msg = "SendBufferToWorker fail. May be the send buffer are overflow";
                 $this->log($msg);
                 return false;
             }
@@ -223,7 +223,7 @@ class Gateway extends Worker
         // 没有可用的worker
         else
         {
-            $msg = "endBufferToWorker fail. the connections between Gateway and BusinessWorker are not ready";
+            $msg = "SendBufferToWorker fail. The connections between Gateway and BusinessWorker are not ready";
             $this->log($msg);
             return false;
         }
