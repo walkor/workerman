@@ -155,12 +155,6 @@ class TcpConnection extends ConnectionInterface
     protected $_isPaused = false;
     
     /**
-     * 应用层发送缓冲区是否已经满了
-     * @var bool
-     */
-    protected $_bufferIsFull = false;
-
-    /**
      * 构造函数
      * @param resource $socket
      * @param EventInterface $event
@@ -240,7 +234,7 @@ class TcpConnection extends ConnectionInterface
         else
         {
             // 缓冲区已经标记为满，任然有数据发送，则丢弃数据包
-            if($this->_bufferIsFull)
+            if(self::$maxSendBufferSize <= strlen($this->_sendBuffer))
             {
                 // 为status命令统计发送失败次数
                 self::$statistics['send_fail']++;
@@ -263,7 +257,6 @@ class TcpConnection extends ConnectionInterface
             // 检查发送缓冲区是否已满，如果满了尝试触发onBufferFull回调
             if(self::$maxSendBufferSize <= strlen($this->_sendBuffer))
             {
-                $this->_bufferIsFull = true;
                 if($this->onBufferFull)
                 {
                     try
