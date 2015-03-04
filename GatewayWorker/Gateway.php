@@ -225,6 +225,7 @@ class Gateway extends Worker
         {
             $msg = "SendBufferToWorker fail. The connections between Gateway and BusinessWorker are not ready";
             $this->log($msg);
+            $connection->close();
             return false;
         }
         return true;
