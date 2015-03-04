@@ -200,6 +200,8 @@ class TcpConnection extends ConnectionInterface
             {
                 // 未发送成功部分放入发送缓冲区
                 $this->_sendBuffer = substr($send_buffer, $len);
+                // 检查发送缓冲区是否已满，如果满了尝试触发onBufferFull回调
+                $this->checkBufferIsFull();
             }
             else
             {
@@ -255,20 +257,7 @@ class TcpConnection extends ConnectionInterface
             // 将数据放入放缓冲区
             $this->_sendBuffer .= $send_buffer;
             // 检查发送缓冲区是否已满，如果满了尝试触发onBufferFull回调
-            if(self::$maxSendBufferSize <= strlen($this->_sendBuffer))
-            {
-                if($this->onBufferFull)
-                {
-                    try
-                    {
-                        call_user_func($this->onBufferFull, $this);
-                    }
-                    catch(Exception $e)
-                    {
-                        echo $e;
-                    }
-                }
-            }
+            $this->checkBufferIsFull();
         }
     }
     
@@ -523,6 +512,27 @@ class TcpConnection extends ConnectionInterface
         return $this->_socket;
     }
 
+    /**
+     * 检查发送缓冲区是否已满，如果满了尝试触发onBufferFull回调
+     * @return void
+     */
+    protected function checkBufferIsFull()
+    {
+        if(self::$maxSendBufferSize <= strlen($this->_sendBuffer))
+        {
+            if($this->onBufferFull)
+            {
+                try
+                {
+                    call_user_func($this->onBufferFull, $this);
+                }
+                catch(Exception $e)
+                {
+                    echo $e;
+                }
+            }
+        }
+    }
     /**
      * 销毁连接
      * @void
