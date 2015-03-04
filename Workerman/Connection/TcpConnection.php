@@ -343,7 +343,7 @@ class TcpConnection extends ConnectionInterface
            if($this->protocol)
            {
                $parser = $this->protocol;
-               while($this->_recvBuffer)
+               while($this->_recvBuffer && !$this->_isPaused)
                {
                    // 当前包的长度已知
                    if($this->_currentPackageLength)
