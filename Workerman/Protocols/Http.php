@@ -1,7 +1,7 @@
 <?php 
 namespace  Workerman\Protocols;
 
-use Workerman\Connection\ConnectionInterface;
+use Workerman\Connection\TcpConnection;
 
 /**
  * http protocol
@@ -12,13 +12,19 @@ class Http implements \Workerman\Protocols\ProtocolInterface
     /**
      * 判断包长
      * @param string $recv_buffer
-     * @param ConnectionInterface $connection
+     * @param TcpConnection $connection
      * @return int
      */
-    public static function input($recv_buffer, ConnectionInterface $connection)
+    public static function input($recv_buffer, TcpConnection $connection)
     {
         if(!strpos($recv_buffer, "\r\n\r\n"))
         {
+            // 无法获得包长，避免客户端传递超大头部的数据包
+            if(strlen($recv_buffer)>=TcpConnection::$maxPackageSize)
+            {
+                $connection->close();
+                return 0;
+            }
             return 0;
         }
         
@@ -46,10 +52,10 @@ class Http implements \Workerman\Protocols\ProtocolInterface
     /**
      * 从http数据包中解析$_POST、$_GET、$_COOKIE等 
      * @param string $recv_buffer
-     * @param ConnectionInterface $connection
+     * @param TcpConnection $connection
      * @return void
      */
-    public static function decode($recv_buffer, ConnectionInterface $connection)
+    public static function decode($recv_buffer, TcpConnection $connection)
     {
         // 初始化
         $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES =  array();
@@ -193,10 +199,10 @@ class Http implements \Workerman\Protocols\ProtocolInterface
     /**
      * 编码，增加HTTP头
      * @param string $content
-     * @param ConnectionInterface $connection
+     * @param TcpConnection $connection
      * @return string
      */
-    public static function encode($content, ConnectionInterface $connection)
+    public static function encode($content, TcpConnection $connection)
     {
         // 没有http-code默认给个
         if(!isset(HttpCache::$header['Http-Code']))

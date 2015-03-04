@@ -63,6 +63,18 @@ class TcpConnection extends ConnectionInterface
     public $onError = null;
     
     /**
+     * 当发送缓冲区满时，如果设置了$onBufferFull回调，则执行
+     * @var callback
+     */
+    public $onBufferFull = null;
+    
+    /**
+     * 当发送缓冲区被清空时，如果设置了$onBufferDrain回调，则执行
+     * @var callback
+     */
+    public $onBufferDrain = null;
+    
+    /**
      * 使用的应用层协议，是协议类的名称
      * 值类似于 Workerman\\Protocols\\Http
      * @var string
@@ -135,6 +147,18 @@ class TcpConnection extends ConnectionInterface
      * @var string
      */
     protected $_remoteAddress = '';
+    
+    /**
+     * 是否是停止接收数据
+     * @var bool
+     */
+    protected $_isPaused = false;
+    
+    /**
+     * 应用层发送缓冲区是否已经满了
+     * @var bool
+     */
+    protected $_bufferIsFull = false;
 
     /**
      * 构造函数
@@ -215,17 +239,17 @@ class TcpConnection extends ConnectionInterface
         }
         else
         {
-            // 检查发送缓冲区是否已满
-            if(self::$maxSendBufferSize <= strlen($this->_sendBuffer) + strlen($send_buffer))
+            // 缓冲区已经标记为满，任然有数据发送，则丢弃数据包
+            if($this->_bufferIsFull)
             {
                 // 为status命令统计发送失败次数
                 self::$statistics['send_fail']++;
                 // 如果有设置失败回调，则执行
                 if($this->onError)
                 {
-                    try 
+                    try
                     {
-                        call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'send buffer full');
+                        call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
                     }
                     catch(Exception $e)
                     {
@@ -236,6 +260,22 @@ class TcpConnection extends ConnectionInterface
             }
             // 将数据放入放缓冲区
             $this->_sendBuffer .= $send_buffer;
+            // 检查发送缓冲区是否已满，如果满了尝试触发onBufferFull回调
+            if(self::$maxSendBufferSize <= strlen($this->_sendBuffer))
+            {
+                $this->_bufferIsFull = true;
+                if($this->onBufferFull)
+                {
+                    try
+                    {
+                        call_user_func($this->onBufferFull, $this);
+                    }
+                    catch(Exception $e)
+                    {
+                        echo $e;
+                    }
+                }
+            }
         }
     }
     
@@ -259,6 +299,7 @@ class TcpConnection extends ConnectionInterface
     
     /**
      * 获得对端端口
+     * @return int
      */
     public function getRemotePort()
     {
@@ -272,6 +313,29 @@ class TcpConnection extends ConnectionInterface
             }
         }
         return $this->_remotePort;
+    }
+    
+    /**
+     * 暂停接收数据，一般用于控制上传流量
+     * @return void
+     */
+    public function pauseRecv()
+    {
+        Worker::$globalEvent->del($this->_socket, EventInterface::EV_READ);
+        $this->_isPaused = true;
+    }
+    
+    /**
+     * 恢复接收数据，一般用户控制上传流量
+     * @return void
+     */
+    public function resumeRecv()
+    {
+        if($this->_isPaused == true)
+        {
+            Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
+            $this->_isPaused = false;
+        }
     }
 
     /**
@@ -396,6 +460,19 @@ class TcpConnection extends ConnectionInterface
         {
             Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
             $this->_sendBuffer = '';
+            // 发送缓冲区的数据被发送完毕，尝试触发onBufferDrain回调
+            if($this->onBufferDrain)
+            {
+                try 
+                {
+                    call_user_func($this->onBufferDrain, $this);
+                }
+                catch(Exception $e)
+                {
+                    echo $e;
+                }
+            }
+            // 如果连接状态为关闭，则销毁连接
             if($this->_status == self::STATUS_CLOSING)
             {
                 $this->destroy();

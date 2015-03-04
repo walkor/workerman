@@ -1,5 +1,7 @@
 <?php 
 namespace Workerman\Protocols;
+use \Workerman\Connection\TcpConnection;
+
 /**
  * Text协议
  * 以换行为请求结束标记
@@ -13,8 +15,15 @@ class Text
      * 如果能够得到包长，则返回包的长度，否则返回0继续等待数据
      * @param string $buffer
      */
-    public static function input($buffer)
+    public static function input($buffer ,TcpConnection $connection)
     {
+        // 由于没有包头，无法预先知道包长，不能无限制的接收数据，
+        // 所以需要判断当前接收的数据是否超过限定值
+        if(strlen($buffer)>=TcpConnection::$maxPackageSize)
+        {
+            $connection->close();
+            return 0;
+        }
         // 获得换行字符"\n"位置
         $pos = strpos($buffer, "\n");
         // 没有换行符，无法得知包长，返回0继续等待数据

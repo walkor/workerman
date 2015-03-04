@@ -124,6 +124,18 @@ class Worker
     public $onError = null;
     
     /**
+     * 当连接的发送缓冲区满时，如果设置了$onBufferFull回调，则执行
+     * @var callback
+     */
+    public $onBufferFull = null;
+    
+    /**
+     * 当链接的发送缓冲区被清空时，如果设置了$onBufferDrain回调，则执行
+     * @var callback
+     */
+    public $onBufferDrain = null;
+    
+    /**
      * 当前进程退出时（由于平滑重启或者服务停止导致），如果设置了此回调，则运行
      * @var callback
      */
@@ -1202,6 +1214,8 @@ class Worker
         $connection->onMessage = $this->onMessage;
         $connection->onClose = $this->onClose;
         $connection->onError = $this->onError;
+        $connection->onBufferDrain = $this->onBufferDrain;
+        $connection->onBufferFull = $this->onBufferFull;
         
         // 如果有设置连接回调，则执行
         if($this->onConnect)
