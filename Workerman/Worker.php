@@ -1229,14 +1229,14 @@ class Worker
         {
             return false;
         }
-        
+        // 模拟一个连接对象
         $connection = new UdpConnection($socket, $remote_address);
         if($this->onMessage)
         {
             $parser = $this->_protocol;
+            ConnectionInterface::$statistics['total_request']++;
             try
             {
-               ConnectionInterface::$statistics['total_request']++;
                call_user_func($this->onMessage, $connection, $parser::decode($recv_buffer, $connection));
             }
             catch(Exception $e)

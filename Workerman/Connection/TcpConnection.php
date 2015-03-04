@@ -193,7 +193,14 @@ class TcpConnection extends ConnectionInterface
                     // 如果有设置失败回调，则执行
                     if($this->onError)
                     {
-                        call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'client closed');
+                        try
+                        {
+                            call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'client closed');
+                        }
+                        catch(Exception $e)
+                        {
+                            echo $e;
+                        }
                     }
                     // 销毁连接
                     $this->destroy();
@@ -216,7 +223,14 @@ class TcpConnection extends ConnectionInterface
                 // 如果有设置失败回调，则执行
                 if($this->onError)
                 {
-                    call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'send buffer full');
+                    try 
+                    {
+                        call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'send buffer full');
+                    }
+                    catch(Exception $e)
+                    {
+                        echo $e;
+                    }
                 }
                 return false;
             }
@@ -226,7 +240,7 @@ class TcpConnection extends ConnectionInterface
     }
     
     /**
-     * get remote ip
+     * 获得对端ip
      * @return string
      */
     public function getRemoteIp()
@@ -244,7 +258,7 @@ class TcpConnection extends ConnectionInterface
     }
     
     /**
-     * get remote port
+     * 获得对端端口
      */
     public function getRemotePort()
     {
@@ -261,7 +275,7 @@ class TcpConnection extends ConnectionInterface
     }
 
     /**
-     * when socket is readable 
+     * 当socket可读时的回调
      * @param resource $socket
      * @return void
      */
@@ -279,16 +293,16 @@ class TcpConnection extends ConnectionInterface
                return ;
            }
            
-           // protocol has been set
+           // 如果设置了协议
            if($this->protocol)
            {
                $parser = $this->protocol;
                while($this->_recvBuffer)
                {
-                   // already know current package length 
+                   // 当前包的长度已知
                    if($this->_currentPackageLength)
                    {
-                       // we need more buffer
+                       // 数据不够一个包
                        if($this->_currentPackageLength > strlen($this->_recvBuffer))
                        {
                            break;
@@ -296,33 +310,37 @@ class TcpConnection extends ConnectionInterface
                    }
                    else
                    {
-                       // try to get the current package length
+                       // 获得当前包长
                        $this->_currentPackageLength = $parser::input($this->_recvBuffer, $this);
-                       // need more buffer
+                       // 数据不够，无法获得包长
                        if($this->_currentPackageLength === 0)
                        {
                            break;
                        }
                        elseif($this->_currentPackageLength > 0 && $this->_currentPackageLength <= self::$maxPackageSize)
                        {
-                           // need more buffer
+                           // 数据不够一个包
                            if($this->_currentPackageLength > strlen($this->_recvBuffer))
                            {
                                break;
                            }
                        }
-                       // error package
+                       // 包错误
                        else
                        {
                            $this->close('error package. package_length='.var_export($this->_currentPackageLength, true));
                        }
                    }
                    
-                   // recvived the  whole data 
+                   // 数据足够一个包长
                    self::$statistics['total_request']++;
+                   // 从缓冲区中获取一个完整的包
                    $one_request_buffer = substr($this->_recvBuffer, 0, $this->_currentPackageLength);
+                   // 将当前包从接受缓冲区中去掉
                    $this->_recvBuffer = substr($this->_recvBuffer, $this->_currentPackageLength);
+                   // 重置当前包长为0
                    $this->_currentPackageLength = 0;
+                   // 处理数据包
                    try
                    {
                        call_user_func($this->onMessage, $this, $parser::decode($one_request_buffer, $this));
@@ -336,12 +354,11 @@ class TcpConnection extends ConnectionInterface
                if($this->_status !== self::STATUS_CLOSED && feof($socket))
                {
                    $this->destroy();
-                   return;
                }
                return;
            }
+           // 没有设置协议，则直接把接收的数据当做一个包处理
            self::$statistics['total_request']++;
-           // protocol not set
            try 
            {
                call_user_func($this->onMessage, $this, $this->_recvBuffer);
@@ -351,13 +368,16 @@ class TcpConnection extends ConnectionInterface
                self::$statistics['throw_exception']++;
                echo $e;
            }
+           // 清空缓冲区
            $this->_recvBuffer = '';
+           // 判断连接是否已经断开
            if($this->_status !== self::STATUS_CLOSED && feof($socket))
            {
                $this->destroy();
                return;
            }
        }
+       // 没收到数据，判断连接是否已经断开
        else if(feof($socket))
        {
            $this->destroy();
@@ -366,7 +386,7 @@ class TcpConnection extends ConnectionInterface
     }
 
     /**
-     * when socket is writeable
+     * socket可写时的回调
      * @return void
      */
     public function baseWrite()
@@ -397,8 +417,9 @@ class TcpConnection extends ConnectionInterface
     }
     
     /**
-     * consume recvBuffer
+     * 从缓冲区中消费掉$length长度的数据
      * @param int $length
+     * @return void
      */
     public function consumeRecvBuffer($length)
     {
@@ -406,7 +427,7 @@ class TcpConnection extends ConnectionInterface
     }
 
     /**
-     * close the connection
+     * 关闭连接
      * @param mixed $data
      * @void
      */
@@ -424,7 +445,7 @@ class TcpConnection extends ConnectionInterface
     }
     
     /**
-     * get socket
+     * 获得socket连接
      * @return resource
      */
     public function getSocket()
@@ -433,7 +454,7 @@ class TcpConnection extends ConnectionInterface
     }
 
     /**
-     * destroy the connection
+     * 销毁连接
      * @void
      */
     protected function destroy()
