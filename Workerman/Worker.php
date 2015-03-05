@@ -148,6 +148,12 @@ class Worker
     public $transport = 'tcp';
     
     /**
+     * 所有的客户端连接
+     * @var array
+     */
+    public $connections = array();
+    
+    /**
      * 应用层协议，由初始化worker时指定
      * 例如 new worker('http://0.0.0.0:8080');指定使用http协议
      * @var string
@@ -1210,12 +1216,14 @@ class Worker
         ConnectionInterface::$statistics['connection_count']++;
         // 初始化连接对象
         $connection = new TcpConnection($new_socket);
+        $connection->worker = $this;
         $connection->protocol = $this->_protocol;
         $connection->onMessage = $this->onMessage;
         $connection->onClose = $this->onClose;
         $connection->onError = $this->onError;
         $connection->onBufferDrain = $this->onBufferDrain;
         $connection->onBufferFull = $this->onBufferFull;
+        $this->connections[(int)$new_socket] = $connection;
         
         // 如果有设置连接回调，则执行
         if($this->onConnect)

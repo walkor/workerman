@@ -82,6 +82,12 @@ class TcpConnection extends ConnectionInterface
     public $protocol = '';
     
     /**
+     * 属于哪个worker
+     * @var Worker
+     */
+    public $worker = null;
+    
+    /**
      * 发送缓冲区大小，当发送缓冲区满时，会尝试触发onError回调（如果有设置的话）
      * 如果没设置onError回调，发送缓冲区满，则后续发送的数据将被丢弃，
      * 直到发送缓冲区有空的位置
@@ -553,6 +559,7 @@ class TcpConnection extends ConnectionInterface
                echo $e;
            }
        }
+       unset($this->worker->connections[(int)$this->_socket]);
        Worker::$globalEvent->del($this->_socket, EventInterface::EV_READ);
        Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
        @fclose($this->_socket);
