@@ -559,7 +559,10 @@ class TcpConnection extends ConnectionInterface
                echo $e;
            }
        }
-       unset($this->worker->connections[(int)$this->_socket]);
+       if($this->worker)
+       {
+           unset($this->worker->connections[(int)$this->_socket]);
+       }
        Worker::$globalEvent->del($this->_socket, EventInterface::EV_READ);
        Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
        @fclose($this->_socket);
