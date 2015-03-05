@@ -159,7 +159,7 @@ class Gateway
    {
        if($client_id === Context::$client_id)
        {
-           return self::kickCurrentClient();
+           return self::closeCurrentClient();
        }
        // 不是发给当前用户则使用存储中的地址
        else
