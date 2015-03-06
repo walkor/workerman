@@ -30,5 +30,4 @@ class Store
 }
 
 // 默认系统临时目录下
-$path_array = explode(DIRECTORY_SEPARATOR, __DIR__);
-Store::$storePath = sys_get_temp_dir().'/workerman-'.$path_array[count($path_array)-2].'/';
+Store::$storePath = sys_get_temp_dir().'/workerman-todpole/';
