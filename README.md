@@ -116,6 +116,18 @@ $text_worker->onMessage =  function($connection, $data)
 Worker::runAll();
 ```
 
+### A WebServer
+test.php
+```php
+use \Workerman\WebServer;
+// WebServer
+$web = new WebServer("http://0.0.0.0:8686");
+$web->count = 2;
+$web->addRoot('www.your_domain.com', __DIR__.'/Web');
+// run all workers
+Worker::runAll();
+```
+
 ### Timer
 test.php
 ```php
