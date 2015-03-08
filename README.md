@@ -66,6 +66,56 @@ $ws_worker->onMessage =  function($connection, $data)
 Worker::runAll();
 ```
 
+### User defined protocol 
+Protocols/MyTextProtocol.php
+```php
+/**
+ * User defined protocol
+ * Format Text+"\n"
+ */
+class MyTextProtocol
+{
+    public static function input($recv_buffer)
+    {
+        // Find the position of the first occurrence of "\n"
+        $pos = strpos($recv_buffer, "\n");
+        // Not a complete package. Return 0 because the length of package can not be calculated
+        if($pos === false)
+        {
+            return 0;
+        }
+        // Return length of the package
+        return $pos+1;
+    }
+
+    public static function decode($recv_buffer)
+    {
+        return trim($recv_buffer);
+    }
+
+    public static function encode($data)
+    {
+        return $data."\n";
+    }
+}
+```
+
+test.php
+```php
+require_once './Workerman/Autoloader.php';
+use Workerman\Worker
+// #### MyTextProtocol worker ####
+$text_worker = new Worker("MyTextProtocol://0.0.0.0:5678");
+$text_worker->onMessage =  function($connection, $data)
+{
+    // send data to client
+    $connection->send("hello world \n");
+};
+
+// run all workers
+Worker::runAll();
+```
+
 ### Timer
 test.php
 ```php
