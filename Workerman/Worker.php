@@ -328,8 +328,6 @@ class Worker
      */
     public static function init()
     {
-        // 关闭opcache
-        ini_set('opcache.enable', false);
         // 如果没设置$pidFile，则生成默认值
         if(empty(self::$pidFile))
         {
