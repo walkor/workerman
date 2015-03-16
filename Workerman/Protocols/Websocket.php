@@ -199,6 +199,11 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             {
                 $Sec_WebSocket_Key = $match[1];
             }
+            else
+            {
+                $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n400 Bad Request");
+                return 0;
+            }
             $new_key = base64_encode(sha1($Sec_WebSocket_Key."258EAFA5-E914-47DA-95CA-C5AB0DC85B11",true));
             // 握手返回的数据
             $new_message = "HTTP/1.1 101 Switching Protocols\r\n";
@@ -290,6 +295,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 // HTTP_REFERER
                 case 'referer':
                     $_SERVER['HTTP_REFERER'] = $value;
+                    break;
+                case 'origin':
+                    $_SERVER['HTTP_ORIGIN'] = $value;
                     break;
             }
         }
