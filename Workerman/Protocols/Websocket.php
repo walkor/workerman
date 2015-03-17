@@ -255,7 +255,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      * @param string $buffer
      * @return void
      */
-    protected function parseHttpHeader($buffer)
+    protected static function parseHttpHeader($buffer)
     {
         $header_data = explode("\r\n", $buffer);
         $_SERVER = array();

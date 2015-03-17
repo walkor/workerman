@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../Workerman/Autoloader.php';
 
 // gateway 进程
 $gateway = new Gateway("Websocket://0.0.0.0:8585");
-// worker名称，以便status时查看方便
+// 名称，以便status时查看方便
 $gateway->name = 'TodpoleGateway';
 // 开启的进程数，建议与cpu核数相同
 $gateway->count = 4;
@@ -55,6 +55,8 @@ $web = new WebServer("http://0.0.0.0:8686");
 $web->count = 2;
 // 设置站点根目录
 $web->addRoot('www.your_domain.com', __DIR__.'/Web');
+
+
 // 如果不是在根目录启动，则运行runAll方法
 if(!defined('GLOBAL_START'))
 {
