@@ -185,7 +185,7 @@ class Select implements EventInterface
                 // 尝试执行任务
                 try
                 {
-                    call_user_func($task_data[0], $task_data[1]);
+                    call_user_func_array($task_data[0], $task_data[1]);
                 }
                 catch(\Exception $e)
                 {

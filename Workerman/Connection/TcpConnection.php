@@ -180,12 +180,19 @@ class TcpConnection extends ConnectionInterface
      */
     public function send($send_buffer, $raw = false)
     {
-        // 如果连接已经关闭，则返回false
-        if($this->_status == self::STATUS_CLOSED)
+        // 如果当前状态是连接中，则把数据放入发送缓冲区
+        if($this->_status === self::STATUS_CONNECTING)
+        {
+            $this->_sendBuffer .= $send_buffer;
+            return null;
+        }
+        // 如果当前连接是关闭，则返回false
+        elseif($this->_status == self::STATUS_CLOSED)
         {
             return false;
         }
-        // 如果没有设置以原始数据发送，并且有设置协议。只协议编码
+        
+        // 如果没有设置以原始数据发送，并且有设置协议则按照协议编码
         if(false === $raw && $this->protocol)
         {
             $parser = $this->protocol;
@@ -241,7 +248,7 @@ class TcpConnection extends ConnectionInterface
         }
         else
         {
-            // 缓冲区已经标记为满，任然有数据发送，则丢弃数据包
+            // 缓冲区已经标记为满，仍然然有数据发送，则丢弃数据包
             if(self::$maxSendBufferSize <= strlen($this->_sendBuffer))
             {
                 // 为status命令统计发送失败次数

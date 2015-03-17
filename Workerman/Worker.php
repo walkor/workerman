@@ -21,7 +21,7 @@ class Worker
      * 版本号
      * @var string
      */
-    const VERSION = '3.0.7';
+    const VERSION = '3.0.8';
     
     /**
      * 状态 启动中
