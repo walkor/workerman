@@ -236,10 +236,6 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         // 如果是flash的policy-file-request
         elseif(0 === strpos($buffer,'<polic'))
         {
-            if('>' != $buffer[strlen($buffer) - 1])
-            {
-                return 0;
-            }
             $policy_xml = '<?xml version="1.0"?><cross-domain-policy><site-control permitted-cross-domain-policies="all"/><allow-access-from domain="*" to-ports="*"/></cross-domain-policy>'."\0";
             $connection->send($policy_xml, true);
             $connection->consumeRecvBuffer(strlen($buffer));
