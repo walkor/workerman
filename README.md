@@ -160,14 +160,18 @@ run width
 ## Available commands
 ```php test.php start  ```  
 ```php test.php start -d  ```  
+![workerman start](http://www.workerman.net/img/workerman-start.png)  
+```php test.php status  ```  
+![workerman satus](http://www.workerman.net/img/workerman-status.png)
 ```php test.php stop  ```  
 ```php test.php restart  ```  
-```php test.php status  ```  
 ```php test.php reload  ```  
 
 ## Demos
 [tadpole](http://kedou.workerman.net/)  
+![workerman todpole](https://github.com/walkor/workerman-todpole/blob/master/Applications/Todpole/Web/images/workerman-todpole-browser.png?raw=true)
 [BrowserQuest](http://browserquest.workerman.net/)  
+![BrowserQuest width workerman](http://www.workerman.net/img/browserquest.jpg)  
 [chat room](http://chat.workerman.net/)  
 [statistics](http://monitor.workerman.net/)  
 [flappybird](http://flap.workerman.net/)  
