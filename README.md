@@ -180,7 +180,7 @@ run width
 ![workerman-statistics](http://www.workerman.net/img/workerman-flappy-bird.png)  
 [jsonRpc](https://github.com/walkor/workerman-JsonRpc)  
 ![workerman-jsonRpc](http://www.workerman.net/img/workerman-json-rpc.png)  
-[thriftRpc](https://github.com/walkor/workerman-thrift) 
+[thriftRpc](https://github.com/walkor/workerman-thrift)  
 ![workerman-thriftRpc](http://www.workerman.net/img/workerman-thrift.png)  
 [web-msg-sender](https://github.com/walkor/web-msg-sender)  
 ![web-msg-sender](http://www.workerman.net/img/web-msg-sender.png)  
