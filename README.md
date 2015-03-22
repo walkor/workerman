@@ -167,6 +167,7 @@ run width
 
 ## Demos
 [tadpole](http://kedou.workerman.net/)  
+[BrowserQuest](http://browserquest.workerman.net/)  
 [chat room](http://chat.workerman.net/)  
 [statistics](http://monitor.workerman.net/)  
 [flappybird](http://flap.workerman.net/)  
