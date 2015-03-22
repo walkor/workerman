@@ -201,7 +201,8 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             }
             else
             {
-                $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n400 Bad Request");
+                $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Sec-WebSocket-Key not found", true);
+                $connection->close();
                 return 0;
             }
             $new_key = base64_encode(sha1($Sec_WebSocket_Key."258EAFA5-E914-47DA-95CA-C5AB0DC85B11",true));
