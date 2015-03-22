@@ -162,7 +162,7 @@ run width
 ```php test.php start -d  ```  
 ![workerman start](http://www.workerman.net/img/workerman-start.png)  
 ```php test.php status  ```  
-![workerman satus](http://www.workerman.net/img/workerman-status.png?)
+![workerman satus](http://www.workerman.net/img/workerman-status.png)
 ```php test.php stop  ```  
 ```php test.php restart  ```  
 ```php test.php reload  ```  
@@ -170,7 +170,7 @@ run width
 ## Demos
 [tadpole](http://kedou.workerman.net/)  
 ![workerman todpole](http://www.workerman.net/img/workerman-todpole.png)
-[BrowserQuest](http://browserquest.workerman.net/)  
+[BrowserQuest](http://browserquest.workerman.net/)   
 ![BrowserQuest width workerman](http://www.workerman.net/img/browserquest.jpg)  
 [chat room](http://chat.workerman.net/)  
 ![workerman-chat](http://www.workerman.net/img/workerman-chat.png)  
