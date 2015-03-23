@@ -21,7 +21,7 @@ class Worker
      * 版本号
      * @var string
      */
-    const VERSION = '3.0.8';
+    const VERSION = '3.0.9';
     
     /**
      * 状态 启动中
@@ -348,6 +348,10 @@ class Worker
         self::$_statisticsFile = sys_get_temp_dir().'/workerman.status';
         // 尝试设置进程名称（需要php>=5.5或者安装了proctitle扩展）
         self::setProcessTitle('WorkerMan: master process  start_file=' . self::$_startFile);
+        
+        // 注册进程退出回调，用来检查是否有错误
+        register_shutdown_function(array('\\Workerman\\Worker', 'checkErrors'));
+        
         // 初始化定时器
         Timer::init();
     }
@@ -1010,6 +1014,66 @@ class Worker
         $wrker_status_str = posix_getpid()."\t".str_pad(round(memory_get_usage()/(1024*1024),2)."M", 7)." " .str_pad($worker->getSocketName(), self::$_maxSocketNameLength) ." ".str_pad(($worker->name == $worker->getSocketName() ? 'none' : $worker->name), self::$_maxWorkerNameLength)." ";
         $wrker_status_str .= str_pad(ConnectionInterface::$statistics['connection_count'], 11)." ".str_pad(ConnectionInterface::$statistics['total_request'], 14)." ".str_pad(ConnectionInterface::$statistics['send_fail'],9)." ".str_pad(ConnectionInterface::$statistics['throw_exception'],15)."\n";
         file_put_contents(self::$_statisticsFile, $wrker_status_str, FILE_APPEND);
+    }
+    
+    /**
+     * 检查错误
+     * @return void
+     */
+    public static function checkErrors()
+    {
+        if(self::STATUS_SHUTDOWN != self::$_status)
+        {
+            $error_msg = "WORKER EXIT UNEXPECTED ";
+            if($errors = error_get_last())
+            {
+                $error_msg .= $this->getErrorType($errors['type']) . " {$errors['message']} in {$errors['file']} on line {$errors['line']}";
+            }
+            $this->log($error_msg);
+        }
+    }
+    
+    /**
+     * 获取错误类型对应的意义
+     * @param integer $type
+     * @return string
+     */
+    protected static function getErrorType($type)
+    {
+        switch($type)
+        {
+            case E_ERROR: // 1 //
+                return 'E_ERROR';
+            case E_WARNING: // 2 //
+                return 'E_WARNING';
+            case E_PARSE: // 4 //
+                return 'E_PARSE';
+            case E_NOTICE: // 8 //
+                return 'E_NOTICE';
+            case E_CORE_ERROR: // 16 //
+                return 'E_CORE_ERROR';
+            case E_CORE_WARNING: // 32 //
+                return 'E_CORE_WARNING';
+            case E_COMPILE_ERROR: // 64 //
+                return 'E_COMPILE_ERROR';
+            case E_CORE_WARNING: // 128 //
+                return 'E_COMPILE_WARNING';
+            case E_USER_ERROR: // 256 //
+                return 'E_USER_ERROR';
+            case E_USER_WARNING: // 512 //
+                return 'E_USER_WARNING';
+            case E_USER_NOTICE: // 1024 //
+                return 'E_USER_NOTICE';
+            case E_STRICT: // 2048 //
+                return 'E_STRICT';
+            case E_RECOVERABLE_ERROR: // 4096 //
+                return 'E_RECOVERABLE_ERROR';
+            case E_DEPRECATED: // 8192 //
+                return 'E_DEPRECATED';
+            case E_USER_DEPRECATED: // 16384 //
+                return 'E_USER_DEPRECATED';
+        }
+        return "";
     }
     
     /**

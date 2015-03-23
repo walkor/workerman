@@ -109,6 +109,12 @@ class Gateway extends Worker
     protected $_onWorkerStop = null;
     
     /**
+     * 进程启动时间
+     * @var int
+     */
+    protected $_startTime = 0;
+    
+    /**
      * 构造函数
      * @param string $socket_name
      * @param array $context_option
@@ -143,6 +149,10 @@ class Gateway extends Worker
         // 保存用户的回调，当对应的事件发生时触发
         $this->_onWorkerStop = $this->onWorkerStop;
         $this->onWorkerStop = array($this, 'onWorkerStop');
+        
+        // 记录进程启动的时间
+        $this->_startTime = time();
+        // 运行父方法
         parent::run();
     }
     
@@ -223,8 +233,13 @@ class Gateway extends Worker
         // 没有可用的worker
         else
         {
-            $msg = "SendBufferToWorker fail. The connections between Gateway and BusinessWorker are not ready";
-            $this->log($msg);
+            // gateway启动后1-2秒内SendBufferToWorker fail是正常现象，因为与worker的连接还没建立起来，所以不记录日志，只是关闭连接
+            $time_diff = 2;
+            if(time() - $this->_startTime >= $time_diff)
+            {
+                $msg = "SendBufferToWorker fail. The connections between Gateway and BusinessWorker are not ready";
+                $this->log($msg);
+            }
             $connection->close();
             return false;
         }
@@ -548,7 +563,10 @@ class Gateway extends Worker
                 continue;
             }
             $connection->pingNotResponseCount++;
-            $connection->send($this->pingData);
+            if($this->pingData)
+            {
+                $connection->send($this->pingData);
+            }
         }
     }
     
