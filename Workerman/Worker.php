@@ -350,7 +350,7 @@ class Worker
         self::setProcessTitle('WorkerMan: master process  start_file=' . self::$_startFile);
         
         // 注册进程退出回调，用来检查是否有错误
-        register_shutdown_function(array('\\Workerman\\Worker', 'checkErrors'));
+        register_shutdown_function(array("\\Workerman\\Worker", 'checkErrors'));
         
         // 初始化定时器
         Timer::init();
@@ -1027,9 +1027,9 @@ class Worker
             $error_msg = "WORKER EXIT UNEXPECTED ";
             if($errors = error_get_last())
             {
-                $error_msg .= $this->getErrorType($errors['type']) . " {$errors['message']} in {$errors['file']} on line {$errors['line']}";
+                $error_msg .= self::getErrorType($errors['type']) . " {$errors['message']} in {$errors['file']} on line {$errors['line']}";
             }
-            $this->log($error_msg);
+            self::log($error_msg);
         }
     }
     
