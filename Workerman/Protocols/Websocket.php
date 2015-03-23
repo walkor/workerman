@@ -135,7 +135,15 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     public static function encode($buffer, ConnectionInterface $connection)
     {
         $len = strlen($buffer);
-        $first_byte = $connection->protocolData['binaryType'];
+        // 还没握手不能发数据
+        if(empty($connection->handshake))
+        {
+            $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Send data before handshake. ", true);
+            $connection->close();
+            return false;
+        }
+       $first_byte = $connection->websocketType;
+        
         if($len<=125)
         {
             return $first_byte.chr($len).$buffer;
@@ -215,9 +223,8 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $connection->handshake = true;
             $connection->consumeRecvBuffer(strlen($buffer));
             $connection->send($new_message, true);
-            $connection->protocolData = array(
-                    'binaryType' => self::BINARY_TYPE_BLOB, // blob or arraybuffer
-            );
+            // blob or arraybuffer
+            $connection->websocketType = self::BINARY_TYPE_BLOB; 
             // 如果有设置onWebSocketConnect回调，尝试执行
             if(isset($connection->onWebSocketConnect))
             {
@@ -243,6 +250,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             return 0;
         }
         // 出错
+        $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Invalid handshake data for websocket. ", true);
         $connection->close();
         return 0;
     }
