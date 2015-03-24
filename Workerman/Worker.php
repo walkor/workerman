@@ -349,9 +349,6 @@ class Worker
         // 尝试设置进程名称（需要php>=5.5或者安装了proctitle扩展）
         self::setProcessTitle('WorkerMan: master process  start_file=' . self::$_startFile);
         
-        // 注册进程退出回调，用来检查是否有错误
-        register_shutdown_function(array("\\Workerman\\Worker", 'checkErrors'));
-        
         // 初始化定时器
         Timer::init();
     }
@@ -1200,6 +1197,9 @@ class Worker
      */
     public function run()
     {
+        // 注册进程退出回调，用来检查是否有错误
+        register_shutdown_function(array("\\Workerman\\Worker", 'checkErrors'));
+        
         // 设置自动加载根目录
         Autoloader::setRootPath($this->_appInitPath);
         
