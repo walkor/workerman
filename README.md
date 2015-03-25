@@ -167,36 +167,57 @@ run width
 ```php test.php restart  ```  
 ```php test.php reload  ```  
 
-## Demos
+# Demos
 
-### [tadpole](http://kedou.workerman.net/)  
+## [tadpole](http://kedou.workerman.net/)  
+[Live demo](http://kedou.workerman.net/)  
+[Source code](https://github.com/walkor/workerman)  
 ![workerman todpole](http://www.workerman.net/img/workerman-todpole.png)  
 
-### [BrowserQuest](http://browserquest.workerman.net/)    
+### [BrowserQuest](http://browserquest.workerman.net/)   
+[Live demo](http://browserquest.workerman.net/)  
+[Source code](https://github.com/walkor/BrowserQuest-PHP)  
 ![BrowserQuest width workerman](http://www.workerman.net/img/browserquest.jpg) 
 
 ### [web vmstat](http://vmstat.workerman.net/)   
+[Live demo](http://vmstat.workerman.net/)  
+[Source code](https://github.com/walkor/workerman-vmstat)  
 ![web vmstat](http://www.workerman.net/img/workerman-vmstat.png)   
 
 ### [live-ascii-camera](https://github.com/walkor/live-ascii-camera)   
+[Live demo camera page](http://live-ascii-camera.workerman.net/camera.html)  
+[Live demo receive page](http://live-ascii-camera.workerman.net/)  
+[Source code](https://github.com/walkor/live-ascii-camera)  
 ![web vmstat](http://www.workerman.net/img/live-ascii-camera.png)   
 
 ### [chat room](http://chat.workerman.net/)  
+[Live demo](http://chat.workerman.net/)  
+[Source code](https://github.com/walkor/workerman-chat)  
 ![workerman-chat](http://www.workerman.net/img/workerman-chat.png)  
 
 ### [statistics](http://monitor.workerman.net/)  
+[Live demo](http://monitor.workerman.net/)  
+[Source code](https://github.com/walkor/workerman-statistics)  
 ![workerman-statistics](http://www.workerman.net/img/workerman-statistics.png)  
 
 ### [flappybird](http://flap.workerman.net/)  
+[Live demo](http://flap.workerman.net/)  
+[Source code](https://github.com/walkor/workerman-flappy-bird)  
 ![workerman-statistics](http://www.workerman.net/img/workerman-flappy-bird.png)  
 
 ### [jsonRpc](https://github.com/walkor/workerman-JsonRpc)  
+[Source code](https://github.com/walkor/workerman-JsonRpc)  
 ![workerman-jsonRpc](http://www.workerman.net/img/workerman-json-rpc.png)  
 
 ### [thriftRpc](https://github.com/walkor/workerman-thrift)  
+[Source code](https://github.com/walkor/workerman-thrift)  
 ![workerman-thriftRpc](http://www.workerman.net/img/workerman-thrift.png)  
 
 ### [web-msg-sender](https://github.com/walkor/web-msg-sender)  
+[Live demo send page](http://workerman.net:3333/)  
+[Live demo receive page](http://workerman.net/web-msg-sender.html)  
+[Source code](https://github.com/walkor/web-msg-sender)  
 ![web-msg-sender](http://www.workerman.net/img/web-msg-sender.png)  
 
-### [queue](https://github.com/walkor/workerman-queue)
+## [queue](https://github.com/walkor/workerman-queue)
+[Source code](https://github.com/walkor/workerman-queue)  
