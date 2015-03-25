@@ -178,6 +178,9 @@ run width
 ### [web vmstat](http://vmstat.workerman.net/)   
 ![web vmstat](http://www.workerman.net/img/workerman-vmstat.png)   
 
+### [web vmstat](https://github.com/walkor/live-ascii-camera)   
+![web vmstat](http://www.workerman.net/img/live-ascii-camera.png)   
+
 ### [chat room](http://chat.workerman.net/)  
 ![workerman-chat](http://www.workerman.net/img/workerman-chat.png)  
 
