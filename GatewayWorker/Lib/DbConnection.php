@@ -1558,6 +1558,7 @@ class DbConnection
         $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $this->pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
     }
+   
     /*
     *   关闭连接
     */
@@ -1592,19 +1593,28 @@ class DbConnection
             {
                 $this->closeConnection();
                 $this->connect();
-                $this->sQuery = $this->pdo->prepare($query);
-                $this->bindMore($parameters);
-                if(!empty($this->parameters)) {
-                    foreach($this->parameters as $param)
-                    {
-                        $parameters = explode("\x7F",$param);
-                        $this->sQuery->bindParam($parameters[0],$parameters[1]);
+                
+                try {
+                    $this->sQuery = $this->pdo->prepare($query);
+                    $this->bindMore($parameters);
+                    if(!empty($this->parameters)) {
+                        foreach($this->parameters as $param)
+                        {
+                            $parameters = explode("\x7F",$param);
+                            $this->sQuery->bindParam($parameters[0],$parameters[1]);
+                        }
                     }
+                    $this->succes  = $this->sQuery->execute();
+                }   
+                catch(\PDOException $ex)
+                {
+                    $this->rollBackTrans();
+                    throw $ex;
                 }
-                $this->succes  = $this->sQuery->execute();
             }
             else
             {
+                $this->rollBackTrans();
                 throw $e;
             }
         }
@@ -1781,6 +1791,36 @@ class DbConnection
     public function lastSQL()
     {
         return $this->lastSql;
+    }
+
+    /**
+     * 开始事务 
+     */
+
+    public function beginTrans()
+    {
+        $this->pdo->beginTransaction();
+    }
+
+    /**
+     * 提交事务 
+     */
+
+    public function commitTrans()
+    {
+        $this->pdo->commit();
+    }
+
+    /**
+     * 事务回滚 
+     */
+
+    public function rollBackTrans()
+    {
+        if ($this->pdo->inTransaction())
+        {
+            $this->pdo->rollBack();
+        }
     }
 }
 
