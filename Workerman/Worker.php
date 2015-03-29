@@ -1022,7 +1022,12 @@ class Worker
         if(self::STATUS_SHUTDOWN != self::$_status)
         {
             $error_msg = "WORKER EXIT UNEXPECTED ";
-            if($errors = error_get_last())
+            $errors = error_get_last();
+            if($errors && ($errors['type'] == E_ERROR ||
+                     $errors['type'] == E_PARSE ||
+                     $errors['type'] == E_CORE_ERROR ||
+                     $errors['type'] == E_COMPILE_ERROR || 
+                     $errors['type'] == E_RECOVERABLE_ERROR ))
             {
                 $error_msg .= self::getErrorType($errors['type']) . " {$errors['message']} in {$errors['file']} on line {$errors['line']}";
             }
@@ -1053,7 +1058,7 @@ class Worker
                 return 'E_CORE_WARNING';
             case E_COMPILE_ERROR: // 64 //
                 return 'E_COMPILE_ERROR';
-            case E_CORE_WARNING: // 128 //
+            case E_COMPILE_WARNING: // 128 //
                 return 'E_COMPILE_WARNING';
             case E_USER_ERROR: // 256 //
                 return 'E_USER_ERROR';
