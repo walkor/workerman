@@ -88,8 +88,8 @@ class TcpConnection extends ConnectionInterface
     public $worker = null;
     
     /**
-     * 发送缓冲区大小，当发送缓冲区满时，会尝试触发onError回调（如果有设置的话）
-     * 如果没设置onError回调，发送缓冲区满，则后续发送的数据将被丢弃，
+     * 发送缓冲区大小，当发送缓冲区满时，会尝试触发onBufferFull回调（如果有设置的话）
+     * 如果没设置onBufferFull回调，由于发送缓冲区满，则后续发送的数据将被丢弃，
      * 直到发送缓冲区有空的位置
      * 注意 此值可以动态设置
      * 例如 Workerman\Connection\TcpConnection::$maxSendBufferSize=1024000;
