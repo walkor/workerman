@@ -1,0 +1,32 @@
+{
+    "name"  : "walkor/workerman",
+    "type"  : "project",
+    "keywords": ["workerman"],
+    "homepage": "http://www.workerman.net",
+    "license" : "MIT",
+    "description": " High performance Socket server framework for network applications implemented in PHP using libevent",
+    "authors" : [
+        {
+            "name"      : "walkor",
+            "email"     : "walkor@workerman.net",
+            "homepage"  : "http://www.workerman.net",	
+            "role": "Developer"
+        }
+    ],
+    "support" : {
+        "email" : "walkor@workerman.net",
+        "issues": "https://github.com/walkor/workerman/issues",
+        "forum" : "http://wenda.workerman.net/",
+        "wiki"  : "http://doc3.workerman.net/index.html",
+        "source": "https://github.com/walkor/workerman"
+    },
+    "require": {
+        "php": ">=5.3",
+        "ext-sockets": "*"
+    },
+    "suggest": {
+		"ext-libevent": "Really it's a requirement for normal work."
+    },
+    "bin": ["workerman/bin/workermand"],
+    "minimum-stability":"dev"
+}
