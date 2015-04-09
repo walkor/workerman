@@ -5,6 +5,12 @@
     "homepage": "http://www.workerman.net",
     "license" : "MIT",
     "description": " High performance Socket server framework for network applications implemented in PHP using libevent",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/walkor/workerman"
+        }
+    ],
     "authors" : [
         {
             "name"      : "walkor",
