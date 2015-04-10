@@ -86,6 +86,11 @@ class DbConnection
     protected $order_by = array();
     
     /**
+     * ORDER BY 的排序方式,默认为升序
+     * @var bool 
+     */
+    protected $order_asc = true;
+    /**
      * SELECT多少记录
      * @var int
      */
@@ -944,6 +949,17 @@ class DbConnection
     {
         return $this->addOrderBy($cols);
     }
+     /**
+     * order by ASC OR DESC
+     * @param array $cols
+     * @param bool $order_asc
+     * @return self
+     */
+    public function orderByASC(array $cols, $order_asc = true)
+    {
+        $this->order_asc = $order_asc;
+        return $this->addOrderBy($cols);
+    }
     
     // -------------abstractquery----------
     /**
@@ -1101,7 +1117,15 @@ class DbConnection
         if (! $this->order_by) {
             return ''; 
         }
-        return ' ORDER BY' . $this->indentCsv($this->order_by);
+
+        if ($this->order_asc)
+        {
+            return ' ORDER BY' . $this->indentCsv($this->order_by) . ' ASC';
+        }
+        else
+        {
+            return ' ORDER BY' . $this->indentCsv($this->order_by) . ' DESC';
+        }
     }
     
     /**
