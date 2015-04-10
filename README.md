@@ -227,3 +227,8 @@ run width
 
 ## [queue](https://github.com/walkor/workerman-queue)
 [Source code](https://github.com/walkor/workerman-queue)  
+
+
+## LICENSE
+
+Workerman is released under the [MIT license](https://github.com/walkor/workerman/blob/master/MIT-LICENSE.txt).
