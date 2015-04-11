@@ -240,7 +240,7 @@ class Gateway extends Worker
                 $msg = "SendBufferToWorker fail. The connections between Gateway and BusinessWorker are not ready";
                 $this->log($msg);
             }
-            $connection->close();
+            $connection->destroy();
             return false;
         }
         return true;
@@ -407,7 +407,7 @@ class Gateway extends Worker
             case GatewayProtocol::CMD_KICK:
                 if(isset($this->_clientConnections[$data['client_id']]))
                 {
-                    $this->_clientConnections[$data['client_id']]->close();
+                    $this->_clientConnections[$data['client_id']]->destroy();
                 }
                 break;
                 // 广播, Gateway::sendToAll($message, $client_id_array)
@@ -559,7 +559,7 @@ class Gateway extends Worker
             // 上次发送的心跳还没有回复次数大于限定值就断开
             if($this->pingNotResponseLimit > 0 && $connection->pingNotResponseCount >= $this->pingNotResponseLimit)
             {
-                $connection->close();
+                $connection->destroy();
                 continue;
             }
             $connection->pingNotResponseCount++;

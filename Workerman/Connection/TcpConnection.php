@@ -506,7 +506,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function close($data = null)
     {
-        if($this->_status == self::STATUS_CLOSING)
+        if($this->_status == self::STATUS_CLOSING || $this->_status == self::STATUS_CLOSED)
         {
             return false;
         }
@@ -558,9 +558,29 @@ class TcpConnection extends ConnectionInterface
      * 销毁连接
      * @void
      */
-    protected function destroy()
+    public function destroy()
     {
+        // 避免重复调用
+        if($this->_status == self::STATUS_CLOSED)
+        {
+            return false;
+        }
+        // 删除事件监听
+        Worker::$globalEvent->del($this->_socket, EventInterface::EV_READ);
+        Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
+        // 关闭socket
+        @fclose($this->_socket);
+        
+        // 从连接中删除
+        if($this->worker)
+        {
+            unset($this->worker->connections[(int)$this->_socket]);
+        }
+        // 标记该连接已经关闭
+       $this->_status = self::STATUS_CLOSED;
+       // 连接计数减一
        self::$statistics['connection_count']--;
+       // 触发onClose回调
        if($this->onClose)
        {
            try
@@ -573,13 +593,5 @@ class TcpConnection extends ConnectionInterface
                echo $e;
            }
        }
-       if($this->worker)
-       {
-           unset($this->worker->connections[(int)$this->_socket]);
-       }
-       Worker::$globalEvent->del($this->_socket, EventInterface::EV_READ);
-       Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
-       @fclose($this->_socket);
-       $this->_status = self::STATUS_CLOSED;
     }
 }
