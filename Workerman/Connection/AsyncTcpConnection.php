@@ -13,11 +13,6 @@ use \Exception;
  */
 class AsyncTcpConnection extends TcpConnection
 {
-    /**
-     * 连接状态 连接中
-     * @var int
-     */
-    protected $_status = self::STATUS_CONNECTING;
     
     /**
      * 当连接成功时，如果设置了连接成功回调，则执行
@@ -26,13 +21,18 @@ class AsyncTcpConnection extends TcpConnection
     public $onConnect = null;
     
     /**
+     * 连接状态 连接中
+     * @var int
+     */
+    protected $_status = self::STATUS_CONNECTING;
+    
+    /**
      * 构造函数，创建连接
      * @param resource $socket
      * @param EventInterface $event
      */
     public function __construct($remote_address)
     {
-        // 获得协议及远程地址
         list($scheme, $address) = explode(':', $remote_address, 2);
         if($scheme != 'tcp')
         {
@@ -48,11 +48,17 @@ class AsyncTcpConnection extends TcpConnection
                 }
             }
         }
+        $this->_remoteAddress = substr($address, 2);
+    }
+    
+    public function connect()
+    {
         // 创建异步连接
-        $this->_socket = stream_socket_client("tcp:$address", $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT);
+        $this->_socket = stream_socket_client("tcp://{$this->_remoteAddress}", $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT);
         // 如果失败尝试触发失败回调（如果有回调的话）
         if(!$this->_socket)
         {
+            $this->_status = self::STATUS_CLOSED;
             $this->emitError(WORKERMAN_CONNECT_FAIL, $errstr);
             return;
         }

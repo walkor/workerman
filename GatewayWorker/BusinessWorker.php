@@ -32,6 +32,12 @@ class BusinessWorker extends Worker
     public $gatewayConnections = array();
     
     /**
+     * 正在连接的gateway内部通讯地址
+     * @var array
+     */
+    protected $_connectingGatewayAddress = array();
+    
+    /**
      * 连接失败gateway内部通讯地址
      * @var array
      */
@@ -153,7 +159,7 @@ class BusinessWorker extends Worker
      */
     public function onClose($connection)
     {
-        unset($this->gatewayConnections[$connection->remoteAddress]);
+        unset($this->gatewayConnections[$connection->remoteAddress], $this->_connectingGatewayAddress[$connection->remoteAddress]);
     }
 
     /**
@@ -171,7 +177,7 @@ class BusinessWorker extends Worker
         }
         foreach($addresses_list as $addr)
         {
-            if(!isset($this->gatewayConnections[$addr]))
+            if(!isset($this->gatewayConnections[$addr]) && !isset($this->_connectingGatewayAddress[$addr]) && !isset($this->_badGatewayAddress[$addr]))
             {
                 $gateway_connection = new AsyncTcpConnection("GatewayProtocol://$addr");
                 $gateway_connection->remoteAddress = $addr;
@@ -179,6 +185,8 @@ class BusinessWorker extends Worker
                 $gateway_connection->onMessage = array($this, 'onGatewayMessage');
                 $gateway_connection->onClose = array($this, 'onClose');
                 $gateway_connection->onError = array($this, 'onError');
+                $gateway_connection->connect();
+                $this->_connectingGatewayAddress[$addr] = 1;
             }
         }
     }
@@ -192,7 +200,7 @@ class BusinessWorker extends Worker
     public function onConnectGateway($connection)
     {
         $this->gatewayConnections[$connection->remoteAddress] = $connection;
-        unset($this->_badGatewayAddress[$connection->remoteAddress]);
+        unset($this->_badGatewayAddress[$connection->remoteAddress], $this->_connectingGatewayAddress[$connection->remoteAddress]);
     }
     
     /**
