@@ -88,6 +88,12 @@ class TcpConnection extends ConnectionInterface
     public $worker = null;
     
     /**
+     * 连接的id，一个自增整数
+     * @var int
+     */
+    public $id = 0;
+    
+    /**
      * 发送缓冲区大小，当发送缓冲区满时，会尝试触发onBufferFull回调（如果有设置的话）
      * 如果没设置onBufferFull回调，由于发送缓冲区满，则后续发送的数据将被丢弃，
      * 直到发送缓冲区有空的位置
@@ -104,6 +110,12 @@ class TcpConnection extends ConnectionInterface
      * @var int
      */
     public static $maxPackageSize = 10485760;
+    
+    /**
+     * id 记录器
+     * @var int
+     */
+    protected static $_idRecorder = 1;
     
     /**
      * 实际的socket资源
@@ -167,6 +179,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function __construct($socket)
     {
+        $this->id = self::$_idRecorder++;
         $this->_socket = $socket;
         stream_set_blocking($this->_socket, 0);
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));

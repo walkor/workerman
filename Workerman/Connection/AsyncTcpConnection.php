@@ -49,6 +49,7 @@ class AsyncTcpConnection extends TcpConnection
             }
         }
         $this->_remoteAddress = substr($address, 2);
+        $this->id = self::$_idRecorder++;
     }
     
     public function connect()

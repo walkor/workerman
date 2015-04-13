@@ -55,6 +55,12 @@ class Gateway extends Worker
     public $pingData = '';
     
     /**
+     * 路由函数
+     * @var callback
+     */
+    public $router = null;
+    
+    /**
      * 保存客户端的所有connection对象
      * @var array
      */
@@ -122,6 +128,8 @@ class Gateway extends Worker
     public function __construct($socket_name, $context_option = array())
     {
         parent::__construct($socket_name, $context_option);
+        
+        $this->router = array("\\GatewayWorker\\Gateway", 'routerRand');
         
         $backrace = debug_backtrace();
         $this->_appInitPath = dirname($backrace[0]['file']);
@@ -219,11 +227,11 @@ class Gateway extends Worker
         $gateway_data['cmd'] = $cmd;
         $gateway_data['body'] = $body;
         $gateway_data['ext_data'] = $connection->session;
-        // 随机选择一个worker处理
-        $key = array_rand($this->_workerConnections);
-        if($key)
+        if($this->_workerConnections)
         {
-            if(false === $this->_workerConnections[$key]->send($gateway_data))
+            // 调用路由函数，选择一个worker把请求转发给它
+            $worker_connection = call_user_func($this->router, $this->_workerConnections, $connection, $cmd, $body);
+            if(false === $worker_connection->send($gateway_data))
             {
                 $msg = "SendBufferToWorker fail. May be the send buffer are overflow";
                 $this->log($msg);
@@ -244,6 +252,19 @@ class Gateway extends Worker
             return false;
         }
         return true;
+    }
+    
+    /**
+     * 随机路由，返回worker connection对象
+     * @param array $worker_connections
+     * @param TcpConnection $client_connection
+     * @param int $cmd
+     * @param mixed $buffer
+     * @return TcpConnection
+     */
+    public static function routerRand($worker_connections, $client_connection, $cmd, $buffer)
+    {
+        return $worker_connections[array_rand($worker_connections)];
     }
     
     /**
