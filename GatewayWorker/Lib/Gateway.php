@@ -88,7 +88,7 @@ class Gateway
     */
    public static function isOnline($client_id)
    {
-       $address = Store::instance('gateway')->get('gateway-'.$client_id);
+       $address = Store::instance('gateway')->get('client_id-'.$client_id);
        if(!$address)
        {
            return 0;
@@ -164,7 +164,7 @@ class Gateway
        // 不是发给当前用户则使用存储中的地址
        else
        {
-           $address = Store::instance('gateway')->get('gateway-'.$client_id);
+           $address = Store::instance('gateway')->get('client_id-'.$client_id);
            if(!$address)
            {
                return false;
@@ -212,7 +212,7 @@ class Gateway
        }
        else
        {
-           $address = Store::instance('gateway')->get('gateway-'.$client_id);
+           $address = Store::instance('gateway')->get('client_id-'.$client_id);
            if(!$address)
            {
                return false;
