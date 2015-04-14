@@ -353,7 +353,7 @@ class Gateway extends Worker
     public function onWorkerStart()
     {
         // 分配一个内部通讯端口
-        $this->lanPort = $this->startPort - posix_getppid() + posix_getpid();
+        $this->lanPort = function_exists('posix_getppid') ? $this->startPort - posix_getppid() + posix_getpid() : $this->startPort;
         if($this->lanPort<0 || $this->lanPort >=65535)
         {
             $this->lanPort = rand($this->startPort, 65535);
