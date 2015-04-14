@@ -57,8 +57,6 @@ class Store
         {
             if(!isset(self::$instance[$config_name]))
             {
-                // 关闭opcache
-                ini_set('opcache.enable', false);
                 self::$instance[$config_name] = new \GatewayWorker\Lib\StoreDriver\File($config_name);
             }
             return self::$instance[$config_name];
