@@ -167,6 +167,89 @@ run width
 ```php test.php restart  ```  
 ```php test.php reload  ```  
 
+# Benchmarks
+```
+CPU:      Intel(R) Core(TM) i3-3220 CPU @ 3.30GHz and 4 processors totally
+Memory:   8G
+OS:       Ubuntu 14.04 LTS
+Software: ab
+PHP:      5.5.9
+```
+
+**Codes**
+```php
+<?php
+use Workerman\Worker;
+$worker = new Worker('tcp://0.0.0.0:1234');
+$worker->count=3;
+$worker->onMessage = function($connection, $data)
+{
+    $connection->send("HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nServer: workerman\1.1.4\r\nhello");
+};
+Worker::runAll();
+```
+**Result**
+
+```shell
+ab -n1000000 -c100 -k http://127.0.0.1:1234/
+This is ApacheBench, Version 2.3 <$Revision: 1528965 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 127.0.0.1 (be patient)
+Completed 100000 requests
+Completed 200000 requests
+Completed 300000 requests
+Completed 400000 requests
+Completed 500000 requests
+Completed 600000 requests
+Completed 700000 requests
+Completed 800000 requests
+Completed 900000 requests
+Completed 1000000 requests
+Finished 1000000 requests
+
+
+Server Software:        workerman/3.1.4
+Server Hostname:        127.0.0.1
+Server Port:            1234
+
+Document Path:          /
+Document Length:        5 bytes
+
+Concurrency Level:      100
+Time taken for tests:   7.240 seconds
+Complete requests:      1000000
+Failed requests:        0
+Keep-Alive requests:    1000000
+Total transferred:      73000000 bytes
+HTML transferred:       5000000 bytes
+Requests per second:    138124.14 [#/sec] (mean)
+Time per request:       0.724 [ms] (mean)
+Time per request:       0.007 [ms] (mean, across all concurrent requests)
+Transfer rate:          9846.74 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.0      0       5
+Processing:     0    1   0.2      1       9
+Waiting:        0    1   0.2      1       9
+Total:          0    1   0.2      1       9
+
+Percentage of the requests served within a certain time (ms)
+  50%      1
+  66%      1
+  75%      1
+  80%      1
+  90%      1
+  95%      1
+  98%      1
+  99%      1
+ 100%      9 (longest request)
+
+```
+
+
 # Demos
 
 ## [tadpole](http://kedou.workerman.net/)  
