@@ -184,7 +184,7 @@ $worker = new Worker('tcp://0.0.0.0:1234');
 $worker->count=3;
 $worker->onMessage = function($connection, $data)
 {
-    $connection->send("HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nServer: workerman\1.1.4\r\nhello");
+    $connection->send("HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nServer: workerman\1.1.4\r\n\r\nhello");
 };
 Worker::runAll();
 ```
