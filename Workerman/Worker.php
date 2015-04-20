@@ -21,7 +21,7 @@ class Worker
      * 版本号
      * @var string
      */
-    const VERSION = '3.1.3';
+    const VERSION = '3.1.4';
     
     /**
      * 状态 启动中
@@ -1279,8 +1279,7 @@ class Worker
         {
             return;
         }
-        // 统计数据
-        ConnectionInterface::$statistics['connection_count']++;
+        
         // 初始化连接对象
         $connection = new TcpConnection($new_socket);
         $connection->worker = $this;
