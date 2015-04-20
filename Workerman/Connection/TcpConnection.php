@@ -542,11 +542,11 @@ class TcpConnection extends ConnectionInterface
         }
         else
         {
+            if($data !== null)
+            {
+                $this->send($data);
+            }
             $this->_status = self::STATUS_CLOSING;
-        }
-        if($data !== null)
-        {
-            $this->send($data);
         }
         if($this->_sendBuffer === '')
         {
