@@ -311,6 +311,8 @@ Percentage of the requests served within a certain time (ms)
 ## [queue](https://github.com/walkor/workerman-queue)
 [Source code](https://github.com/walkor/workerman-queue)  
 
+## [shadowsocks-php](https://github.com/walkor/shadowsocks-php)
+[Source code](https://github.com/walkor/shadowsocks-php)
 
 ## LICENSE
 
