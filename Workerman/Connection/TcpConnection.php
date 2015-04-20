@@ -356,6 +356,11 @@ class TcpConnection extends ConnectionInterface
      */
     public function baseRead($socket)
     {
+        if(!is_resource($socket) || feof($socket))
+        {
+            $this->destroy();
+            return;
+        }
        while(1)
        {
            $buffer = fread($socket, self::READ_BUFFER_SIZE);
@@ -410,6 +415,7 @@ class TcpConnection extends ConnectionInterface
                        else
                        {
                            $this->close('error package. package_length='.var_export($this->_currentPackageLength, true));
+                           return;
                        }
                    }
                    
@@ -441,10 +447,6 @@ class TcpConnection extends ConnectionInterface
                        echo $e;
                    }
                }
-               if($this->_status !== self::STATUS_CLOSED && feof($socket))
-               {
-                   $this->destroy();
-               }
                return;
            }
            // 没有设置协议，则直接把接收的数据当做一个包处理
@@ -460,18 +462,6 @@ class TcpConnection extends ConnectionInterface
            }
            // 清空缓冲区
            $this->_recvBuffer = '';
-           // 判断连接是否已经断开
-           if($this->_status !== self::STATUS_CLOSED && feof($socket))
-           {
-               $this->destroy();
-               return;
-           }
-       }
-       // 没收到数据，判断连接是否已经断开
-       else if(!is_resource($socket) || feof($socket))
-       {
-           $this->destroy();
-           return;
        }
     }
 
