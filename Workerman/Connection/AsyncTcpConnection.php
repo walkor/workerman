@@ -50,6 +50,8 @@ class AsyncTcpConnection extends TcpConnection
         }
         $this->_remoteAddress = substr($address, 2);
         $this->id = self::$_idRecorder++;
+        // 统计数据
+        self::$statistics['connection_count']++;
     }
     
     public function connect()
@@ -110,8 +112,6 @@ class AsyncTcpConnection extends TcpConnection
             }
             // 标记状态为连接已经建立
             $this->_status = self::STATUS_ESTABLISH;
-            // 为status 命令统计数据
-            ConnectionInterface::$statistics['connection_count']++;
             // 如果有设置onConnect回调，则执行
             if($this->onConnect)
             {
@@ -128,6 +128,9 @@ class AsyncTcpConnection extends TcpConnection
         }
         else
         {
+            $this->_status = self::STATUS_CLOSED;
+            // 关闭socket
+            @fclose($this->_socket);
             // 连接未建立成功
             $this->emitError(WORKERMAN_CONNECT_FAIL, 'connect fail');
         }

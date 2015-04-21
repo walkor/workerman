@@ -576,7 +576,7 @@ class TcpConnection extends ConnectionInterface
     }
     /**
      * 销毁连接
-     * @void
+     * @return void
      */
     public function destroy()
     {
@@ -590,7 +590,6 @@ class TcpConnection extends ConnectionInterface
         Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
         // 关闭socket
         @fclose($this->_socket);
-        
         // 从连接中删除
         if($this->worker)
         {
@@ -613,6 +612,10 @@ class TcpConnection extends ConnectionInterface
        }
     }
     
+    /**
+     * 析构函数
+     * @return void
+     */
     public function __destruct()
     {
         // 统计数据
