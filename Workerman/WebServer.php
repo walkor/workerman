@@ -171,6 +171,7 @@ class WebServer extends Worker
             if(!is_file($file))
             {
                 $file = "$root_dir/index.html";
+                $extension = 'html';
             }
         }
         
