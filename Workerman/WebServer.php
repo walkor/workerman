@@ -168,6 +168,10 @@ class WebServer extends Worker
         if($extension == 'php' && !is_file($file))
         {
             $file = "$root_dir/index.php";
+            if(!is_file($file))
+            {
+                $file = "$root_dir/index.html";
+            }
         }
         
         // 请求的文件存在
