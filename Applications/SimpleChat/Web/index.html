@@ -7,7 +7,7 @@
 
 </div>
 <input type="text" name="content" id="content" />
-<input type="button" name="submit" value="submit"/>
+<input type="button" name="submit" value="submit" id="submit"/>
 <script type="text/javascript">
 var ws = new WebSocket("ws://"+document.domain+":3636");
 var button = document.getElementById('submit');
@@ -16,23 +16,27 @@ var content = document.getElementById('content');
 ws.onmessage = function(e)
 {
     data = e.data;
+    data = eval('(' + data + ')');
     if(data)
     {
-        switch(data['type'])
+        switch(data.type)
         {
             case 'login':
-                panel.innerHTML += '<p>User['+data['from_id']+'] login</p>';
+                panel.innerHTML += '<p>User['+data.from_id+'] login</p>';
                 break;
             case 'say':
-                panel.innerHTML += '<p>User['+data['from_id']+'] said:'+data['content']+'</p>';
+                panel.innerHTML += '<p>User['+data.from_id+'] said:'+data.content+'</p>';
+                break;
             case 'logout':
-            	panel.innerHTML += '<p>User['+data['from_id']+'] logout</p>';
+                panel.innerHTML += '<p>User['+data.from_id+'] logout</p>';
+                break;
         }
     }
 };
-button.click = function()
+button.onclick = function()
 {
-	ws.send(content.value);
+    ws.send(content.value);
+    content.value = '';
 };
 </script>
 </body>
