@@ -518,7 +518,7 @@ class Gateway extends Worker
             Lock::release();
             if(get_class($store) == 'Memcached')
             {
-                $msg = " registerAddress fail : " . $store->getResultMessage();
+                $msg = " registerAddress fail : Memcache Error " . $store->getResultMessage();
             }
             $this->log($msg);
             return false;
