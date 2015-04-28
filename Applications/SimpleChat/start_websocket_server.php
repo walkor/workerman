@@ -24,7 +24,6 @@ $ws_server->onConnect = function($connection)
                 'time' => date('Y-m-d H:i:s'),
                 // @see http://doc3.workerman.net/worker-development/id.html
                 'from_id' => $connection->id,
-                'client_list' => get_client_list(),
         );
         broad_cast(json_encode($data));
     };
@@ -51,7 +50,6 @@ $ws_server->onClose = function($connection)
                 'time' => date('Y-m-d H:i:s'),
                 // @see http://doc3.workerman.net/worker-development/id.html
                 'from_id' => $connection->id,
-                'client_list' => get_client_list(),
         );
         broad_cast(json_encode($data));
 };
@@ -70,21 +68,6 @@ function broad_cast($msg)
         // @see http://doc3.workerman.net/worker-development/send.html
         $connection->send($msg);
     }
-}
-
-/**
- * get all client
- * @return array
- */
-function get_client_list()
-{
-    global $ws_server;
-    $client_list = array();
-    foreach($ws_server->connections as $connection)
-    {
-        $client_list[] = $connection->id;
-    }
-    return $client_list;
 }
 
 
