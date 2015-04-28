@@ -310,7 +310,7 @@ Percentage of the requests served within a certain time (ms)
 
 ## [shadowsocks-php](https://github.com/walkor/shadowsocks-php)
 [Source code](https://github.com/walkor/shadowsocks-php)  
-![shadowsocks-php](https://github.com/walkor/shadowsocks-php)  
+![shadowsocks-php](http://www.workerman.net/img/shadowsocks-php.png)  
 
 ## [queue](https://github.com/walkor/workerman-queue)
 [Source code](https://github.com/walkor/workerman-queue)  
