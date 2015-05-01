@@ -1,4 +1,5 @@
 <?php 
+use \Workerman\Worker;
 use \Workerman\WebServer;
 use \Workerman\Autoloader;
 
