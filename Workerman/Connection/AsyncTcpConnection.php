@@ -52,6 +52,7 @@ class AsyncTcpConnection extends TcpConnection
         $this->id = self::$_idRecorder++;
         // 统计数据
         self::$statistics['connection_count']++;
+        $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
     }
     
     public function connect()

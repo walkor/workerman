@@ -1,6 +1,8 @@
 <?php 
 namespace GatewayWorker;
 
+use Workerman\Connection\TcpConnection;
+
 use \Workerman\Worker;
 use \Workerman\Lib\Timer;
 use \Workerman\Protocols\GatewayProtocol;
@@ -171,7 +173,7 @@ class Gateway extends Worker
      */
     public function onClientMessage($connection, $data)
     {
-        $connection->pingNotResponseCount = 0;
+        $connection->pingNotResponseCount = -1;
         $this->sendToWorker(GatewayProtocol::CMD_ON_MESSAGE, $connection, $data);
     }
     
@@ -195,7 +197,7 @@ class Gateway extends Worker
         // 连接的session
         $connection->session = '';
         // 该连接的心跳参数
-        $connection->pingNotResponseCount = 0;
+        $connection->pingNotResponseCount = -1;
         // 保存客户端连接connection对象
         $this->_clientConnections[$connection->globalClientId] = $connection;
         // 保存该连接的内部gateway通讯地址
@@ -403,6 +405,10 @@ class Gateway extends Worker
     public function onWorkerConnect($connection)
     {
         $connection->remoteAddress = $connection->getRemoteIp().':'.$connection->getRemotePort();
+        if(TcpConnection::$defaultMaxSendBufferSize == $connection->maxSendBufferSize)
+        {
+            $connection->maxSendBufferSize = 10*1024*1024;
+        }
         $this->_workerConnections[$connection->remoteAddress] = $connection;
     }
     
@@ -583,10 +589,13 @@ class Gateway extends Worker
                 $connection->destroy();
                 continue;
             }
-            $connection->pingNotResponseCount++;
-            if($this->pingData)
+            // $connection->pingNotResponseCount为-1说明最近客户端有发来消息，则不给客户端发送心跳
+            if($connection->pingNotResponseCount++ >= 0)
             {
-                $connection->send($this->pingData);
+                if($this->pingData)
+                {
+                    $connection->send($this->pingData);
+                }
             }
         }
     }

@@ -1,6 +1,8 @@
 <?php
 namespace GatewayWorker;
 
+use Workerman\Connection\TcpConnection;
+
 use \Workerman\Worker;
 use \Workerman\Connection\AsyncTcpConnection;
 use \Workerman\Protocols\GatewayProtocol;
@@ -185,6 +187,10 @@ class BusinessWorker extends Worker
                 $gateway_connection->onMessage = array($this, 'onGatewayMessage');
                 $gateway_connection->onClose = array($this, 'onClose');
                 $gateway_connection->onError = array($this, 'onError');
+                if(TcpConnection::$defaultMaxSendBufferSize == $gateway_connection->maxSendBufferSize)
+                {
+                    $gateway_connection->maxSendBufferSize = 10*1024*1024;
+                }
                 $gateway_connection->connect();
                 $this->_connectingGatewayAddress[$addr] = 1;
             }
