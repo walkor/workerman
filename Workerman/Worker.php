@@ -410,7 +410,7 @@ class Worker
     protected static function displayUI()
     {
         echo "\033[1A\n\033[K-----------------------\033[47;30m WORKERMAN \033[0m-----------------------------\n\033[0m";
-        echo 'Workerman version:' . Worker::VERSION . "          PHP version:".PHP_VERSION."\n";
+        echo 'Workerman version:' , Worker::VERSION , "          PHP version:",PHP_VERSION,"\n";
         echo "------------------------\033[47;30m WORKERS \033[0m-------------------------------\n";
         echo "\033[47;30muser\033[0m",str_pad('', self::$_maxUserNameLength+2-strlen('user')), "\033[47;30mworker\033[0m",str_pad('', self::$_maxWorkerNameLength+2-strlen('worker')), "\033[47;30mlisten\033[0m",str_pad('', self::$_maxSocketNameLength+2-strlen('listen')), "\033[47;30mprocesses\033[0m \033[47;30m","status\033[0m\n";
         foreach(self::$_workers as $worker)
