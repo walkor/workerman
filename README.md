@@ -1,8 +1,10 @@
 ## Workerman 3.0 
 
-Home page:[http://www.workerman.net](http://www.workerman.net)
+中文文档: [http://doc3.workerman.net](http://doc3.workerman.net)
 
-Documentation:[http://doc3.workerman.net](http://doc3.workerman.net)
+Documentation:[https://github.com/walkor/workerman-manual](https://github.com/walkor/workerman-manual/blob/master/english/src/SUMMARY.md)
+
+Home page:[http://www.workerman.net](http://www.workerman.net)
 
 ## What is it
 Workerman is a library for event-driven programming in PHP. It has a huge number of features. Each worker is able to handle thousands of connections.
