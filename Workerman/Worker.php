@@ -464,7 +464,7 @@ class Worker
         {
             // 启动 workerman
             case 'start':
-                if($command2 == '-d')
+                if($command2 === '-d')
                 {
                     Worker::$daemonize = true;
                 }
@@ -516,7 +516,7 @@ class Worker
                         exit(0);
                     }
                     // -d 说明是以守护进程的方式启动
-                    if($command2 == '-d')
+                    if($command2 === '-d')
                     {
                         Worker::$daemonize = true;
                     }
@@ -606,7 +606,7 @@ class Worker
         }
         umask(0);
         $pid = pcntl_fork();
-        if(-1 == $pid)
+        if(-1 === $pid)
         {
             throw new Exception('fork fail');
         }
@@ -614,13 +614,13 @@ class Worker
         {
             exit(0);
         }
-        if(-1 == posix_setsid())
+        if(-1 === posix_setsid())
         {
             throw new Exception("setsid fail");
         }
         // fork again avoid SVR4 system regain the control of terminal
         $pid = pcntl_fork();
-        if(-1 == $pid)
+        if(-1 === $pid)
         {
             throw new Exception("fork fail");
         }
@@ -1008,7 +1008,7 @@ class Worker
         
         // 子进程部分
         $worker = current(self::$_workers);
-        $wrker_status_str = posix_getpid()."\t".str_pad(round(memory_get_usage()/(1024*1024),2)."M", 7)." " .str_pad($worker->getSocketName(), self::$_maxSocketNameLength) ." ".str_pad(($worker->name == $worker->getSocketName() ? 'none' : $worker->name), self::$_maxWorkerNameLength)." ";
+        $wrker_status_str = posix_getpid()."\t".str_pad(round(memory_get_usage()/(1024*1024),2)."M", 7)." " .str_pad($worker->getSocketName(), self::$_maxSocketNameLength) ." ".str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name), self::$_maxWorkerNameLength)." ";
         $wrker_status_str .= str_pad(ConnectionInterface::$statistics['connection_count'], 11)." ".str_pad(ConnectionInterface::$statistics['total_request'], 14)." ".str_pad(ConnectionInterface::$statistics['send_fail'],9)." ".str_pad(ConnectionInterface::$statistics['throw_exception'],15)."\n";
         file_put_contents(self::$_statisticsFile, $wrker_status_str, FILE_APPEND);
     }
@@ -1023,11 +1023,11 @@ class Worker
         {
             $error_msg = "WORKER EXIT UNEXPECTED ";
             $errors = error_get_last();
-            if($errors && ($errors['type'] == E_ERROR ||
-                     $errors['type'] == E_PARSE ||
-                     $errors['type'] == E_CORE_ERROR ||
-                     $errors['type'] == E_COMPILE_ERROR || 
-                     $errors['type'] == E_RECOVERABLE_ERROR ))
+            if($errors && ($errors['type'] === E_ERROR ||
+                     $errors['type'] === E_PARSE ||
+                     $errors['type'] === E_CORE_ERROR ||
+                     $errors['type'] === E_COMPILE_ERROR || 
+                     $errors['type'] === E_RECOVERABLE_ERROR ))
             {
                 $error_msg .= self::getErrorType($errors['type']) . " {$errors['message']} in {$errors['file']} on line {$errors['line']}";
             }

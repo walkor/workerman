@@ -154,9 +154,9 @@ class WebServer extends Worker
         
         $path_info = pathinfo($path);
         $extension = isset($path_info['extension']) ? $path_info['extension'] : '' ;
-        if($extension == '')
+        if($extension === '')
         {
-            $path = ($len = strlen($path)) && $path[$len -1] == '/' ? $path.'index.php' : $path . '/index.php';
+            $path = ($len = strlen($path)) && $path[$len -1] === '/' ? $path.'index.php' : $path . '/index.php';
             $extension = 'php';
         }
         
@@ -165,7 +165,7 @@ class WebServer extends Worker
         $file = "$root_dir/$path";
         
         // 对应的php文件不存在则直接使用根目录的index.php
-        if($extension == 'php' && !is_file($file))
+        if($extension === 'php' && !is_file($file))
         {
             $file = "$root_dir/index.php";
             if(!is_file($file))
@@ -188,7 +188,7 @@ class WebServer extends Worker
             $file = realpath($file);
             
             // 如果请求的是php文件
-            if($extension == 'php')
+            if($extension === 'php')
             {
                 $cwd = getcwd();
                 chdir($root_dir);

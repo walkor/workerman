@@ -210,7 +210,7 @@ class TcpConnection extends ConnectionInterface
             return null;
         }
         // 如果当前连接是关闭，则返回false
-        elseif($this->_status == self::STATUS_CLOSING || $this->_status == self::STATUS_CLOSED)
+        elseif($this->_status === self::STATUS_CLOSING || $this->_status === self::STATUS_CLOSED)
         {
             return false;
         }
@@ -349,7 +349,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function resumeRecv()
     {
-        if($this->_isPaused == true)
+        if($this->_isPaused === true)
         {
             Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
             $this->_isPaused = false;
@@ -430,7 +430,7 @@ class TcpConnection extends ConnectionInterface
                    // 数据足够一个包长
                    self::$statistics['total_request']++;
                    // 当前包长刚好等于buffer的长度
-                   if(strlen($this->_recvBuffer) == $this->_currentPackageLength)
+                   if(strlen($this->_recvBuffer) === $this->_currentPackageLength)
                    {
                        $one_request_buffer = $this->_recvBuffer;
                        $this->_recvBuffer = '';
@@ -497,7 +497,7 @@ class TcpConnection extends ConnectionInterface
                 }
             }
             // 如果连接状态为关闭，则销毁连接
-            if($this->_status == self::STATUS_CLOSING)
+            if($this->_status === self::STATUS_CLOSING)
             {
                 $this->destroy();
             }
@@ -534,7 +534,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function close($data = null)
     {
-        if($this->_status == self::STATUS_CLOSING || $this->_status == self::STATUS_CLOSED)
+        if($this->_status === self::STATUS_CLOSING || $this->_status === self::STATUS_CLOSED)
         {
             return false;
         }
@@ -589,7 +589,7 @@ class TcpConnection extends ConnectionInterface
     public function destroy()
     {
         // 避免重复调用
-        if($this->_status == self::STATUS_CLOSED)
+        if($this->_status === self::STATUS_CLOSED)
         {
             return false;
         }

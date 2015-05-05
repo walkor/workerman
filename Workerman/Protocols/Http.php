@@ -160,9 +160,9 @@ class Http
         }
         
         // 需要解析$_POST
-        if($_SERVER['REQUEST_METHOD'] == 'POST')
+        if($_SERVER['REQUEST_METHOD'] === 'POST')
         {
-            if(isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] == 'multipart/form-data')
+            if(isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] === 'multipart/form-data')
             {
                 self::parseUploadFiles($http_body, $http_post_boundary);
             }
@@ -224,7 +224,7 @@ class Http
         // other headers
         foreach(HttpCache::$header as $key=>$item)
         {
-            if('Set-Cookie' == $key && is_array($item))
+            if('Set-Cookie' === $key && is_array($item))
             {
                 foreach($item as $it)
                 {
@@ -270,7 +270,7 @@ class Http
             }
         }
     
-        if('location' == strtolower($key) && !$http_response_code)
+        if('location' === strtolower($key) && !$http_response_code)
         {
             return self::header($content, true, 302);
         }
@@ -278,13 +278,13 @@ class Http
         if(isset(HttpCache::$codes[$http_response_code]))
         {
             HttpCache::$header['Http-Code'] = "HTTP/1.1 $http_response_code " .  HttpCache::$codes[$http_response_code];
-            if($key == 'Http-Code')
+            if($key === 'Http-Code')
             {
                 return true;
             }
         }
     
-        if($key == 'Set-Cookie')
+        if($key === 'Set-Cookie')
         {
             HttpCache::$header[$key][] = $content;
         }

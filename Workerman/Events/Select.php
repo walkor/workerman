@@ -177,7 +177,7 @@ class Select implements EventInterface
                 // 任务数据[func, args, flag, timer_interval]
                 $task_data = $this->_task[$timer_id];
                 // 如果是持续的定时任务，再把任务加到定时队列
-                if($task_data[2] == self::EV_TIMER)
+                if($task_data[2] === self::EV_TIMER)
                 {
                     $next_run_time = $time_now+$task_data[3];
                     $this->_scheduler->insert($timer_id, -$next_run_time);
