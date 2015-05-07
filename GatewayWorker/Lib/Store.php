@@ -80,7 +80,7 @@ class Store
                 list($ip, $port) = explode(':', $address);
                 $timeout = 1;
                 self::$instance[$config_name]->connect($ip, $port, $timeout);
-                self::$instance[$config_name]->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_IGBINARY);
+                self::$instance[$config_name]->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);
             }
             return self::$instance[$config_name];
         }
