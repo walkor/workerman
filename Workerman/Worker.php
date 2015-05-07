@@ -554,6 +554,8 @@ class Worker
     {
         // stop
         pcntl_signal(SIGINT,  array('\Workerman\Worker', 'signalHandler'), false);
+        pcntl_signal(SIGSTOP,  array('\Workerman\Worker', 'signalHandler'), false);
+        
         // reload
         pcntl_signal(SIGUSR1, array('\Workerman\Worker', 'signalHandler'), false);
         // status
@@ -570,6 +572,8 @@ class Worker
     {
         // uninstall stop signal handler
         pcntl_signal(SIGINT,  SIG_IGN, false);
+        pcntl_signal(SIGSTOP,  SIG_IGN, false);
+        
         // uninstall reload signal handler
         pcntl_signal(SIGUSR1, SIG_IGN, false);
         // uninstall  status signal handler
@@ -592,6 +596,7 @@ class Worker
         {
             // stop
             case SIGINT:
+            case SIGSTOP:
                 self::stopAll();
                 break;
             // reload
