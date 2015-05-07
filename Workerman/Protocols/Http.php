@@ -362,15 +362,15 @@ class Http
         }
         HttpCache::$instance->sessionStarted = true;
         // 没有sid，则创建一个session文件，生成一个sid
-        if(!isset($_COOKIE[HttpCache::$sessionName]) || !is_file(HttpCache::$sessionPath . '/sess_' . $_COOKIE[HttpCache::$sessionName]))
+        if(!isset($_COOKIE[HttpCache::$sessionName]) || !is_file(HttpCache::$sessionPath . '/ses' . $_COOKIE[HttpCache::$sessionName]))
         {
-            $file_name = tempnam(HttpCache::$sessionPath, 'sess_');
+            $file_name = tempnam(HttpCache::$sessionPath, 'ses');
             if(!$file_name)
             {
                 return false;
             }
             HttpCache::$instance->sessionFile = $file_name;
-            $session_id = substr(basename($file_name), strlen('sess_'));
+            $session_id = substr(basename($file_name), strlen('ses'));
             return self::setcookie(
                     HttpCache::$sessionName
                     , $session_id
@@ -383,7 +383,7 @@ class Http
         }
         if(!HttpCache::$instance->sessionFile)
         {
-            HttpCache::$instance->sessionFile = HttpCache::$sessionPath . '/sess_' . $_COOKIE[HttpCache::$sessionName];
+            HttpCache::$instance->sessionFile = HttpCache::$sessionPath . '/ses' . $_COOKIE[HttpCache::$sessionName];
         }
         // 有sid则打开文件，读取session值
         if(HttpCache::$instance->sessionFile)
