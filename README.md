@@ -1,6 +1,6 @@
 ## Workerman 3.0 
 
-文档: [http://doc3.workerman.net](http://doc3.workerman.net)
+中文文档: [http://doc3.workerman.net](http://doc3.workerman.net)
 
 Documentation:[https://github.com/walkor/workerman-manual](https://github.com/walkor/workerman-manual/blob/master/english/src/SUMMARY.md)
 
