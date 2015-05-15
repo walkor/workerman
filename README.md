@@ -12,23 +12,43 @@ Workerman is a library for event-driven programming in PHP. It has a huge number
 
 ## Usage
 
-### A tcp server
+### A websocket server 
 test.php
 ```php
-require_once './Workerman/Autoloader.php';
+<?php
 use Workerman\Worker;
+require_once './Workerman/Autoloader.php';
 
-// #### create socket and listen 1234 port ####
-$tcp_worker = new Worker("tcp://0.0.0.0:1234");
-//create 4 hello_worker processes
-$tcp_worker->count = 4;
-// when client send data to 1234 port
-$tcp_worker->onMessage = function($connection, $data)
+// Create a Websocket server
+$ws_worker = new Worker("websocket://0.0.0.0:2346");
+
+// 4 processes
+$ws_worker->count = 4;
+
+// Emitted when new connection come
+$ws_worker->onConnect = function($connection)
 {
-    // send data to client
-    $connection->send("hello $data \n");
+    // Emitted when websocket handshake done
+    $connection->onWebSocketConnect = function($connection)
+    {
+        echo "New connection\n";
+    };
 };
 
+// Emitted when data received
+$ws_worker->onMessage = function($connection, $data)
+{
+    // Send hello $data
+    $connection->send('hello ' . $data);
+};
+
+// Emitted when connection closed
+$ws_worker->onClose = function($connection)
+{
+    echo "Connection closed";
+};
+
+// Run worker
 Worker::runAll();
 ```
 
@@ -43,6 +63,8 @@ $http_worker = new Worker("http://0.0.0.0:2345");
 $http_worker->count = 4;
 $http_worker->onMessage = function($connection, $data)
 {
+    // $_GET, $_POST, $_COOKIE, $_SESSION, $_SERVER, $_FILES are available
+    var_dump($_GET, $_POST, $_COOKIE, $_SESSION, $_SERVER, $_FILES);
     // send data to client
     $connection->send("hello world \n");
 };
@@ -51,21 +73,51 @@ $http_worker->onMessage = function($connection, $data)
 Worker::runAll();
 ```
 
-
-### A websocket server 
+### A WebServer
 test.php
 ```php
 require_once './Workerman/Autoloader.php';
-use Workerman\Worker
-// #### websocket worker ####
-$ws_worker = new Worker("websocket://0.0.0.0:5678");
-$ws_worker->onMessage =  function($connection, $data)
+use \Workerman\WebServer;
+// WebServer
+$web = new WebServer("http://0.0.0.0:8686");
+$web->count = 2;
+// Set the root of domain
+$web->addRoot('www.your_domain.com', '/your/path/Web');
+// run all workers
+Worker::runAll();
+```
+
+### A tcp server
+test.php
+```php
+require_once './Workerman/Autoloader.php';
+use Workerman\Worker;
+
+// #### create socket and listen 1234 port ####
+$tcp_worker = new Worker("tcp://0.0.0.0:1234");
+
+//create 4 hello_worker processes
+$tcp_worker->count = 4;
+
+// Emitted when new connection come
+$tcp_worker->onConnect = function($connection)
 {
-    // send data to client
-    $connection->send("hello world \n");
+    echo "New Connection\n";
 };
 
-// run all workers
+// Emitted when data received
+$tcp_worker->onMessage = function($connection, $data)
+{
+    // send data to client
+    $connection->send("hello $data \n");
+};
+
+// Emitted when new connection come
+$tcp_worker->onClose($connection)
+{
+    echo "Connection closed\n";
+};
+
 Worker::runAll();
 ```
 
@@ -109,25 +161,23 @@ require_once './Workerman/Autoloader.php';
 use Workerman\Worker
 // #### MyTextProtocol worker ####
 $text_worker = new Worker("MyTextProtocol://0.0.0.0:5678");
+
+$text_worker->onConnect = function($connection)
+{
+    echo "New connection\n";
+};
+
 $text_worker->onMessage =  function($connection, $data)
 {
     // send data to client
     $connection->send("hello world \n");
 };
 
-// run all workers
-Worker::runAll();
-```
+$text_worker->onClose = function($connection)
+{
+    echo "Connection closed\n";
+};
 
-### A WebServer
-test.php
-```php
-require_once './Workerman/Autoloader.php';
-use \Workerman\WebServer;
-// WebServer
-$web = new WebServer("http://0.0.0.0:8686");
-$web->count = 2;
-$web->addRoot('www.your_domain.com', __DIR__.'/Web');
 // run all workers
 Worker::runAll();
 ```
