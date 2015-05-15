@@ -1,8 +1,8 @@
 ## Workerman 3.0 
 
-中文文档: [http://doc3.workerman.net](http://doc3.workerman.net)
-
 中文主页:[http://www.workerman.net](http://www.workerman.net)
+
+中文文档: [http://doc3.workerman.net](http://doc3.workerman.net)
 
 Documentation:[https://github.com/walkor/workerman-manual](https://github.com/walkor/workerman-manual/blob/master/english/src/SUMMARY.md)
 
@@ -45,7 +45,7 @@ $ws_worker->onMessage = function($connection, $data)
 // Emitted when connection closed
 $ws_worker->onClose = function($connection)
 {
-    echo "Connection closed";
+    echo "Connection closed\n";
 };
 
 // Run worker
@@ -95,8 +95,6 @@ use Workerman\Worker;
 
 // #### create socket and listen 1234 port ####
 $tcp_worker = new Worker("tcp://0.0.0.0:1234");
-
-//create 4 hello_worker processes
 $tcp_worker->count = 4;
 
 // Emitted when new connection come
