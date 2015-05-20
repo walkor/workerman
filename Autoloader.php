@@ -13,13 +13,8 @@
  */
 namespace Workerman;
 
-// 定义Workerman根目录
-if(!defined('WORKERMAN_ROOT_DIR'))
-{
-    define('WORKERMAN_ROOT_DIR', realpath(__DIR__  . '/../'));
-}
 // 包含常量定义文件
-require_once WORKERMAN_ROOT_DIR.'/Workerman/Lib/Constants.php';
+require_once __DIR__.'/Lib/Constants.php';
 
 /**
  * 自动加载类
@@ -29,7 +24,7 @@ class Autoloader
 {
     // 应用的初始化目录，作为加载类文件的参考目录
     protected static $_appInitPath = '';
-
+    
     /**
      * 设置应用初始化目录
      * @param string $root_path
@@ -49,13 +44,25 @@ class Autoloader
     {
         // 相对路径
         $class_path = str_replace('\\', DIRECTORY_SEPARATOR ,$name);
-        // 先尝试在应用目录寻找文件
-        $class_file = self::$_appInitPath . '/' . $class_path.'.php';
-        // 文件不存在，则在workerman根目录中寻找
-        if(!is_file($class_file))
+        // 如果是Workerman命名空间，则在当前目录寻找类文件
+        if(strpos($name, 'Workerman\\') === 0)
         {
-            $class_file = WORKERMAN_ROOT_DIR . DIRECTORY_SEPARATOR . "$class_path.php";
+            $class_file = __DIR__.substr($class_path, strlen('Workerman')).'.php';
         }
+        else 
+        {
+            // 先尝试在应用目录寻找文件
+            if(self::$_appInitPath)
+            {
+                $class_file = self::$_appInitPath . DIRECTORY_SEPARATOR . $class_path.'.php';
+            }
+            // 文件不存在，则在上一层目录寻找
+            if(empty($class_file) || !is_file($class_file))
+            {
+                $class_file = __DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR . "$class_path.php";
+            }
+        }
+       
         // 找到文件
         if(is_file($class_file))
         {
