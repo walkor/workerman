@@ -29,6 +29,6 @@
     },
     "autoload": {
         "psr-4": {"Workerman\\": "./"}
-    }
+    },
     "minimum-stability":"dev"
 }
