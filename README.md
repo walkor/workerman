@@ -119,7 +119,7 @@ $tcp_worker->onClose($connection)
 Worker::runAll();
 ```
 
-### User defined protocol 
+### Custom protocol
 Protocols/MyTextProtocol.php
 ```php
 /**
