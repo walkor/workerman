@@ -27,5 +27,8 @@
     "suggest": {
 	"ext-libevent": "Really it's a requirement for normal work."
     },
+    "autoload": {
+        "psr-4": {"Workerman\\": "./"}
+    }
     "minimum-stability":"dev"
 }
