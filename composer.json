@@ -1,7 +1,7 @@
 {
-    "name"  : "walkor/workerman",
+    "name"  : "workerman/workerman",
     "type"  : "project",
-    "keywords": ["workerman"],
+    "keywords": ["event-loop", "asynchronous"],
     "homepage": "http://www.workerman.net",
     "license" : "MIT",
     "description": " High performance Socket server framework for network applications implemented in PHP using libevent",
