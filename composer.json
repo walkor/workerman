@@ -4,7 +4,7 @@
     "keywords": ["event-loop", "asynchronous"],
     "homepage": "http://www.workerman.net",
     "license" : "MIT",
-    "description": " High performance Socket server framework for network applications implemented in PHP using libevent",
+    "description": "An asynchronous event driven PHP framework for easily building fast, scalable network applications.",
     "authors" : [
         {
             "name"      : "walkor",
@@ -25,7 +25,7 @@
         "ext-sockets": "*"
     },
     "suggest": {
-	"ext-libevent": "Really it's a requirement for normal work."
+	"ext-libevent": "For better performance."
     },
     "autoload": {
         "psr-4": {"Workerman\\": "./"}
