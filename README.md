@@ -11,7 +11,10 @@ Documentation:[https://github.com/walkor/workerman-manual](https://github.com/wa
 Workerman is a library for event-driven programming in PHP. It has a huge number of features. Each worker is able to handle thousands of connections.
 
 ## Installation
+
+```
 composer require workerman/workerman
+```
 
 ## Basic Usage
 
