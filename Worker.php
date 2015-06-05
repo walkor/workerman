@@ -596,7 +596,7 @@ class Worker
                 break;
             // reload
             case SIGUSR1:
-                self::$_pidsToRestart = self::getAllWorkerPids();;
+                self::$_pidsToRestart = self::getAllWorkerPids();
                 self::reload();
                 break;
             // show status
