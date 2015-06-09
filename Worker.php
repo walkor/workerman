@@ -322,14 +322,14 @@ class Worker
         self::initWorkers();
         //  初始化所有信号处理函数
         self::installSignal();
-        // 展示启动界面
-        self::displayUI();
-        // 尝试重定向标准输入输出
-        self::resetStd();
         // 保存主进程pid
         self::saveMasterPid();
         // 创建子进程（worker进程）并运行
         self::forkWorkers();
+        // 展示启动界面
+        self::displayUI();
+        // 尝试重定向标准输入输出
+        self::resetStd();
         // 监控所有子进程（worker进程）
         self::monitorWorkers();
     }
@@ -430,6 +430,16 @@ class Worker
             echo str_pad($worker->user, self::$_maxUserNameLength+2),str_pad($worker->name, self::$_maxWorkerNameLength+2),str_pad($worker->getSocketName(), self::$_maxSocketNameLength+2), str_pad(' '.$worker->count, 9), " \033[32;40m [OK] \033[0m\n";;
         }
         echo "----------------------------------------------------------------\n";
+        if(self::$daemonize)
+        {
+            global $argv;
+            $start_file = $argv[0];
+            echo "Input \"php $start_file stop\" to quit DAEMON mode. \nStart success.\n";
+        }
+        else
+        {
+            echo "Press Ctrl-C to quit DEBUG mode. \nStart success.\n";
+        }
     }
     
     /**
@@ -744,6 +754,11 @@ class Worker
         // 子进程运行
         elseif(0 === $pid)
         {
+            // 启动过程中尝试重定向标准输出
+            if(self::$_status === self::STATUS_STARTING)
+            {
+                self::resetStd();
+            }
             self::$_pidMap = array();
             self::$_workers = array($worker->workerId => $worker);
             Timer::delAll();
