@@ -434,11 +434,11 @@ class Worker
         {
             global $argv;
             $start_file = $argv[0];
-            echo "Input \"php $start_file stop\" to quit DAEMON mode. Start success.\n";
+            echo "Input \"php $start_file stop\" to quit. Start success.\n";
         }
         else
         {
-            echo "Press Ctrl-C to quit DEBUG mode. Start success.\n";
+            echo "Press Ctrl-C to quit. Start success.\n";
         }
     }
     
@@ -464,7 +464,19 @@ class Worker
         $command2 = isset($argv[2]) ? $argv[2] : '';
         
         // 记录日志
-        self::log("Workerman[$start_file] $command");
+        $mode = '';
+        if($command === 'start')
+        {
+            if($command2 === '-d')
+            {
+                $mode = 'in DAEMON mode';
+            }
+            else
+            {
+                $mode = 'in DEBUG mode';
+            }
+        }
+        self::log("Workerman[$start_file] $command $mode");
         
         // 检查主进程是否在运行
         $master_pid = @file_get_contents(self::$pidFile);
