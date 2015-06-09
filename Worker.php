@@ -434,11 +434,11 @@ class Worker
         {
             global $argv;
             $start_file = $argv[0];
-            echo "Input \"php $start_file stop\" to quit DAEMON mode. \nStart success.\n";
+            echo "Input \"php $start_file stop\" to quit DAEMON mode. Start success.\n";
         }
         else
         {
-            echo "Press Ctrl-C to quit DEBUG mode. \nStart success.\n";
+            echo "Press Ctrl-C to quit DEBUG mode. Start success.\n";
         }
     }
     
