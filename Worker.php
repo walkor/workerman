@@ -1196,6 +1196,8 @@ class Worker
         
         // flag
         $flags =  $this->transport === 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
+        $errno = 0;
+        $errmsg = '';
         $this->_mainSocket = stream_socket_server($this->transport.":".$address, $errno, $errmsg, $flags, $this->_context);
         if(!$this->_mainSocket)
         {
