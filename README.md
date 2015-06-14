@@ -27,12 +27,8 @@ $ws_worker->count = 4;
 // Emitted when new connection come
 $ws_worker->onConnect = function($connection)
 {
-    // Emitted when websocket handshake done
-    $connection->onWebSocketConnect = function($connection)
-    {
-        echo "New connection\n";
-    };
-};
+    echo "New connection\n";
+ };
 
 // Emitted when data received
 $ws_worker->onMessage = function($connection, $data)
