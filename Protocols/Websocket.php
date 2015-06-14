@@ -201,27 +201,41 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     public static function encode($buffer, ConnectionInterface $connection)
     {
         $len = strlen($buffer);
-        // 还没握手不能发数据
         if(empty($connection->websocketHandshake))
         {
-            $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Send data before handshake. ", true);
-            $connection->close();
-            return false;
+            // 默认是utf8文本格式
+            $connection->websocketType = self::BINARY_TYPE_BLOB;
         }
+        
         $first_byte = $connection->websocketType;
         
         if($len<=125)
         {
-            return $first_byte.chr($len).$buffer;
+            $encode_buffer = $first_byte.chr($len).$buffer;
         }
         else if($len<=65535)
         {
-            return $first_byte.chr(126).pack("n", $len).$buffer;
+            $encode_buffer = $first_byte.chr(126).pack("n", $len).$buffer;
         }
         else
         {
-            return $first_byte.chr(127).pack("xxxxN", $len).$buffer;
+            $encode_buffer = $first_byte.chr(127).pack("xxxxN", $len).$buffer;
         }
+        
+        // 还没握手不能发数据，先将数据缓冲起来，等握手完毕后发送
+        if(empty($connection->websocketHandshake))
+        {
+            if(empty($connection->tmpWebsocketData))
+            {
+                // 临时数据缓冲
+                $connection->tmpWebsocketData = '';
+            }
+            $connection->tmpWebsocketData .= $encode_buffer;
+            // 返回空，阻止发送
+            return '';
+        }
+        
+        return $encode_buffer;
     }
     
     /**
@@ -289,19 +303,33 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 $connection->close();
                 return 0;
             }
+            // 握手的key
             $new_key = base64_encode(sha1($Sec_WebSocket_Key."258EAFA5-E914-47DA-95CA-C5AB0DC85B11",true));
             // 握手返回的数据
-            $new_message = "HTTP/1.1 101 Switching Protocols\r\n";
-            $new_message .= "Upgrade: websocket\r\n";
-            $new_message .= "Sec-WebSocket-Version: 13\r\n";
-            $new_message .= "Connection: Upgrade\r\n";
-            $new_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n\r\n";
+            $handshake_message = "HTTP/1.1 101 Switching Protocols\r\n";
+            $handshake_message .= "Upgrade: websocket\r\n";
+            $handshake_message .= "Sec-WebSocket-Version: 13\r\n";
+            $handshake_message .= "Connection: Upgrade\r\n";
+            $handshake_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n\r\n";
+            // 标记已经握手
             $connection->websocketHandshake = true;
+            // 缓冲fin为0的包，直到fin为1
             $connection->websocketDataBuffer = '';
+            // 当前数据帧的长度，可能是fin为0的帧，也可能是fin为1的帧
             $connection->websocketCurrentFrameLength = 0;
+            // 当前帧的数据缓冲
             $connection->websocketCurrentFrameBuffer = '';
+            // 消费掉握手数据，不触发onMessage
             $connection->consumeRecvBuffer(strlen($buffer));
-            $connection->send($new_message, true);
+            // 发送握手数据
+            $connection->send($handshake_message, true);
+            
+            // 握手后有数据要发送
+            if(!empty($connection->tmpWebsocketData))
+            {
+                $connection->send($connection->tmpWebsocketData, true);
+                $connection->tmpWebsocketData = '';
+            }
             // blob or arraybuffer
             $connection->websocketType = self::BINARY_TYPE_BLOB; 
             // 如果有设置onWebSocketConnect回调，尝试执行

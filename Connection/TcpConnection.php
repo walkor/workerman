@@ -219,6 +219,10 @@ class TcpConnection extends ConnectionInterface
         {
             $parser = $this->protocol;
             $send_buffer = $parser::encode($send_buffer, $this);
+            if($send_buffer === '')
+            {
+                return null;
+            }
         }
         
         // 如果当前状态是连接中，则把数据放入发送缓冲区
