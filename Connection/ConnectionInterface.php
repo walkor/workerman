@@ -13,12 +13,6 @@
  */
 namespace Workerman\Connection;
 
-use Workerman\Events\Libevent;
-use Workerman\Events\Select;
-use Workerman\Events\EventInterface;
-use Workerman\Worker;
-use \Exception;
-
 /**
  * connection类的接口 
  */
