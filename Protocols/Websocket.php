@@ -293,7 +293,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             
             // 解析Sec-WebSocket-Key
             $Sec_WebSocket_Key = '';
-            if(preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/", $buffer, $match))
+            if(preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match))
             {
                 $Sec_WebSocket_Key = $match[1];
             }
