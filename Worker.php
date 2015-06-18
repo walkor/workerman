@@ -745,7 +745,7 @@ class Worker
             // 创建子进程
             while(count(self::$_pidMap[$worker->workerId]) < $worker->count)
             {
-                self::forkOneWorker($worker);
+                static::forkOneWorker($worker);
             }
         }
     }
