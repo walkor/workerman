@@ -299,7 +299,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             }
             else
             {
-                $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Sec-WebSocket-Key not found", true);
+                $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Sec-WebSocket-Key not found.<br>This is WebSocket service, you can not access via HTTP", true);
                 $connection->close();
                 return 0;
             }
