@@ -75,9 +75,10 @@ require_once './Workerman/Autoloader.php';
 use \Workerman\WebServer;
 // WebServer
 $web = new WebServer("http://0.0.0.0:8686");
-$web->count = 2;
-// Set the root of domain
+$web->count = 4;
+// Set the root of domains
 $web->addRoot('www.your_domain.com', '/your/path/Web');
+$web->addRoot('www.another_domain.com', '/another/path/Web');
 // run all workers
 Worker::runAll();
 ```
