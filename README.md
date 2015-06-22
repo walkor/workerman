@@ -118,6 +118,7 @@ Worker::runAll();
 ### Custom protocol
 Protocols/MyTextProtocol.php
 ```php
+namespace Protocols;
 /**
  * User defined protocol
  * Format Text+"\n"
