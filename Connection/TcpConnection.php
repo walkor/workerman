@@ -523,7 +523,7 @@ class TcpConnection extends ConnectionInterface
         }
         else
         {
-           if(feof($this->_socket))
+           if(feof($this->_socket) || !is_resource($this->_socket))
            {
                self::$statistics['send_fail']++;
                $this->destroy();
