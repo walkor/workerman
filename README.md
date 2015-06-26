@@ -55,7 +55,11 @@ use Workerman\Worker;
 
 // #### http worker ####
 $http_worker = new Worker("http://0.0.0.0:2345");
+
+// 4 processes
 $http_worker->count = 4;
+
+// Emitted when data received
 $http_worker->onMessage = function($connection, $data)
 {
     // $_GET, $_POST, $_COOKIE, $_SESSION, $_SERVER, $_FILES are available
@@ -73,9 +77,13 @@ test.php
 ```php
 require_once './Workerman/Autoloader.php';
 use \Workerman\WebServer;
+
 // WebServer
-$web = new WebServer("http://0.0.0.0:8686");
+$web = new WebServer("http://0.0.0.0:80");
+
+// 4 processes
 $web->count = 4;
+
 // Set the root of domains
 $web->addRoot('www.your_domain.com', '/your/path/Web');
 $web->addRoot('www.another_domain.com', '/another/path/Web');
@@ -91,6 +99,8 @@ use Workerman\Worker;
 
 // #### create socket and listen 1234 port ####
 $tcp_worker = new Worker("tcp://0.0.0.0:1234");
+
+// 4 processes
 $tcp_worker->count = 4;
 
 // Emitted when new connection come
