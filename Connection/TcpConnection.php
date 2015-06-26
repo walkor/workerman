@@ -254,7 +254,7 @@ class TcpConnection extends ConnectionInterface
             else
             {
                 // 如果连接断开
-                if(feof($this->_socket))
+                if(feof($this->_socket) || !is_resource($this->_socket))
                 {
                     // status统计发送失败次数
                     self::$statistics['send_fail']++;
