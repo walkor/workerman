@@ -109,7 +109,7 @@ class AsyncTcpConnection extends TcpConnection
         // 删除连接可写监听
         Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
         // 需要判断两次连接是否已经断开
-        if(!feof($this->_socket) && !feof($this->_socket))
+        if(!feof($this->_socket) && !feof($this->_socket) && is_resource($this->_socket))
         {
             // 设置非阻塞
             stream_set_blocking($this->_socket, 0);
