@@ -103,6 +103,12 @@ class TcpConnection extends ConnectionInterface
     public $id = 0;
     
     /**
+     * 连接的id，为$id的副本，用来清理connections中的连接
+     * @var int
+     */
+    protected $_id = 0;
+    
+    /**
      * 设置当前连接的最大发送缓冲区大小，默认大小为TcpConnection::$defaultMaxSendBufferSize
      * 当发送缓冲区满时，会尝试触发onBufferFull回调（如果有设置的话）
      * 如果没设置onBufferFull回调，由于发送缓冲区满，则后续发送的数据将被丢弃，
@@ -197,7 +203,7 @@ class TcpConnection extends ConnectionInterface
     {
         // 统计数据
         self::$statistics['connection_count']++;
-        $this->id = self::$_idRecorder++;
+        $this->id = $this->_id = self::$_idRecorder++;
         $this->_socket = $socket;
         stream_set_blocking($this->_socket, 0);
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
@@ -615,7 +621,7 @@ class TcpConnection extends ConnectionInterface
         // 从连接中删除
         if($this->worker)
         {
-            unset($this->worker->connections[(int)$this->_socket]);
+            unset($this->worker->connections[$this->_id]);
         }
         // 标记该连接已经关闭
        $this->_status = self::STATUS_CLOSED;
