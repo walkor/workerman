@@ -446,7 +446,7 @@ class Http
      /**
      * 解析$_FILES
      */
-    protected function parseUploadFiles($http_body, $http_post_boundary)
+    protected static function parseUploadFiles($http_body, $http_post_boundary)
     {
         $http_body = substr($http_body, 0, strlen($http_body) - (strlen($http_post_boundary) + 4));
         $boundary_data_array = explode($http_post_boundary."\r\n", $http_body);
