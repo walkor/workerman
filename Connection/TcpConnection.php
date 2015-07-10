@@ -13,8 +13,6 @@
  */
 namespace Workerman\Connection;
 
-use Workerman\Events\Libevent;
-use Workerman\Events\Select;
 use Workerman\Events\EventInterface;
 use Workerman\Worker;
 use \Exception;
@@ -103,6 +101,12 @@ class TcpConnection extends ConnectionInterface
      * @var int
      */
     public $id = 0;
+    
+    /**
+     * 连接的id，为$id的副本，用来清理connections中的连接
+     * @var int
+     */
+    protected $_id = 0;
     
     /**
      * 设置当前连接的最大发送缓冲区大小，默认大小为TcpConnection::$defaultMaxSendBufferSize
@@ -199,7 +203,7 @@ class TcpConnection extends ConnectionInterface
     {
         // 统计数据
         self::$statistics['connection_count']++;
-        $this->id = self::$_idRecorder++;
+        $this->id = $this->_id = self::$_idRecorder++;
         $this->_socket = $socket;
         stream_set_blocking($this->_socket, 0);
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
@@ -219,6 +223,10 @@ class TcpConnection extends ConnectionInterface
         {
             $parser = $this->protocol;
             $send_buffer = $parser::encode($send_buffer, $this);
+            if($send_buffer === '')
+            {
+                return null;
+            }
         }
         
         // 如果当前状态是连接中，则把数据放入发送缓冲区
@@ -252,7 +260,7 @@ class TcpConnection extends ConnectionInterface
             else
             {
                 // 如果连接断开
-                if(feof($this->_socket))
+                if(feof($this->_socket) || !is_resource($this->_socket))
                 {
                     // status统计发送失败次数
                     self::$statistics['send_fail']++;
@@ -521,7 +529,7 @@ class TcpConnection extends ConnectionInterface
         }
         else
         {
-           if(feof($this->_socket))
+           if(feof($this->_socket) || !is_resource($this->_socket))
            {
                self::$statistics['send_fail']++;
                $this->destroy();
@@ -613,7 +621,7 @@ class TcpConnection extends ConnectionInterface
         // 从连接中删除
         if($this->worker)
         {
-            unset($this->worker->connections[(int)$this->_socket]);
+            unset($this->worker->connections[$this->_id]);
         }
         // 标记该连接已经关闭
        $this->_status = self::STATUS_CLOSED;

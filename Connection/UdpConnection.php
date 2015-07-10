@@ -13,12 +13,6 @@
  */
 namespace Workerman\Connection;
 
-use Workerman\Events\Libevent;
-use Workerman\Events\Select;
-use Workerman\Events\EventInterface;
-use Workerman\Worker;
-use \Exception;
-
 /**
  * udp连接类（udp实际上是无连接的，这里是为了保持与TCP接口一致） 
  */

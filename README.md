@@ -1,11 +1,4 @@
-## Workerman 3.0 
-
-中文主页:[http://www.workerman.net](http://www.workerman.net)
-
-中文文档: [http://doc3.workerman.net](http://doc3.workerman.net)
-
-Documentation:[https://github.com/walkor/workerman-manual](https://github.com/walkor/workerman-manual/blob/master/english/src/SUMMARY.md)
-
+# Workerman
 
 ## What is it
 Workerman is a library for event-driven programming in PHP. It has a huge number of features. Each worker is able to handle thousands of connections.
@@ -34,12 +27,8 @@ $ws_worker->count = 4;
 // Emitted when new connection come
 $ws_worker->onConnect = function($connection)
 {
-    // Emitted when websocket handshake done
-    $connection->onWebSocketConnect = function($connection)
-    {
-        echo "New connection\n";
-    };
-};
+    echo "New connection\n";
+ };
 
 // Emitted when data received
 $ws_worker->onMessage = function($connection, $data)
@@ -66,7 +55,11 @@ use Workerman\Worker;
 
 // #### http worker ####
 $http_worker = new Worker("http://0.0.0.0:2345");
+
+// 4 processes
 $http_worker->count = 4;
+
+// Emitted when data received
 $http_worker->onMessage = function($connection, $data)
 {
     // $_GET, $_POST, $_COOKIE, $_SESSION, $_SERVER, $_FILES are available
@@ -84,11 +77,16 @@ test.php
 ```php
 require_once './Workerman/Autoloader.php';
 use \Workerman\WebServer;
+
 // WebServer
-$web = new WebServer("http://0.0.0.0:8686");
-$web->count = 2;
-// Set the root of domain
+$web = new WebServer("http://0.0.0.0:80");
+
+// 4 processes
+$web->count = 4;
+
+// Set the root of domains
 $web->addRoot('www.your_domain.com', '/your/path/Web');
+$web->addRoot('www.another_domain.com', '/another/path/Web');
 // run all workers
 Worker::runAll();
 ```
@@ -101,6 +99,8 @@ use Workerman\Worker;
 
 // #### create socket and listen 1234 port ####
 $tcp_worker = new Worker("tcp://0.0.0.0:1234");
+
+// 4 processes
 $tcp_worker->count = 4;
 
 // Emitted when new connection come
@@ -128,6 +128,7 @@ Worker::runAll();
 ### Custom protocol
 Protocols/MyTextProtocol.php
 ```php
+namespace Protocols;
 /**
  * User defined protocol
  * Format Text+"\n"
@@ -163,6 +164,7 @@ test.php
 ```php
 require_once './Workerman/Autoloader.php';
 use Workerman\Worker
+
 // #### MyTextProtocol worker ####
 $text_worker = new Worker("MyTextProtocol://0.0.0.0:5678");
 
@@ -223,6 +225,14 @@ run width
 ```php test.php stop  ```  
 ```php test.php restart  ```  
 ```php test.php reload  ```  
+
+## Documentation
+
+中文主页:[http://www.workerman.net](http://www.workerman.net)
+
+中文文档: [http://doc3.workerman.net](http://doc3.workerman.net)
+
+Documentation:[https://github.com/walkor/workerman-manual](https://github.com/walkor/workerman-manual/blob/master/english/src/SUMMARY.md)
 
 # Benchmarks
 ```

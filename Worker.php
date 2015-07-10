@@ -32,7 +32,7 @@ class Worker
      * 版本号
      * @var string
      */
-    const VERSION = '3.1.6';
+    const VERSION = '3.1.8';
     
     /**
      * 状态 启动中
@@ -321,14 +321,14 @@ class Worker
         self::initWorkers();
         //  初始化所有信号处理函数
         self::installSignal();
-        // 展示启动界面
-        self::displayUI();
-        // 尝试重定向标准输入输出
-        self::resetStd();
         // 保存主进程pid
         self::saveMasterPid();
         // 创建子进程（worker进程）并运行
         self::forkWorkers();
+        // 展示启动界面
+        self::displayUI();
+        // 尝试重定向标准输入输出
+        self::resetStd();
         // 监控所有子进程（worker进程）
         self::monitorWorkers();
     }
@@ -431,6 +431,16 @@ class Worker
             echo str_pad($worker->user, self::$_maxUserNameLength+2),str_pad($worker->name, self::$_maxWorkerNameLength+2),str_pad($worker->getSocketName(), self::$_maxSocketNameLength+2), str_pad(' '.$worker->count, 9), " \033[32;40m [OK] \033[0m\n";;
         }
         echo "----------------------------------------------------------------\n";
+        if(self::$daemonize)
+        {
+            global $argv;
+            $start_file = $argv[0];
+            echo "Input \"php $start_file stop\" to quit. Start success.\n";
+        }
+        else
+        {
+            echo "Press Ctrl-C to quit. Start success.\n";
+        }
     }
     
     /**
@@ -455,7 +465,19 @@ class Worker
         $command2 = isset($argv[2]) ? $argv[2] : '';
         
         // 记录日志
-        self::log("Workerman[$start_file] $command");
+        $mode = '';
+        if($command === 'start')
+        {
+            if($command2 === '-d')
+            {
+                $mode = 'in DAEMON mode';
+            }
+            else
+            {
+                $mode = 'in DEBUG mode';
+            }
+        }
+        self::log("Workerman[$start_file] $command $mode");
         
         // 检查主进程是否在运行
         $master_pid = @file_get_contents(self::$pidFile);
@@ -597,7 +619,7 @@ class Worker
                 break;
             // reload
             case SIGUSR1:
-                self::$_pidsToRestart = self::getAllWorkerPids();;
+                self::$_pidsToRestart = self::getAllWorkerPids();
                 self::reload();
                 break;
             // show status
@@ -725,7 +747,7 @@ class Worker
             // 创建子进程
             while(count(self::$_pidMap[$worker->workerId]) < $worker->count)
             {
-                self::forkOneWorker($worker);
+                static::forkOneWorker($worker);
             }
         }
     }
@@ -746,6 +768,11 @@ class Worker
         // 子进程运行
         elseif(0 === $pid)
         {
+            // 启动过程中尝试重定向标准输出
+            if(self::$_status === self::STATUS_STARTING)
+            {
+                self::resetStd();
+            }
             self::$_pidMap = array();
             self::$_workers = array($worker->workerId => $worker);
             Timer::delAll();
@@ -1174,6 +1201,8 @@ class Worker
         
         // flag
         $flags =  $this->transport === 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
+        $errno = 0;
+        $errmsg = '';
         $this->_mainSocket = stream_socket_server($this->transport.":".$address, $errno, $errmsg, $flags, $this->_context);
         if(!$this->_mainSocket)
         {
@@ -1299,6 +1328,7 @@ class Worker
         
         // 初始化连接对象
         $connection = new TcpConnection($new_socket);
+        $this->connections[$connection->id] = $connection;
         $connection->worker = $this;
         $connection->protocol = $this->_protocol;
         $connection->onMessage = $this->onMessage;
@@ -1306,7 +1336,6 @@ class Worker
         $connection->onError = $this->onError;
         $connection->onBufferDrain = $this->onBufferDrain;
         $connection->onBufferFull = $this->onBufferFull;
-        $this->connections[(int)$new_socket] = $connection;
         
         // 如果有设置连接回调，则执行
         if($this->onConnect)
