@@ -843,6 +843,8 @@ class Worker
             // 挂起进程，直到有子进程退出或者被信号打断
             $status = 0;
             $pid = pcntl_wait($status, WUNTRACED);
+            // 如果有信号到来，尝试触发信号处理函数
+            pcntl_signal_dispatch();
             // 有子进程退出
             if($pid > 0)
             {
