@@ -3,6 +3,12 @@
 ## What is it
 Workerman is a library for event-driven programming in PHP. It has a huge number of features. Each worker is able to handle thousands of connections.
 
+## Requires
+
+PHP 5.3 or Higher  
+A POSIX compatible operating system (Linux, OSX, BSD)  
+POSIX and PCNTL extensions for PHP  
+
 ## Installation
 
 ```
