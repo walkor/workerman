@@ -542,6 +542,31 @@ class TcpConnection extends ConnectionInterface
     }
     
     /**
+     * 管道重定向
+     * @return void
+     */
+    public function pipe($dest)
+    {
+        $source = $this;
+        $this->onMessage = function($source, $data)use($dest)
+        {
+            $dest->send($data);
+        };
+        $this->onClose = function($source)use($dest)
+        {
+            $dest->destroy();
+        };
+        $dest->onBufferFull = function($dest)use($source)
+        {
+            $source->pauseRecv();
+        };
+        $dest->onBufferDrain = function($dest)use($source)
+        {
+            $source->resumeRecv();
+        };
+    }
+    
+    /**
      * 从缓冲区中消费掉$length长度的数据
      * @param int $length
      * @return void
@@ -642,6 +667,8 @@ class TcpConnection extends ConnectionInterface
                echo $e;
            }
        }
+       // 清理回调，避免内存泄露
+       $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = null;
     }
     
     /**
