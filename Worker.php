@@ -1250,6 +1250,9 @@ class Worker
      */
     public function run()
     {
+        //更新 Worker 状态
+        self::$_status = self::STATUS_RUNNING;
+        
         // 注册进程退出回调，用来检查是否有错误
         register_shutdown_function(array("\\Workerman\\Worker", 'checkErrors'));
         
