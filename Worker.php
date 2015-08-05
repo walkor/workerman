@@ -803,7 +803,7 @@ class Worker
         {
             if(!posix_setgid($user_info['gid']) || !posix_setuid($user_info['uid']))
             {
-                self::log( 'Notice : Can not run woker as '.$user_name." , You shuld be root\n", true);
+                self::log( 'Notice : Can not run woker as '.$user_name." , You should be root\n", true);
             }
         }
     }
