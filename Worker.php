@@ -1131,7 +1131,7 @@ class Worker
     protected static function log($msg)
     {
         $msg = $msg."\n";
-        if(self::$_status === self::STATUS_STARTING || !self::$daemonize)
+        if(!self::$daemonize)
         {
             echo $msg;
         }
