@@ -72,7 +72,7 @@ class Http
         $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES =  array();
         $GLOBALS['HTTP_RAW_POST_DATA'] = '';
         // 清空上次的数据
-        HttpCache::$header = array('Connection'=>'keep-alive');
+        HttpCache::$header = array('Connection'=>'Connection: keep-alive');
         HttpCache::$instance = new HttpCache();
         // 需要设置的变量名
         $_SERVER = array (
