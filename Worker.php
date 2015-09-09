@@ -1165,6 +1165,9 @@ class Worker
             }
             $this->_context = stream_context_create($context_option);
         }
+        
+        // 设置一个空的onMessage，当onMessage未设置时用来消费socket数据
+        $this->onMessage = function(){};
     }
     
     /**
