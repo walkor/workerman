@@ -357,6 +357,11 @@ Percentage of the requests served within a certain time (ms)
 [Source code](https://github.com/walkor/workerman-chat)  
 ![workerman-chat](http://www.workerman.net/img/workerman-chat.png)  
 
+## [PHPSocket.IO](https://github.com/walkor/phpsocket.io)
+[Live demo](http://www.workerman.net/demos/phpsocketio-chat/)
+[Source code](https://github.com/walkor/phpsocket.io)
+![phpsocket.io](http://www.workerman.net/img/socket.io.png)
+
 ## [statistics](http://www.workerman.net:55757/)  
 [Live demo](http://www.workerman.net:55757/)  
 [Source code](https://github.com/walkor/workerman-statistics)  
