@@ -26,7 +26,7 @@ class TcpConnection extends ConnectionInterface
      * 当数据可读时，从socket缓冲区读取多少字节数据
      * @var int
      */
-    const READ_BUFFER_SIZE = 8192;
+    const READ_BUFFER_SIZE = 65535;
 
     /**
      * 连接状态 连接中
