@@ -486,7 +486,8 @@ class Worker
         {
             if($command === 'start')
             {
-                self::log("Workerman[$start_file] is running");
+                self::log("Workerman[$start_file] already running");
+                exit;
             }
         }
         elseif($command !== 'start' && $command !== 'restart')
