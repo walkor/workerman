@@ -402,23 +402,12 @@ class TcpConnection extends ConnectionInterface
             $this->destroy();
             return;
         }
-       
-        if(!$this->_recvBuffer)
-        {
-            return;
-        }
         
-        if(!$this->onMessage)
-        {
-            $this->_recvBuffer = '';
-            return ;
-        }
-       
         // 如果设置了协议
         if($this->protocol)
         {
            $parser = $this->protocol;
-           while($this->_recvBuffer && !$this->_isPaused)
+           while($this->_recvBuffer !== '' && !$this->_isPaused)
            {
                // 当前包的长度已知
                if($this->_currentPackageLength)
@@ -472,6 +461,10 @@ class TcpConnection extends ConnectionInterface
                }
                // 重置当前包长为0
                $this->_currentPackageLength = 0;
+               if(!$this->onMessage)
+               {
+                   continue ;
+               }
                // 处理数据包
                try
                {
@@ -485,8 +478,19 @@ class TcpConnection extends ConnectionInterface
            }
            return;
         }
+        
+        if($this->_recvBuffer === '' || $this->_isPaused)
+        {
+            return;
+        }
+        
         // 没有设置协议，则直接把接收的数据当做一个包处理
         self::$statistics['total_request']++;
+        if(!$this->onMessage)
+        {
+            $this->_recvBuffer = '';
+            return ;
+        }
         try 
         {
            call_user_func($this->onMessage, $this, $this->_recvBuffer);
