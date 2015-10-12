@@ -13,9 +13,6 @@
  */
 namespace Workerman;
 
-// 包含常量定义文件
-require_once __DIR__.'/Lib/Constants.php';
-
 /**
  * 自动加载类
  * @author walkor<walkor@workerman.net>

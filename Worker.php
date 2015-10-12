@@ -13,6 +13,8 @@
  */
 namespace Workerman;
 
+require_once __DIR__.'/Lib/Constants.php';
+
 use \Workerman\Events\Libevent;
 use \Workerman\Events\Select;
 use \Workerman\Events\EventInterface;
