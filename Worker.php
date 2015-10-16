@@ -429,7 +429,7 @@ class Worker
     {
         foreach(self::$_workers as $worker_id=>$worker)
         {
-            self::$_idMap[$worker_id] = array_fill(0, $woker->count, 0);
+            self::$_idMap[$worker_id] = array_fill(0, $worker->count, 0);
         }
     }
     
@@ -830,7 +830,7 @@ class Worker
         $id = array_search($pid, self::$_idMap[$worker_id]);
         if($id === false)
         {
-            echo "{$worker->name} getId fail\n";
+            echo "getId fail\n";
         }
         return $id;
     }
