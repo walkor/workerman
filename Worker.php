@@ -34,7 +34,7 @@ class Worker
      * 版本号
      * @var string
      */
-    const VERSION = '3.2.1';
+    const VERSION = '3.2.2';
     
     /**
      * 状态 启动中
@@ -108,6 +108,12 @@ class Worker
      * @var bool
      */
     public $reloadable = true;
+
+    /**
+     * reuse port
+     * @var bool
+     */
+    public $reusePort = false;
     
     /**
      * 当worker进程启动时，如果设置了$onWorkerStart回调函数，则运行
@@ -416,8 +422,12 @@ class Worker
             {
                 self::$_maxUserNameLength = $user_name_length;
             }
-            // 监听端口
-            $worker->listen();
+            // 如果端口不可复用，则直接在主进程就监听
+            if(!$worker->reusePort)
+            {
+                // 监听端口
+                $worker->listen();
+            }
         }
     }
     
@@ -800,6 +810,11 @@ class Worker
         // 子进程运行
         elseif(0 === $pid)
         {
+            // 如果设置了端口复用，则在子进程执行监听
+            if($worker->reusePort)
+            {
+                $worker->listen();
+            }
             // 启动过程中尝试重定向标准输出
             if(self::$_status === self::STATUS_STARTING)
             {
@@ -1228,13 +1243,14 @@ class Worker
      */
     public function listen()
     {
-        // 设置自动加载根目录
-        Autoloader::setRootPath($this->_appInitPath);
-        
-        if(!$this->_socketName)
+        if(!$this->_socketName || $this->_mainSocket)
         {
             return;
         }
+ 
+        // 设置自动加载根目录  
+        Autoloader::setRootPath($this->_appInitPath);
+
         // 获得应用层通讯协议以及监听的地址
         list($scheme, $address) = explode(':', $this->_socketName, 2);
         // 如果有指定应用层协议，则检查对应的协议类是否存在
@@ -1260,6 +1276,11 @@ class Worker
         $flags =  $this->transport === 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
         $errno = 0;
         $errmsg = '';
+        // 如果设置了端口复用，则设置SO_REUSEPORT选项为1
+        if($this->reusePort)
+        {
+            stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
+        }
         $this->_mainSocket = stream_socket_server($this->transport.":".$address, $errno, $errmsg, $flags, $this->_context);
         if(!$this->_mainSocket)
         {
