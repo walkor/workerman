@@ -53,7 +53,7 @@ $ws_worker->onClose = function($connection)
 Worker::runAll();
 ```
 
-### A http server
+### An http server
 test.php
 ```php
 require_once './Workerman/Autoloader.php';
@@ -218,7 +218,7 @@ $task->onWorkerStart = function($task)
 Worker::runAll();
 ```
 
-run width
+run with:
 
 ```php test.php start```
 
