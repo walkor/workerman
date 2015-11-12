@@ -56,7 +56,7 @@ class Libevent implements EventInterface
      * 添加事件
      * @see EventInterface::add()
      */
-    public function add($fd, $flag, $func, $args=null)
+    public function add($fd, $flag, $func, $args=array())
     {
         switch($flag)
         {
