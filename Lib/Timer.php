@@ -108,7 +108,7 @@ class Timer
         {
             self::$_tasks[$run_time] = array();
         }
-        self::$_tasks[$run_time][] = array($func, $args, $persistent, $time_interval);
+        self::$_tasks[$run_time][] = array($func, (array)$args, $persistent, $time_interval);
         return true;
     }
     
