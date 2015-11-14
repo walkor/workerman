@@ -365,7 +365,7 @@ class Worker
         {
             $backtrace = debug_backtrace();
             self::$_startFile = $backtrace[count($backtrace)-1]['file'];
-            self::$pidFile = sys_get_temp_dir()."/workerman.".str_replace('/', '_', self::$_startFile).".pid";
+            self::$pidFile = __DIR__ . "/../".str_replace('/', '_', self::$_startFile).".pid";
         }
         // 没有设置日志文件，则生成一个默认值
         if(empty(self::$logFile))
