@@ -493,7 +493,7 @@ class Worker
         $start_file = $argv[0]; 
         if(!isset($argv[1]))
         {
-            exit("Usage: php yourfile.php {start|stop|restart|reload|status}\n");
+            exit("Usage: php yourfile.php {start|stop|restart|reload|status|kill}\n");
         }
         
         // 命令
@@ -608,7 +608,7 @@ class Worker
                 exit;
             // 未知命令
             default :
-                 exit("Usage: php yourfile.php {start|stop|restart|reload|status}\n");
+                 exit("Usage: php yourfile.php {start|stop|restart|reload|status|kill}\n");
         }
     }
     
