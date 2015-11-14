@@ -536,6 +536,10 @@ class Worker
         // 根据命令做相应处理
         switch($command)
         {
+            case 'kill':
+                exec("ps aux | grep $start_file | grep -v grep | awk '{print $2}' |xargs kill -SIGINT");
+                exec("ps aux | grep $start_file | grep -v grep | awk '{print $2}' |xargs kill -SIGKILL");
+                break;
             // 启动 workerman
             case 'start':
                 if($command2 === '-d')
