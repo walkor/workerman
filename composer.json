@@ -21,8 +21,7 @@
         "source": "https://github.com/walkor/workerman"
     },
     "require": {
-        "php": ">=5.3",
-        "ext-sockets": "*"
+        "php": ">=5.3"
     },
     "suggest": {
 	"ext-libevent": "For better performance."
