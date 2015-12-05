@@ -1404,7 +1404,7 @@ class Worker
     public function acceptConnection($socket)
     {
         // 获得客户端连接
-        $new_socket = @stream_socket_accept($socket, 0);
+        $new_socket = @stream_socket_accept($socket, 0, $remote_address);
         // 惊群现象，忽略
         if(false === $new_socket)
         {
@@ -1412,7 +1412,7 @@ class Worker
         }
         
         // 初始化连接对象
-        $connection = new TcpConnection($new_socket);
+        $connection = new TcpConnection($new_socket, $remote_address);
         $this->connections[$connection->id] = $connection;
         $connection->worker = $this;
         $connection->protocol = $this->_protocol;

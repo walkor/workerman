@@ -170,18 +170,6 @@ class TcpConnection extends ConnectionInterface
     protected $_status = self::STATUS_ESTABLISH;
     
     /**
-     * 对端ip
-     * @var string
-     */
-    protected $_remoteIp = '';
-    
-    /**
-     * 对端端口
-     * @var int
-     */
-    protected $_remotePort = 0;
-    
-    /**
      * 对端的地址 ip+port
      * 值类似于 192.168.1.100:3698
      * @var string
@@ -199,7 +187,7 @@ class TcpConnection extends ConnectionInterface
      * @param resource $socket
      * @param EventInterface $event
      */
-    public function __construct($socket)
+    public function __construct($socket, $remote_address)
     {
         // 统计数据
         self::$statistics['connection_count']++;
@@ -208,6 +196,7 @@ class TcpConnection extends ConnectionInterface
         stream_set_blocking($this->_socket, 0);
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
+        $this->_remoteAddress = $remote_address;
     }
     
     /**
@@ -323,16 +312,12 @@ class TcpConnection extends ConnectionInterface
      */
     public function getRemoteIp()
     {
-        if(!$this->_remoteIp)
+        $pos = strrpos($this->_remoteAddress, ':');
+        if($pos)
         {
-            $this->_remoteAddress = stream_socket_get_name($this->_socket, true);
-            if($this->_remoteAddress)
-            {
-                list($this->_remoteIp, $this->_remotePort) = explode(':', $this->_remoteAddress, 2);
-                $this->_remotePort = (int)$this->_remotePort;
-            }
+            return substr($this->_remoteAddress, 0, $pos);
         }
-        return $this->_remoteIp;
+        return '';
     }
     
     /**
@@ -341,16 +326,11 @@ class TcpConnection extends ConnectionInterface
      */
     public function getRemotePort()
     {
-        if(!$this->_remotePort)
+        if($this->_remoteAddress)
         {
-            $this->_remoteAddress = stream_socket_get_name($this->_socket, true);
-            if($this->_remoteAddress)
-            {
-                list($this->_remoteIp, $this->_remotePort) = explode(':', $this->_remoteAddress, 2);
-                $this->_remotePort = (int)$this->_remotePort;
-            }
+            return (int)substr(strrchr($this->_remoteAddress, ':'), 1);
         }
-        return $this->_remotePort;
+        return 0;
     }
     
     /**
