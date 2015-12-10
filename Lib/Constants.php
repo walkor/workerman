@@ -19,6 +19,8 @@ if(!ini_get('date.timezone') )
 }
 // 显示错误到终端
 ini_set('display_errors', 'on');
+// 报告所有错误
+error_reporting(E_ALL);
 
 // 连接失败
 define('WORKERMAN_CONNECT_FAIL', 1);

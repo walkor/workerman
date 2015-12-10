@@ -167,6 +167,12 @@ class Worker
     public $onWorkerStop = null;
     
     /**
+     * 当收到reload命令时的回调函数
+     * @var callback
+     */
+    public $onWorkerReload = null;
+    
+    /**
      * 传输层协议
      * @var string
      */
@@ -1040,6 +1046,11 @@ class Worker
         {
             // 如果当前worker的reloadable属性为真，则执行退出
             $worker = current(self::$_workers);
+            // 如果有设置Reload回调，则执行
+            if($worker->onWorkerReload)
+            {
+                call_user_func($worker->onWorkerReload, $this);
+            }
             if($worker->reloadable)
             {
                 self::stopAll();
