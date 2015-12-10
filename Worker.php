@@ -1020,6 +1020,14 @@ class Worker
                         $reloadable_pid_array[$pid] = $pid;
                     }
                 }
+                else
+                {
+                    foreach($worker_pid_array as $pid)
+                    {
+                        // 给reloadable=false的进程也发送一个reload信号，触发onWorkerReload
+                        posix_kill($pid, SIGUSR1);
+                    }
+                }
             }
             
             // 得到所有可以重启的进程
