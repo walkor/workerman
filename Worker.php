@@ -1049,7 +1049,7 @@ class Worker
             // 如果有设置Reload回调，则执行
             if($worker->onWorkerReload)
             {
-                call_user_func($worker->onWorkerReload, $this);
+                call_user_func($worker->onWorkerReload, $worker);
             }
             if($worker->reloadable)
             {
