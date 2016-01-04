@@ -206,6 +206,10 @@ class Select implements EventInterface
                 {
                     echo $e;
                 }
+                if($task_data[2] === self::EV_TIMER_ONCE)
+                {
+                    $this->del($timer_id, self::EV_TIMER_ONCE);
+                }
                 continue;
             }
             else
