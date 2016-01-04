@@ -191,6 +191,10 @@ class Libevent implements EventInterface
         {
             echo $e;
         }
+        if($this->_eventTimer[$timer_id][3] === self::EV_TIMER_ONCE)
+        {
+            $this->del($timer_id, self::EV_TIMER_ONCE);
+        }
     }
     
     /**
