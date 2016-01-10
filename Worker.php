@@ -98,10 +98,22 @@ class Worker
     public $count = 1;
     
     /**
-     * 设置当前worker进程的运行用户，启动时需要root超级权限
+     * 设置当前worker进程的运行用户，需要root超级权限
      * @var string
      */
     public $user = '';
+    
+    /**
+     * 设置当前worker进程的运行用户组，需要root超级权限
+     * @var string
+     */
+    public $group = '';
+    
+    /**
+     * 设置当前worker进程的文件系统根目录，需要root超级权限
+     * @var string
+     */
+    public $chroot = '';
     
     /**
      * 当前worker进程是否可以平滑重启 
@@ -419,7 +431,7 @@ class Worker
                 self::$_maxSocketNameLength = $socket_name_length;
             }
             // 获得运行用户名的最大长度
-            if(empty($worker->user) || posix_getuid() !== 0)
+            if(empty($worker->user))
             {
                 $worker->user = self::getCurrentUser();
             }
@@ -834,7 +846,7 @@ class Worker
             self::$_workers = array($worker->workerId => $worker);
             Timer::delAll();
             self::setProcessTitle('WorkerMan: worker process  ' . $worker->name . ' ' . $worker->getSocketName());
-            self::setProcessUser($worker->user);
+            self::setProcessUserAndRoot();
             $worker->id = $id;
             $worker->run();
             exit(250);
@@ -861,22 +873,57 @@ class Worker
     }
 
     /**
-     * 尝试设置运行当前进程的用户
+     * 尝试设置运行当前进程的用户、用户组、文件系统根目录
      *
      * @param $user_name
      */
-    protected static function setProcessUser($user_name)
+    protected static function setProcessUserAndRoot()
     {
-        if(empty($user_name) || posix_getuid() !== 0)
+        // set chroot
+        if($this->chroot)
         {
-            return;
-        }
-        $user_info = posix_getpwnam($user_name);
-        if($user_info['uid'] != posix_getuid() || $user_info['gid'] != posix_getgid())
-        {
-            if(!posix_setgid($user_info['gid']) || !posix_setuid($user_info['uid']))
+            if (posix_getuid() != 0)
             {
-                self::log( 'Notice : Can not run woker as '.$user_name." , You should be root\n", true);
+                self::log('Waring: You must have the root privileges to change root.', true);
+            }
+            else if(!chroot($this->chroot))
+            {
+                return self::log( "Notice: chroot({$this->chroot}) fail.", true);
+            }
+        }
+        
+        // get uid
+        $user_info = posix_getpwnam($this->user);
+        if(!$user_info)
+        {
+            return self::log( "Waring: User {$this->user} not exsits", true);
+        }
+        $uid = $user_info['uid'];
+        // get gid
+        if($this->group)
+        {
+            $group_info = posix_getgrnam($this->group);
+            if(!$group_info)
+            {
+                return self::log( "Waring: Group {$this->group} not exsits", true);
+            }
+            $gid = $group_info['gid'];
+        }
+        else
+        {
+            $gid = $user_info['gid'];
+        }
+        
+        // set uid and gid
+        if($uid != posix_getuid() || $gid != posix_getgid())
+        {
+            if (posix_getuid() != 0)
+            {
+                self::log('Waring: You must have the root privileges to change uid and gid.', true);
+            }
+            elseif(!posix_setgid($gid) || !posix_initgroups($user_info['name'], $gid) || !posix_setuid($uid))
+            {
+                self::log( "Waring: change gid or uid fail.", true);
             }
         }
     }
