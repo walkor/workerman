@@ -846,7 +846,7 @@ class Worker
             self::$_workers = array($worker->workerId => $worker);
             Timer::delAll();
             self::setProcessTitle('WorkerMan: worker process  ' . $worker->name . ' ' . $worker->getSocketName());
-            self::setProcessUserAndRoot();
+            $worker->setProcessUserAndRoot();
             $worker->id = $id;
             $worker->run();
             exit(250);
@@ -877,7 +877,7 @@ class Worker
      *
      * @param $user_name
      */
-    protected static function setProcessUserAndRoot()
+    public function setProcessUserAndRoot()
     {
         // set chroot
         if($this->chroot)
