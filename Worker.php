@@ -337,6 +337,21 @@ class Worker
         'start_timestamp' => 0,
         'worker_exit_info' => array()
     );
+
+    /**
+     * php内置协议
+     * @var array
+     */
+    protected static $_builtinTransports = array(
+        'tcp'   => 'tcp',
+        'udp'   => 'udp',
+        'unix'  => 'unix',
+        'ssl'   => 'tcp',
+        'tsl'   => 'tcp',
+        'sslv2' => 'tcp',
+        'sslv3' => 'tcp',
+        'tls'   => 'tcp'
+    );
     
     /**
      * 运行所有worker实例
@@ -1301,10 +1316,11 @@ class Worker
         // 设置自动加载根目录  
         Autoloader::setRootPath($this->_appInitPath);
 
+        $local_socket = $this->_socketName;
         // 获得应用层通讯协议以及监听的地址
         list($scheme, $address) = explode(':', $this->_socketName, 2);
         // 如果有指定应用层协议，则检查对应的协议类是否存在
-        if($scheme != 'tcp' && $scheme != 'udp')
+        if(!isset(self::$_builtinTransports[$scheme]))
         {
             $scheme = ucfirst($scheme);
             $this->_protocol = '\\Protocols\\'.$scheme;
@@ -1316,10 +1332,11 @@ class Worker
                     throw new Exception("class \\Protocols\\$scheme not exist");
                 }
             }
+            $local_socket = $this->transport.":".$address;
         }
-        elseif($scheme === 'udp')
+        else
         {
-            $this->transport = 'udp';
+            $this->transport = self::$_builtinTransports[$scheme];
         }
         
         // flag
@@ -1331,14 +1348,23 @@ class Worker
         {
             stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
         }
-        $this->_mainSocket = stream_socket_server($this->transport.":".$address, $errno, $errmsg, $flags, $this->_context);
+        if($this->transport === 'unix')
+        {
+            umask(0);
+            if(!is_file($address))
+            {
+                register_shutdown_function(function()use($address){@unlink($address);});
+            }
+        }
+        // 创建监听
+        $this->_mainSocket = stream_socket_server($local_socket, $errno, $errmsg, $flags, $this->_context);
         if(!$this->_mainSocket)
         {
             throw new Exception($errmsg);
         }
         
         // 尝试打开tcp的keepalive，关闭TCP Nagle算法
-        if(function_exists('socket_import_stream'))
+        if(function_exists('socket_import_stream') && $this->transport === 'tcp')
         {
             $socket   = socket_import_stream($this->_mainSocket );
             @socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
@@ -1368,7 +1394,7 @@ class Worker
      */
     public function getSocketName()
     {
-        return $this->_socketName ? $this->_socketName : 'none';
+        return $this->_socketName ? lcfirst($this->_socketName) : 'none';
     }
     
     /**
