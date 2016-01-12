@@ -110,12 +110,6 @@ class Worker
     public $group = '';
     
     /**
-     * 设置当前worker进程的文件系统根目录，需要root超级权限
-     * @var string
-     */
-    public $chroot = '';
-    
-    /**
      * 当前worker进程是否可以平滑重启 
      * @var bool
      */
@@ -390,6 +384,8 @@ class Worker
         {
             self::$logFile = __DIR__ . '/../workerman.log';
         }
+        touch(self::$logFile);
+        chmod(self::$logFile, 0622);
         // 标记状态为启动中
         self::$_status = self::STATUS_STARTING;
         // 启动时间戳
@@ -846,7 +842,7 @@ class Worker
             self::$_workers = array($worker->workerId => $worker);
             Timer::delAll();
             self::setProcessTitle('WorkerMan: worker process  ' . $worker->name . ' ' . $worker->getSocketName());
-            $worker->setProcessUserAndRoot();
+            $worker->setUserAndGroup();
             $worker->id = $id;
             $worker->run();
             exit(250);
@@ -873,25 +869,10 @@ class Worker
     }
 
     /**
-     * 尝试设置运行当前进程的用户、用户组、文件系统根目录
-     *
-     * @param $user_name
+     * 尝试设置运行当前进程的用户、用户组
      */
-    public function setProcessUserAndRoot()
+    public function setUserAndGroup()
     {
-        // set chroot
-        if($this->chroot)
-        {
-            if (posix_getuid() != 0)
-            {
-                self::log('Waring: You must have the root privileges to change root.', true);
-            }
-            else if(!chroot($this->chroot))
-            {
-                return self::log( "Notice: chroot({$this->chroot}) fail.", true);
-            }
-        }
-        
         // get uid
         $user_info = posix_getpwnam($this->user);
         if(!$user_info)
@@ -927,7 +908,6 @@ class Worker
             }
         }
     }
-
     
     /**
      * 设置当前进程的名称，在ps aux命令中有用
