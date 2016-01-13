@@ -182,16 +182,9 @@ class Libevent implements EventInterface
         {
             event_add($this->_eventTimer[$timer_id][2], $this->_eventTimer[$timer_id][4]);
         }
-        try 
-        {
-            // 执行任务
-            call_user_func_array($this->_eventTimer[$timer_id][0], $this->_eventTimer[$timer_id][1]);
-        }
-        catch(\Exception $e)
-        {
-            echo $e;
-        }
-        if($this->_eventTimer[$timer_id][3] === self::EV_TIMER_ONCE)
+        // 执行任务
+        call_user_func_array($this->_eventTimer[$timer_id][0], $this->_eventTimer[$timer_id][1]);
+        if(isset($this->_eventTimer[$timer_id]) && $this->_eventTimer[$timer_id][3] === self::EV_TIMER_ONCE)
         {
             $this->del($timer_id, self::EV_TIMER_ONCE);
         }

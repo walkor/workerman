@@ -339,14 +339,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             if(isset($connection->onWebSocketConnect))
             {
                 self::parseHttpHeader($buffer);
-                try
-                {
-                    call_user_func($connection->onWebSocketConnect, $connection, $buffer);
-                }
-                catch(\Exception $e)
-                {
-                    echo $e;
-                }
+                call_user_func($connection->onWebSocketConnect, $connection, $buffer);
                 $_GET = $_COOKIE = $_SERVER = array();
             }
             return 0;
