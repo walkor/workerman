@@ -187,7 +187,7 @@ class TcpConnection extends ConnectionInterface
      * @param resource $socket
      * @param EventInterface $event
      */
-    public function __construct($socket, $remote_address)
+    public function __construct($socket, $remote_address = '')
     {
         // 统计数据
         self::$statistics['connection_count']++;

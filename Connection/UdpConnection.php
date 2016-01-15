@@ -66,8 +66,18 @@ class UdpConnection extends ConnectionInterface
      * @param string $send_buffer
      * @return void|boolean
      */
-    public function send($send_buffer)
+    public function send($send_buffer, $raw = false)
     {
+        // 如果没有设置以原始数据发送，并且有设置协议则按照协议编码
+        if(false === $raw && $this->protocol)
+        {
+            $parser = $this->protocol;
+            $send_buffer = $parser::encode($send_buffer, $this);
+            if($send_buffer === '')
+            {
+                return null;
+            }
+        }
         return strlen($send_buffer) === stream_socket_sendto($this->_socket, $send_buffer, 0, $this->_remoteAddress);
     }
     

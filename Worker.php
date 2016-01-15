@@ -1032,6 +1032,11 @@ class Worker
      */
     protected static function exitAndClearAll()
     {
+        if($this->transport === 'unix' && $this->_socketName)
+        {
+            list(, $address) = explode(':', $this->_socketName, 2);
+            @unlink($address);
+        }
         @unlink(self::$pidFile);
         self::log("Workerman[".basename(self::$_startFile)."] has been stopped");
         exit(0);
@@ -1355,6 +1360,7 @@ class Worker
         if($this->transport === 'unix')
         {
             umask(0);
+            list($scheme, $address) = explode(':', $this->_socketName, 2);
             if(!is_file($address))
             {
                 register_shutdown_function(function()use($address){@unlink($address);});
