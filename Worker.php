@@ -244,7 +244,7 @@ class Worker
      * 例如 php start.php start ，则入口文件为start.php
      * @var string
      */
-    protected static $startFile = '';
+    public static $startFile = '';
     
     /**
      * 主进程pid
