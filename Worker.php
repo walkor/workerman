@@ -1032,10 +1032,14 @@ class Worker
      */
     protected static function exitAndClearAll()
     {
-        if($this->transport === 'unix' && $this->_socketName)
+        foreach(self::$_workers as $worker)
         {
-            list(, $address) = explode(':', $this->_socketName, 2);
-            @unlink($address);
+            $socket_name = $worker->getSocketName();
+            if($worker->transport === 'unix' && $socket_name)
+            {
+                list(, $address) = explode(':', $socket_name, 2);
+                @unlink($address);
+            }
         }
         @unlink(self::$pidFile);
         self::log("Workerman[".basename(self::$_startFile)."] has been stopped");
