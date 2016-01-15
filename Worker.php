@@ -1530,6 +1530,7 @@ class Worker
         }
         // 模拟一个连接对象
         $connection = new UdpConnection($socket, $remote_address);
+        $connection->protocol = $this->protocol;
         if($this->onMessage)
         {
             if($this->protocol)
