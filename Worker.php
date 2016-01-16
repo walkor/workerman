@@ -240,6 +240,13 @@ class Worker
     public static $globalEvent = null;
     
     /**
+     * 启动的全局入口文件
+     * 例如 php start.php start ，则入口文件为start.php
+     * @var string
+     */
+    public static $startFile = '';
+    
+    /**
      * 主进程pid
      * @var int
      */
@@ -322,13 +329,6 @@ class Worker
     protected static $_statisticsFile = '';
     
     /**
-     * 启动的全局入口文件
-     * 例如 php start.php start ，则入口文件为start.php
-     * @var string
-     */
-    protected static $_startFile = '';
-    
-    /**
      * 全局统计数据，用于在运行 status 命令时展示
      * 统计的内容包括 workerman启动的时间戳及每组worker进程的退出次数及退出状态码
      * @var array
@@ -391,8 +391,8 @@ class Worker
         if(empty(self::$pidFile))
         {
             $backtrace = debug_backtrace();
-            self::$_startFile = $backtrace[count($backtrace)-1]['file'];
-            self::$pidFile = __DIR__ . "/../".str_replace('/', '_', self::$_startFile).".pid";
+            self::$startFile = $backtrace[count($backtrace)-1]['file'];
+            self::$pidFile = __DIR__ . "/../".str_replace('/', '_', self::$startFile).".pid";
         }
         // 没有设置日志文件，则生成一个默认值
         if(empty(self::$logFile))
@@ -408,7 +408,7 @@ class Worker
         // 设置status文件位置
         self::$_statisticsFile = sys_get_temp_dir().'/workerman.status';
         // 尝试设置进程名称（需要php>=5.5或者安装了proctitle扩展）
-        self::setProcessTitle('WorkerMan: master process  start_file=' . self::$_startFile);
+        self::setProcessTitle('WorkerMan: master process  start_file=' . self::$startFile);
         // 初始化id
         self::initId();
         // 初始化定时器
@@ -1042,7 +1042,7 @@ class Worker
             }
         }
         @unlink(self::$pidFile);
-        self::log("Workerman[".basename(self::$_startFile)."] has been stopped");
+        self::log("Workerman[".basename(self::$startFile)."] has been stopped");
         exit(0);
     }
     
@@ -1058,7 +1058,7 @@ class Worker
             // 设置为平滑重启状态
             if(self::$_status !== self::STATUS_RELOADING && self::$_status !== self::STATUS_SHUTDOWN)
             {
-                self::log("Workerman[".basename(self::$_startFile)."] reloading");
+                self::log("Workerman[".basename(self::$startFile)."] reloading");
                 self::$_status = self::STATUS_RELOADING;
             }
             
@@ -1130,7 +1130,7 @@ class Worker
         // 主进程部分
         if(self::$_masterPid === posix_getpid())
         {
-            self::log("Workerman[".basename(self::$_startFile)."] Stopping ...");
+            self::log("Workerman[".basename(self::$startFile)."] Stopping ...");
             $worker_pid_array = self::getAllWorkerPids();
             // 向所有子进程发送SIGINT信号，表明关闭服务
             foreach($worker_pid_array as $worker_pid)
