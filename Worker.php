@@ -387,11 +387,13 @@ class Worker
      */
     protected static function init()
     {
+        // 记录启动入口
+        $backtrace = debug_backtrace();
+        self::$_startFile = $backtrace[count($backtrace)-1]['file'];
+        
         // 如果没设置$pidFile，则生成默认值
         if(empty(self::$pidFile))
         {
-            $backtrace = debug_backtrace();
-            self::$_startFile = $backtrace[count($backtrace)-1]['file'];
             self::$pidFile = __DIR__ . "/../".str_replace('/', '_', self::$_startFile).".pid";
         }
         // 没有设置日志文件，则生成一个默认值
