@@ -15,8 +15,6 @@ namespace Workerman;
 
 require_once __DIR__.'/Lib/Constants.php';
 
-use \Workerman\Events\Libevent;
-use \Workerman\Events\Select;
 use \Workerman\Events\EventInterface;
 use \Workerman\Connection\ConnectionInterface;
 use \Workerman\Connection\TcpConnection;
@@ -34,7 +32,7 @@ class Worker
      * 版本号
      * @var string
      */
-    const VERSION = '3.2.7';
+    const VERSION = '3.2.8';
     
     /**
      * 状态 启动中
@@ -235,7 +233,7 @@ class Worker
     
     /**
      * 全局事件轮询库，用于监听所有资源的可读可写事件
-     * @var Select/Libevent
+     * @var Select/Libevent/Ev
      */
     public static $globalEvent = null;
     
@@ -337,6 +335,20 @@ class Worker
         'start_timestamp' => 0,
         'worker_exit_info' => array()
     );
+    
+    /**
+     * 可用的事件轮询库
+     * @var array
+     */
+    protected static $_availableEventLoops = array(
+        'libevent', 'ev'
+    );
+    
+    /**
+     * 当前eventLoop使用的是哪个
+     * @var string
+     */
+    protected static $_eventLoopName = 'select';
 
     /**
      * php内置协议
@@ -786,6 +798,23 @@ class Worker
     }
     
     /**
+     * 获取LoopName
+     * @return string
+     */
+    protected static function getEventLoopName()
+    {
+        foreach(self::$_availableEventLoops as $name)
+        {
+            if(extension_loaded($name))
+            {
+                self::$_eventLoopName = $name;
+                break;
+            }
+        }
+        return self::$_eventLoopName;
+    }
+    
+    /**
      * 获得所有子进程的pid
      * @return array
      */
@@ -1168,7 +1197,7 @@ class Worker
             file_put_contents(self::$_statisticsFile, 'Workerman version:' . Worker::VERSION . "          PHP version:".PHP_VERSION."\n", FILE_APPEND);
             file_put_contents(self::$_statisticsFile, 'start time:'. date('Y-m-d H:i:s', self::$_globalStatistics['start_timestamp']).'   run ' . floor((time()-self::$_globalStatistics['start_timestamp'])/(24*60*60)). ' days ' . floor(((time()-self::$_globalStatistics['start_timestamp'])%(24*60*60))/(60*60)) . " hours   \n", FILE_APPEND);
             $load_str = 'load average: ' . implode(", ", $loadavg);
-            file_put_contents(self::$_statisticsFile, str_pad($load_str, 33) . 'event-loop:'.(extension_loaded('libevent') ? 'libevent' : 'select')."\n", FILE_APPEND);
+            file_put_contents(self::$_statisticsFile, str_pad($load_str, 33) . 'event-loop:'.self::getEventLoopName()."\n", FILE_APPEND);
             file_put_contents(self::$_statisticsFile,  count(self::$_pidMap) . ' workers       ' . count(self::getAllWorkerPids())." processes\n", FILE_APPEND);
             file_put_contents(self::$_statisticsFile, str_pad('worker_name', self::$_maxWorkerNameLength) . " exit_status     exit_count\n", FILE_APPEND);
             foreach(self::$_pidMap as $worker_id =>$worker_pid_array)
@@ -1430,14 +1459,8 @@ class Worker
         // 如果没有全局事件轮询，则创建一个
         if(!self::$globalEvent)
         {
-            if(extension_loaded('libevent'))
-            {
-                self::$globalEvent = new Libevent();
-            }
-            else
-            {
-                self::$globalEvent = new Select();
-            }
+            $eventLoopClass = "\\Workerman\\Events\\". ucfirst(self::getEventLoopName());
+            self::$globalEvent = new $eventLoopClass;
             // 监听_mainSocket上的可读事件（客户端连接事件）
             if($this->_socketName)
             {
