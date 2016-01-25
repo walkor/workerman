@@ -89,7 +89,15 @@ class AsyncTcpConnection extends TcpConnection
     {
         if($this->onError)
         {
-            call_user_func($this->onError, $this, $code, $msg);
+            try
+            {
+                call_user_func($this->onError, $this, $code, $msg);
+            }
+            catch(\Exception $e)
+            {
+                echo $e;
+                exit(250);
+            }
         }
     }
     
@@ -121,7 +129,15 @@ class AsyncTcpConnection extends TcpConnection
             // 如果有设置onConnect回调，则执行
             if($this->onConnect)
             {
-                call_user_func($this->onConnect, $this);
+                try
+                {
+                    call_user_func($this->onConnect, $this);
+                }
+                catch(\Exception $e)
+                {
+                    echo $e;
+                    exit(250);
+                }
             }
         }
         else

@@ -1142,7 +1142,15 @@ class Worker
             // 如果有设置Reload回调，则执行
             if($worker->onWorkerReload)
             {
-                call_user_func($worker->onWorkerReload, $worker);
+                try 
+                {
+                    call_user_func($worker->onWorkerReload, $worker);
+                }
+                catch(\Exception $e)
+                {
+                    echo $e;
+                    exit(250);
+                }
             }
             if($worker->reloadable)
             {
@@ -1484,7 +1492,15 @@ class Worker
         // 如果有设置进程启动回调，则执行
         if($this->onWorkerStart)
         {
-            call_user_func($this->onWorkerStart, $this);
+            try 
+            {
+                call_user_func($this->onWorkerStart, $this);
+            }
+            catch(\Exception $e)
+            {
+                echo $e;
+                exit(250);
+            }
         }
         
         // 子进程主循环
@@ -1500,7 +1516,15 @@ class Worker
         // 如果有设置进程终止回调，则执行
         if($this->onWorkerStop)
         {
-            call_user_func($this->onWorkerStop, $this);
+            try 
+            {
+                call_user_func($this->onWorkerStop, $this);
+            }
+            catch(\Exception $e)
+            {
+                echo $e;
+                exit(250);
+            }
         }
         // 删除相关监听事件，关闭_mainSocket
         self::$globalEvent->del($this->_mainSocket, EventInterface::EV_READ);
@@ -1536,7 +1560,15 @@ class Worker
         // 如果有设置连接回调，则执行
         if($this->onConnect)
         {
-            call_user_func($this->onConnect, $connection);
+            try
+            {
+                call_user_func($this->onConnect, $connection);
+            }
+            catch(\Exception $e)
+            {
+                echo $e;
+                exit(250);
+            }
         }
     }
 
@@ -1565,7 +1597,15 @@ class Worker
                 $recv_buffer = $parser::decode($recv_buffer, $connection);
             }
             ConnectionInterface::$statistics['total_request']++;
-            call_user_func($this->onMessage, $connection, $recv_buffer);
+            try
+            {
+                call_user_func($this->onMessage, $connection, $recv_buffer);
+            }
+            catch(\Exception $e)
+            {
+                echo $e;
+                exit(250);
+            }
         }
     }
 }

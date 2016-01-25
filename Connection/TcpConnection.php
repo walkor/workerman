@@ -256,7 +256,15 @@ class TcpConnection extends ConnectionInterface
                     // 如果有设置失败回调，则执行
                     if($this->onError)
                     {
-                        call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'client closed');
+                        try
+                        {
+                            call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'client closed');
+                        }
+                        catch(\Exception $e)
+                        {
+                            echo $e;
+                            exit(250);
+                        }
                     }
                     // 销毁连接
                     $this->destroy();
@@ -281,7 +289,15 @@ class TcpConnection extends ConnectionInterface
                 // 如果有设置失败回调，则执行
                 if($this->onError)
                 {
-                    call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
+                    try
+                    {
+                        call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
+                    }
+                    catch(\Exception $e)
+                    {
+                        echo $e;
+                        exit(250);
+                    }
                 }
                 return false;
             }
@@ -431,8 +447,16 @@ class TcpConnection extends ConnectionInterface
                {
                    continue ;
                }
-               // 处理数据包
-               call_user_func($this->onMessage, $this, $parser::decode($one_request_buffer, $this));
+               try
+               {
+                   // 处理数据包
+                   call_user_func($this->onMessage, $this, $parser::decode($one_request_buffer, $this));
+               }
+                catch(\Exception $e)
+                {
+                    echo $e;
+                    exit(250);
+                }
            }
            return;
         }
@@ -449,7 +473,15 @@ class TcpConnection extends ConnectionInterface
             $this->_recvBuffer = '';
             return ;
         }
-        call_user_func($this->onMessage, $this, $this->_recvBuffer);
+        try
+        {
+            call_user_func($this->onMessage, $this, $this->_recvBuffer);
+        }
+        catch(\Exception $e)
+        {
+            echo $e;
+            exit(250);
+        }
         // 清空缓冲区
         $this->_recvBuffer = '';
     }
@@ -468,7 +500,15 @@ class TcpConnection extends ConnectionInterface
             // 发送缓冲区的数据被发送完毕，尝试触发onBufferDrain回调
             if($this->onBufferDrain)
             {
-                call_user_func($this->onBufferDrain, $this);
+                try
+                {
+                    call_user_func($this->onBufferDrain, $this);
+                }
+                catch(\Exception $e)
+                {
+                    echo $e;
+                    exit(250);
+                }
             }
             // 如果连接状态为关闭，则销毁连接
             if($this->_status === self::STATUS_CLOSING)
@@ -568,7 +608,15 @@ class TcpConnection extends ConnectionInterface
         {
             if($this->onBufferFull)
             {
-                call_user_func($this->onBufferFull, $this);
+                try
+                {
+                    call_user_func($this->onBufferFull, $this);
+                }
+                catch(\Exception $e)
+                {
+                    echo $e;
+                    exit(250);
+                }
             }
         }
     }
@@ -594,14 +642,22 @@ class TcpConnection extends ConnectionInterface
             unset($this->worker->connections[$this->_id]);
         }
         // 标记该连接已经关闭
-       $this->_status = self::STATUS_CLOSED;
-       // 触发onClose回调
-       if($this->onClose)
-       {
-           call_user_func($this->onClose, $this);
-       }
-       // 清理回调，避免内存泄露
-       $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = null;
+        $this->_status = self::STATUS_CLOSED;
+        // 触发onClose回调
+        if($this->onClose)
+        {
+            try
+            {
+               call_user_func($this->onClose, $this);
+            }
+            catch(\Exception $e)
+            {
+                echo $e;
+                exit(250);
+            }
+        }
+        // 清理回调，避免内存泄露
+        $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = null;
     }
     
     /**

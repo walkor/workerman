@@ -90,7 +90,15 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     // 如果有设置onWebSocketClose回调，尝试执行
                     if(isset($connection->onWebSocketClose))
                     {
-                        call_user_func($connection->onWebSocketClose, $connection);
+                        try 
+                        {
+                            call_user_func($connection->onWebSocketClose, $connection);
+                        }
+                        catch(\Exception $e)
+                        {
+                            echo $e;
+                            exit(250);
+                        }
                     }
                     // 默认行为是关闭连接
                     else
@@ -103,7 +111,15 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     // 如果有设置onWebSocketPing回调，尝试执行
                     if(isset($connection->onWebSocketPing))
                     {
-                        call_user_func($connection->onWebSocketPing, $connection);
+                        try 
+                        {
+                            call_user_func($connection->onWebSocketPing, $connection);
+                        }
+                        catch(\Exception $e)
+                        {
+                            echo $e;
+                            exit(250);
+                        }
                     }
                     // 默认发送pong
                     else 
@@ -122,7 +138,15 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     // 如果有设置onWebSocketPong回调，尝试执行
                     if(isset($connection->onWebSocketPong))
                     {
-                        call_user_func($connection->onWebSocketPong, $connection);
+                        try
+                        {
+                            call_user_func($connection->onWebSocketPong, $connection);
+                        }
+                        catch(\Exception $e)
+                        {
+                            echo $e;
+                            exit(250);
+                        }
                     }
                     // 从接受缓冲区中消费掉该数据包
                     if(!$data_len)
@@ -339,7 +363,15 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             if(isset($connection->onWebSocketConnect))
             {
                 self::parseHttpHeader($buffer);
-                call_user_func($connection->onWebSocketConnect, $connection, $buffer);
+                try
+                {
+                    call_user_func($connection->onWebSocketConnect, $connection, $buffer);
+                }
+                catch(\Exception $e)
+                {
+                    echo $e;
+                    exit(250);
+                }
                 $_GET = $_COOKIE = $_SERVER = array();
             }
             return 0;

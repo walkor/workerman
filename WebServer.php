@@ -103,7 +103,15 @@ class WebServer extends Worker
         // 尝试执行开发者设定的onWorkerStart回调
         if($this->_onWorkerStart)
         {
-            call_user_func($this->_onWorkerStart, $this);
+            try
+            {
+                call_user_func($this->_onWorkerStart, $this);
+            }
+            catch(\Exception $e)
+            {
+                echo $e;
+                exit(250);
+            }
         }
     }
     

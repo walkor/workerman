@@ -56,13 +56,21 @@ class Ev implements EventInterface
     {
         $callback = function($event,$socket)use($fd,$func)
         {
-            call_user_func($func,$fd);
+            try
+            {
+                call_user_func($func,$fd);
+            }
+            catch(\Exception $e)
+            {
+                echo $e;
+                exit(250);
+            }
         };
 
         switch($flag)
         {
             case self::EV_SIGNAL:
-                $event = new \EvSignal($fd,$callback);
+                $event = new \EvSignal($fd, $callback);
                 $this->_eventSignal[$fd] = $event;
                 return true;
             case self::EV_TIMER:
@@ -136,7 +144,15 @@ class Ev implements EventInterface
             $this->_eventTimer[$timer_id]->stop();
             unset($this->_eventTimer[$timer_id]);
         }
-        call_user_func_array($param[0],$param[1]);
+        try
+        {
+            call_user_func_array($param[0],$param[1]);
+        }
+        catch(\Exception $e)
+        {
+            echo $e;
+            exit(250);
+        }
     }
 
     /**
