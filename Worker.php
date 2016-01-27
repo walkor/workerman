@@ -371,6 +371,7 @@ class Worker
      */
     public static function runAll()
     {
+        self::checkSapiEnv();
         // 初始化环境变量
         self::init();
         // 解析命令
@@ -391,6 +392,16 @@ class Worker
         self::resetStd();
         // 监控所有子进程（worker进程）
         self::monitorWorkers();
+    }
+
+    /**
+     * 检查运行环境
+     */
+    protected static function checkSapiEnv()
+    {   // 只允许在cli下面运行
+        if (php_sapi_name() != "cli"){
+            exit("only run in command line mode \n");
+        }
     }
     
     /**
