@@ -14,44 +14,43 @@
 namespace Workerman\Connection;
 
 /**
- * udp连接类（udp实际上是无连接的，这里是为了保持与TCP接口一致） 
+ * UdpConnection. 
  */
 class UdpConnection extends ConnectionInterface
 {
     /**
-     * 应用层协议
-     * 值类似于 Workerman\\Protocols\\Http
+     * Application layer protocol.
+     * The format is like this Workerman\\Protocols\\Http.
      * @var string
      */
     public $protocol = '';
     
     /**
-     * udp socket 资源
+     * Udp socket.
      * @var resource
      */
     protected $_socket = null;
     
     /**
-     * 对端 ip
+     * Remote ip.
      * @var string
      */
     protected $_remoteIp = '';
     
     /**
-     * 对端 端口
+     * Remote port.
      * @var int
      */
     protected $_remotePort = 0;
     
     /**
-     * 对端 地址
-     * 值类似于 192.168.10.100:3698
+     * Remote address.
      * @var string
      */
     protected $_remoteAddress = '';
 
     /**
-     * 构造函数
+     * Construct.
      * @param resource $socket
      * @param string $remote_address
      */
@@ -62,13 +61,12 @@ class UdpConnection extends ConnectionInterface
     }
     
     /**
-     * 发送数据给对端
+     * Sends data on the connection.
      * @param string $send_buffer
      * @return void|boolean
      */
     public function send($send_buffer, $raw = false)
     {
-        // 如果没有设置以原始数据发送，并且有设置协议则按照协议编码
         if(false === $raw && $this->protocol)
         {
             $parser = $this->protocol;
@@ -82,7 +80,7 @@ class UdpConnection extends ConnectionInterface
     }
     
     /**
-     * 获得对端 ip
+     * Get remote IP.
      * @return string
      */
     public function getRemoteIp()
@@ -95,7 +93,8 @@ class UdpConnection extends ConnectionInterface
     }
     
     /**
-     * 获得对端端口
+     * Get remote port.
+     * @return int
      */
     public function getRemotePort()
     {
@@ -107,7 +106,7 @@ class UdpConnection extends ConnectionInterface
     }
 
     /**
-     * 关闭连接（此处为了保持与TCP接口一致，提供了close方法）
+     * Close connection.
      * @void
      */
     public function close($data = null)

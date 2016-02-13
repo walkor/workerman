@@ -21,7 +21,7 @@ use Workerman\Connection\TcpConnection;
 class Http
 {
     /**
-     * 判断包长
+     * Check the integrity of the package.
      * @param string $recv_buffer
      * @param TcpConnection $connection
      * @return int
@@ -30,7 +30,7 @@ class Http
     {
         if(!strpos($recv_buffer, "\r\n\r\n"))
         {
-            // 无法获得包长，避免客户端传递超大头部的数据包
+            // Judge whether the package length exceeds the limit.
             if(strlen($recv_buffer)>=TcpConnection::$maxPackageSize)
             {
                 $connection->close();
@@ -61,20 +61,20 @@ class Http
     }
     
     /**
-     * 从http数据包中解析$_POST、$_GET、$_COOKIE等 
+     * Parse $_POST、$_GET、$_COOKIE. 
      * @param string $recv_buffer
      * @param TcpConnection $connection
      * @return void
      */
     public static function decode($recv_buffer, TcpConnection $connection)
     {
-        // 初始化
+        // Init.
         $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES =  array();
         $GLOBALS['HTTP_RAW_POST_DATA'] = '';
-        // 清空上次的数据
+        // Clear cache.
         HttpCache::$header = array('Connection'=>'Connection: keep-alive');
         HttpCache::$instance = new HttpCache();
-        // 需要设置的变量名
+        // $_SERVER
         $_SERVER = array (
               'QUERY_STRING' => '',
               'REQUEST_METHOD' => '',
@@ -93,7 +93,7 @@ class Http
               'REMOTE_PORT' => '0',
            );
         
-        // 将header分割成数组
+        // Parse headers.
         list($http_header, $http_body) = explode("\r\n\r\n", $recv_buffer, 2);
         $header_data = explode("\r\n", $http_header);
         
@@ -170,7 +170,7 @@ class Http
             }
         }
         
-        // 需要解析$_POST
+        // Parse $_POST.
         if($_SERVER['REQUEST_METHOD'] === 'POST')
         {
             if(isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] === 'multipart/form-data')
@@ -208,14 +208,14 @@ class Http
     }
     
     /**
-     * 编码，增加HTTP头
+     * Http encode.
      * @param string $content
      * @param TcpConnection $connection
      * @return string
      */
     public static function encode($content, TcpConnection $connection)
     {
-        // 没有http-code默认给个
+        // Default http-code.
         if(!isset(HttpCache::$header['Http-Code']))
         {
             $header = "HTTP/1.1 200 OK\r\n";
@@ -308,7 +308,7 @@ class Http
     }
     
     /**
-     * 删除一个header
+     * Remove header.
      * @param string $name
      * @return void
      */
@@ -322,7 +322,7 @@ class Http
     }
     
     /**
-     * 设置cookie
+     * Set cookie.
      * @param string $name
      * @param string $value
      * @param integer $maxage
@@ -361,7 +361,7 @@ class Http
             return true;
         }
         HttpCache::$instance->sessionStarted = true;
-        // 没有sid，则创建一个session文件，生成一个sid
+        // Generate a SID.
         if(!isset($_COOKIE[HttpCache::$sessionName]) || !is_file(HttpCache::$sessionPath . '/ses' . $_COOKIE[HttpCache::$sessionName]))
         {
             $file_name = tempnam(HttpCache::$sessionPath, 'ses');
@@ -385,7 +385,7 @@ class Http
         {
             HttpCache::$instance->sessionFile = HttpCache::$sessionPath . '/ses' . $_COOKIE[HttpCache::$sessionName];
         }
-        // 有sid则打开文件，读取session值
+        // Read session from session file.
         if(HttpCache::$instance->sessionFile)
         {
             $raw = file_get_contents(HttpCache::$instance->sessionFile);
@@ -397,7 +397,7 @@ class Http
     }
     
     /**
-     * 保存session
+     * Save session.
      * @return bool
      */
     public static function sessionWriteClose()
@@ -418,7 +418,7 @@ class Http
     }
     
     /**
-     * 退出
+     * End, like call exit in php-fpm.
      * @param string $msg
      * @throws \Exception
      */
@@ -436,7 +436,8 @@ class Http
     }
     
     /**
-     * get mime types
+     * Get mime types.
+     * @return string
      */
     public static function getMimeTypesFile()
     {
@@ -444,7 +445,8 @@ class Http
     }
     
      /**
-     * 解析$_FILES
+     * Parse $_FILES.
+     * @return void
      */
     protected static function parseUploadFiles($http_body, $http_post_boundary)
     {
@@ -457,7 +459,7 @@ class Http
         foreach($boundary_data_array as $boundary_data_buffer)
         {
             list($boundary_header_buffer, $boundary_value) = explode("\r\n\r\n", $boundary_data_buffer, 2);
-            // 去掉末尾\r\n
+            // Remove \r\n from the end of buffer.
             $boundary_value = substr($boundary_value, 0, -2);
             foreach (explode("\r\n", $boundary_header_buffer) as $item)
             {
@@ -466,9 +468,10 @@ class Http
                 switch ($header_key)
                 {
                     case "content-disposition":
-                        // 是文件
+                        // Is file data.
                         if(preg_match('/name=".*?"; filename="(.*?)"$/', $header_value, $match))
                         {
+                            // Parse $_FILES.
                             $_FILES[] = array(
                                 'file_name' => $match[1],
                                 'file_data' => $boundary_value,
@@ -476,10 +479,10 @@ class Http
                             );
                             continue;
                         }
-                        // 是post field
+                        // Is post field.
                         else
                         {
-                            // 收集post
+                            // Parse $_POST.
                             if(preg_match('/name="(.*?)"$/', $header_value, $match))
                             {
                                 $_POST[$match[1]] = $boundary_value;
@@ -493,8 +496,7 @@ class Http
 }
 
 /**
- * 解析http协议数据包 缓存先关
- * @author walkor
+ * Http cache for the current http response.
  */
 class HttpCache
 {

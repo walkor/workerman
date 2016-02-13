@@ -18,37 +18,32 @@ namespace Workerman\Events;
 class Ev implements EventInterface
 {
     /**
-     * eventBase
-     * @var object
-     */
-    protected $_eventBase = null;
-
-    /**
-     * 所有的事件
+     * All listeners for read/write event.
      * @var array
      */
     protected $_allEvents = array();
 
     /**
-     * 所有的信号事件
+     * Event listeners of signal.
      * @var array
      */
     protected $_eventSignal = array();
 
     /**
-     * 所有的定时事件
+     * All timer event listeners.
      * [func, args, event, flag, time_interval]
      * @var array
      */
     protected $_eventTimer = array();
 
     /**
-     * 定时器id
+     * Timer id.
+     * @var int
      */
     protected static $_timerId = 1;
 
     /**
-     * 添加事件
+     * Add a timer.
      * @see EventInterface::add()
      */
     public function add($fd, $flag, $func, $args=null)
@@ -90,7 +85,7 @@ class Ev implements EventInterface
     }
 
     /**
-     * 删除事件
+     * Remove a timer.
      * @see Events\EventInterface::del()
      */
     public function del($fd ,$flag)
@@ -131,7 +126,7 @@ class Ev implements EventInterface
     }
 
     /**
-     * 定时器回调
+     * Timer callback.
      * @param event $event
      */
     public function timerCallback($event)
@@ -155,7 +150,7 @@ class Ev implements EventInterface
     }
 
     /**
-     * 删除所有定时器
+     * Remove all timers.
      * @return void
      */
     public function clearAllTimer()
@@ -168,7 +163,7 @@ class Ev implements EventInterface
     }
 
     /**
-     * 事件循环
+     * Main loop.
      * @see EventInterface::loop()
      */
     public function loop()

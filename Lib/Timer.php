@@ -16,7 +16,7 @@ use \Workerman\Events\EventInterface;
 use \Exception;
 
 /**
- * 定时器
+ * Timer.
  * 
  * example:
  * Workerman\Lib\Timer::add($time_interval, callback, array($arg1, $arg2..));
@@ -24,7 +24,7 @@ use \Exception;
 class Timer 
 {
     /**
-     * 基于ALARM信号的任务
+     * Tasks that based on ALARM signal.
      * [
      *   run_time => [[$func, $args, $persistent, time_interval],[$func, $args, $persistent, time_interval],..]],
      *   run_time => [[$func, $args, $persistent, time_interval],[$func, $args, $persistent, time_interval],..]],
@@ -42,7 +42,7 @@ class Timer
     
     
     /**
-     * 初始化
+     * Init.
      * @return void
      */
     public static function init($event = null)
@@ -58,7 +58,7 @@ class Timer
     }
     
     /**
-     * 信号处理函数，只处理ALARM事件
+     * ALARM signal handler.
      * @return void
      */
     public static function signalHandle()
@@ -72,7 +72,7 @@ class Timer
     
     
     /**
-     * 添加一个定时器
+     * Add a timer.
      * @param int $time_interval
      * @param callback $func
      * @param mix $args
@@ -114,7 +114,7 @@ class Timer
     
     
     /**
-     * 尝试触发定时回调
+     * Tick.
      * @return void
      */
     public static function tick()
@@ -155,7 +155,7 @@ class Timer
     }
     
     /**
-     * 删除定时器
+     * Remove a timer.
      * @param $timer_id
      */
     public static function del($timer_id)
@@ -167,7 +167,8 @@ class Timer
     }
     
     /**
-     * 删除所有定时
+     * Remove all timers.
+     * @return void
      */
     public static function delAll()
     {

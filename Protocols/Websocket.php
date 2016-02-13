@@ -16,55 +16,55 @@ namespace Workerman\Protocols;
 use Workerman\Connection\ConnectionInterface;
 
 /**
- * WebSocket 协议服务端解包和打包
+ * WebSocket protocol.
  */
 class Websocket implements \Workerman\Protocols\ProtocolInterface
 {
     /**
-     * websocket头部最小长度
+     * Minimum head length of websocket protocol.
      * @var int
      */
     const MIN_HEAD_LEN = 6;
     
     /**
-     * websocket blob类型
+     * Websocket blob type.
      * @var char
      */
     const BINARY_TYPE_BLOB = "\x81";
 
     /**
-     * websocket arraybuffer类型
+     * Websocket arraybuffer type.
      * @var char
      */
     const BINARY_TYPE_ARRAYBUFFER = "\x82";
     
     /**
-     * 检查包的完整性
+     * Check the integrity of the package.
      * @param string $buffer
      */
     public static function input($buffer, ConnectionInterface $connection)
     {
-        // 数据长度
+        // Receive length.
         $recv_len = strlen($buffer);
-        // 长度不够
+        // We need more data.
         if($recv_len < self::MIN_HEAD_LEN)
         {
             return 0;
         }
         
-        // 还没有握手
+        // Has not yet completed the handshake.
         if(empty($connection->websocketHandshake))
         {
             return self::dealHandshake($buffer, $connection);
         }
         
-        // $connection->websocketCurrentFrameLength有值说明当前fin为0，则缓冲websocket帧数据
+        // Buffer websocket frame data.
         if($connection->websocketCurrentFrameLength)
         {
-            // 如果当前帧数据未收全，则继续收
+            // We need more frame data.
             if($connection->websocketCurrentFrameLength > $recv_len)
             {
-                // 返回0，因为不清楚完整的数据包长度，需要等待fin=1的帧
+                // Return 0, because it is not clear the full packet length, waiting for the frame of fin=1.
                 return 0;
             }
         }
@@ -76,18 +76,17 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $opcode = $firstbyte & 0xf;
             switch($opcode)
             {
-                // 附加数据帧 @todo 实现附加数据帧
                 case 0x0:
                     break;
-                // 文本数据帧
+                // Blob type.
                 case 0x1:
                     break;
-                // 二进制数据帧
+                // Arraybuffer type.
                 case 0x2:
                     break;
-                // 关闭的包
+                // Close package.
                 case 0x8:
-                    // 如果有设置onWebSocketClose回调，尝试执行
+                    // Try to emit onWebSocketClose callback.
                     if(isset($connection->onWebSocketClose))
                     {
                         try 
@@ -100,15 +99,15 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                             exit(250);
                         }
                     }
-                    // 默认行为是关闭连接
+                    // Close connection.
                     else
                     {
                         $connection->close();
                     }
                     return 0;
-                // ping的包
+                // Ping package.
                 case 0x9:
-                    // 如果有设置onWebSocketPing回调，尝试执行
+                    // Try to emit onWebSocketPing callback.
                     if(isset($connection->onWebSocketPing))
                     {
                         try 
@@ -121,21 +120,21 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                             exit(250);
                         }
                     }
-                    // 默认发送pong
+                    // Send pong package to client.
                     else 
                     {
                         $connection->send(pack('H*', '8a00'), true);
                     }
-                    // 从接受缓冲区中消费掉该数据包
+                    // Consume data from receive buffer.
                     if(!$data_len)
                     {
                         $connection->consumeRecvBuffer(self::MIN_HEAD_LEN);
                         return 0;
                     }
                     break;
-                // pong的包
+                // Pong package.
                 case 0xa:
-                    // 如果有设置onWebSocketPong回调，尝试执行
+                    // Try to emit onWebSocketPong callback.
                     if(isset($connection->onWebSocketPong))
                     {
                         try
@@ -148,21 +147,21 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                             exit(250);
                         }
                     }
-                    // 从接受缓冲区中消费掉该数据包
+                    //  Consume data from receive buffer.
                     if(!$data_len)
                     {
                         $connection->consumeRecvBuffer(self::MIN_HEAD_LEN);
                         return 0;
                     }
                     break;
-                // 错误的opcode 
+                // Wrong opcode. 
                 default :
                     echo "error opcode $opcode and close websocket connection\n";
                     $connection->close();
                     return 0;
             }
             
-            // websocket二进制数据
+            // Calculate packet length.
             $head_len = self::MIN_HEAD_LEN;
             if ($data_len === 126) {
                 $head_len = 8;
@@ -192,7 +191,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             }
         }
         
-        // 收到的数据刚好是一个frame
+        // Received just a frame length data.
         if($connection->websocketCurrentFrameLength == $recv_len)
         {
             self::decode($buffer, $connection);
@@ -200,17 +199,17 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $connection->websocketCurrentFrameLength = 0;
             return 0;
         }
-        // 收到的数据大于一个frame
+        // The length of the received data is greater than the length of a frame.
         elseif($connection->websocketCurrentFrameLength < $recv_len)
         {
             self::decode(substr($buffer, 0, $connection->websocketCurrentFrameLength), $connection);
             $connection->consumeRecvBuffer($connection->websocketCurrentFrameLength);
             $current_frame_length = $connection->websocketCurrentFrameLength;
             $connection->websocketCurrentFrameLength = 0;
-            // 继续读取下一个frame
+            // Continue to read next frame.
             return self::input(substr($buffer, $current_frame_length), $connection);
         }
-        // 收到的数据不足一个frame
+        // The length of the received data is less than the length of a frame.
         else
         {
             return 0;
@@ -218,7 +217,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     }
     
     /**
-     * 打包
+     * Websocket encode.
      * @param string $buffer
      * @return string
      */
@@ -227,7 +226,6 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         $len = strlen($buffer);
         if(empty($connection->websocketType))
         {
-            // 默认是utf8文本格式
             $connection->websocketType = self::BINARY_TYPE_BLOB;
         }
         
@@ -246,16 +244,15 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $encode_buffer = $first_byte.chr(127).pack("xxxxN", $len).$buffer;
         }
         
-        // 还没握手不能发数据，先将数据缓冲起来，等握手完毕后发送
+        // Handshake not completed so temporary buffer websocket data waiting for send.
         if(empty($connection->websocketHandshake))
         {
             if(empty($connection->tmpWebsocketData))
             {
-                // 临时数据缓冲
                 $connection->tmpWebsocketData = '';
             }
             $connection->tmpWebsocketData .= $encode_buffer;
-            // 返回空，阻止发送
+            // Return empty string.
             return '';
         }
         
@@ -263,7 +260,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     }
     
     /**
-     * 解包
+     * Websocket decode.
      * @param string $buffer
      * @return string
      */
@@ -298,24 +295,24 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     }
     
     /**
-     * 处理websocket握手
+     * Websocket handshake.
      * @param string $buffer
      * @param TcpConnection $connection
      * @return int
      */
     protected static function dealHandshake($buffer, $connection)
     {
-        // 握手阶段客户端发送HTTP协议
+        // HTTP protocol.
         if(0 === strpos($buffer, 'GET'))
         {
-            // 判断\r\n\r\n边界
+            // Find \r\n\r\n.
             $heder_end_pos = strpos($buffer, "\r\n\r\n");
             if(!$heder_end_pos)
             {
                 return 0;
             }
             
-            // 解析Sec-WebSocket-Key
+            // Get Sec-WebSocket-Key.
             $Sec_WebSocket_Key = '';
             if(preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match))
             {
@@ -327,28 +324,28 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 $connection->close();
                 return 0;
             }
-            // 握手的key
+            // Calculation websocket key.
             $new_key = base64_encode(sha1($Sec_WebSocket_Key."258EAFA5-E914-47DA-95CA-C5AB0DC85B11",true));
-            // 握手返回的数据
+            // Handshake response data.
             $handshake_message = "HTTP/1.1 101 Switching Protocols\r\n";
             $handshake_message .= "Upgrade: websocket\r\n";
             $handshake_message .= "Sec-WebSocket-Version: 13\r\n";
             $handshake_message .= "Connection: Upgrade\r\n";
             $handshake_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n\r\n";
-            // 标记已经握手
+            // Mark handshake complete..
             $connection->websocketHandshake = true;
-            // 缓冲fin为0的包，直到fin为1
+            // Websocket data buffer.
             $connection->websocketDataBuffer = '';
-            // 当前数据帧的长度，可能是fin为0的帧，也可能是fin为1的帧
+            // Current websocket frame length.
             $connection->websocketCurrentFrameLength = 0;
-            // 当前帧的数据缓冲
+            // Current websocket frame data.
             $connection->websocketCurrentFrameBuffer = '';
-            // 消费掉握手数据，不触发onMessage
+            // Consume handshake data.
             $connection->consumeRecvBuffer(strlen($buffer));
-            // 发送握手数据
+            // Send handshake response.
             $connection->send($handshake_message, true);
             
-            // 握手后有数据要发送
+            // There are data waiting to be sent.
             if(!empty($connection->tmpWebsocketData))
             {
                 $connection->send($connection->tmpWebsocketData, true);
@@ -359,7 +356,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             {
                 $connection->websocketType = self::BINARY_TYPE_BLOB;
             } 
-            // 如果有设置onWebSocketConnect回调，尝试执行
+            // Try to emit onWebSocketConnect callback.
             if(isset($connection->onWebSocketConnect))
             {
                 self::parseHttpHeader($buffer);
@@ -376,7 +373,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             }
             return 0;
         }
-        // 如果是flash的policy-file-request
+        // Is flash policy-file-request.
         elseif(0 === strpos($buffer,'<polic'))
         {
             $policy_xml = '<?xml version="1.0"?><cross-domain-policy><site-control permitted-cross-domain-policies="all"/><allow-access-from domain="*" to-ports="*"/></cross-domain-policy>'."\0";
@@ -384,14 +381,14 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $connection->consumeRecvBuffer(strlen($buffer));
             return 0;
         }
-        // 出错
+        // Bad websocket handshake request.
         $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Invalid handshake data for websocket. ", true);
         $connection->close();
         return 0;
     }
     
     /**
-     * 从header中获取
+     * Parse http header.
      * @param string $buffer
      * @return void
      */

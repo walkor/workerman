@@ -18,40 +18,37 @@ use \Workerman\Protocols\Http;
 use \Workerman\Protocols\HttpCache;
 
 /**
- * 
- *  基于Worker实现的一个简单的WebServer
- *  支持静态文件、支持文件上传、支持POST
- *  HTTP协议
+ *  WebServer.
  */
 class WebServer extends Worker
 {
     /**
-     * 默认mime类型
+     * Mime.
      * @var string
      */
     protected static $defaultMimeType = 'text/html; charset=utf-8';
     
     /**
-     * 服务器名到文件路径的转换
+     * Virtual host to path mapping.
      * @var array ['workerman.net'=>'/home', 'www.workerman.net'=>'home/www']
      */
     protected $serverRoot = array();
     
     /**
-     * mime类型映射关系
+     * Mime mapping.
      * @var array
      */
     protected static $mimeTypeMap = array();
     
     
     /**
-     * 用来保存用户设置的onWorkerStart回调
+     * Used to save user OnWorkerStart callback settings.
      * @var callback
      */
     protected $_onWorkerStart = null;
     
     /**
-     * 添加站点域名与站点目录的对应关系，类似nginx的
+     * Add virtual host.
      * @param string $domain
      * @param string $root_path
      * @return void
@@ -62,7 +59,7 @@ class WebServer extends Worker
     }
     
     /**
-     * 构造函数
+     * Construct.
      * @param string $socket_name
      * @param array $context_option
      */
@@ -74,7 +71,7 @@ class WebServer extends Worker
     }
     
     /**
-     * 运行
+     * Run webserver instance.
      * @see Workerman.Worker::run()
      */
     public function run()
@@ -86,7 +83,7 @@ class WebServer extends Worker
     }
     
     /**
-     * 进程启动的时候一些初始化工作
+     * Emit when process start.
      * @throws \Exception
      */
     public function onWorkerStart()
@@ -95,12 +92,12 @@ class WebServer extends Worker
         {
             throw new \Exception('server root not set, please use WebServer::addRoot($domain, $root_path) to set server root path');
         }
-        // 初始化HttpCache
+        // Init HttpCache.
         HttpCache::init();
-        // 初始化mimeMap
+        // Init mimeMap.
         $this->initMimeTypeMap();
         
-        // 尝试执行开发者设定的onWorkerStart回调
+        // Try to emit onWorkerStart callback.
         if($this->_onWorkerStart)
         {
             try
@@ -116,7 +113,7 @@ class WebServer extends Worker
     }
     
     /**
-     * 初始化mimeType
+     * Init mime map.
      * @return void
      */
     public function initMimeTypeMap()
@@ -149,18 +146,14 @@ class WebServer extends Worker
     }
     
     /**
-     * 当接收到完整的http请求后的处理逻辑
-     * 1、如果请求的是以php为后缀的文件，则尝试加载
-     * 2、如果请求的url没有后缀，则尝试加载对应目录的index.php
-     * 3、如果请求的是非php为后缀的文件，尝试读取原始数据并发送
-     * 4、如果请求的文件不存在，则返回404
+     * Emit when http message coming.
      * @param TcpConnection $connection
      * @param mixed $data
      * @return void
      */
     public function onMessage($connection, $data)
     {
-        // 请求的文件
+        // REQUEST_URI.
         $url_info = parse_url($_SERVER['REQUEST_URI']);
         if(!$url_info)
         {
@@ -182,7 +175,6 @@ class WebServer extends Worker
         
         $file = "$root_dir/$path";
         
-        // 对应的php文件不存在则直接使用根目录的index.php
         if($extension === 'php' && !is_file($file))
         {
             $file = "$root_dir/index.php";
@@ -193,10 +185,10 @@ class WebServer extends Worker
             }
         }
         
-        // 请求的文件存在
+        // File exsits.
         if(is_file($file))
         {
-            // 判断是否是站点目录里的文件
+            // Security check.
             if((!($request_realpath = realpath($file)) || !($root_dir_realpath = realpath($root_dir))) || 0 !== strpos($request_realpath, $root_dir_realpath))
             {
                 Http::header('HTTP/1.1 400 Bad Request');
@@ -205,25 +197,24 @@ class WebServer extends Worker
             
             $file = realpath($file);
             
-            // 如果请求的是php文件
+            // Request php file.
             if($extension === 'php')
             {
                 $cwd = getcwd();
                 chdir($root_dir);
                 ini_set('display_errors', 'off');
-                // 缓冲输出
                 ob_start();
-                // 载入php文件
+                // Try to include php file.
                 try 
                 {
-                    // $_SERVER变量
+                    // $_SERVER.
                     $_SERVER['REMOTE_ADDR'] = $connection->getRemoteIp();
                     $_SERVER['REMOTE_PORT'] = $connection->getRemotePort();
                     include $file;
                 }
                 catch(\Exception $e) 
                 {
-                    // 如果不是exit
+                    // Jump_exit?
                     if($e->getMessage() != 'jump_exit')
                     {
                         echo $e;
@@ -236,7 +227,7 @@ class WebServer extends Worker
                 return ;
             }
             
-            // 请求的是静态资源文件
+            // Static resource file request.
             if(isset(self::$mimeTypeMap[$extension]))
             {
                Http::header('Content-Type: '. self::$mimeTypeMap[$extension]);
@@ -246,20 +237,19 @@ class WebServer extends Worker
                 Http::header('Content-Type: '. self::$defaultMimeType);
             }
             
-            // 获取文件信息
+            // Get file stat.
             $info = stat($file);
             
             $modified_time = $info ? date('D, d M Y H:i:s', $info['mtime']) . ' GMT' : '';
             
-            // 如果有$_SERVER['HTTP_IF_MODIFIED_SINCE']
             if(!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $info)
             {
-                // 文件没有更改则直接304
+                // Http 304.
                 if($modified_time === $_SERVER['HTTP_IF_MODIFIED_SINCE'])
                 {
                     // 304
                     Http::header('HTTP/1.1 304 Not Modified');
-                    // 发送给客户端
+                    // Send nothing but http headers..
                     return $connection->close('');
                 }
             }
@@ -268,14 +258,14 @@ class WebServer extends Worker
             {
                 Http::header("Last-Modified: $modified_time");
             }
-            // 发送给客户端
+            // Send to client.
            return $connection->close(file_get_contents($file));
         }
         else 
         {
             // 404
             Http::header("HTTP/1.1 404 Not Found");
-            return $connection->close('<html><head><title>404 页面不存在</title></head><body><center><h3>404 Not Found</h3></center></body></html>');
+            return $connection->close('<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>');
         }
     }
 }

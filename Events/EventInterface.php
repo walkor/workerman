@@ -16,37 +16,37 @@ namespace Workerman\Events;
 interface EventInterface
 {
     /**
-     * 读事件
+     * Read event. 
      * @var int
      */
     const EV_READ = 1;
     
     /**
-     * 写事件
+     * Write event.
      * @var int
      */
     const EV_WRITE = 2;
     
     /**
-     * 信号事件
+     * Signal event.
      * @var int
      */
     const EV_SIGNAL = 4;
     
     /**
-     * 连续的定时事件
+     * Timer event.
      * @var int
      */
     const EV_TIMER = 8;
     
     /**
-     * 定时一次
+     * Timer once event.
      * @var int 
      */
     const EV_TIMER_ONCE = 16;
     
     /**
-     * 添加事件回调 
+     * Add event listener to event loop.
      * @param resource $fd
      * @param int $flag
      * @param callable $func
@@ -55,7 +55,7 @@ interface EventInterface
     public function add($fd, $flag, $func, $args = null);
     
     /**
-     * 删除事件回调
+     * Remove event listener from event loop.
      * @param resource $fd
      * @param int $flag
      * @return bool
@@ -63,13 +63,13 @@ interface EventInterface
     public function del($fd, $flag);
     
     /**
-     * 清除所有定时器
+     * Remove all timers.
      * @return void
      */
     public function clearAllTimer();
     
     /**
-     * 事件循环
+     * Main loop.
      * @return void
      */
     public function loop();

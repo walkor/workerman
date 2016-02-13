@@ -19,32 +19,32 @@ namespace Workerman\Events;
 class Libevent implements EventInterface
 {
     /**
-     * eventBase
+     * Event base.
      * @var object
      */
     protected $_eventBase = null;
     
     /**
-     * 所有的事件
+     * All listeners for read/write event.
      * @var array
      */
     protected $_allEvents = array();
     
     /**
-     * 所有的信号事件
+     * Event listeners of signal.
      * @var array
      */
     protected $_eventSignal = array();
     
     /**
-     * 所有的定时事件
+     * All timer event listeners.
      * [func, args, event, flag, time_interval]
      * @var array
      */
     protected $_eventTimer = array();
     
     /**
-     * 构造函数
+     * construct
      * @return void
      */
     public function __construct()
@@ -53,7 +53,6 @@ class Libevent implements EventInterface
     }
    
     /**
-     * 添加事件
      * @see EventInterface::add()
      */
     public function add($fd, $flag, $func, $args=array())
@@ -128,7 +127,6 @@ class Libevent implements EventInterface
     }
     
     /**
-     * 删除事件
      * @see Events\EventInterface::del()
      */
     public function del($fd ,$flag)
@@ -170,21 +168,19 @@ class Libevent implements EventInterface
     }
     
     /**
-     * 定时器回调
+     * Timer callback.
      * @param null $_null
      * @param null $_null
      * @param int $timer_id
      */
     protected function timerCallback($_null, $_null, $timer_id)
     {
-        // 如果是连续的定时任务，再把任务加进去
         if($this->_eventTimer[$timer_id][3] === self::EV_TIMER)
         {
             event_add($this->_eventTimer[$timer_id][2], $this->_eventTimer[$timer_id][4]);
         }
         try 
         {
-            // 执行任务
             call_user_func_array($this->_eventTimer[$timer_id][0], $this->_eventTimer[$timer_id][1]);
         }
         catch(\Exception $e)
@@ -199,7 +195,7 @@ class Libevent implements EventInterface
     }
     
     /**
-     * 删除所有定时器
+     * @see Events\EventInterface::clearAllTimer() 
      * @return void
      */
     public function clearAllTimer()
@@ -213,7 +209,6 @@ class Libevent implements EventInterface
      
 
     /**
-     * 事件循环
      * @see EventInterface::loop()
      */
     public function loop()

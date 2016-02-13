@@ -14,12 +14,12 @@
 namespace Workerman\Connection;
 
 /**
- * connection类的接口 
+ * ConnectionInterface.
  */
 abstract class  ConnectionInterface
 {
     /**
-     * status命令的统计数据
+     * Statistics for status command.
      * @var array
      */
     public static $statistics = array(
@@ -30,45 +30,45 @@ abstract class  ConnectionInterface
     );
     
     /**
-     * 当收到数据时，如果有设置$onMessage回调，则执行
+     * Emitted when data is received. 
      * @var callback
      */
     public $onMessage = null;
     
     /**
-     * 当连接关闭时，如果设置了$onClose回调，则执行
+     * Emitted when the other end of the socket sends a FIN packet.
      * @var callback
      */
     public $onClose = null;
     
     /**
-     * 当出现错误时，如果设置了$onError回调，则执行
+     * Emitted when an error occurs with connection. 
      * @var callback
      */
     public $onError = null;
     
     /**
-     * 发送数据给对端
+     * Sends data on the connection.
      * @param string $send_buffer
      * @return void|boolean
      */
     abstract public function send($send_buffer);
     
     /**
-     * 获得远端ip
+     * Get remote IP.
      * @return string
      */
     abstract public function getRemoteIp();
     
     /**
-     * 获得远端端口
+     * Get remote port.
      * @return int
      */
     abstract public function getRemotePort();
 
     /**
-     * 关闭连接，为了保持接口一致，udp保留了此方法，当是udp时调用此方法无任何作用
-     * @void
+     * Close connection.
+     * @return void
      */
     abstract public function close($data = null);
 }
