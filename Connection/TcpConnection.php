@@ -334,7 +334,7 @@ class TcpConnection extends ConnectionInterface
         {
             Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
             $this->_isPaused = false;
-            $this->baseRead($this->_socket);
+            $this->baseRead($this->_socket, false);
         }
     }
 
@@ -343,7 +343,7 @@ class TcpConnection extends ConnectionInterface
      * @param resource $socket
      * @return void
      */
-    public function baseRead($socket)
+    public function baseRead($socket, $check_eof = true)
     {
         $read_data = false;
         while(1)
@@ -358,7 +358,7 @@ class TcpConnection extends ConnectionInterface
         }
         
         // Check connection closed.
-        if(!$read_data && (!is_resource($socket) || feof($socket)))
+        if(!$read_data && $check_eof)
         {
             $this->destroy();
             return;

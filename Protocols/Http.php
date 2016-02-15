@@ -46,8 +46,8 @@ class Http
             $match = array();
             if(preg_match("/\r\nContent-Length: ?(\d+)/", $header, $match))
             {
-                $content_lenght = $match[1];
-                return $content_lenght + strlen($header) + 4;
+                $content_length = $match[1];
+                return $content_length + strlen($header) + 4;
             }
             else
             {

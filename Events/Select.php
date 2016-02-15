@@ -231,34 +231,33 @@ class Select implements EventInterface
             $read = $this->_readFds;
             $write = $this->_writeFds;
             // Waiting read/write/signal/timeout events.
-            @stream_select($read, $write, $e, 0, $this->_selectTimeout);
+            $ret = @stream_select($read, $write, $e, 0, $this->_selectTimeout);
             
             if(!$this->_scheduler->isEmpty())
             {
                 $this->tick();
             }
             
-            if($read)
+            if(!$ret)
             {
-                foreach($read as $fd)
+                continue;
+            }
+            
+            foreach($read as $fd)
+            {
+                $fd_key = (int) $fd;
+                if(isset($this->_allEvents[$fd_key][self::EV_READ]))
                 {
-                    $fd_key = (int) $fd;
-                    if(isset($this->_allEvents[$fd_key][self::EV_READ]))
-                    {
-                        call_user_func_array($this->_allEvents[$fd_key][self::EV_READ][0], array($this->_allEvents[$fd_key][self::EV_READ][1]));
-                    }
+                    call_user_func_array($this->_allEvents[$fd_key][self::EV_READ][0], array($this->_allEvents[$fd_key][self::EV_READ][1]));
                 }
             }
             
-            if($write)
+            foreach($write as $fd)
             {
-                foreach($write as $fd)
+                $fd_key = (int) $fd;
+                if(isset($this->_allEvents[$fd_key][self::EV_WRITE]))
                 {
-                    $fd_key = (int) $fd;
-                    if(isset($this->_allEvents[$fd_key][self::EV_WRITE]))
-                    {
-                        call_user_func_array($this->_allEvents[$fd_key][self::EV_WRITE][0], array($this->_allEvents[$fd_key][self::EV_WRITE][1]));
-                    }
+                    call_user_func_array($this->_allEvents[$fd_key][self::EV_WRITE][0], array($this->_allEvents[$fd_key][self::EV_WRITE][1]));
                 }
             }
         }
