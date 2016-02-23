@@ -115,6 +115,13 @@ class AsyncTcpConnection extends TcpConnection
             Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
             // Nonblocking.
             stream_set_blocking($this->_socket, 0);
+            // Try to open keepalive for tcp and disable Nagle algorithm.
+            if(function_exists('socket_import_stream'))
+            {
+                $raw_socket = socket_import_stream($this->_socket);
+                socket_set_option($raw_socket, SOL_SOCKET, SO_KEEPALIVE, 1);
+                socket_set_option($raw_socket, SOL_TCP, TCP_NODELAY, 1);
+            }
             // Register a listener waiting read event.
             Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
             // There are some data waiting to send.
