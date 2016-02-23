@@ -605,7 +605,7 @@ class Worker
                 // Waiting amoment.
                 usleep(100000);
                 // Display statisitcs data from a disk file.
-                readfile(self::$_statisticsFile);
+                @readfile(self::$_statisticsFile);
                 exit(0);
             case 'restart':
             case 'stop':
@@ -1406,7 +1406,7 @@ class Worker
         {
             $socket   = socket_import_stream($this->_mainSocket );
             @socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
-            @socket_set_option($socket, SOL_SOCKET, TCP_NODELAY, 1);
+            @socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
         }
         
         // Non blocking.

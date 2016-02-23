@@ -135,11 +135,11 @@ class WebServer extends Worker
             if(preg_match("/\s*(\S+)\s+(\S.+)/", $content, $match))
             {
                 $mime_type = $match[1];
-                $extension_var = $match[2];
-                $extension_array = explode(' ', substr($extension_var, 0, -1));
-                foreach($extension_array as $extension)
+                $workerman_file_extension_var = $match[2];
+                $workerman_file_extension_array = explode(' ', substr($workerman_file_extension_var, 0, -1));
+                foreach($workerman_file_extension_array as $workerman_file_extension)
                 {
-                    self::$mimeTypeMap[$extension] = $mime_type;
+                    self::$mimeTypeMap[$workerman_file_extension] = $mime_type;
                 } 
             }
         }
@@ -151,57 +151,57 @@ class WebServer extends Worker
      * @param mixed $data
      * @return void
      */
-    public function onMessage($connection, $data)
+    public function onMessage($connection)
     {
         // REQUEST_URI.
-        $url_info = parse_url($_SERVER['REQUEST_URI']);
-        if(!$url_info)
+        $workerman_url_info = parse_url($_SERVER['REQUEST_URI']);
+        if(!$workerman_url_info)
         {
             Http::header('HTTP/1.1 400 Bad Request');
             return $connection->close('<h1>400 Bad Request</h1>');
         }
         
-        $path = $url_info['path'];
+        $workerman_path = $workerman_url_info['path'];
         
-        $path_info = pathinfo($path);
-        $extension = isset($path_info['extension']) ? $path_info['extension'] : '' ;
-        if($extension === '')
+        $workerman_path_info = pathinfo($workerman_path);
+        $workerman_file_extension = isset($workerman_path_info['extension']) ? $workerman_path_info['extension'] : '' ;
+        if($workerman_file_extension === '')
         {
-            $path = ($len = strlen($path)) && $path[$len -1] === '/' ? $path.'index.php' : $path . '/index.php';
-            $extension = 'php';
+            $workerman_path = ($len = strlen($workerman_path)) && $workerman_path[$len -1] === '/' ? $workerman_path.'index.php' : $workerman_path . '/index.php';
+            $workerman_file_extension = 'php';
         }
         
-        $root_dir = isset($this->serverRoot[$_SERVER['HTTP_HOST']]) ? $this->serverRoot[$_SERVER['HTTP_HOST']] : current($this->serverRoot);
+        $workerman_root_dir = isset($this->serverRoot[$_SERVER['HTTP_HOST']]) ? $this->serverRoot[$_SERVER['HTTP_HOST']] : current($this->serverRoot);
         
-        $file = "$root_dir/$path";
+        $workerman_file = "$workerman_root_dir/$workerman_path";
         
-        if($extension === 'php' && !is_file($file))
+        if($workerman_file_extension === 'php' && !is_file($workerman_file))
         {
-            $file = "$root_dir/index.php";
-            if(!is_file($file))
+            $workerman_file = "$workerman_root_dir/index.php";
+            if(!is_file($workerman_file))
             {
-                $file = "$root_dir/index.html";
-                $extension = 'html';
+                $workerman_file = "$workerman_root_dir/index.html";
+                $workerman_file_extension = 'html';
             }
         }
         
         // File exsits.
-        if(is_file($file))
+        if(is_file($workerman_file))
         {
             // Security check.
-            if((!($request_realpath = realpath($file)) || !($root_dir_realpath = realpath($root_dir))) || 0 !== strpos($request_realpath, $root_dir_realpath))
+            if((!($workerman_request_realpath = realpath($workerman_file)) || !($workerman_root_dir_realpath = realpath($workerman_root_dir))) || 0 !== strpos($workerman_request_realpath, $workerman_root_dir_realpath))
             {
                 Http::header('HTTP/1.1 400 Bad Request');
                 return $connection->close('<h1>400 Bad Request</h1>');
             }
             
-            $file = realpath($file);
+            $workerman_file = realpath($workerman_file);
             
             // Request php file.
-            if($extension === 'php')
+            if($workerman_file_extension === 'php')
             {
-                $cwd = getcwd();
-                chdir($root_dir);
+                $workerman_cwd = getcwd();
+                chdir($workerman_root_dir);
                 ini_set('display_errors', 'off');
                 ob_start();
                 // Try to include php file.
@@ -210,7 +210,7 @@ class WebServer extends Worker
                     // $_SERVER.
                     $_SERVER['REMOTE_ADDR'] = $connection->getRemoteIp();
                     $_SERVER['REMOTE_PORT'] = $connection->getRemotePort();
-                    include $file;
+                    include $workerman_file;
                 }
                 catch(\Exception $e) 
                 {
@@ -223,14 +223,14 @@ class WebServer extends Worker
                 $content = ob_get_clean();
                 ini_set('display_errors', 'on');
                 $connection->close($content);
-                chdir($cwd);
+                chdir($workerman_cwd);
                 return ;
             }
             
             // Static resource file request.
-            if(isset(self::$mimeTypeMap[$extension]))
+            if(isset(self::$mimeTypeMap[$workerman_file_extension]))
             {
-               Http::header('Content-Type: '. self::$mimeTypeMap[$extension]);
+               Http::header('Content-Type: '. self::$mimeTypeMap[$workerman_file_extension]);
             }
             else 
             {
@@ -238,7 +238,7 @@ class WebServer extends Worker
             }
             
             // Get file stat.
-            $info = stat($file);
+            $info = stat($workerman_file);
             
             $modified_time = $info ? date('D, d M Y H:i:s', $info['mtime']) . ' GMT' : '';
             
@@ -259,7 +259,7 @@ class WebServer extends Worker
                 Http::header("Last-Modified: $modified_time");
             }
             // Send to client.
-           return $connection->close(file_get_contents($file));
+           return $connection->close(file_get_contents($workerman_file));
         }
         else 
         {
