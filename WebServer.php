@@ -121,7 +121,7 @@ class WebServer extends Worker
         $mime_file = Http::getMimeTypesFile();
         if(!is_file($mime_file))
         {
-            $this->notice("$mime_file mime.type file not fond");
+            $this->log("$mime_file mime.type file not fond");
             return;
         }
         $items = file($mime_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
