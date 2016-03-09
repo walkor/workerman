@@ -171,7 +171,7 @@ class WebServer extends Worker
             $workerman_file_extension = 'php';
         }
         
-        $workerman_root_dir = isset($this->serverRoot[$_SERVER['HTTP_HOST']]) ? $this->serverRoot[$_SERVER['HTTP_HOST']] : current($this->serverRoot);
+        $workerman_root_dir = isset($this->serverRoot[$_SERVER['SERVER_NAME']]) ? $this->serverRoot[$_SERVER['SERVER_NAME']] : current($this->serverRoot);
         
         $workerman_file = "$workerman_root_dir/$workerman_path";
         
