@@ -169,11 +169,11 @@ class Libevent implements EventInterface
     
     /**
      * Timer callback.
-     * @param null $_null
-     * @param null $_null
+     * @param null $_null1
+     * @param null $_null2
      * @param int $timer_id
      */
-    protected function timerCallback($_null, $_null, $timer_id)
+    protected function timerCallback($_null1, $_null2, $timer_id)
     {
         if($this->_eventTimer[$timer_id][3] === self::EV_TIMER)
         {
