@@ -15,7 +15,7 @@ namespace Workerman\Connection;
 
 use Workerman\Events\EventInterface;
 use Workerman\Worker;
-use \Exception;
+use Exception;
 
 /**
  * AsyncTcpConnection.
@@ -37,8 +37,8 @@ class AsyncTcpConnection extends TcpConnection
     
     /**
      * Construct.
-     * @param resource $socket
-     * @param EventInterface $event
+     * @param string $remote_address
+     * @throws Exception
      */
     public function __construct($remote_address)
     {

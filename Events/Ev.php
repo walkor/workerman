@@ -44,7 +44,7 @@ class Ev implements EventInterface
 
     /**
      * Add a timer.
-     * @see EventInterface::add()
+     * {@inheritdoc}
      */
     public function add($fd, $flag, $func, $args=null)
     {
@@ -86,7 +86,7 @@ class Ev implements EventInterface
 
     /**
      * Remove a timer.
-     * @see Events\EventInterface::del()
+     * {@inheritdoc}
      */
     public function del($fd ,$flag)
     {
@@ -127,7 +127,7 @@ class Ev implements EventInterface
 
     /**
      * Timer callback.
-     * @param event $event
+     * @param \EvWatcher $event
      */
     public function timerCallback($event)
     {
@@ -171,5 +171,3 @@ class Ev implements EventInterface
         \Ev::run();
     }
 }
-
-

@@ -68,6 +68,8 @@ abstract class  ConnectionInterface
 
     /**
      * Close connection.
+     *
+     * @param $data
      * @return void
      */
     abstract public function close($data = null);

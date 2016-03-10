@@ -21,9 +21,9 @@ class UdpConnection extends ConnectionInterface
     /**
      * Application layer protocol.
      * The format is like this Workerman\\Protocols\\Http.
-     * @var string
+     * @var \Workerman\Protocols\ProtocolInterface
      */
-    public $protocol = '';
+    public $protocol = null;
     
     /**
      * Udp socket.
@@ -63,6 +63,7 @@ class UdpConnection extends ConnectionInterface
     /**
      * Sends data on the connection.
      * @param string $send_buffer
+     * @param bool $raw
      * @return void|boolean
      */
     public function send($send_buffer, $raw = false)
@@ -107,7 +108,9 @@ class UdpConnection extends ConnectionInterface
 
     /**
      * Close connection.
-     * @void
+     *
+     * @param mixed $data
+     * @return bool
      */
     public function close($data = null)
     {

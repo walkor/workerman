@@ -13,9 +13,8 @@
  */
 namespace Workerman;
 
-use \Workerman\Worker;
-use \Workerman\Protocols\Http;
-use \Workerman\Protocols\HttpCache;
+use Workerman\Protocols\Http;
+use Workerman\Protocols\HttpCache;
 
 /**
  *  WebServer.
@@ -65,7 +64,7 @@ class WebServer extends Worker
      */
     public function __construct($socket_name, $context_option = array())
     {
-        list($scheme, $address) = explode(':', $socket_name, 2);
+        list(, $address) = explode(':', $socket_name, 2);
         parent::__construct('http:'.$address, $context_option);
         $this->name = 'WebServer';
     }
@@ -147,8 +146,7 @@ class WebServer extends Worker
     
     /**
      * Emit when http message coming.
-     * @param TcpConnection $connection
-     * @param mixed $data
+     * @param Connection\TcpConnection $connection
      * @return void
      */
     public function onMessage($connection)
@@ -158,7 +156,8 @@ class WebServer extends Worker
         if(!$workerman_url_info)
         {
             Http::header('HTTP/1.1 400 Bad Request');
-            return $connection->close('<h1>400 Bad Request</h1>');
+            $connection->close('<h1>400 Bad Request</h1>');
+            return;
         }
         
         $workerman_path = $workerman_url_info['path'];
@@ -192,7 +191,8 @@ class WebServer extends Worker
             if((!($workerman_request_realpath = realpath($workerman_file)) || !($workerman_root_dir_realpath = realpath($workerman_root_dir))) || 0 !== strpos($workerman_request_realpath, $workerman_root_dir_realpath))
             {
                 Http::header('HTTP/1.1 400 Bad Request');
-                return $connection->close('<h1>400 Bad Request</h1>');
+                $connection->close('<h1>400 Bad Request</h1>');
+                return;
             }
             
             $workerman_file = realpath($workerman_file);
@@ -224,7 +224,7 @@ class WebServer extends Worker
                 ini_set('display_errors', 'on');
                 $connection->close($content);
                 chdir($workerman_cwd);
-                return ;
+                return;
             }
             
             // Static resource file request.
@@ -250,7 +250,8 @@ class WebServer extends Worker
                     // 304
                     Http::header('HTTP/1.1 304 Not Modified');
                     // Send nothing but http headers..
-                    return $connection->close('');
+                    $connection->close('');
+                    return;
                 }
             }
             
@@ -259,13 +260,15 @@ class WebServer extends Worker
                 Http::header("Last-Modified: $modified_time");
             }
             // Send to client.
-           return $connection->close(file_get_contents($workerman_file));
+            $connection->close(file_get_contents($workerman_file));
+            return;
         }
         else 
         {
             // 404
             Http::header("HTTP/1.1 404 Not Found");
-            return $connection->close('<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>');
+            $connection->close('<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>');
+            return;
         }
     }
 }

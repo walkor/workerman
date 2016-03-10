@@ -83,7 +83,7 @@ Worker::runAll();
 test.php
 ```php
 require_once './Workerman/Autoloader.php';
-use \Workerman\WebServer;
+use Workerman\WebServer;
 
 // WebServer
 $web = new WebServer("http://0.0.0.0:80");

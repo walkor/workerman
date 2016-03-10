@@ -20,7 +20,7 @@ class Libevent implements EventInterface
 {
     /**
      * Event base.
-     * @var object
+     * @var resource
      */
     protected $_eventBase = null;
     
@@ -45,7 +45,6 @@ class Libevent implements EventInterface
     
     /**
      * construct
-     * @return void
      */
     public function __construct()
     {
@@ -53,7 +52,7 @@ class Libevent implements EventInterface
     }
    
     /**
-     * @see EventInterface::add()
+     * {@inheritdoc}
      */
     public function add($fd, $flag, $func, $args=array())
     {
@@ -127,7 +126,7 @@ class Libevent implements EventInterface
     }
     
     /**
-     * @see Events\EventInterface::del()
+     * {@inheritdoc}
      */
     public function del($fd ,$flag)
     {
@@ -169,9 +168,9 @@ class Libevent implements EventInterface
     
     /**
      * Timer callback.
-     * @param null $_null1
-     * @param null $_null2
-     * @param int $timer_id
+     * @param mixed $_null1
+     * @param int $_null2
+     * @param mixed $timer_id
      */
     protected function timerCallback($_null1, $_null2, $timer_id)
     {
@@ -195,8 +194,7 @@ class Libevent implements EventInterface
     }
     
     /**
-     * @see Events\EventInterface::clearAllTimer() 
-     * @return void
+     * {@inheritdoc}
      */
     public function clearAllTimer()
     {
@@ -207,9 +205,8 @@ class Libevent implements EventInterface
         $this->_eventTimer = array();
     }
      
-
     /**
-     * @see EventInterface::loop()
+     * {@inheritdoc}
      */
     public function loop()
     {

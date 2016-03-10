@@ -28,19 +28,21 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     
     /**
      * Websocket blob type.
-     * @var char
+     * @var string
      */
     const BINARY_TYPE_BLOB = "\x81";
 
     /**
      * Websocket arraybuffer type.
-     * @var char
+     * @var string
      */
     const BINARY_TYPE_ARRAYBUFFER = "\x82";
     
     /**
      * Check the integrity of the package.
      * @param string $buffer
+     * @param ConnectionInterface $connection
+     * @return int
      */
     public static function input($buffer, ConnectionInterface $connection)
     {
@@ -219,6 +221,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     /**
      * Websocket encode.
      * @param string $buffer
+     * @param ConnectionInterface $connection
      * @return string
      */
     public static function encode($buffer, ConnectionInterface $connection)
@@ -262,6 +265,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     /**
      * Websocket decode.
      * @param string $buffer
+     * @param ConnectionInterface $connection
      * @return string
      */
     public static function decode($buffer, ConnectionInterface $connection)
@@ -297,7 +301,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     /**
      * Websocket handshake.
      * @param string $buffer
-     * @param TcpConnection $connection
+     * @param \Workerman\Connection\TcpConnection $connection
      * @return int
      */
     protected static function dealHandshake($buffer, $connection)

@@ -47,16 +47,17 @@ interface EventInterface
     
     /**
      * Add event listener to event loop.
-     * @param resource $fd
+     * @param mixed $fd
      * @param int $flag
      * @param callable $func
+     * @param mixed $args
      * @return bool
      */
     public function add($fd, $flag, $func, $args = null);
     
     /**
      * Remove event listener from event loop.
-     * @param resource $fd
+     * @param mixed $fd
      * @param int $flag
      * @return bool
      */

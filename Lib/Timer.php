@@ -12,8 +12,8 @@
  * @license http://www.opensource.org/licenses/mit-license.php MIT License
  */
 namespace Workerman\Lib;
-use \Workerman\Events\EventInterface;
-use \Exception;
+use Workerman\Events\EventInterface;
+use Exception;
 
 /**
  * Timer.

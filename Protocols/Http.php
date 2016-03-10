@@ -39,7 +39,7 @@ class Http
             return 0;
         }
         
-        list($header, $body) = explode("\r\n\r\n", $recv_buffer, 2);
+        list($header,) = explode("\r\n\r\n", $recv_buffer, 2);
         if(0 === strpos($recv_buffer, "POST"))
         {
             // find Content-Length
@@ -64,7 +64,7 @@ class Http
      * Parse $_POST、$_GET、$_COOKIE. 
      * @param string $recv_buffer
      * @param TcpConnection $connection
-     * @return void
+     * @return array
      */
     public static function decode($recv_buffer, TcpConnection $connection)
     {
@@ -98,7 +98,8 @@ class Http
         $header_data = explode("\r\n", $http_header);
         
         list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(' ', $header_data[0]);
-        
+
+        $http_post_boundary = '';
         unset($header_data[0]);
         foreach($header_data as $content)
         {
@@ -260,7 +261,7 @@ class Http
     
     /**
      * 设置http头
-     * @return bool
+     * @return bool|void
      */
     public static function header($content, $replace = true, $http_response_code = 0)
     {
@@ -316,7 +317,8 @@ class Http
     {
         if(PHP_SAPI != 'cli')
         {
-            return header_remove($name);
+            header_remove($name);
+            return;
         }
         unset( HttpCache::$header[$name]);
     }
@@ -330,6 +332,7 @@ class Http
      * @param string $domain
      * @param bool $secure
      * @param bool $HTTPOnly
+     * @return bool|void
      */
     public static function setcookie($name, $value = '', $maxage = 0, $path = '', $domain = '', $secure = false, $HTTPOnly = false) {
         if(PHP_SAPI != 'cli')
@@ -446,6 +449,8 @@ class Http
     
      /**
      * Parse $_FILES.
+      * @param string $http_body
+      * @param string $http_post_boundary
      * @return void
      */
     protected static function parseUploadFiles($http_body, $http_post_boundary)
@@ -545,7 +550,12 @@ class HttpCache
             504 => 'Gateway Timeout',
             505 => 'HTTP Version Not Supported',
       );
+
+    /**
+     * @var HttpCache
+     */
     public static $instance = null;
+
     public static $header = array();
     public static $sessionPath = '';
     public static $sessionName = '';
