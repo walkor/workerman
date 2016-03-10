@@ -15,12 +15,12 @@ namespace Workerman;
 
 require_once __DIR__.'/Lib/Constants.php';
 
-use \Workerman\Events\EventInterface;
-use \Workerman\Connection\ConnectionInterface;
-use \Workerman\Connection\TcpConnection;
-use \Workerman\Connection\UdpConnection;
-use \Workerman\Lib\Timer;
-use \Exception;
+use Workerman\Events\EventInterface;
+use Workerman\Connection\ConnectionInterface;
+use Workerman\Connection\TcpConnection;
+use Workerman\Connection\UdpConnection;
+use Workerman\Lib\Timer;
+use Exception;
 
 /**
  * Worker class
@@ -187,7 +187,7 @@ class Worker
     
     /**
      * Application layer protocol.
-     * @var string
+     * @var Protocols\ProtocolInterface
      */
     public $protocol = '';
     
@@ -223,7 +223,7 @@ class Worker
     
     /**
      * Global event loop.
-     * @var Select/Libevent/Ev
+     * @var Events\EventInterface
      */
     public static $globalEvent = null;
     
@@ -247,7 +247,7 @@ class Worker
     
     /**
      * Context of socket.
-     * @var array
+     * @var resource
      */
     protected $_context = null;
     
@@ -462,7 +462,7 @@ class Worker
             {
                 if(posix_getuid() !== 0 && $worker->user != self::getCurrentUser())
                 {
-                    self::log('Waring: You must have the root privileges to change uid and gid.', true);
+                    self::log('Waring: You must have the root privileges to change uid and gid.');
                 }
             }
             
@@ -917,7 +917,8 @@ class Worker
         $user_info = posix_getpwnam($this->user);
         if(!$user_info)
         {
-            return self::log( "Waring: User {$this->user} not exsits", true);
+            self::log( "Waring: User {$this->user} not exsits");
+            return;
         }
         $uid = $user_info['uid'];
         // Get gid.
@@ -926,7 +927,8 @@ class Worker
             $group_info = posix_getgrnam($this->group);
             if(!$group_info)
             {
-                return self::log( "Waring: Group {$this->group} not exsits", true);
+                self::log( "Waring: Group {$this->group} not exsits");
+                return;
             }
             $gid = $group_info['gid'];
         }
@@ -940,7 +942,7 @@ class Worker
         {
             if(!posix_setgid($gid) || !posix_initgroups($user_info['name'], $gid) || !posix_setuid($uid))
             {
-                self::log( "Waring: change gid or uid fail.", true);
+                self::log( "Waring: change gid or uid fail.");
             }
         }
     }
@@ -1221,6 +1223,7 @@ class Worker
         }
         
         // For child processes.
+        /** @var Worker $worker */
         $worker = current(self::$_workers);
         $wrker_status_str = posix_getpid()."\t".str_pad(round(memory_get_usage(true)/(1024*1024),2)."M", 7)." " .str_pad($worker->getSocketName(), self::$_maxSocketNameLength) ." ".str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name), self::$_maxWorkerNameLength)." ";
         $wrker_status_str .= str_pad(ConnectionInterface::$statistics['connection_count'], 11)." ".str_pad(ConnectionInterface::$statistics['total_request'], 14)." ".str_pad(ConnectionInterface::$statistics['send_fail'],9)." ".str_pad(ConnectionInterface::$statistics['throw_exception'],15)."\n";
@@ -1388,7 +1391,7 @@ class Worker
         if($this->transport === 'unix')
         {
             umask(0);
-            list($scheme, $address) = explode(':', $this->_socketName, 2);
+            list(, $address) = explode(':', $this->_socketName, 2);
             if(!is_file($address))
             {
                 register_shutdown_function(function()use($address){@unlink($address);});
@@ -1592,5 +1595,7 @@ class Worker
                 exit(250);
             }
         }
+
+        return true;
     }
 }

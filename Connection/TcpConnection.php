@@ -15,7 +15,7 @@ namespace Workerman\Connection;
 
 use Workerman\Events\EventInterface;
 use Workerman\Worker;
-use \Exception;
+use Exception;
 
 /**
  * TcpConnection.
@@ -85,9 +85,9 @@ class TcpConnection extends ConnectionInterface
     /**
      * Application layer protocol.
      * The format is like this Workerman\\Protocols\\Http.
-     * @var string
+     * @var \Workerman\Protocols\ProtocolInterface
      */
-    public $protocol = '';
+    public $protocol = null;
     
     /**
      * Which worker belong to.
@@ -177,7 +177,7 @@ class TcpConnection extends ConnectionInterface
     /**
      * Construct.
      * @param resource $socket
-     * @param EventInterface $event
+     * @param string $remote_address
      */
     public function __construct($socket, $remote_address = '')
     {
@@ -194,7 +194,7 @@ class TcpConnection extends ConnectionInterface
      * Sends data on the connection.
      * @param string $send_buffer
      * @param bool $raw
-     * @return void|boolean
+     * @return void|bool|null
      */
     public function send($send_buffer, $raw = false)
     {
@@ -467,7 +467,7 @@ class TcpConnection extends ConnectionInterface
 
     /**
      * Base write handler.
-     * @return void
+     * @return void|bool
      */
     public function baseWrite()
     {
@@ -508,6 +508,7 @@ class TcpConnection extends ConnectionInterface
     
     /**
      * This method pulls all the data out of a readable stream, and writes it to the supplied destination.
+     * @param TcpConnection $dest
      * @return void
      */
     public function pipe($dest)
@@ -544,13 +545,13 @@ class TcpConnection extends ConnectionInterface
     /**
      * Close connection.
      * @param mixed $data
-     * @void
+     * @return void
      */
     public function close($data = null)
     {
         if($this->_status === self::STATUS_CLOSING || $this->_status === self::STATUS_CLOSED)
         {
-            return false;
+            return;
         }
         else
         {
@@ -606,7 +607,7 @@ class TcpConnection extends ConnectionInterface
         // Avoid repeated calls.
         if($this->_status === self::STATUS_CLOSED)
         {
-            return false;
+            return;
         }
         // Remove event listener.
         Worker::$globalEvent->del($this->_socket, EventInterface::EV_READ);

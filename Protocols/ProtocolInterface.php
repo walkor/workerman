@@ -13,7 +13,7 @@
  */
 namespace Workerman\Protocols;
 
-use \Workerman\Connection\ConnectionInterface;
+use Workerman\Connection\ConnectionInterface;
 
 /**
  * Protocol interface

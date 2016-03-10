@@ -12,7 +12,7 @@
  * @license http://www.opensource.org/licenses/mit-license.php MIT License
  */
 namespace Workerman\Protocols;
-use \Workerman\Connection\TcpConnection;
+use Workerman\Connection\TcpConnection;
 
 /**
  * Text Protocol.
@@ -22,6 +22,8 @@ class Text
     /**
      * Check the integrity of the package.
      * @param string $buffer
+     * @param TcpConnection $connection
+     * @return int
      */
     public static function input($buffer ,TcpConnection $connection)
     {

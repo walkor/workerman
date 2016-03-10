@@ -45,7 +45,7 @@ class Select implements EventInterface
     /**
      * Timer scheduler.
      * {['data':timer_id, 'priority':run_timestamp], ..}
-     * @var SplPriorityQueue
+     * @var \SplPriorityQueue
      */
     protected $_scheduler = null;
     
@@ -67,10 +67,15 @@ class Select implements EventInterface
      * @var int
      */
     protected $_selectTimeout = 100000000;
+
+    /**
+     * Paired socket channels
+     * @var array
+     */
+    protected $channel = array();
     
     /**
      * Construct.
-     * @return void
      */
     public function __construct()
     {
@@ -87,7 +92,7 @@ class Select implements EventInterface
     }
     
     /**
-     * @see Events\EventInterface::add()
+     * {@inheritdoc}
      */
     public function add($fd, $flag, $func, $args = array())
     {
@@ -130,7 +135,7 @@ class Select implements EventInterface
     }
     
     /**
-     * @see Events\EventInterface::del()
+     * {@inheritdoc}
      */
     public function del($fd ,$flag)
     {
@@ -160,7 +165,7 @@ class Select implements EventInterface
                 unset($this->_task[$fd_key]);
                 return true;
         }
-        return false;;
+        return false;
     }
     
     /**
@@ -208,7 +213,7 @@ class Select implements EventInterface
     }
     
     /**
-     * @see Events\EventInterface::clearAllTimer()
+     * {@inheritdoc}
      */
     public function clearAllTimer()
     {
@@ -218,7 +223,7 @@ class Select implements EventInterface
     }
     
     /**
-     * @see Events\EventInterface::loop()
+     * {@inheritdoc}
      */
     public function loop()
     {
