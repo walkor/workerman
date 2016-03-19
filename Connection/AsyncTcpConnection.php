@@ -37,7 +37,7 @@ class AsyncTcpConnection extends TcpConnection
     protected $_status = self::STATUS_CONNECTING;
 
     /**
-     * Remote address.
+     * Remote host.
      *
      * @var string
      */

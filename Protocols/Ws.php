@@ -74,6 +74,7 @@ class Ws
         $opcode = ord($buffer[0]) & 0xf;
         $data_len = ord($buffer[1]) & 127;
         switch ($opcode) {
+            // Continue.
             case 0x0:
                 break;
             // Blob type.

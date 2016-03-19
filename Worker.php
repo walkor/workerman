@@ -1549,7 +1549,6 @@ class Worker
                 exit(250);
             }
         }
-
         return true;
     }
 }
