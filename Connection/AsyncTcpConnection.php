@@ -37,6 +37,13 @@ class AsyncTcpConnection extends TcpConnection
     protected $_status = self::STATUS_CONNECTING;
 
     /**
+     * Remote address.
+     *
+     * @var string
+     */
+    protected $_remoteHost = '';
+
+    /**
      * Construct.
      *
      * @param string $remote_address
@@ -57,6 +64,7 @@ class AsyncTcpConnection extends TcpConnection
             }
         }
         $this->_remoteAddress = substr($address, 2);
+        $this->_remoteHost    = substr($this->_remoteAddress, 0, strrpos($this->_remoteAddress, ':'));
         $this->id             = self::$_idRecorder++;
         // For statistics.
         self::$statistics['connection_count']++;
@@ -76,6 +84,16 @@ class AsyncTcpConnection extends TcpConnection
         }
         // Add socket to global event loop waiting connection is successfully established or faild. 
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'checkConnection'));
+    }
+
+    /**
+     * Get remote address.
+     *
+     * @return string 
+     */
+    public function getRemoteHost()
+    {
+        return $this->_remoteHost;
     }
 
     /**
@@ -105,26 +123,26 @@ class AsyncTcpConnection extends TcpConnection
      */
     public function checkConnection($socket)
     {
-        // Need call foef twice.
-        if (!feof($this->_socket) && !feof($this->_socket) && is_resource($this->_socket)) {
+        // Check socket state.
+        if (stream_socket_get_name($socket, true)) {
             // Remove write listener.
-            Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
+            Worker::$globalEvent->del($socket, EventInterface::EV_WRITE);
             // Nonblocking.
-            stream_set_blocking($this->_socket, 0);
+            stream_set_blocking($socket, 0);
             // Try to open keepalive for tcp and disable Nagle algorithm.
             if (function_exists('socket_import_stream')) {
-                $raw_socket = socket_import_stream($this->_socket);
+                $raw_socket = socket_import_stream($socket);
                 socket_set_option($raw_socket, SOL_SOCKET, SO_KEEPALIVE, 1);
                 socket_set_option($raw_socket, SOL_TCP, TCP_NODELAY, 1);
             }
             // Register a listener waiting read event.
-            Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
+            Worker::$globalEvent->add($socket, EventInterface::EV_READ, array($this, 'baseRead'));
             // There are some data waiting to send.
             if ($this->_sendBuffer) {
-                Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+                Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             }
             $this->_status        = self::STATUS_ESTABLISH;
-            $this->_remoteAddress = stream_socket_get_name($this->_socket, true);
+            $this->_remoteAddress = stream_socket_get_name($socket, true);
             // Try to emit onConnect callback.
             if ($this->onConnect) {
                 try {
