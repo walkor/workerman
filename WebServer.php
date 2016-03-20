@@ -218,40 +218,78 @@ class WebServer extends Worker
                 return;
             }
 
-            // Static resource file request.
-            if (isset(self::$mimeTypeMap[$workerman_file_extension])) {
-                Http::header('Content-Type: ' . self::$mimeTypeMap[$workerman_file_extension]);
-            } else {
-                Http::header('Content-Type: ' . self::$defaultMimeType);
-            }
-
-            // Get file stat.
-            $info = stat($workerman_file);
-
-            $modified_time = $info ? date('D, d M Y H:i:s', $info['mtime']) . ' GMT' : '';
-
-            if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $info) {
-                // Http 304.
-                if ($modified_time === $_SERVER['HTTP_IF_MODIFIED_SINCE']) {
-                    // 304
-                    Http::header('HTTP/1.1 304 Not Modified');
-                    // Send nothing but http headers..
-                    $connection->close('');
-                    return;
-                }
-            }
-
-            if ($modified_time) {
-                Http::header("Last-Modified: $modified_time");
-            }
-            // Send to client.
-            $connection->close(file_get_contents($workerman_file));
-            return;
+            // Send file to client.
+            return self::sendFile($connection, $workerman_file);
         } else {
             // 404
             Http::header("HTTP/1.1 404 Not Found");
             $connection->close('<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>');
             return;
         }
+    }
+
+    public static function sendFile($connection, $file_name)
+    {
+        // Check 304.
+        $info = stat($file_name);
+        $modified_time = $info ? date('D, d M Y H:i:s', $info['mtime']) . ' GMT' : '';
+        if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $info) {
+            // Http 304.
+            if ($modified_time === $_SERVER['HTTP_IF_MODIFIED_SINCE']) {
+                // 304
+                Http::header('HTTP/1.1 304 Not Modified');
+                // Send nothing but http headers..
+                $connection->close('');
+                return;
+            }
+        }
+
+        // Http header.
+        if ($modified_time) {
+            $modified_time = "Last-Modified: $modified_time\r\n";
+        }
+        $file_size = filesize($file_name);
+        $extension = pathinfo($file_name, PATHINFO_EXTENSION);
+        $content_type = isset(self::$mimeTypeMap[$extension]) ? self::$mimeTypeMap[$extension] : self::$defaultMimeType;
+        $header = "HTTP/1.1 200 OK\r\n";
+        $header .= "Content-Type: $content_type\r\n";
+        $header .= "Connection: keep-alive\r\n";
+        $header .= $modified_time;
+        $header .= "Content-Length: $file_size\r\n\r\n";
+        $trunk_limit_size = 1024*1024;
+        if ($file_size < $trunk_limit_size) {
+            return $connection->send($header.file_get_contents($file_name), true);
+        }
+        $connection->send($header, true);
+
+        // Read file content from disk piece by piece and send to client.
+        $connection->fileHandler = fopen($file_name, 'r');
+        $do_write = function()use($connection)
+        {
+            // Send buffer not full.
+            while(empty($connection->bufferFull))
+            {
+                // Read from disk.
+                $buffer = fread($connection->fileHandler, 8192);
+                // Read eof.
+                if($buffer === '' || $buffer === false)
+                {
+                    return;
+                }
+                $connection->send($buffer, true);
+            }
+        };
+        // Send buffer full.
+        $connection->onBufferFull = function($connection)
+        {
+            $connection->bufferFull = true;
+        };
+        // Send buffer drain.
+        $connection->onBufferDrain = function($connection)use($do_write)
+        {
+            $connection->bufferFull = false;
+            $do_write();
+        };
+        $do_write();
     }
 }
