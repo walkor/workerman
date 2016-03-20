@@ -101,6 +101,9 @@ class Ws
                     // Consume data from receive buffer.
                     if (!$data_len) {
                         $connection->consumeRecvBuffer(self::MIN_HEAD_LEN);
+                        if ($recv_len > self::MIN_HEAD_LEN) {
+                            return self::input(substr($buffer, self::MIN_HEAD_LEN), $connection);
+                        }
                         return 0;
                     }
                     break;
@@ -118,6 +121,9 @@ class Ws
                     //  Consume data from receive buffer.
                     if (!$data_len) {
                         $connection->consumeRecvBuffer(self::MIN_HEAD_LEN);
+                        if ($recv_len > self::MIN_HEAD_LEN) {
+                            return self::input(substr($buffer, self::MIN_HEAD_LEN), $connection);
+                        }
                         return 0;
                     }
                     break;

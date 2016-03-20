@@ -25,7 +25,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      *
      * @var int
      */
-    const MIN_HEAD_LEN = 6;
+    const MIN_HEAD_LEN = 2;
 
     /**
      * Websocket blob type.
@@ -112,9 +112,13 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     else {
                         $connection->send(pack('H*', '8a00'), true);
                     }
+
                     // Consume data from receive buffer.
                     if (!$data_len) {
                         $connection->consumeRecvBuffer(self::MIN_HEAD_LEN);
+                        if ($recv_len > self::MIN_HEAD_LEN) {
+                            return self::input(substr($buffer, self::MIN_HEAD_LEN), $connection);
+                        }
                         return 0;
                     }
                     break;
@@ -132,6 +136,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     //  Consume data from receive buffer.
                     if (!$data_len) {
                         $connection->consumeRecvBuffer(self::MIN_HEAD_LEN);
+                        if ($recv_len > self::MIN_HEAD_LEN) {
+                            return self::input(substr($buffer, self::MIN_HEAD_LEN), $connection);
+                        }
                         return 0;
                     }
                     break;
@@ -143,7 +150,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             }
 
             // Calculate packet length.
-            $head_len = self::MIN_HEAD_LEN;
+            $head_len = 6;
             if ($data_len === 126) {
                 $head_len = 8;
                 if ($head_len > $recv_len) {
