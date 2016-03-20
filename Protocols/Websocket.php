@@ -149,7 +149,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 if ($head_len > $recv_len) {
                     return 0;
                 }
-                $pack     = unpack('ntotal_len', substr($buffer, 2, 2));
+                $pack     = unpack('nn/ntotal_len', $buffer);
                 $data_len = $pack['total_len'];
             } else {
                 if ($data_len === 127) {
@@ -157,8 +157,8 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     if ($head_len > $recv_len) {
                         return 0;
                     }
-                    $arr      = unpack('N2', substr($buffer, 2, 8));
-                    $data_len = $arr[1] * 4294967296 + $arr[2];
+                    $arr      = unpack('n/N2c', $buffer);
+                    $data_len = $arr['c1']*4294967296 + $arr['c2'];
                 }
             }
             $current_frame_length = $head_len + $data_len;
@@ -170,7 +170,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         }
 
         // Received just a frame length data.
-        if ($connection->websocketCurrentFrameLength == $recv_len) {
+        if ($connection->websocketCurrentFrameLength === $recv_len) {
             self::decode($buffer, $connection);
             $connection->consumeRecvBuffer($connection->websocketCurrentFrameLength);
             $connection->websocketCurrentFrameLength = 0;
@@ -258,8 +258,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $connection->websocketDataBuffer .= $decoded;
             return $connection->websocketDataBuffer;
         } else {
-            $decoded                         = $connection->websocketDataBuffer . $decoded;
-            $connection->websocketDataBuffer = '';
+            if ($connection->websocketDataBuffer !== '') {
+                $decoded                         = $connection->websocketDataBuffer . $decoded;
+                $connection->websocketDataBuffer = '';
+            }
             return $decoded;
         }
     }
@@ -280,6 +282,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             if (!$heder_end_pos) {
                 return 0;
             }
+            $header_length = $heder_end_pos + 4;
 
             // Get Sec-WebSocket-Key.
             $Sec_WebSocket_Key = '';
@@ -308,7 +311,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             // Current websocket frame data.
             $connection->websocketCurrentFrameBuffer = '';
             // Consume handshake data.
-            $connection->consumeRecvBuffer(strlen($buffer));
+            $connection->consumeRecvBuffer($header_length);
             // Send handshake response.
             $connection->send($handshake_message, true);
 
@@ -332,6 +335,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 }
                 $_GET = $_COOKIE = $_SERVER = array();
             }
+            if (strlen($buffer) > $header_length) {
+                return self::input(substr($buffer, $header_length), $connection);
+            } 
             return 0;
         } // Is flash policy-file-request.
         elseif (0 === strpos($buffer, '<polic')) {
