@@ -184,6 +184,7 @@ class Ws
      */
     public static function encode($payload, $connection)
     {
+        $payload = (string)$payload;
         if (empty($connection->handshakeStep)) {
             self::sendHandshake($connection);
         }
