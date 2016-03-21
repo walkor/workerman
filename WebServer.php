@@ -6,268 +6,290 @@
  * For full copyright and license information, please see the MIT-LICENSE.txt
  * Redistributions of files must retain the above copyright notice.
  *
- * @author walkor<walkor@workerman.net>
+ * @author    walkor<walkor@workerman.net>
  * @copyright walkor<walkor@workerman.net>
- * @link http://www.workerman.net/
- * @license http://www.opensource.org/licenses/mit-license.php MIT License
+ * @link      http://www.workerman.net/
+ * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 namespace Workerman;
 
-use \Workerman\Worker;
-use \Workerman\Protocols\Http;
-use \Workerman\Protocols\HttpCache;
+use Workerman\Protocols\Http;
+use Workerman\Protocols\HttpCache;
 
 /**
- * 
- *  基于Worker实现的一个简单的WebServer
- *  支持静态文件、支持文件上传、支持POST
- *  HTTP协议
+ *  WebServer.
  */
 class WebServer extends Worker
 {
     /**
-     * 默认mime类型
+     * Mime.
+     *
      * @var string
      */
     protected static $defaultMimeType = 'text/html; charset=utf-8';
-    
+
     /**
-     * 服务器名到文件路径的转换
+     * Virtual host to path mapping.
+     *
      * @var array ['workerman.net'=>'/home', 'www.workerman.net'=>'home/www']
      */
     protected $serverRoot = array();
-    
+
     /**
-     * mime类型映射关系
+     * Mime mapping.
+     *
      * @var array
      */
     protected static $mimeTypeMap = array();
-    
-    
+
+
     /**
-     * 用来保存用户设置的onWorkerStart回调
+     * Used to save user OnWorkerStart callback settings.
+     *
      * @var callback
      */
     protected $_onWorkerStart = null;
-    
+
     /**
-     * 添加站点域名与站点目录的对应关系，类似nginx的
+     * Add virtual host.
+     *
      * @param string $domain
      * @param string $root_path
      * @return void
      */
-    public  function addRoot($domain, $root_path)
+    public function addRoot($domain, $root_path)
     {
         $this->serverRoot[$domain] = $root_path;
     }
-    
+
     /**
-     * 构造函数
+     * Construct.
+     *
      * @param string $socket_name
-     * @param array $context_option
+     * @param array  $context_option
      */
     public function __construct($socket_name, $context_option = array())
     {
-        list($scheme, $address) = explode(':', $socket_name, 2);
-        parent::__construct('http:'.$address, $context_option);
+        list(, $address) = explode(':', $socket_name, 2);
+        parent::__construct('http:' . $address, $context_option);
         $this->name = 'WebServer';
     }
-    
+
     /**
-     * 运行
+     * Run webserver instance.
+     *
      * @see Workerman.Worker::run()
      */
     public function run()
     {
         $this->_onWorkerStart = $this->onWorkerStart;
-        $this->onWorkerStart = array($this, 'onWorkerStart');
-        $this->onMessage = array($this, 'onMessage');
+        $this->onWorkerStart  = array($this, 'onWorkerStart');
+        $this->onMessage      = array($this, 'onMessage');
         parent::run();
     }
-    
+
     /**
-     * 进程启动的时候一些初始化工作
+     * Emit when process start.
+     *
      * @throws \Exception
      */
     public function onWorkerStart()
     {
-        if(empty($this->serverRoot))
-        {
+        if (empty($this->serverRoot)) {
             throw new \Exception('server root not set, please use WebServer::addRoot($domain, $root_path) to set server root path');
         }
-        // 初始化HttpCache
+        // Init HttpCache.
         HttpCache::init();
-        // 初始化mimeMap
+        // Init mimeMap.
         $this->initMimeTypeMap();
-        
-        // 尝试执行开发者设定的onWorkerStart回调
-        if($this->_onWorkerStart)
-        {
-            call_user_func($this->_onWorkerStart, $this);
+
+        // Try to emit onWorkerStart callback.
+        if ($this->_onWorkerStart) {
+            try {
+                call_user_func($this->_onWorkerStart, $this);
+            } catch (\Exception $e) {
+                echo $e;
+                exit(250);
+            }
         }
     }
-    
+
     /**
-     * 初始化mimeType
+     * Init mime map.
+     *
      * @return void
      */
     public function initMimeTypeMap()
     {
         $mime_file = Http::getMimeTypesFile();
-        if(!is_file($mime_file))
-        {
-            $this->notice("$mime_file mime.type file not fond");
+        if (!is_file($mime_file)) {
+            $this->log("$mime_file mime.type file not fond");
             return;
         }
         $items = file($mime_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        if(!is_array($items))
-        {
+        if (!is_array($items)) {
             $this->log("get $mime_file mime.type content fail");
             return;
         }
-        foreach($items as $content)
-        {
-            if(preg_match("/\s*(\S+)\s+(\S.+)/", $content, $match))
-            {
-                $mime_type = $match[1];
-                $extension_var = $match[2];
-                $extension_array = explode(' ', substr($extension_var, 0, -1));
-                foreach($extension_array as $extension)
-                {
-                    self::$mimeTypeMap[$extension] = $mime_type;
-                } 
+        foreach ($items as $content) {
+            if (preg_match("/\s*(\S+)\s+(\S.+)/", $content, $match)) {
+                $mime_type                      = $match[1];
+                $workerman_file_extension_var   = $match[2];
+                $workerman_file_extension_array = explode(' ', substr($workerman_file_extension_var, 0, -1));
+                foreach ($workerman_file_extension_array as $workerman_file_extension) {
+                    self::$mimeTypeMap[$workerman_file_extension] = $mime_type;
+                }
             }
         }
     }
-    
+
     /**
-     * 当接收到完整的http请求后的处理逻辑
-     * 1、如果请求的是以php为后缀的文件，则尝试加载
-     * 2、如果请求的url没有后缀，则尝试加载对应目录的index.php
-     * 3、如果请求的是非php为后缀的文件，尝试读取原始数据并发送
-     * 4、如果请求的文件不存在，则返回404
-     * @param TcpConnection $connection
-     * @param mixed $data
+     * Emit when http message coming.
+     *
+     * @param Connection\TcpConnection $connection
      * @return void
      */
-    public function onMessage($connection, $data)
+    public function onMessage($connection)
     {
-        // 请求的文件
-        $url_info = parse_url($_SERVER['REQUEST_URI']);
-        if(!$url_info)
-        {
+        // REQUEST_URI.
+        $workerman_url_info = parse_url($_SERVER['REQUEST_URI']);
+        if (!$workerman_url_info) {
             Http::header('HTTP/1.1 400 Bad Request');
-            return $connection->close('<h1>400 Bad Request</h1>');
+            $connection->close('<h1>400 Bad Request</h1>');
+            return;
         }
-        
-        $path = $url_info['path'];
-        
-        $path_info = pathinfo($path);
-        $extension = isset($path_info['extension']) ? $path_info['extension'] : '' ;
-        if($extension === '')
-        {
-            $path = ($len = strlen($path)) && $path[$len -1] === '/' ? $path.'index.php' : $path . '/index.php';
-            $extension = 'php';
+
+        $workerman_path = $workerman_url_info['path'];
+
+        $workerman_path_info      = pathinfo($workerman_path);
+        $workerman_file_extension = isset($workerman_path_info['extension']) ? $workerman_path_info['extension'] : '';
+        if ($workerman_file_extension === '') {
+            $workerman_path           = ($len = strlen($workerman_path)) && $workerman_path[$len - 1] === '/' ? $workerman_path . 'index.php' : $workerman_path . '/index.php';
+            $workerman_file_extension = 'php';
         }
-        
-        $root_dir = isset($this->serverRoot[$_SERVER['HTTP_HOST']]) ? $this->serverRoot[$_SERVER['HTTP_HOST']] : current($this->serverRoot);
-        
-        $file = "$root_dir/$path";
-        
-        // 对应的php文件不存在则直接使用根目录的index.php
-        if($extension === 'php' && !is_file($file))
-        {
-            $file = "$root_dir/index.php";
-            if(!is_file($file))
-            {
-                $file = "$root_dir/index.html";
-                $extension = 'html';
+
+        $workerman_root_dir = isset($this->serverRoot[$_SERVER['SERVER_NAME']]) ? $this->serverRoot[$_SERVER['SERVER_NAME']] : current($this->serverRoot);
+
+        $workerman_file = "$workerman_root_dir/$workerman_path";
+
+        if ($workerman_file_extension === 'php' && !is_file($workerman_file)) {
+            $workerman_file = "$workerman_root_dir/index.php";
+            if (!is_file($workerman_file)) {
+                $workerman_file           = "$workerman_root_dir/index.html";
+                $workerman_file_extension = 'html';
             }
         }
-        
-        // 请求的文件存在
-        if(is_file($file))
-        {
-            // 判断是否是站点目录里的文件
-            if((!($request_realpath = realpath($file)) || !($root_dir_realpath = realpath($root_dir))) || 0 !== strpos($request_realpath, $root_dir_realpath))
-            {
+
+        // File exsits.
+        if (is_file($workerman_file)) {
+            // Security check.
+            if ((!($workerman_request_realpath = realpath($workerman_file)) || !($workerman_root_dir_realpath = realpath($workerman_root_dir))) || 0 !== strpos($workerman_request_realpath,
+                    $workerman_root_dir_realpath)
+            ) {
                 Http::header('HTTP/1.1 400 Bad Request');
-                return $connection->close('<h1>400 Bad Request</h1>');
+                $connection->close('<h1>400 Bad Request</h1>');
+                return;
             }
-            
-            $file = realpath($file);
-            
-            // 如果请求的是php文件
-            if($extension === 'php')
-            {
-                $cwd = getcwd();
-                chdir($root_dir);
+
+            $workerman_file = realpath($workerman_file);
+
+            // Request php file.
+            if ($workerman_file_extension === 'php') {
+                $workerman_cwd = getcwd();
+                chdir($workerman_root_dir);
                 ini_set('display_errors', 'off');
-                // 缓冲输出
                 ob_start();
-                // 载入php文件
-                try 
-                {
-                    // $_SERVER变量
+                // Try to include php file.
+                try {
+                    // $_SERVER.
                     $_SERVER['REMOTE_ADDR'] = $connection->getRemoteIp();
                     $_SERVER['REMOTE_PORT'] = $connection->getRemotePort();
-                    include $file;
-                }
-                catch(\Exception $e) 
-                {
-                    // 如果不是exit
-                    if($e->getMessage() != 'jump_exit')
-                    {
+                    include $workerman_file;
+                } catch (\Exception $e) {
+                    // Jump_exit?
+                    if ($e->getMessage() != 'jump_exit') {
                         echo $e;
                     }
                 }
                 $content = ob_get_clean();
                 ini_set('display_errors', 'on');
                 $connection->close($content);
-                chdir($cwd);
-                return ;
+                chdir($workerman_cwd);
+                return;
             }
-            
-            // 请求的是静态资源文件
-            if(isset(self::$mimeTypeMap[$extension]))
-            {
-               Http::header('Content-Type: '. self::$mimeTypeMap[$extension]);
-            }
-            else 
-            {
-                Http::header('Content-Type: '. self::$defaultMimeType);
-            }
-            
-            // 获取文件信息
-            $info = stat($file);
-            
-            $modified_time = $info ? date('D, d M Y H:i:s', $info['mtime']) . ' GMT' : '';
-            
-            // 如果有$_SERVER['HTTP_IF_MODIFIED_SINCE']
-            if(!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $info)
-            {
-                // 文件没有更改则直接304
-                if($modified_time === $_SERVER['HTTP_IF_MODIFIED_SINCE'])
-                {
-                    // 304
-                    Http::header('HTTP/1.1 304 Not Modified');
-                    // 发送给客户端
-                    return $connection->close('');
-                }
-            }
-            
-            if($modified_time)
-            {
-                Http::header("Last-Modified: $modified_time");
-            }
-            // 发送给客户端
-           return $connection->close(file_get_contents($file));
-        }
-        else 
-        {
+
+            // Send file to client.
+            return self::sendFile($connection, $workerman_file);
+        } else {
             // 404
             Http::header("HTTP/1.1 404 Not Found");
-            return $connection->close('<html><head><title>404 页面不存在</title></head><body><center><h3>404 Not Found</h3></center></body></html>');
+            $connection->close('<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>');
+            return;
         }
+    }
+
+    public static function sendFile($connection, $file_name)
+    {
+        // Check 304.
+        $info = stat($file_name);
+        $modified_time = $info ? date('D, d M Y H:i:s', $info['mtime']) . ' GMT' : '';
+        if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $info) {
+            // Http 304.
+            if ($modified_time === $_SERVER['HTTP_IF_MODIFIED_SINCE']) {
+                // 304
+                Http::header('HTTP/1.1 304 Not Modified');
+                // Send nothing but http headers..
+                $connection->close('');
+                return;
+            }
+        }
+
+        // Http header.
+        if ($modified_time) {
+            $modified_time = "Last-Modified: $modified_time\r\n";
+        }
+        $file_size = filesize($file_name);
+        $extension = pathinfo($file_name, PATHINFO_EXTENSION);
+        $content_type = isset(self::$mimeTypeMap[$extension]) ? self::$mimeTypeMap[$extension] : self::$defaultMimeType;
+        $header = "HTTP/1.1 200 OK\r\n";
+        $header .= "Content-Type: $content_type\r\n";
+        $header .= "Connection: keep-alive\r\n";
+        $header .= $modified_time;
+        $header .= "Content-Length: $file_size\r\n\r\n";
+        $trunk_limit_size = 1024*1024;
+        if ($file_size < $trunk_limit_size) {
+            return $connection->send($header.file_get_contents($file_name), true);
+        }
+        $connection->send($header, true);
+
+        // Read file content from disk piece by piece and send to client.
+        $connection->fileHandler = fopen($file_name, 'r');
+        $do_write = function()use($connection)
+        {
+            // Send buffer not full.
+            while(empty($connection->bufferFull))
+            {
+                // Read from disk.
+                $buffer = fread($connection->fileHandler, 8192);
+                // Read eof.
+                if($buffer === '' || $buffer === false)
+                {
+                    return;
+                }
+                $connection->send($buffer, true);
+            }
+        };
+        // Send buffer full.
+        $connection->onBufferFull = function($connection)
+        {
+            $connection->bufferFull = true;
+        };
+        // Send buffer drain.
+        $connection->onBufferDrain = function($connection)use($do_write)
+        {
+            $connection->bufferFull = false;
+            $do_write();
+        };
+        $do_write();
     }
 }

@@ -1,4 +1,5 @@
 # Workerman
+[![Gitter](https://badges.gitter.im/walkor/Workerman.svg)](https://gitter.im/walkor/Workerman?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge)
 
 ## What is it
 Workerman is a library for event-driven programming in PHP. It has a huge number of features. Each worker is able to handle thousands of connections.
@@ -82,7 +83,7 @@ Worker::runAll();
 test.php
 ```php
 require_once './Workerman/Autoloader.php';
-use \Workerman\WebServer;
+use Workerman\WebServer;
 
 // WebServer
 $web = new WebServer("http://0.0.0.0:80");
@@ -169,7 +170,7 @@ class MyTextProtocol
 test.php
 ```php
 require_once './Workerman/Autoloader.php';
-use Workerman\Worker
+use Workerman\Worker;
 
 // #### MyTextProtocol worker ####
 $text_worker = new Worker("MyTextProtocol://0.0.0.0:5678");
