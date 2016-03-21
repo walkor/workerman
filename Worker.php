@@ -378,6 +378,7 @@ class Worker
      */
     protected static $_availableEventLoops = array(
         'libevent',
+        'event',
         'ev'
     );
 
