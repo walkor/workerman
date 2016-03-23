@@ -86,19 +86,9 @@ class Event implements EventInterface
                 return self::$_timerId++;
                 
             default :
-
-                $callback = function ($fd) use ($func) {
-                    try {
-                        call_user_func($func, $fd);
-                    } catch (\Exception $e) {
-                        echo $e;
-                        exit(250);
-                    }
-                };
-
                 $fd_key = (int)$fd;
                 $real_flag = $flag === self::EV_READ ? \Event::READ | \Event::PERSIST : \Event::WRITE | \Event::PERSIST;
-                $event = new \Event($this->_eventBase, $fd, $real_flag, $callback);
+                $event = new \Event($this->_eventBase, $fd, $real_flag, $func, $fd);
                 if (!$event||!$event->add()) {
                     return false;
                 }
