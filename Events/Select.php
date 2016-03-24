@@ -181,11 +181,12 @@ class Select implements EventInterface
     protected function tick()
     {
         while (!$this->_scheduler->isEmpty()) {
-            $scheduler_data = $this->_scheduler->top();
-            $timer_id       = $scheduler_data['data'];
-            $next_run_time  = -$scheduler_data['priority'];
-            $time_now       = microtime(true);
-            if ($time_now >= $next_run_time) {
+            $scheduler_data       = $this->_scheduler->top();
+            $timer_id             = $scheduler_data['data'];
+            $next_run_time        = -$scheduler_data['priority'];
+            $time_now             = microtime(true);
+            $this->_selectTimeout = ($next_run_time - $time_now) * 1000000;
+            if ($this->_selectTimeout <= 0) {
                 $this->_scheduler->extract();
 
                 if (!isset($this->_task[$timer_id])) {
@@ -203,10 +204,8 @@ class Select implements EventInterface
                     $this->del($timer_id, self::EV_TIMER_ONCE);
                 }
                 continue;
-            } else {
-                $this->_selectTimeout = ($next_run_time - $time_now) * 1000000;
-                return;
             }
+            return;
         }
         $this->_selectTimeout = 100000000;
     }
