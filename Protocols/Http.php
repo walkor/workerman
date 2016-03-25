@@ -42,7 +42,7 @@ class Http
         if (0 === strpos($recv_buffer, "POST")) {
             // find Content-Length
             $match = array();
-            if (preg_match("/\r\nContent-Length: ?(\d+)/", $header, $match)) {
+            if (preg_match("/\r\nContent-Length: ?(\d+)/i", $header, $match)) {
                 $content_length = $match[1];
                 return $content_length + strlen($header) + 4;
             } else {
