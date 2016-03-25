@@ -508,7 +508,7 @@ class Worker
                 $worker->user = self::getCurrentUser();
             } else {
                 if (posix_getuid() !== 0 && $worker->user != self::getCurrentUser()) {
-                    self::log('Waring: You must have the root privileges to change uid and gid.');
+                    self::log('Warning: You must have the root privileges to change uid and gid.');
                 }
             }
 
@@ -927,7 +927,7 @@ class Worker
         // Get uid.
         $user_info = posix_getpwnam($this->user);
         if (!$user_info) {
-            self::log("Waring: User {$this->user} not exsits");
+            self::log("Warning: User {$this->user} not exsits");
             return;
         }
         $uid = $user_info['uid'];
@@ -935,7 +935,7 @@ class Worker
         if ($this->group) {
             $group_info = posix_getgrnam($this->group);
             if (!$group_info) {
-                self::log("Waring: Group {$this->group} not exsits");
+                self::log("Warning: Group {$this->group} not exsits");
                 return;
             }
             $gid = $group_info['gid'];
@@ -946,7 +946,7 @@ class Worker
         // Set uid and gid.
         if ($uid != posix_getuid() || $gid != posix_getgid()) {
             if (!posix_setgid($gid) || !posix_initgroups($user_info['name'], $gid) || !posix_setuid($uid)) {
-                self::log("Waring: change gid or uid fail.");
+                self::log("Warning: change gid or uid fail.");
             }
         }
     }
