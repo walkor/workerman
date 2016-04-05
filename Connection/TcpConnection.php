@@ -261,6 +261,9 @@ class TcpConnection extends ConnectionInterface
                         } catch (\Exception $e) {
                             echo $e;
                             exit(250);
+                        } catch (\Error $e) {
+                            echo $e;
+                            exit(250);
                         }
                     }
                     $this->destroy();
@@ -420,6 +423,9 @@ class TcpConnection extends ConnectionInterface
                 } catch (\Exception $e) {
                     echo $e;
                     exit(250);
+                } catch (\Error $e) {
+                    echo $e;
+                    exit(250);
                 }
             }
             return;
@@ -438,6 +444,9 @@ class TcpConnection extends ConnectionInterface
         try {
             call_user_func($this->onMessage, $this, $this->_recvBuffer);
         } catch (\Exception $e) {
+            echo $e;
+            exit(250);
+        } catch (\Error $e) {
             echo $e;
             exit(250);
         }
@@ -461,6 +470,9 @@ class TcpConnection extends ConnectionInterface
                 try {
                     call_user_func($this->onBufferDrain, $this);
                 } catch (\Exception $e) {
+                    echo $e;
+                    exit(250);
+                } catch (\Error $e) {
                     echo $e;
                     exit(250);
                 }
@@ -557,6 +569,9 @@ class TcpConnection extends ConnectionInterface
                 } catch (\Exception $e) {
                     echo $e;
                     exit(250);
+                } catch (\Error $e) {
+                    echo $e;
+                    exit(250);
                 }
             }
         }
@@ -588,6 +603,9 @@ class TcpConnection extends ConnectionInterface
             try {
                 call_user_func($this->onClose, $this);
             } catch (\Exception $e) {
+                echo $e;
+                exit(250);
+            } catch (\Error $e) {
                 echo $e;
                 exit(250);
             }

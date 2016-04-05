@@ -92,6 +92,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         } catch (\Exception $e) {
                             echo $e;
                             exit(250);
+                        } catch (\Error $e) {
+                            echo $e;
+                            exit(250);
                         }
                     } // Close connection.
                     else {
@@ -105,6 +108,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         try {
                             call_user_func($connection->onWebSocketPing, $connection);
                         } catch (\Exception $e) {
+                            echo $e;
+                            exit(250);
+                        } catch (\Error $e) {
                             echo $e;
                             exit(250);
                         }
@@ -129,6 +135,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         try {
                             call_user_func($connection->onWebSocketPong, $connection);
                         } catch (\Exception $e) {
+                            echo $e;
+                            exit(250);
+                        } catch (\Error $e) {
                             echo $e;
                             exit(250);
                         }
@@ -337,6 +346,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 try {
                     call_user_func($connection->onWebSocketConnect, $connection, $buffer);
                 } catch (\Exception $e) {
+                    echo $e;
+                    exit(250);
+                } catch (\Error $e) {
                     echo $e;
                     exit(250);
                 }

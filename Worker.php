@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.3.1';
+    const VERSION = '3.3.2';
 
     /**
      * Status starting.
@@ -1110,6 +1110,9 @@ class Worker
                 } catch (\Exception $e) {
                     echo $e;
                     exit(250);
+                } catch (\Error $e) {
+                    echo $e;
+                    exit(250);
                 }
             }
 
@@ -1457,6 +1460,9 @@ class Worker
             } catch (\Exception $e) {
                 echo $e;
                 exit(250);
+            } catch (\Error $e) {
+                echo $e;
+                exit(250);
             }
         }
 
@@ -1476,6 +1482,9 @@ class Worker
             try {
                 call_user_func($this->onWorkerStop, $this);
             } catch (\Exception $e) {
+                echo $e;
+                exit(250);
+            } catch (\Error $e) {
                 echo $e;
                 exit(250);
             }
@@ -1518,6 +1527,9 @@ class Worker
             } catch (\Exception $e) {
                 echo $e;
                 exit(250);
+            } catch (\Error $e) {
+                echo $e;
+                exit(250);
             }
         }
     }
@@ -1546,6 +1558,9 @@ class Worker
             try {
                 call_user_func($this->onMessage, $connection, $recv_buffer);
             } catch (\Exception $e) {
+                echo $e;
+                exit(250);
+            } catch (\Error $e) {
                 echo $e;
                 exit(250);
             }

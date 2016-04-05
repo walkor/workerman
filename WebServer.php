@@ -110,6 +110,9 @@ class WebServer extends Worker
             } catch (\Exception $e) {
                 echo $e;
                 exit(250);
+            } catch (\Error $e) {
+                echo $e;
+                exit(250);
             }
         }
     }

@@ -172,6 +172,9 @@ class Libevent implements EventInterface
         } catch (\Exception $e) {
             echo $e;
             exit(250);
+        } catch (\Error $e) {
+            echo $e;
+            exit(250);
         }
         if (isset($this->_eventTimer[$timer_id]) && $this->_eventTimer[$timer_id][3] === self::EV_TIMER_ONCE) {
             $this->del($timer_id, self::EV_TIMER_ONCE);

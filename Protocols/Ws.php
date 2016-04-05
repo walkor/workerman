@@ -78,6 +78,9 @@ class Ws
                         } catch (\Exception $e) {
                             echo $e;
                             exit(250);
+                        } catch (\Error $e) {
+                            echo $e;
+                            exit(250);
                         }
                     } // Close connection.
                     else {
@@ -91,6 +94,9 @@ class Ws
                         try {
                             call_user_func($connection->onWebSocketPing, $connection);
                         } catch (\Exception $e) {
+                            echo $e;
+                            exit(250);
+                        } catch (\Error $e) {
                             echo $e;
                             exit(250);
                         }
@@ -114,6 +120,9 @@ class Ws
                         try {
                             call_user_func($connection->onWebSocketPong, $connection);
                         } catch (\Exception $e) {
+                            echo $e;
+                            exit(250);
+                        } catch (\Error $e) {
                             echo $e;
                             exit(250);
                         }
@@ -194,7 +203,7 @@ class Ws
         $pack = '';
         $length = $length_flag = strlen($payload);
         if (65535 < $length) {
-            $pack   = pack('NN', ($length & 0xFFFFFFFF00000000) >> 0b100000, $length & 0x00000000FFFFFFFF);
+            $pack   = pack('NN', ($length & 0xFFFFFFFF00000000) >> 32, $length & 0x00000000FFFFFFFF);
             $length_flag = 127;
         } else if (125 < $length) {
             $pack   = pack('n*', $length);
@@ -310,6 +319,9 @@ class Ws
                 try {
                     call_user_func($connection->onWebSocketConnect, $connection, substr($buffer, 0, $handshake_respnse_length));
                 } catch (\Exception $e) {
+                    echo $e;
+                    exit(250);
+                } catch (\Error $e) {
                     echo $e;
                     exit(250);
                 }
