@@ -1505,7 +1505,7 @@ class Worker
         // Accept a connection on server socket.
         $new_socket = @stream_socket_accept($socket, 0, $remote_address);
         // Thundering herd.
-        if (false === $new_socket) {
+        if (!$new_socket) {
             return;
         }
 
