@@ -13,6 +13,8 @@
  */
 namespace Workerman\Events;
 
+use Workerman\Worker;
+
 /**
  * libevent eventloop
  */
@@ -155,10 +157,10 @@ class Event implements EventInterface
         try {
             call_user_func_array($param[0], $param[1]);
         } catch (\Exception $e) {
-            echo $e;
+            Worker::log($e);
             exit(250);
         } catch (\Error $e) {
-            echo $e;
+            Worker::log($e);
             exit(250);
         }
     }

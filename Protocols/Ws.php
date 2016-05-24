@@ -1,6 +1,8 @@
 <?php
 namespace Workerman\Protocols;
 
+use Workerman\Worker;
+
 /**
  * Websocket protocol for client.
  */
@@ -76,10 +78,10 @@ class Ws
                         try {
                             call_user_func($connection->onWebSocketClose, $connection);
                         } catch (\Exception $e) {
-                            echo $e;
+                            Worker::log($e);
                             exit(250);
                         } catch (\Error $e) {
-                            echo $e;
+                            Worker::log($e);
                             exit(250);
                         }
                     } // Close connection.
@@ -94,10 +96,10 @@ class Ws
                         try {
                             call_user_func($connection->onWebSocketPing, $connection);
                         } catch (\Exception $e) {
-                            echo $e;
+                            Worker::log($e);
                             exit(250);
                         } catch (\Error $e) {
-                            echo $e;
+                            Worker::log($e);
                             exit(250);
                         }
                     } // Send pong package to client.
@@ -120,10 +122,10 @@ class Ws
                         try {
                             call_user_func($connection->onWebSocketPong, $connection);
                         } catch (\Exception $e) {
-                            echo $e;
+                            Worker::log($e);
                             exit(250);
                         } catch (\Error $e) {
-                            echo $e;
+                            Worker::log($e);
                             exit(250);
                         }
                     }
@@ -319,10 +321,10 @@ class Ws
                 try {
                     call_user_func($connection->onWebSocketConnect, $connection, substr($buffer, 0, $handshake_respnse_length));
                 } catch (\Exception $e) {
-                    echo $e;
+                    Worker::log($e);
                     exit(250);
                 } catch (\Error $e) {
-                    echo $e;
+                    Worker::log($e);
                     exit(250);
                 }
             }

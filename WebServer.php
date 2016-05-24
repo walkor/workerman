@@ -108,10 +108,10 @@ class WebServer extends Worker
             try {
                 call_user_func($this->_onWorkerStart, $this);
             } catch (\Exception $e) {
-                echo $e;
+                self::log($e);
                 exit(250);
             } catch (\Error $e) {
-                echo $e;
+                self::log($e);
                 exit(250);
             }
         }

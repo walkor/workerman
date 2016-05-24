@@ -13,6 +13,8 @@
  */
 namespace Workerman\Events;
 
+use Workerman\Worker;
+
 /**
  * libevent eventloop
  */
@@ -170,10 +172,10 @@ class Libevent implements EventInterface
         try {
             call_user_func_array($this->_eventTimer[$timer_id][0], $this->_eventTimer[$timer_id][1]);
         } catch (\Exception $e) {
-            echo $e;
+            Worker::log($e);
             exit(250);
         } catch (\Error $e) {
-            echo $e;
+            Worker::log($e);
             exit(250);
         }
         if (isset($this->_eventTimer[$timer_id]) && $this->_eventTimer[$timer_id][3] === self::EV_TIMER_ONCE) {

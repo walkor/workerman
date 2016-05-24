@@ -1110,10 +1110,10 @@ class Worker
                 try {
                     call_user_func($worker->onWorkerReload, $worker);
                 } catch (\Exception $e) {
-                    echo $e;
+                    self::log($e);
                     exit(250);
                 } catch (\Error $e) {
-                    echo $e;
+                    self::log($e);
                     exit(250);
                 }
             }
@@ -1291,7 +1291,7 @@ class Worker
      * @param string $msg
      * @return void
      */
-    protected static function log($msg)
+    public static function log($msg)
     {
         $msg = $msg . "\n";
         if (!self::$daemonize) {
@@ -1460,10 +1460,10 @@ class Worker
             try {
                 call_user_func($this->onWorkerStart, $this);
             } catch (\Exception $e) {
-                echo $e;
+                self::log($e);
                 exit(250);
             } catch (\Error $e) {
-                echo $e;
+                self::log($e);
                 exit(250);
             }
         }
@@ -1484,10 +1484,10 @@ class Worker
             try {
                 call_user_func($this->onWorkerStop, $this);
             } catch (\Exception $e) {
-                echo $e;
+                self::log($e);
                 exit(250);
             } catch (\Error $e) {
-                echo $e;
+                self::log($e);
                 exit(250);
             }
         }
@@ -1527,10 +1527,10 @@ class Worker
             try {
                 call_user_func($this->onConnect, $connection);
             } catch (\Exception $e) {
-                echo $e;
+                self::log($e);
                 exit(250);
             } catch (\Error $e) {
-                echo $e;
+                self::log($e);
                 exit(250);
             }
         }
@@ -1560,10 +1560,10 @@ class Worker
             try {
                 call_user_func($this->onMessage, $connection, $recv_buffer);
             } catch (\Exception $e) {
-                echo $e;
+                self::log($e);
                 exit(250);
             } catch (\Error $e) {
-                echo $e;
+                self::log($e);
                 exit(250);
             }
         }

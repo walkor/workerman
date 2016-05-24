@@ -109,10 +109,10 @@ class AsyncTcpConnection extends TcpConnection
             try {
                 call_user_func($this->onError, $this, $code, $msg);
             } catch (\Exception $e) {
-                echo $e;
+                Worker::log($e);
                 exit(250);
             } catch (\Error $e) {
-                echo $e;
+                Worker::log($e);
                 exit(250);
             }
         }
@@ -151,10 +151,10 @@ class AsyncTcpConnection extends TcpConnection
                 try {
                     call_user_func($this->onConnect, $this);
                 } catch (\Exception $e) {
-                    echo $e;
+                    Worker::log($e);
                     exit(250);
                 } catch (\Error $e) {
-                    echo $e;
+                    Worker::log($e);
                     exit(250);
                 }
             }

@@ -12,6 +12,8 @@
  */
 namespace Workerman\Events;
 
+use Workerman\Worker;
+
 /**
  * ev eventloop
  */
@@ -56,10 +58,10 @@ class Ev implements EventInterface
             try {
                 call_user_func($func, $fd);
             } catch (\Exception $e) {
-                echo $e;
+                Worker::log($e);
                 exit(250);
             } catch (\Error $e) {
-                echo $e;
+                Worker::log($e);
                 exit(250);
             }
         };
@@ -138,10 +140,10 @@ class Ev implements EventInterface
         try {
             call_user_func_array($param[0], $param[1]);
         } catch (\Exception $e) {
-            echo $e;
+            Worker::log($e);
             exit(250);
         } catch (\Error $e) {
-            echo $e;
+            Worker::log($e);
             exit(250);
         }
     }
