@@ -307,7 +307,7 @@ class TcpConnection extends ConnectionInterface
     {
         $pos = strrpos($this->_remoteAddress, ':');
         if ($pos) {
-            return substr($this->_remoteAddress, 0, $pos);
+            return trim(substr($this->_remoteAddress, 0, $pos), '[]');
         }
         return '';
     }
