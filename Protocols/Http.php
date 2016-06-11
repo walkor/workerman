@@ -156,6 +156,9 @@ class Http
                         $http_post_boundary      = '--' . $match[1];
                     }
                     break;
+                case 'x-requested-with':
+                    $_SERVER["HTTP_X_REQUESTED_WITH"] = $value;
+                    break;
             }
         }
 
