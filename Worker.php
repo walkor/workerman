@@ -399,7 +399,6 @@ class Worker
         'udp'   => 'udp',
         'unix'  => 'unix',
         'ssl'   => 'tcp',
-        'tsl'   => 'tcp',
         'sslv2' => 'tcp',
         'sslv3' => 'tcp',
         'tls'   => 'tcp'
