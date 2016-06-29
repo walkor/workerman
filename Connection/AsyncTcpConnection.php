@@ -44,6 +44,28 @@ class AsyncTcpConnection extends TcpConnection
     protected $_remoteHost = '';
 
     /**
+     * PHP built-in protocols.
+     *
+     * @var array
+     */
+    protected static $_builtinTransports = array(
+        'tcp'   => 'tcp',
+        'udp'   => 'udp',
+        'unix'  => 'unix',
+        'ssl'   => 'ssl',
+        'sslv2' => 'sslv2',
+        'sslv3' => 'sslv3',
+        'tls'   => 'tls'
+    );
+
+    /**
+     * Transport layer protocol.
+     *
+     * @var string
+     */
+    protected $_transport = 'tcp';
+
+    /**
      * Construct.
      *
      * @param string $remote_address
@@ -51,18 +73,22 @@ class AsyncTcpConnection extends TcpConnection
      */
     public function __construct($remote_address)
     {
+        // Get the application layer communication protocol and listening address.
         list($scheme, $address) = explode(':', $remote_address, 2);
-        if ($scheme != 'tcp') {
-            // Get application layer protocol.
+        // Check application layer protocol class.
+        if (!isset(self::$_builtinTransports[$scheme])) {
             $scheme         = ucfirst($scheme);
             $this->protocol = '\\Protocols\\' . $scheme;
             if (!class_exists($this->protocol)) {
-                $this->protocol = '\\Workerman\\Protocols\\' . $scheme;
+                $this->protocol = "\\Workerman\\Protocols\\$scheme";
                 if (!class_exists($this->protocol)) {
                     throw new Exception("class \\Protocols\\$scheme not exist");
                 }
             }
+        } else {
+            $this->_transport = self::$_builtinTransports[$scheme];
         }
+        
         $this->_remoteAddress = substr($address, 2);
         $this->_remoteHost    = substr($this->_remoteAddress, 0, strrpos($this->_remoteAddress, ':'));
         $this->id             = self::$_idRecorder++;
@@ -74,7 +100,7 @@ class AsyncTcpConnection extends TcpConnection
     public function connect()
     {
         // Open socket connection asynchronously.
-        $this->_socket = stream_socket_client("tcp://{$this->_remoteAddress}", $errno, $errstr, 0,
+        $this->_socket = stream_socket_client("{$this->_transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
             STREAM_CLIENT_ASYNC_CONNECT);
         // If failed attempt to emit onError callback.
         if (!$this->_socket) {
@@ -133,7 +159,7 @@ class AsyncTcpConnection extends TcpConnection
             // Nonblocking.
             stream_set_blocking($socket, 0);
             // Try to open keepalive for tcp and disable Nagle algorithm.
-            if (function_exists('socket_import_stream')) {
+            if (function_exists('socket_import_stream') && $this->_transport === 'tcp') {
                 $raw_socket = socket_import_stream($socket);
                 socket_set_option($raw_socket, SOL_SOCKET, SO_KEEPALIVE, 1);
                 socket_set_option($raw_socket, SOL_TCP, TCP_NODELAY, 1);
