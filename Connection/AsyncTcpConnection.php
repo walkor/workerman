@@ -63,7 +63,7 @@ class AsyncTcpConnection extends TcpConnection
      *
      * @var string
      */
-    protected $_transport = 'tcp';
+    public $transport = 'tcp';
 
     /**
      * Construct.
@@ -86,7 +86,7 @@ class AsyncTcpConnection extends TcpConnection
                 }
             }
         } else {
-            $this->_transport = self::$_builtinTransports[$scheme];
+            $this->transport = self::$_builtinTransports[$scheme];
         }
         
         $this->_remoteAddress = substr($address, 2);
@@ -100,7 +100,7 @@ class AsyncTcpConnection extends TcpConnection
     public function connect()
     {
         // Open socket connection asynchronously.
-        $this->_socket = stream_socket_client("{$this->_transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
+        $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
             STREAM_CLIENT_ASYNC_CONNECT);
         // If failed attempt to emit onError callback.
         if (!$this->_socket) {
@@ -159,7 +159,7 @@ class AsyncTcpConnection extends TcpConnection
             // Nonblocking.
             stream_set_blocking($socket, 0);
             // Try to open keepalive for tcp and disable Nagle algorithm.
-            if (function_exists('socket_import_stream') && $this->_transport === 'tcp') {
+            if (function_exists('socket_import_stream') && $this->transport === 'tcp') {
                 $raw_socket = socket_import_stream($socket);
                 socket_set_option($raw_socket, SOL_SOCKET, SO_KEEPALIVE, 1);
                 socket_set_option($raw_socket, SOL_TCP, TCP_NODELAY, 1);

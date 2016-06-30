@@ -211,6 +211,7 @@ class TcpConnection extends ConnectionInterface
         $this->id      = $this->_id = self::$_idRecorder++;
         $this->_socket = $socket;
         stream_set_blocking($this->_socket, 0);
+        stream_set_read_buffer($this->_socket, 0);
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
         $this->_remoteAddress    = $remote_address;
@@ -354,24 +355,21 @@ class TcpConnection extends ConnectionInterface
      * Base read handler.
      *
      * @param resource $socket
+     * @param bool $check_eof
      * @return void
      */
     public function baseRead($socket, $check_eof = true)
     {
-        $read_data = false;
-        while (1) {
-            $buffer = fread($socket, self::READ_BUFFER_SIZE);
-            if ($buffer === '' || $buffer === false) {
-                break;
-            }
-            $read_data = true;
-            $this->_recvBuffer .= $buffer;
-        }
+        $buffer = fread($socket, self::READ_BUFFER_SIZE);
 
         // Check connection closed.
-        if (!$read_data && $check_eof) {
-            $this->destroy();
-            return;
+        if (!$buffer) {
+            if ($check_eof && (feof($socket) || !is_resource($socket) || $buffer === false)) {
+                $this->destroy();
+                return;
+            }
+        } else {
+            $this->_recvBuffer .= $buffer;
         }
 
         // If the application layer protocol has been set up.
