@@ -363,7 +363,7 @@ class TcpConnection extends ConnectionInterface
         $buffer = fread($socket, self::READ_BUFFER_SIZE);
 
         // Check connection closed.
-        if (!$buffer) {
+        if ($buffer === '' || $buffer === false) {
             if ($check_eof && (feof($socket) || !is_resource($socket) || $buffer === false)) {
                 $this->destroy();
                 return;
