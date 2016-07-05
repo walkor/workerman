@@ -598,7 +598,7 @@ class Worker
         // Start command.
         $mode = '';
         if ($command === 'start') {
-            if ($command2 === '-d') {
+            if ($command2 === '-d' || Worker::$daemonize) {
                 $mode = 'in DAEMON mode';
             } else {
                 $mode = 'in DEBUG mode';
