@@ -30,6 +30,13 @@ class AsyncTcpConnection extends TcpConnection
     public $onConnect = null;
 
     /**
+     * Transport layer protocol.
+     *
+     * @var string
+     */
+    public $transport = 'tcp';
+
+    /**
      * Status.
      *
      * @var int
@@ -42,6 +49,13 @@ class AsyncTcpConnection extends TcpConnection
      * @var string
      */
     protected $_remoteHost = '';
+
+    /**
+     * Connect start time.
+     *
+     * @var string
+     */
+    protected $_connectStartTime = 0;
 
     /**
      * PHP built-in protocols.
@@ -57,13 +71,6 @@ class AsyncTcpConnection extends TcpConnection
         'sslv3' => 'sslv3',
         'tls'   => 'tls'
     );
-
-    /**
-     * Transport layer protocol.
-     *
-     * @var string
-     */
-    public $transport = 'tcp';
 
     /**
      * Construct.
@@ -97,8 +104,14 @@ class AsyncTcpConnection extends TcpConnection
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
     }
 
+    /**
+     * Do connect.
+     *
+     * @return void 
+     */
     public function connect()
     {
+        $this->_connectStartTime = microtime(true);
         // Open socket connection asynchronously.
         $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
             STREAM_CLIENT_ASYNC_CONNECT);
@@ -187,7 +200,7 @@ class AsyncTcpConnection extends TcpConnection
             }
         } else {
             // Connection failed.
-            $this->emitError(WORKERMAN_CONNECT_FAIL, 'connect fail');
+            $this->emitError(WORKERMAN_CONNECT_FAIL, 'connect ' . $this->_remoteAddress . ' fail after ' . round(microtime(true) - $this->_connectStartTime, 4) . ' seconds');
             $this->destroy();
             $this->onConnect = null;
         }
