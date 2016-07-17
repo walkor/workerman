@@ -30,6 +30,13 @@ class TcpConnection extends ConnectionInterface
     const READ_BUFFER_SIZE = 65535;
 
     /**
+     * Status initial.
+     *
+     * @var int
+     */
+    const STATUS_INITIAL = 0;
+
+    /**
      * Status connecting.
      *
      * @var int
@@ -221,7 +228,7 @@ class TcpConnection extends ConnectionInterface
      * Sends data on the connection.
      *
      * @param string $send_buffer
-     * @param bool   $raw
+     * @param bool  $raw
      * @return void|bool|null
      */
     public function send($send_buffer, $raw = false)
@@ -235,7 +242,7 @@ class TcpConnection extends ConnectionInterface
             }
         }
 
-        if ($this->_status === self::STATUS_CONNECTING) {
+        if ($this->_status === self::STATUS_INITIAL || $this->_status === self::STATUS_CONNECTING) {
             $this->_sendBuffer .= $send_buffer;
             return null;
         } elseif ($this->_status === self::STATUS_CLOSING || $this->_status === self::STATUS_CLOSED) {
@@ -529,15 +536,16 @@ class TcpConnection extends ConnectionInterface
      * Close connection.
      *
      * @param mixed $data
+     * @param bool $raw
      * @return void
      */
-    public function close($data = null)
+    public function close($data = null, $raw = false)
     {
         if ($this->_status === self::STATUS_CLOSING || $this->_status === self::STATUS_CLOSED) {
             return;
         } else {
             if ($data !== null) {
-                $this->send($data);
+                $this->send($data, $raw);
             }
             $this->_status = self::STATUS_CLOSING;
         }
@@ -611,8 +619,10 @@ class TcpConnection extends ConnectionInterface
                 exit(250);
             }
         }
-        // Cleaning up the callback to avoid memory leaks.
-        $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = null;
+        if ($this->_status === self::STATUS_CLOSED) {
+            // Cleaning up the callback to avoid memory leaks.
+            $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = null;
+        }
     }
 
     /**
