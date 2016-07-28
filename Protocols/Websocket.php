@@ -356,7 +356,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     Worker::log($e);
                     exit(250);
                 }
-                $_GET = $_COOKIE = $_SERVER = array();
+                if ($_SESSION && class_exists('\GatewayWorker\Lib\Context')) {
+                    $connection->session = \GatewayWorker\Lib\Context::sessionEncode($_SESSION);
+                }
+                $_GET = $_SERVER = $_SESSION = $_COOKIE = array();
             }
             if (strlen($buffer) > $header_length) {
                 return self::input(substr($buffer, $header_length), $connection);
@@ -384,44 +387,39 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      */
     protected static function parseHttpHeader($buffer)
     {
-        $header_data = explode("\r\n", $buffer);
-        $_SERVER     = array();
+        // Parse headers.
+        list($http_header, ) = explode("\r\n\r\n", $buffer, 2);
+        $header_data = explode("\r\n", $http_header);
+
+        if ($_SERVER) {
+            $_SERVER = array();
+        }
+
         list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(' ',
             $header_data[0]);
+
         unset($header_data[0]);
         foreach ($header_data as $content) {
             // \r\n\r\n
             if (empty($content)) {
                 continue;
             }
-            list($key, $value) = explode(':', $content, 2);
-            $key   = strtolower($key);
-            $value = trim($value);
+            list($key, $value)       = explode(':', $content, 2);
+            $key                     = str_replace('-', '_', strtoupper($key));
+            $value                   = trim($value);
+            $_SERVER['HTTP_' . $key] = $value;
             switch ($key) {
                 // HTTP_HOST
-                case 'host':
-                    $_SERVER['HTTP_HOST']   = $value;
+                case 'HOST':
                     $tmp                    = explode(':', $value);
                     $_SERVER['SERVER_NAME'] = $tmp[0];
                     if (isset($tmp[1])) {
                         $_SERVER['SERVER_PORT'] = $tmp[1];
                     }
                     break;
-                // HTTP_COOKIE
-                case 'cookie':
-                    $_SERVER['HTTP_COOKIE'] = $value;
+                // cookie
+                case 'COOKIE':
                     parse_str(str_replace('; ', '&', $_SERVER['HTTP_COOKIE']), $_COOKIE);
-                    break;
-                // HTTP_USER_AGENT
-                case 'user-agent':
-                    $_SERVER['HTTP_USER_AGENT'] = $value;
-                    break;
-                // HTTP_REFERER
-                case 'referer':
-                    $_SERVER['HTTP_REFERER'] = $value;
-                    break;
-                case 'origin':
-                    $_SERVER['HTTP_ORIGIN'] = $value;
                     break;
             }
         }

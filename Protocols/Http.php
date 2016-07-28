@@ -104,9 +104,9 @@ class Http
             if (empty($content)) {
                 continue;
             }
-            list($key, $value) = explode(':', $content, 2);
-            $key   = str_replace('-', '_', strtoupper($key));
-            $value = trim($value);
+            list($key, $value)       = explode(':', $content, 2);
+            $key                     = str_replace('-', '_', strtoupper($key));
+            $value                   = trim($value);
             $_SERVER['HTTP_' . $key] = $value;
             switch ($key) {
                 // HTTP_HOST
@@ -129,6 +129,7 @@ class Http
                         $_SERVER['CONTENT_TYPE'] = 'multipart/form-data';
                         $http_post_boundary      = '--' . $match[1];
                     }
+                    break;
                 case 'CONTENT_LENGTH':
                     $_SERVER['CONTENT_LENGTH'] = $value;
                     break;
@@ -338,6 +339,7 @@ class Http
                 session_decode($raw);
             }
         }
+        return true;
     }
 
     /**
