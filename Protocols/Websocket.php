@@ -321,6 +321,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $handshake_message .= "Upgrade: websocket\r\n";
             $handshake_message .= "Sec-WebSocket-Version: 13\r\n";
             $handshake_message .= "Connection: Upgrade\r\n";
+            $handshake_message .= "Server: workerman/".Worker::VERSION."\r\n";
             $handshake_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n\r\n";
             // Mark handshake complete..
             $connection->websocketHandshake = true;
@@ -356,7 +357,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     Worker::log($e);
                     exit(250);
                 }
-                if ($_SESSION && class_exists('\GatewayWorker\Lib\Context')) {
+                if (!empty($_SESSION) && class_exists('\GatewayWorker\Lib\Context')) {
                     $connection->session = \GatewayWorker\Lib\Context::sessionEncode($_SESSION);
                 }
                 $_GET = $_SERVER = $_SESSION = $_COOKIE = array();

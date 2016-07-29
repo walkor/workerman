@@ -14,6 +14,7 @@
 namespace Workerman\Protocols;
 
 use Workerman\Connection\TcpConnection;
+use Workerman\Worker;
 
 /**
  * http protocol
@@ -77,7 +78,7 @@ class Http
             'REQUEST_METHOD'       => '',
             'REQUEST_URI'          => '',
             'SERVER_PROTOCOL'      => '',
-            'SERVER_SOFTWARE'      => 'workerman/3.3.3',
+            'SERVER_SOFTWARE'      => 'workerman/'.Worker::VERSION,
             'SERVER_NAME'          => '',
             'HTTP_HOST'            => '',
             'HTTP_USER_AGENT'      => '',
@@ -200,7 +201,7 @@ class Http
         }
 
         // header
-        $header .= "Server: WorkerMan/3.0\r\nContent-Length: " . strlen($content) . "\r\n\r\n";
+        $header .= "Server: workerman/" . Worker::VERSION . "\r\nContent-Length: " . strlen($content) . "\r\n\r\n";
 
         // save session
         self::sessionWriteClose();
