@@ -275,6 +275,16 @@ class Ws
     }
 
     /**
+     * Send websocket handshake data.
+     *
+     * @return void
+     */
+    public static function onConnect($connection)
+    {
+        self::sendHandshake($connection);
+    }
+
+    /**
      * Send websocket handshake.
      *
      * @param \Workerman\Connection\TcpConnection $connection
@@ -282,6 +292,9 @@ class Ws
      */
     public static function sendHandshake($connection)
     {
+        if (!empty($connection->handshakeStep)) {
+            return;
+        }
         // Get Host.
         $port = $connection->getRemotePort();
         $host = $port === 80 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
@@ -296,7 +309,7 @@ class Ws
         $connection->send($header, true);
         $connection->handshakeStep               = 1;
         $connection->websocketCurrentFrameLength = 0;
-        $connection->websocketDataBuffer  = '';
+        $connection->websocketDataBuffer         = '';
         if (empty($connection->websocketType)) {
             $connection->websocketType = self::BINARY_TYPE_BLOB;
         }

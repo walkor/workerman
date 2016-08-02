@@ -196,6 +196,17 @@ class AsyncTcpConnection extends TcpConnection
             }
             $this->_status        = self::STATUS_ESTABLISH;
             $this->_remoteAddress = stream_socket_get_name($socket, true);
+            if (is_callable(array($this->protocol, 'onConnect'))) {
+                try {
+                    call_user_func(array($this->protocol, 'onConnect'), $this);
+                } catch (\Exception $e) {
+                    Worker::log($e);
+                    exit(250);
+                } catch (\Error $e) {
+                    Worker::log($e);
+                    exit(250);
+                }
+            }
             // Try to emit onConnect callback.
             if ($this->onConnect) {
                 try {
