@@ -281,6 +281,7 @@ class Ws
      */
     public static function onConnect($connection)
     {
+        $connection->handshakeStep = null;
         self::sendHandshake($connection);
     }
 
@@ -353,6 +354,7 @@ class Ws
             $connection->consumeRecvBuffer($handshake_respnse_length);
             if (!empty($connection->tmpWebsocketData)) {
                 $connection->send($connection->tmpWebsocketData, true);
+                $connection->tmpWebsocketData = '';
             }
             if (strlen($buffer > $handshake_respnse_length)) {
                 return self::input(substr($buffer, $handshake_respnse_length));
