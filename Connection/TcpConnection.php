@@ -619,6 +619,18 @@ class TcpConnection extends ConnectionInterface
                 exit(250);
             }
         }
+        // Try to emit protocol::onClose
+        if (method_exists($this->protocol, 'onClose')) {
+            try {
+                call_user_func(array($this->protocol, 'onClose'), $this);
+            } catch (\Exception $e) {
+                Worker::log($e);
+                exit(250);
+            } catch (\Error $e) {
+                Worker::log($e);
+                exit(250);
+            }
+        }
         if ($this->_status === self::STATUS_CLOSED) {
             // Cleaning up the callback to avoid memory leaks.
             $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = null;

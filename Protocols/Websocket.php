@@ -154,7 +154,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     break;
                 // Wrong opcode. 
                 default :
-                    echo "error opcode $opcode and close websocket connection\n";
+                    echo "error opcode $opcode and close websocket connection. Buffer:" . bin2hex($buffer) . "\n";
                     $connection->close();
                     return 0;
             }

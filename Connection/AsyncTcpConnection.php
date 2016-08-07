@@ -176,7 +176,7 @@ class AsyncTcpConnection extends TcpConnection
     public function checkConnection($socket)
     {
         // Check socket state.
-        if (stream_socket_get_name($socket, true)) {
+        if ($address = stream_socket_get_name($socket, true)) {
             // Remove write listener.
             Worker::$globalEvent->del($socket, EventInterface::EV_WRITE);
             // Nonblocking.
@@ -195,10 +195,12 @@ class AsyncTcpConnection extends TcpConnection
                 Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             }
             $this->_status        = self::STATUS_ESTABLISH;
-            $this->_remoteAddress = stream_socket_get_name($socket, true);
-            if (is_callable(array($this->protocol, 'onConnect'))) {
+            $this->_remoteAddress = $address;
+
+            // Try to emit onConnect callback.
+            if ($this->onConnect) {
                 try {
-                    call_user_func(array($this->protocol, 'onConnect'), $this);
+                    call_user_func($this->onConnect, $this);
                 } catch (\Exception $e) {
                     Worker::log($e);
                     exit(250);
@@ -207,10 +209,10 @@ class AsyncTcpConnection extends TcpConnection
                     exit(250);
                 }
             }
-            // Try to emit onConnect callback.
-            if ($this->onConnect) {
+            // Try to emit protocol::onConnect
+            if (method_exists($this->protocol, 'onConnect')) {
                 try {
-                    call_user_func($this->onConnect, $this);
+                    call_user_func(array($this->protocol, 'onConnect'), $this);
                 } catch (\Exception $e) {
                     Worker::log($e);
                     exit(250);
