@@ -102,6 +102,7 @@ class UdpConnection extends ConnectionInterface
      * Close connection.
      *
      * @param mixed $data
+     * @param bool  $raw
      * @return bool
      */
     public function close($data = null, $raw = false)
