@@ -320,7 +320,7 @@ class Ws
         $port = $connection->getRemotePort();
         $host = $port === 80 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
         // Handshake header.
-        $header = "GET / HTTP/1.1\r\n".
+        $header = 'GET ' . $connection->getRemoteURI() . " HTTP/1.1\r\n".
         "Host: $host\r\n".
         "Connection: Upgrade\r\n".
         "Upgrade: websocket\r\n".
@@ -374,7 +374,7 @@ class Ws
                 $connection->send($connection->tmpWebsocketData, true);
                 $connection->tmpWebsocketData = '';
             }
-            if (strlen($buffer > $handshake_response_length)) {
+            if (strlen($buffer) > $handshake_response_length) {
                 return self::input(substr($buffer, $handshake_response_length), $connection);
             }
         }

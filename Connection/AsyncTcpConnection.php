@@ -58,6 +58,14 @@ class AsyncTcpConnection extends TcpConnection
     protected $_connectStartTime = 0;
 
     /**
+     * Remote URI.
+     *
+     * @var string
+     */
+    protected $_remoteURI = '';
+
+
+    /**
      * PHP built-in protocols.
      *
      * @var array
@@ -80,8 +88,29 @@ class AsyncTcpConnection extends TcpConnection
      */
     public function __construct($remote_address)
     {
-        // Get the application layer communication protocol and listening address.
-        list($scheme, $address) = explode(':', $remote_address, 2);
+        $address_info = parse_url($remote_address);
+        if (!$address_info) {
+            echo new \Exception('bad remote_address');
+            $this->_remoteAddress = $remote_address;
+        } else {
+            if (!isset($address_info['port'])) {
+                $address_info['port'] = 80;
+            }
+            if (!isset($address_info['path'])) {
+                $address_info['path'] = '/';
+            }
+            if (!isset($address_info['query'])) {
+                $address_info['query'] = '';
+            } else {
+                $address_info['query'] = '?' . $address_info['query'];
+            }
+            $this->_remoteAddress = "{$address_info['host']}:{$address_info['port']}";
+            $this->_remoteHost    = $address_info['host'];
+            $this->_remoteURI     = "{$address_info['path']}{$address_info['query']}";
+            $scheme               = isset($address_info['scheme']) ? $address_info['scheme'] : 'tcp';
+        }
+
+        $this->id             = self::$_idRecorder++;
         // Check application layer protocol class.
         if (!isset(self::$_builtinTransports[$scheme])) {
             $scheme         = ucfirst($scheme);
@@ -95,10 +124,7 @@ class AsyncTcpConnection extends TcpConnection
         } else {
             $this->transport = self::$_builtinTransports[$scheme];
         }
-        
-        $this->_remoteAddress = substr($address, 2);
-        $this->_remoteHost    = substr($this->_remoteAddress, 0, strrpos($this->_remoteAddress, ':'));
-        $this->id             = self::$_idRecorder++;
+
         // For statistics.
         self::$statistics['connection_count']++;
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
@@ -142,6 +168,16 @@ class AsyncTcpConnection extends TcpConnection
     public function getRemoteHost()
     {
         return $this->_remoteHost;
+    }
+
+    /**
+     * Get remote URI.
+     *
+     * @return string
+     */
+    public function getRemoteURI()
+    {
+        return $this->_remoteURI;
     }
 
     /**
