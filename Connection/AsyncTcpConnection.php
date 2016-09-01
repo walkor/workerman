@@ -217,7 +217,10 @@ class AsyncTcpConnection extends TcpConnection
             Worker::$globalEvent->del($socket, EventInterface::EV_WRITE);
             // Nonblocking.
             stream_set_blocking($socket, 0);
-            stream_set_read_buffer($socket, 0);
+            // Compatible with hhvm
+            if (function_exists('stream_set_read_buffer')) {
+                stream_set_read_buffer($socket, 0);
+            }
             // Try to open keepalive for tcp and disable Nagle algorithm.
             if (function_exists('socket_import_stream') && $this->transport === 'tcp') {
                 $raw_socket = socket_import_stream($socket);

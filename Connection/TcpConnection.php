@@ -218,7 +218,10 @@ class TcpConnection extends ConnectionInterface
         $this->id      = $this->_id = self::$_idRecorder++;
         $this->_socket = $socket;
         stream_set_blocking($this->_socket, 0);
-        stream_set_read_buffer($this->_socket, 0);
+        // Compatible with hhvm
+        if (function_exists('stream_set_read_buffer')) {
+            stream_set_read_buffer($this->_socket, 0);
+        }
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
         $this->_remoteAddress    = $remote_address;
