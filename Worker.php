@@ -611,7 +611,7 @@ class Worker
         $master_is_alive = $master_pid && @posix_kill($master_pid, 0);
         // Master is still alive?
         if ($master_is_alive) {
-            if ($command === 'start') {
+            if ($command === 'start' && posix_getpid() != $master_pid) {
                 self::log("Workerman[$start_file] already running");
                 exit;
             }
