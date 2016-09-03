@@ -1313,8 +1313,8 @@ class Worker
         self::$_pidMap[$this->workerId]  = array();
 
         // Get autoload root path.
-        $backrace                = debug_backtrace();
-        $this->_autoloadRootPath = dirname($backrace[0]['file']);
+        $backtrace                = debug_backtrace();
+        $this->_autoloadRootPath = dirname($backtrace[0]['file']);
 
         // Context for socket.
         if ($socket_name) {
