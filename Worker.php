@@ -722,7 +722,7 @@ class Worker
     }
 
     /**
-     * Signal hander.
+     * Signal handler.
      *
      * @param int $signal
      */
