@@ -1425,7 +1425,7 @@ class Worker
         //Update process state.
         self::$_status = self::STATUS_RUNNING;
 
-        // Eegister shutdown function for checking errors.
+        // Register shutdown function for checking errors.
         register_shutdown_function(array("\\Workerman\\Worker", 'checkErrors'));
 
         // Set autoload root path.
