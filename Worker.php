@@ -76,8 +76,7 @@ class Worker
      *
      * @var int
      */
-    const DEFAUL_BACKLOG = 1024;
-
+    const DEFAULT_BACKLOG = 1024;
     /**
      * Max udp package size.
      *
@@ -1320,7 +1319,7 @@ class Worker
         if ($socket_name) {
             $this->_socketName = $socket_name;
             if (!isset($context_option['socket']['backlog'])) {
-                $context_option['socket']['backlog'] = self::DEFAUL_BACKLOG;
+                $context_option['socket']['backlog'] = self::DEFAULT_BACKLOG;
             }
             $this->_context = stream_context_create($context_option);
         }
@@ -1426,7 +1425,7 @@ class Worker
         //Update process state.
         self::$_status = self::STATUS_RUNNING;
 
-        // Eegister shutdown function for checking errors.
+        // Register shutdown function for checking errors.
         register_shutdown_function(array("\\Workerman\\Worker", 'checkErrors'));
 
         // Set autoload root path.
