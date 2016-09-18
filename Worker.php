@@ -1207,15 +1207,15 @@ class Worker
         // For child processes.
         /** @var Worker $worker */
         $worker           = current(self::$_workers);
-        $wrker_status_str = posix_getpid() . "\t" . str_pad(round(memory_get_usage(true) / (1024 * 1024), 2) . "M",
+        $worker_status_str = posix_getpid() . "\t" . str_pad(round(memory_get_usage(true) / (1024 * 1024), 2) . "M",
                 7) . " " . str_pad($worker->getSocketName(),
                 self::$_maxSocketNameLength) . " " . str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name),
                 self::$_maxWorkerNameLength) . " ";
-        $wrker_status_str .= str_pad(ConnectionInterface::$statistics['connection_count'],
+        $worker_status_str .= str_pad(ConnectionInterface::$statistics['connection_count'],
                 11) . " " . str_pad(ConnectionInterface::$statistics['total_request'],
                 14) . " " . str_pad(ConnectionInterface::$statistics['send_fail'],
                 9) . " " . str_pad(ConnectionInterface::$statistics['throw_exception'], 15) . "\n";
-        file_put_contents(self::$_statisticsFile, $wrker_status_str, FILE_APPEND);
+        file_put_contents(self::$_statisticsFile, $worker_status_str, FILE_APPEND);
     }
 
     /**
