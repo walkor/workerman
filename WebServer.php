@@ -209,7 +209,11 @@ class WebServer extends Worker
                 }
                 $content = ob_get_clean();
                 ini_set('display_errors', 'on');
-                $connection->close($content);
+                if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+                    $connection->send($content);
+                } else {
+                    $connection->close($content);
+                }
                 chdir($workerman_cwd);
                 return;
             }
