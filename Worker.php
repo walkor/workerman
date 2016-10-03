@@ -1553,6 +1553,9 @@ class Worker
             if ($this->protocol) {
                 $parser      = $this->protocol;
                 $recv_buffer = $parser::decode($recv_buffer, $connection);
+                // Discard bad packets.
+                if ($recv_buffer === false)
+                    return true;
             }
             ConnectionInterface::$statistics['total_request']++;
             try {
