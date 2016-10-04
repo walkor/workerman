@@ -57,9 +57,10 @@ class UdpConnection extends ConnectionInterface
      *
      * @param string $send_buffer
      * @param bool   $raw
+     * @param string $remote_addr
      * @return void|boolean
      */
-    public function send($send_buffer, $raw = false)
+    public function send($send_buffer, $raw = false, $remote_addr = null)
     {
         if (false === $raw && $this->protocol) {
             $parser      = $this->protocol;
@@ -68,7 +69,9 @@ class UdpConnection extends ConnectionInterface
                 return null;
             }
         }
-        return strlen($send_buffer) === stream_socket_sendto($this->_socket, $send_buffer, 0, $this->_remoteAddress);
+        if (!$remote_addr)
+            $remote_addr = self::ipv6($this->getRemoteIp()) . ':' . $this->getRemotePort();
+        return strlen($send_buffer) === stream_socket_sendto($this->_socket, $send_buffer, 0, $remote_addr);
     }
 
     /**
@@ -111,5 +114,17 @@ class UdpConnection extends ConnectionInterface
             $this->send($data, $raw);
         }
         return true;
+    }
+
+    /**
+     * If remote ip is ipv6, add brackets.
+     *
+     * @param string $RemoteIP
+     * @return string
+     */
+    private static function ipv6($RemoteIP) {
+        if (strpos($RemoteIP, ':') !== false)
+            return '['.$RemoteIP.']';
+        return $RemoteIP;
     }
 }
