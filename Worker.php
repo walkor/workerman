@@ -587,7 +587,7 @@ class Worker
         // Check argv;
         $start_file = $argv[0];
         if (!isset($argv[1])) {
-            exit("Usage: php yourfile.php {start|stop|restart|reload|status|kill}\n");
+            exit("Usage: php yourfile.php {start|stop|restart|reload|status}\n");
         }
 
         // Get command.
@@ -614,18 +614,13 @@ class Worker
                 self::log("Workerman[$start_file] already running");
                 exit;
             }
-        } elseif ($command !== 'start' && $command !== 'restart' && $command !== 'kill') {
+        } elseif ($command !== 'start' && $command !== 'restart') {
             self::log("Workerman[$start_file] not run");
             exit;
         }
 
         // execute command.
         switch ($command) {
-            case 'kill':
-                exec("ps aux | grep $start_file | grep -v grep | awk '{print $2}' |xargs kill -SIGINT");
-                usleep(100000);
-                exec("ps aux | grep $start_file | grep -v grep | awk '{print $2}' |xargs kill -SIGKILL");
-                break;
             case 'start':
                 if ($command2 === '-d') {
                     Worker::$daemonize = true;
@@ -638,7 +633,7 @@ class Worker
                 // Master process will send status signal to all child processes.
                 posix_kill($master_pid, SIGUSR2);
                 // Waiting amoment.
-                usleep(100000);
+                usleep(500000);
                 // Display statisitcs data from a disk file.
                 @readfile(self::$_statisticsFile);
                 exit(0);
@@ -679,7 +674,7 @@ class Worker
                 self::log("Workerman[$start_file] reload");
                 exit;
             default :
-                exit("Usage: php yourfile.php {start|stop|restart|reload|status|kill}\n");
+                exit("Usage: php yourfile.php {start|stop|restart|reload|status}\n");
         }
     }
 
