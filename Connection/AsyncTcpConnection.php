@@ -64,6 +64,13 @@ class AsyncTcpConnection extends TcpConnection
      */
     protected $_remoteURI = '';
 
+    /**
+     * Context option.
+     *
+     * @var null
+     */
+    protected $_contextOption = null;
+
 
     /**
      * PHP built-in protocols.
@@ -84,9 +91,10 @@ class AsyncTcpConnection extends TcpConnection
      * Construct.
      *
      * @param string $remote_address
+     * @param array $context_option
      * @throws Exception
      */
-    public function __construct($remote_address)
+    public function __construct($remote_address, $context_option = null)
     {
         $address_info = parse_url($remote_address);
         if (!$address_info) {
@@ -128,6 +136,7 @@ class AsyncTcpConnection extends TcpConnection
         // For statistics.
         self::$statistics['connection_count']++;
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
+        $this->_contextOption    = $context_option;
     }
 
     /**
@@ -137,14 +146,21 @@ class AsyncTcpConnection extends TcpConnection
      */
     public function connect()
     {
-         if ($this->_status !== self::STATUS_INITIAL && $this->_status !== self::STATUS_CLOSING && $this->_status !== self::STATUS_CLOSED) {
+         if ($this->_status !== self::STATUS_INITIAL && $this->_status !== self::STATUS_CLOSING &&
+             $this->_status !== self::STATUS_CLOSED) {
             return;
         }
         $this->_status = self::STATUS_CONNECTING;
         $this->_connectStartTime = microtime(true);
         // Open socket connection asynchronously.
-        $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
-            STREAM_CLIENT_ASYNC_CONNECT);
+        if ($this->_contextOption) {
+            $context = stream_context_create($this->_contextOption);
+            $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
+                STREAM_CLIENT_ASYNC_CONNECT, $context);
+        } else {
+            $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
+                STREAM_CLIENT_ASYNC_CONNECT);
+        }
         // If failed attempt to emit onError callback.
         if (!$this->_socket) {
             $this->emitError(WORKERMAN_CONNECT_FAIL, $errstr);
