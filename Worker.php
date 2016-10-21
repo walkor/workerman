@@ -456,8 +456,9 @@ class Worker
         if (empty(self::$logFile)) {
             self::$logFile = __DIR__ . '/../workerman.log';
         }
-        touch(self::$logFile);
-        chmod(self::$logFile, 0622);
+        $log_file = (string)self::$logFile;
+        touch($log_file);
+        chmod($log_file, 0622);
 
         // State.
         self::$_status = self::STATUS_STARTING;
@@ -552,26 +553,26 @@ class Worker
      */
     protected static function displayUI()
     {
-        echo "\033[1A\n\033[K-----------------------\033[47;30m WORKERMAN \033[0m-----------------------------\n\033[0m";
-        echo 'Workerman version:', Worker::VERSION, "          PHP version:", PHP_VERSION, "\n";
-        echo "------------------------\033[47;30m WORKERS \033[0m-------------------------------\n";
-        echo "\033[47;30muser\033[0m", str_pad('',
-            self::$_maxUserNameLength + 2 - strlen('user')), "\033[47;30mworker\033[0m", str_pad('',
-            self::$_maxWorkerNameLength + 2 - strlen('worker')), "\033[47;30mlisten\033[0m", str_pad('',
-            self::$_maxSocketNameLength + 2 - strlen('listen')), "\033[47;30mprocesses\033[0m \033[47;30m", "status\033[0m\n";
+        self::safeEcho("\033[1A\n\033[K-----------------------\033[47;30m WORKERMAN \033[0m-----------------------------\n\033[0m");
+        self::safeEcho('Workerman version:'. Worker::VERSION. "          PHP version:". PHP_VERSION. "\n");
+        self::safeEcho("------------------------\033[47;30m WORKERS \033[0m-------------------------------\n");
+        self::safeEcho("\033[47;30muser\033[0m". str_pad('',
+            self::$_maxUserNameLength + 2 - strlen('user')). "\033[47;30mworker\033[0m". str_pad('',
+            self::$_maxWorkerNameLength + 2 - strlen('worker')). "\033[47;30mlisten\033[0m". str_pad('',
+            self::$_maxSocketNameLength + 2 - strlen('listen')). "\033[47;30mprocesses\033[0m \033[47;30m". "status\033[0m\n");
 
         foreach (self::$_workers as $worker) {
-            echo str_pad($worker->user, self::$_maxUserNameLength + 2), str_pad($worker->name,
-                self::$_maxWorkerNameLength + 2), str_pad($worker->getSocketName(),
-                self::$_maxSocketNameLength + 2), str_pad(' ' . $worker->count, 9), " \033[32;40m [OK] \033[0m\n";;
+            self::safeEcho(str_pad($worker->user, self::$_maxUserNameLength + 2). str_pad($worker->name,
+                self::$_maxWorkerNameLength + 2). str_pad($worker->getSocketName(),
+                self::$_maxSocketNameLength + 2). str_pad(' ' . $worker->count, 9). " \033[32;40m [OK] \033[0m\n");
         }
-        echo "----------------------------------------------------------------\n";
+        self::safeEcho("----------------------------------------------------------------\n");
         if (self::$daemonize) {
             global $argv;
             $start_file = $argv[0];
-            echo "Input \"php $start_file stop\" to quit. Start success.\n";
+            self::safeEcho("Input \"php $start_file stop\" to quit. Start success.\n");
         } else {
-            echo "Press Ctrl-C to quit. Start success.\n";
+            self::safeEcho("Press Ctrl-C to quit. Start success.\n");
         }
     }
 
@@ -907,7 +908,7 @@ class Worker
     {
         $id = array_search($pid, self::$_idMap[$worker_id]);
         if ($id === false) {
-            echo "getId fail\n";
+            self::safeEcho("getId fail\n");
         }
         return $id;
     }
@@ -1288,9 +1289,21 @@ class Worker
     {
         $msg = $msg . "\n";
         if (!self::$daemonize) {
-            echo $msg;
+            self::safeEcho($msg);
         }
         file_put_contents((string)self::$logFile, date('Y-m-d H:i:s') . ' ' . 'pid:'. posix_getpid() . ' ' . $msg, FILE_APPEND | LOCK_EX);
+    }
+
+    /**
+     * Safe Echo.
+     *
+     * @param $msg
+     */
+    public static function safeEcho($msg)
+    {
+        if (!function_exists('posix_isatty') || posix_isatty(STDOUT)) {
+            echo $msg;
+        }
     }
 
     /**
