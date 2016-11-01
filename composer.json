@@ -1,6 +1,6 @@
 {
     "name"  : "workerman/workerman",
-    "type"  : "project",
+    "type"  : "library",
     "keywords": ["event-loop", "asynchronous"],
     "homepage": "http://www.workerman.net",
     "license" : "MIT",
@@ -24,7 +24,7 @@
         "php": ">=5.3"
     },
     "suggest": {
-	"ext-libevent": "For better performance."
+	"ext-event": "For better performance."
     },
     "autoload": {
         "psr-4": {"Workerman\\": "./"}
