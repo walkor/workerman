@@ -14,6 +14,7 @@
 namespace Workerman\Connection;
 
 use Workerman\Events\EventInterface;
+use Workerman\Lib\Timer;
 use Workerman\Worker;
 use Exception;
 
@@ -67,9 +68,16 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Context option.
      *
-     * @var null
+     * @var resource
      */
     protected $_contextOption = null;
+
+    /**
+     * Reconnect timer.
+     *
+     * @var int
+     */
+    protected $_reconnectTimer = null;
 
 
     /**
@@ -146,11 +154,11 @@ class AsyncTcpConnection extends TcpConnection
      */
     public function connect()
     {
-         if ($this->_status !== self::STATUS_INITIAL && $this->_status !== self::STATUS_CLOSING &&
+        if ($this->_status !== self::STATUS_INITIAL && $this->_status !== self::STATUS_CLOSING &&
              $this->_status !== self::STATUS_CLOSED) {
             return;
         }
-        $this->_status = self::STATUS_CONNECTING;
+        $this->_status           = self::STATUS_CONNECTING;
         $this->_connectStartTime = microtime(true);
         // Open socket connection asynchronously.
         if ($this->_contextOption) {
@@ -174,6 +182,24 @@ class AsyncTcpConnection extends TcpConnection
         }
         // Add socket to global event loop waiting connection is successfully established or faild. 
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'checkConnection'));
+    }
+
+    /**
+     * Reconnect.
+     *
+     * @param int $after
+     * @return void
+     */
+    public function reConnect($after = 0) {
+        $this->_status = self::STATUS_INITIAL;
+        if ($this->_reconnectTimer) {
+            Timer::del($this->_reconnectTimer);
+        }
+        if ($after >= 0) {
+            $this->_reconnectTimer = Timer::add($after, array($this, 'connect'), null, false);
+            return;
+        }
+        return $this->connect();
     }
 
     /**
