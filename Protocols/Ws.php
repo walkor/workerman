@@ -3,6 +3,7 @@ namespace Workerman\Protocols;
 
 use Workerman\Worker;
 use Workerman\Lib\Timer;
+use Workerman\Connection\TcpConnection;
 
 /**
  * Websocket protocol for client.
