@@ -1356,21 +1356,18 @@ class Worker
         list($scheme, $address) = explode(':', $this->_socketName, 2);
         // Check application layer protocol class.
         if (!isset(self::$_builtinTransports[$scheme])) {
-			
-			if(class_exists($scheme){
-				$this->protocol = $scheme;
-			} else {
-				$scheme         = ucfirst($scheme);
-				$this->protocol = '\\Protocols\\' . $scheme;
-				if (!class_exists($this->protocol)) {
-					$this->protocol = "\\Workerman\\Protocols\\$scheme";
-					if (!class_exists($this->protocol)) {
-						throw new Exception("class \\Protocols\\$scheme not exist");
-					}
-				}
-			}
-			
-            
+            if(class_exists($scheme)){
+                $this->protocol = $scheme;
+            } else {
+                $scheme         = ucfirst($scheme);
+                $this->protocol = '\\Protocols\\' . $scheme;
+                if (!class_exists($this->protocol)) {
+                    $this->protocol = "\\Workerman\\Protocols\\$scheme";
+                    if (!class_exists($this->protocol)) {
+                        throw new Exception("class \\Protocols\\$scheme not exist");
+                    }
+                }
+            }
             $local_socket = $this->transport . ":" . $address;
         } else {
             $this->transport = self::$_builtinTransports[$scheme];
