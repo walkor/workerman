@@ -195,7 +195,7 @@ class AsyncTcpConnection extends TcpConnection
         if ($this->_reconnectTimer) {
             Timer::del($this->_reconnectTimer);
         }
-        if ($after >= 0) {
+        if ($after > 0) {
             $this->_reconnectTimer = Timer::add($after, array($this, 'connect'), null, false);
             return;
         }
