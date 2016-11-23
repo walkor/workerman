@@ -1,4 +1,16 @@
 <?php
+/**
+ * This file is part of workerman.
+ *
+ * Licensed under The MIT License
+ * For full copyright and license information, please see the MIT-LICENSE.txt
+ * Redistributions of files must retain the above copyright notice.
+ *
+ * @author    walkor<walkor@workerman.net>
+ * @copyright walkor<walkor@workerman.net>
+ * @link      http://www.workerman.net/
+ * @license   http://www.opensource.org/licenses/mit-license.php MIT License
+ */
 namespace Workerman\Protocols;
 
 use Workerman\Worker;
@@ -10,13 +22,6 @@ use Workerman\Connection\TcpConnection;
  */
 class Ws
 {
-    /**
-     * Minimum head length of websocket protocol.
-     *
-     * @var int
-     */
-    const MIN_HEAD_LEN = 2;
-
     /**
      * Websocket blob type.
      *
@@ -49,7 +54,7 @@ class Ws
             return self::dealHandshake($buffer, $connection);
         }
         $recv_len = strlen($buffer);
-        if ($recv_len < self::MIN_HEAD_LEN) {
+        if ($recv_len < 2) {
             return 0;
         }
         // Buffer websocket frame data.
@@ -60,10 +65,14 @@ class Ws
                 return 0;
             }
         } else {
-            $data_len     = ord($buffer[1]) & 127;
+
             $firstbyte    = ord($buffer[0]);
+            $secondbyte   = ord($buffer[1]);
+            $data_len     = $secondbyte & 127;
             $is_fin_frame = $firstbyte >> 7;
+            $masked       = $secondbyte >> 7;
             $opcode       = $firstbyte & 0xf;
+
             switch ($opcode) {
                 case 0x0:
                     break;
@@ -110,9 +119,10 @@ class Ws
                     }
                     // Consume data from receive buffer.
                     if (!$data_len) {
-                        $connection->consumeRecvBuffer(self::MIN_HEAD_LEN);
-                        if ($recv_len > self::MIN_HEAD_LEN) {
-                            return self::input(substr($buffer, self::MIN_HEAD_LEN), $connection);
+                        $head_len = $masked ? 6 : 2;
+                        $connection->consumeRecvBuffer($head_len);
+                        if ($recv_len > $head_len) {
+                            return self::input(substr($buffer, $head_len), $connection);
                         }
                         return 0;
                     }
@@ -133,9 +143,10 @@ class Ws
                     }
                     //  Consume data from receive buffer.
                     if (!$data_len) {
-                        $connection->consumeRecvBuffer(self::MIN_HEAD_LEN);
-                        if ($recv_len > self::MIN_HEAD_LEN) {
-                            return self::input(substr($buffer, self::MIN_HEAD_LEN), $connection);
+                        $head_len = $masked ? 6 : 2;
+                        $connection->consumeRecvBuffer($head_len);
+                        if ($recv_len > $head_len) {
+                            return self::input(substr($buffer, $head_len), $connection);
                         }
                         return 0;
                     }
