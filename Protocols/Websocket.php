@@ -23,13 +23,6 @@ use Workerman\Worker;
 class Websocket implements \Workerman\Protocols\ProtocolInterface
 {
     /**
-     * Minimum head length of websocket protocol.
-     *
-     * @var int
-     */
-    const MIN_HEAD_LEN = 2;
-
-    /**
      * Websocket blob type.
      *
      * @var string
@@ -55,7 +48,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         // Receive length.
         $recv_len = strlen($buffer);
         // We need more data.
-        if ($recv_len < self::MIN_HEAD_LEN) {
+        if ($recv_len < 2) {
             return 0;
         }
 
@@ -72,9 +65,11 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 return 0;
             }
         } else {
-            $data_len     = ord($buffer[1]) & 127;
             $firstbyte    = ord($buffer[0]);
+            $secondbyte   = ord($buffer[1]);
+            $data_len     = $secondbyte & 127;
             $is_fin_frame = $firstbyte >> 7;
+            $masked       = $secondbyte >> 7;
             $opcode       = $firstbyte & 0xf;
             switch ($opcode) {
                 case 0x0:
@@ -123,9 +118,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
 
                     // Consume data from receive buffer.
                     if (!$data_len) {
-                        $connection->consumeRecvBuffer(self::MIN_HEAD_LEN);
-                        if ($recv_len > self::MIN_HEAD_LEN) {
-                            return self::input(substr($buffer, self::MIN_HEAD_LEN), $connection);
+                        $head_len = $masked ? 6 : 2;
+                        $connection->consumeRecvBuffer($head_len);
+                        if ($recv_len > $head_len) {
+                            return self::input(substr($buffer, $head_len), $connection);
                         }
                         return 0;
                     }
@@ -146,9 +142,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     }
                     //  Consume data from receive buffer.
                     if (!$data_len) {
-                        $connection->consumeRecvBuffer(self::MIN_HEAD_LEN);
-                        if ($recv_len > self::MIN_HEAD_LEN) {
-                            return self::input(substr($buffer, self::MIN_HEAD_LEN), $connection);
+                        $head_len = $masked ? 6 : 2;
+                        $connection->consumeRecvBuffer($head_len);
+                        if ($recv_len > $head_len) {
+                            return self::input(substr($buffer, $head_len), $connection);
                         }
                         return 0;
                     }
@@ -296,7 +293,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      */
     public static function decode($buffer, ConnectionInterface $connection)
     {
-        $len = $masks = $data = $decoded = null;
+        $masks = $data = $decoded = null;
         $len = ord($buffer[1]) & 127;
         if ($len === 126) {
             $masks = substr($buffer, 4, 4);
