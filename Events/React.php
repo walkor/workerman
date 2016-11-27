@@ -20,8 +20,14 @@ use React\EventLoop\Timer\TimerInterface;
  */
 class React implements LoopInterface
 {
+    /**
+     * @var React\EventLoop\LoopInterface
+     */
     protected $_loop = null;
 
+    /**
+     * React constructor.
+     */
     public function __construct() {
         if (function_exists('event_base_new')) {
             $this->_loop = new \Workerman\Events\React\LibEventLoop();
@@ -32,6 +38,15 @@ class React implements LoopInterface
         }
     }
 
+    /**
+     * Add event listener to event loop.
+     *
+     * @param $fd
+     * @param $flag
+     * @param $func
+     * @param array $args
+     * @return bool
+     */
     public function add($fd, $flag, $func, $args = array())
     {
         switch ($flag) {
@@ -49,6 +64,13 @@ class React implements LoopInterface
         return false;
     }
 
+    /**
+     * Remove event listener from event loop.
+     *
+     * @param mixed $fd
+     * @param int   $flag
+     * @return bool
+     */
     public function del($fd, $flag)
     {
         switch ($flag) {
@@ -65,22 +87,11 @@ class React implements LoopInterface
         return false;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function clearAllTimer()
-    {
-
-    }
-
-    public function getLoop()
-    {
-        return $this->_loop;
-    }
-
 
     /**
-     * {@inheritdoc}
+     * Main loop.
+     *
+     * @return void
      */
     public function loop()
     {
