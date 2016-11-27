@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.3.5';
+    const VERSION = '3.3.6';
 
     /**
      * Status starting.
@@ -542,6 +542,16 @@ class Worker
     }
 
     /**
+     * Get global event-loop instance.
+     *
+     * @return EventInterface
+     */
+    public static function getEventLoop()
+    {
+        return self::$globalEvent;
+    }
+
+    /**
      * Init idMap.
      * return void
      */
@@ -834,6 +844,9 @@ class Worker
      */
     protected static function getEventLoopName()
     {
+        if (interface_exists('\React\EventLoop\LoopInterface')) {
+            return 'React';
+        }
         foreach (self::$_availableEventLoops as $name) {
             if (extension_loaded($name)) {
                 self::$_eventLoopName = $name;
