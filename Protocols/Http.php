@@ -307,8 +307,11 @@ class Http
         if (PHP_SAPI != 'cli') {
             return session_start();
         }
+
+        self::tryGcSessions();
+
         if (HttpCache::$instance->sessionStarted) {
-            echo "already sessionStarted\nn";
+            echo "already sessionStarted\n";
             return true;
         }
         HttpCache::$instance->sessionStarted = true;
@@ -433,6 +436,27 @@ class Http
             }
         }
     }
+
+    /**
+     * Try GC sessions.
+     *
+     * @return void
+     */
+    public static function tryGcSessions()
+    {
+        if (HttpCache::$sessionGcProbability <= 0 ||
+            HttpCache::$sessionGcDivisor     <= 0 ||
+            rand(1, HttpCache::$sessionGcDivisor) > HttpCache::$sessionGcProbability) {
+            return;
+        }
+
+        $time_now = time();
+        foreach(glob(HttpCache::$sessionPath.'/ses*') as $file) {
+            if(is_file($file) && $time_now - filemtime($file) > HttpCache::$sessionGcMaxLifeTime) {
+                unlink($file);
+            }
+        }
+    }
 }
 
 /**
@@ -489,11 +513,13 @@ class HttpCache
     /**
      * @var HttpCache
      */
-    public static $instance = null;
-
-    public static $header = array();
-    public static $sessionPath = '';
-    public static $sessionName = '';
+    public static $instance             = null;
+    public static $header               = array();
+    public static $sessionPath          = '';
+    public static $sessionName          = '';
+    public static $sessionGcProbability = 1;
+    public static $sessionGcDivisor     = 1000;
+    public static $sessionGcMaxLifeTime = 1440;
     public $sessionStarted = false;
     public $sessionFile = '';
 
@@ -501,9 +527,24 @@ class HttpCache
     {
         self::$sessionName = ini_get('session.name');
         self::$sessionPath = session_save_path();
-        if (!self::$sessionPath) {
+        if (!self::$sessionPath || strpos(self::$sessionPath, 'tcp://') === 0) {
             self::$sessionPath = sys_get_temp_dir();
         }
+
+        if ($gc_probability = ini_get('session.gc_probability')) {
+            self::$sessionGcProbability = $gc_probability;
+        }
+
+        if ($gc_divisor = ini_get('session.gc_divisor')) {
+            self::$sessionGcDivisor = $gc_divisor;
+        }
+
+        if ($gc_max_life_time = ini_get('session.gc_maxlifetime')) {
+            self::$sessionGcMaxLifeTime = $gc_max_life_time;
+        }
+
         @\session_start();
     }
 }
+
+HttpCache::init();

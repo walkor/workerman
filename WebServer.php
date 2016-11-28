@@ -89,10 +89,10 @@ class WebServer extends Worker
     public function onWorkerStart()
     {
         if (empty($this->serverRoot)) {
-            throw new \Exception('server root not set, please use WebServer::addRoot($domain, $root_path) to set server root path');
+            echo new \Exception('server root not set, please use WebServer::addRoot($domain, $root_path) to set server root path');
+            exit(250);
         }
-        // Init HttpCache.
-        HttpCache::init();
+
         // Init mimeMap.
         $this->initMimeTypeMap();
 
