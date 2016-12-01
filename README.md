@@ -599,7 +599,7 @@ Percentage of the requests served within a certain time (ms)
 ```
 
 
-## other links with workerman
+## Other links with workerman
 
 ## [PHPSocket.IO](https://github.com/walkor/phpsocket.io)  
 [Live demo](http://www.workerman.net/demos/phpsocketio-chat/)  
