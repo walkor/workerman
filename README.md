@@ -21,6 +21,7 @@ composer require workerman/workerman
 ### A websocket server 
 ```php
 <?php
+require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
 
 // Create a Websocket server
@@ -213,7 +214,7 @@ $task->onWorkerStart = function($task)
 Worker::runAll();
 ```
 
-### AsyncTcpConnection
+### AsyncTcpConnection (tcp/ws/text/frame etc...)
 ```php
 require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
@@ -241,7 +242,7 @@ $worker->onWorkerStart = function()
 Worker::runAll();
 ```
 
-### Work with Async Mysql of ReactPHP
+### Async Mysql of ReactPHP
 ```
 composer require react/mysql
 ```
@@ -287,7 +288,7 @@ $worker->onMessage = function($connection, $data) {
 Worker::runAll();
 ```
 
-### Work with Async Redis of ReactPHP
+### Async Redis of ReactPHP
 ```
 composer require clue/redis-react
 ```
@@ -329,7 +330,7 @@ $worker->onMessage = function($connection, $data) {
 Worker::runAll();
 ```
 
-### Work with Aysnc dns of ReactPHP
+### Aysnc dns of ReactPHP
 ```
 composer require react/dns
 ```
@@ -357,6 +358,145 @@ $worker->onMessage = function($connection, $host) {
 
 Worker::runAll();
 ```
+
+### Http client of ReactPHP
+```
+composer require react/http-client
+```
+
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+
+$worker = new Worker('tcp://0.0.0.0:6161');
+
+$worker->onWorkerStart = function() {
+    global   $client;
+    $loop    = Worker::getEventLoop();
+    $factory = new React\Dns\Resolver\Factory();
+    $dns     = $factory->createCached('8.8.8.8', $loop);
+    $factory = new React\HttpClient\Factory();
+    $client = $factory->create($loop, $dns);
+};
+
+$worker->onMessage = function($connection, $host) {
+    global     $client;
+    $request = $client->request('GET', trim($host));
+    $request->on('error', function(Exception $e) use ($connection) {
+        $connection->send($e);
+    });
+    $request->on('response', function ($response) use ($connection) {
+        $response->on('data', function ($data, $response) use ($connection) {
+            $connection->send($data);
+        });
+    });
+    $request->end();
+};
+
+Worker::runAll();
+```
+
+### Http client of ReactPHP
+```
+composer require react/http-client
+```
+
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+
+$worker = new Worker('tcp://0.0.0.0:6161');
+
+$worker->onWorkerStart = function() {
+    global   $client;
+    $loop    = Worker::getEventLoop();
+    $factory = new React\Dns\Resolver\Factory();
+    $dns     = $factory->createCached('8.8.8.8', $loop);
+    $factory = new React\HttpClient\Factory();
+    $client = $factory->create($loop, $dns);
+};
+
+$worker->onMessage = function($connection, $host) {
+    global     $client;
+    $request = $client->request('GET', trim($host));
+    $request->on('error', function(Exception $e) use ($connection) {
+        $connection->send($e);
+    });
+    $request->on('response', function ($response) use ($connection) {
+        $response->on('data', function ($data, $response) use ($connection) {
+            $connection->send($data);
+        });
+    });
+    $request->end();
+};
+
+Worker::runAll();
+```
+
+### ZMQ of ReactPHP
+```
+composer require react/zmq
+```
+
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+
+$worker = new Worker('text://0.0.0.0:6161');
+
+$worker->onWorkerStart = function() {
+    global   $pull;
+    $loop    = Worker::getEventLoop();
+    $context = new React\ZMQ\Context($loop);
+    $pull    = $context->getSocket(ZMQ::SOCKET_PULL);
+    $pull->bind('tcp://127.0.0.1:5555');
+
+    $pull->on('error', function ($e) {
+        var_dump($e->getMessage());
+    });
+
+    $pull->on('message', function ($msg) {
+        echo "Received: $msg\n";
+    });
+};
+
+Worker::runAll();
+```
+
+### STOMP of ReactPHP
+```
+composer require react/stomp
+```
+
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+
+$worker = new Worker('text://0.0.0.0:6161');
+
+$worker->onWorkerStart = function() {
+    global   $client;
+    $loop    = Worker::getEventLoop();
+    $factory = new React\Stomp\Factory($loop);
+    $client  = $factory->createClient(array('vhost' => '/', 'login' => 'guest', 'passcode' => 'guest'));
+
+    $client
+        ->connect()
+        ->then(function ($client) use ($loop) {
+            $client->subscribe('/topic/foo', function ($frame) {
+                echo "Message received: {$frame->body}\n";
+            });
+        });
+};
+
+Worker::runAll();
+```
+
+
 
 ## Available commands
 ```php test.php start  ```  
