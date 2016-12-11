@@ -54,7 +54,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
 
         // Has not yet completed the handshake.
         if (empty($connection->websocketHandshake)) {
-            return self::dealHandshake($buffer, $connection);
+            return static::dealHandshake($buffer, $connection);
         }
 
         // Buffer websocket frame data.
@@ -121,7 +121,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         $head_len = $masked ? 6 : 2;
                         $connection->consumeRecvBuffer($head_len);
                         if ($recv_len > $head_len) {
-                            return self::input(substr($buffer, $head_len), $connection);
+                            return static::input(substr($buffer, $head_len), $connection);
                         }
                         return 0;
                     }
@@ -145,7 +145,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         $head_len = $masked ? 6 : 2;
                         $connection->consumeRecvBuffer($head_len);
                         if ($recv_len > $head_len) {
-                            return self::input(substr($buffer, $head_len), $connection);
+                            return static::input(substr($buffer, $head_len), $connection);
                         }
                         return 0;
                     }
@@ -194,18 +194,18 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
 
         // Received just a frame length data.
         if ($connection->websocketCurrentFrameLength === $recv_len) {
-            self::decode($buffer, $connection);
+            static::decode($buffer, $connection);
             $connection->consumeRecvBuffer($connection->websocketCurrentFrameLength);
             $connection->websocketCurrentFrameLength = 0;
             return 0;
         } // The length of the received data is greater than the length of a frame.
         elseif ($connection->websocketCurrentFrameLength < $recv_len) {
-            self::decode(substr($buffer, 0, $connection->websocketCurrentFrameLength), $connection);
+            static::decode(substr($buffer, 0, $connection->websocketCurrentFrameLength), $connection);
             $connection->consumeRecvBuffer($connection->websocketCurrentFrameLength);
             $current_frame_length                    = $connection->websocketCurrentFrameLength;
             $connection->websocketCurrentFrameLength = 0;
             // Continue to read next frame.
-            return self::input(substr($buffer, $current_frame_length), $connection);
+            return static::input(substr($buffer, $current_frame_length), $connection);
         } // The length of the received data is less than the length of a frame.
         else {
             return 0;
@@ -226,7 +226,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         }
         $len = strlen($buffer);
         if (empty($connection->websocketType)) {
-            $connection->websocketType = self::BINARY_TYPE_BLOB;
+            $connection->websocketType = static::BINARY_TYPE_BLOB;
         }
 
         $first_byte = $connection->websocketType;
@@ -379,11 +379,11 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             }
             // blob or arraybuffer
             if (empty($connection->websocketType)) {
-                $connection->websocketType = self::BINARY_TYPE_BLOB;
+                $connection->websocketType = static::BINARY_TYPE_BLOB;
             }
             // Try to emit onWebSocketConnect callback.
             if (isset($connection->onWebSocketConnect)) {
-                self::parseHttpHeader($buffer);
+                static::parseHttpHeader($buffer);
                 try {
                     call_user_func($connection->onWebSocketConnect, $connection, $buffer);
                 } catch (\Exception $e) {
@@ -399,7 +399,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 $_GET = $_SERVER = $_SESSION = $_COOKIE = array();
             }
             if (strlen($buffer) > $header_length) {
-                return self::input(substr($buffer, $header_length), $connection);
+                return static::input(substr($buffer, $header_length), $connection);
             } 
             return 0;
         } // Is flash policy-file-request.
