@@ -57,9 +57,13 @@ class React implements LoopInterface
             case EventInterface::EV_SIGNAL:
                 return $this->_loop->addSignal($fd, $func);
             case EventInterface::EV_TIMER:
-                return $this->_loop->addPeriodicTimer($fd, $func);
+                return $this->_loop->addPeriodicTimer($fd, function() use ($func, $args) {
+                    call_user_func_array($func, $args);
+                });
             case EventInterface::EV_TIMER_ONCE:
-                return $this->_loop->addTimer($fd, $func);
+                return $this->_loop->addTimer($fd, function() use ($func, $args) {
+                    call_user_func_array($func, $args);
+                });
         }
         return false;
     }
