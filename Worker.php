@@ -190,13 +190,6 @@ class Worker
     public $onWorkerStop = null;
 
     /**
-     * Emitted when the master process get reload signal.
-     *
-     * @var callback
-     */
-    public static $onMasterReload = null;
-
-    /**
      * Emitted when worker processes get reload signal.
      *
      * @var callback
@@ -265,6 +258,20 @@ class Worker
      * @var Events\EventInterface
      */
     public static $globalEvent = null;
+
+    /**
+     * Emitted when the master process get reload signal.
+     *
+     * @var callback
+     */
+    public static $onMasterReload = null;
+
+    /**
+     * Emitted when the master process terminated.
+     *
+     * @var callback
+     */
+    public static $onMasterStop = null;
 
     /**
      * The PID of master process.
@@ -1080,6 +1087,9 @@ class Worker
         }
         @unlink(self::$pidFile);
         self::log("Workerman[" . basename(self::$_startFile) . "] has been stopped");
+        if (self::$onMasterStop) {
+            call_user_func(self::$onMasterStop);
+        }
         exit(0);
     }
 
