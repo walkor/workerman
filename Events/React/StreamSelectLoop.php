@@ -28,7 +28,9 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
      */
     public function addSignal($signal, $callback)
     {
-        pcntl_signal($signal, $callback);
+        if(PHP_EOL !== "\r\n") {
+            pcntl_signal($signal, $callback);
+        }
     }
 
     /**
@@ -38,7 +40,9 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
      */
     public function removeSignal($signal)
     {
-        pcntl_signal($signal, SIG_IGN);
+        if(PHP_EOL !== "\r\n") {
+            pcntl_signal($signal, SIG_IGN);
+        }
     }
 
     /**
@@ -63,7 +67,9 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
         }
 
         // Calls signal handlers for pending signals
-        pcntl_signal_dispatch();
+        if(PHP_EOL !== "\r\n") {
+            pcntl_signal_dispatch();
+        }
         $timeout && usleep($timeout);
 
         return 0;
