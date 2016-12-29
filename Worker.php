@@ -76,7 +76,7 @@ class Worker
      *
      * @var int
      */
-    const DEFAULT_BACKLOG = 1024;
+    const DEFAULT_BACKLOG = 102400;
     /**
      * Max udp package size.
      *
