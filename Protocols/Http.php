@@ -22,6 +22,12 @@ use Workerman\Worker;
 class Http
 {
     /**
+      * The supported HTTP methods
+      * @var array
+      */
+    public static $methods = array('GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS');
+
+    /**
      * Check the integrity of the package.
      *
      * @param string        $recv_buffer
@@ -40,21 +46,34 @@ class Http
         }
 
         list($header,) = explode("\r\n\r\n", $recv_buffer, 2);
-        if (0 === strpos($recv_buffer, "POST")) {
-            // find Content-Length
-            $match = array();
-            if (preg_match("/\r\nContent-Length: ?(\d+)/i", $header, $match)) {
-                $content_length = $match[1];
-                return $content_length + strlen($header) + 4;
-            } else {
-                return 0;
-            }
-        } elseif (0 === strpos($recv_buffer, "GET")) {
-            return strlen($header) + 4;
-        } else {
+        $method = substr($header, 0, strpos($header, ' '));
+
+        if(in_array($method, static::$methods)) {
+            return static::getRequestSize($header, $method);
+        }else{
             $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
+    }
+
+    /**
+      * Get whole size of the request
+      * includes the request headers and request body.
+      * @param string $header The request headers
+      * @param string $method The request method
+      * @return integer
+      */
+    protected static function getRequestSize($header, $method)
+    {
+        if($method=='GET') {
+            return strlen($header) + 4;
+        }
+        $match = array();
+        if (preg_match("/\r\nContent-Length: ?(\d+)/i", $header, $match)) {
+            $content_length = isset($match[1]) ? $match[1] : 0;
+            return $content_length + strlen($header) + 4;
+        }
+        return 0;
     }
 
     /**
@@ -144,8 +163,16 @@ class Http
             } else {
                 parse_str($http_body, $_POST);
                 // $GLOBALS['HTTP_RAW_POST_DATA']
-                $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
+                $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
             }
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+                $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $http_body;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+                $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $http_body;
         }
 
         // QUERY_STRING
