@@ -87,7 +87,9 @@ class React implements LoopInterface
                 return $this->_loop->removeSignal($fd);
             case EventInterface::EV_TIMER:
             case EventInterface::EV_TIMER_ONCE;
-                return  $this->_loop->cancelTimer($fd);
+                if ($fd !== null){
+                    return  $this->_loop->cancelTimer($fd);
+                }
         }
         return false;
     }
