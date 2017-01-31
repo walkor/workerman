@@ -301,6 +301,13 @@ class Worker
      */
     protected $_context = null;
 
+
+    /**
+     * Estabilish if using ssl
+     */
+    protected $_secure = false;
+
+
     /**
      * All worker instances.
      *
@@ -1383,6 +1390,11 @@ class Worker
             if (!isset($context_option['socket']['backlog'])) {
                 $context_option['socket']['backlog'] = self::DEFAULT_BACKLOG;
             }
+
+            if(isset($context_option['ssl'])) {
+                $this->_secure = true;
+            }
+
             $this->_context = stream_context_create($context_option);
         }
 
@@ -1439,6 +1451,11 @@ class Worker
             stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
         }
 
+        //check ssl in context options
+        if($this->_secure) {
+            $local_socket = str_replace("tcp", "ssl", $local_socket);
+        }
+
         // Create an Internet or Unix domain server socket.
         $this->_mainSocket = stream_socket_server($local_socket, $errno, $errmsg, $flags, $this->_context);
         if (!$this->_mainSocket) {
@@ -1456,8 +1473,13 @@ class Worker
             @socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
         }
 
-        // Non blocking.
-        stream_set_blocking($this->_mainSocket, 0);
+        //check ssl in context options
+        if($this->_secure) {
+            stream_set_blocking($this->_mainSocket, 1);
+        } else {
+            //Non blocking
+            stream_set_blocking($this->_mainSocket, 0);
+        }
 
         // Register a listener to be notified when server socket is ready to read.
         if (self::$globalEvent) {
