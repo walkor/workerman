@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.3.6';
+    const VERSION = '3.3.7';
 
     /**
      * Status starting.
@@ -411,10 +411,7 @@ class Worker
         'tcp'   => 'tcp',
         'udp'   => 'udp',
         'unix'  => 'unix',
-        'ssl'   => 'tcp',
-        'sslv2' => 'tcp',
-        'sslv3' => 'tcp',
-        'tls'   => 'tcp'
+        'ssl'   => 'tcp'
     );
 
     /**
@@ -1408,7 +1405,6 @@ class Worker
         // Autoload.
         Autoloader::setRootPath($this->_autoloadRootPath);
 
-        $local_socket = $this->_socketName;
         // Get the application layer communication protocol and listening address.
         list($scheme, $address) = explode(':', $this->_socketName, 2);
         // Check application layer protocol class.
@@ -1425,10 +1421,14 @@ class Worker
                     }
                 }
             }
-            $local_socket = $this->transport . ":" . $address;
+            if (!isset(self::$_builtinTransports[$this->transport])) {
+                throw new \Exception('Bad worker->transport ' . var_export($this->transport, true));
+            }
         } else {
-            $this->transport = self::$_builtinTransports[$scheme];
+            $this->transport = $scheme;
         }
+
+        $local_socket = self::$_builtinTransports[$this->transport] . ":" . $address;
 
         // Flag.
         $flags  = $this->transport === 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
@@ -1445,8 +1445,12 @@ class Worker
             throw new Exception($errmsg);
         }
 
+        if ($this->transport === 'ssl') {
+            stream_socket_enable_crypto($this->_mainSocket, false);
+        }
+
         // Try to open keepalive for tcp and disable Nagle algorithm.
-        if (function_exists('socket_import_stream') && $this->transport === 'tcp') {
+        if (function_exists('socket_import_stream') && self::$_builtinTransports[$this->transport] === 'tcp') {
             $socket = socket_import_stream($this->_mainSocket);
             @socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
             @socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
@@ -1575,6 +1579,7 @@ class Worker
         $this->connections[$connection->id] = $connection;
         $connection->worker                 = $this;
         $connection->protocol               = $this->protocol;
+        $connection->transport              = $this->transport;
         $connection->onMessage              = $this->onMessage;
         $connection->onClose                = $this->onClose;
         $connection->onError                = $this->onError;
