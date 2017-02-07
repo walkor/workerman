@@ -30,9 +30,6 @@ $ws_worker = new Worker("websocket://0.0.0.0:2346");
 // 4 processes
 $ws_worker->count = 4;
 
-// WebSockets over SSL (wss)
-//$ws_worker->transport = 'ssl';
-
 // Emitted when new connection come
 $ws_worker->onConnect = function($connection)
 {
@@ -66,9 +63,6 @@ $http_worker = new Worker("http://0.0.0.0:2345");
 
 // 4 processes
 $http_worker->count = 4;
-
-// HTTP over SSL (https)
-//$ws_worker->transport = 'ssl';
 
 // Emitted when data received
 $http_worker->onMessage = function($connection, $data)
