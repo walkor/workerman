@@ -104,10 +104,12 @@ class AsyncTcpConnection extends TcpConnection
      */
     public function __construct($remote_address, $context_option = null)
     {
-        $address_info = parse_url($remote_address);
+        list($scheme, $address) = explode(':', $this->_socketName, 2);
         if (!$address_info) {
-            echo new \Exception('bad remote_address');
-            $this->_remoteAddress = $remote_address;
+            list($scheme, $this->_remoteAddress) = explode(':', $remote_address, 2);
+            if (!$this->_remoteAddress) {
+                echo new \Exception('bad remote_address');
+            }
         } else {
             if (!isset($address_info['port'])) {
                 $address_info['port'] = 80;
