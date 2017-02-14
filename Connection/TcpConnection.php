@@ -391,7 +391,9 @@ class TcpConnection extends ConnectionInterface
                 STREAM_CRYPTO_METHOD_SSLv3_SERVER | STREAM_CRYPTO_METHOD_SSLv23_SERVER);
             // Negotiation has failed.
             if(false === $ret) {
-                echo "\nSSL Handshake fail. \nBuffer:".bin2hex(fread($socket, 8182))."\n";
+                if (!feof($socket)) {
+                    echo "\nSSL Handshake fail. \nBuffer:".bin2hex(fread($socket, 8182))."\n";
+                }
                 return $this->destroy();
             } elseif(0 === $ret) {
                 // There isn't enough data and should try again.
