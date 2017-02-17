@@ -623,7 +623,7 @@ class Worker
         // Check argv;
         $start_file = $argv[0];
         if (!isset($argv[1])) {
-            exit("Usage: php yourfile.php {start|stop|restart|reload|status}\n");
+            exit("Usage: php $start_file {start|stop|restart|reload|status}\n");
         }
 
         // Get command.
