@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.3.7';
+    const VERSION = '3.3.9';
 
     /**
      * Status starting.
@@ -934,6 +934,8 @@ class Worker
             $worker->setUserAndGroup();
             $worker->id = $id;
             $worker->run();
+            $err = new Exception('event-loop exited');
+            self::log($err);
             exit(250);
         } else {
             throw new Exception("forkOneWorker fail");

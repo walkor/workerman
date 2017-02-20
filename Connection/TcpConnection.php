@@ -387,12 +387,17 @@ class TcpConnection extends ConnectionInterface
     {
         // SSL handshake.
         if ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true) {
-            stream_set_blocking($socket, true);
-            stream_set_timeout($socket, 1);
-            $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv23_SERVER);
-            if(!$ret) {
-                echo new \Exception('ssl handshake fail, stream_socket_enable_crypto return ' . var_export($ret, true));
+            $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_SERVER |
+                STREAM_CRYPTO_METHOD_SSLv3_SERVER | STREAM_CRYPTO_METHOD_SSLv23_SERVER);
+            // Negotiation has failed.
+            if(false === $ret) {
+                if (!feof($socket)) {
+                    echo "\nSSL Handshake fail. \nBuffer:".bin2hex(fread($socket, 8182))."\n";
+                }
                 return $this->destroy();
+            } elseif(0 === $ret) {
+                // There isn't enough data and should try again.
+                return;
             }
             if (isset($this->onSslHandshake)) {
                 try {
