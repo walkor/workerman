@@ -1210,7 +1210,7 @@ class Worker
     {
         // For master process.
         if (self::$_masterPid === posix_getpid()) {
-            $loadavg = sys_getloadavg();
+            $loadavg = function_exists('sys_getloadavg') ? sys_getloadavg() : array('-', '-', '-');
             file_put_contents(self::$_statisticsFile,
                 "---------------------------------------GLOBAL STATUS--------------------------------------------\n");
             file_put_contents(self::$_statisticsFile,
