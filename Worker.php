@@ -468,8 +468,10 @@ class Worker
             self::$logFile = __DIR__ . '/../workerman.log';
         }
         $log_file = (string)self::$logFile;
-        touch($log_file);
-        chmod($log_file, 0622);
+        if (!is_file($log_file)) {
+            touch($log_file);
+            chmod($log_file, 0622);
+        }
 
         // State.
         self::$_status = self::STATUS_STARTING;
