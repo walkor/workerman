@@ -108,6 +108,7 @@ class Http
             'HTTP_CONNECTION'      => '',
             'REMOTE_ADDR'          => '',
             'REMOTE_PORT'          => '0',
+            'REQUEST_TIME'         => time()
         );
 
         // Parse headers.
