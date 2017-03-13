@@ -260,4 +260,14 @@ class Select implements EventInterface
             }
         }
     }
+
+    /**
+     * Destroy loop.
+     *
+     * @return void
+     */
+    public function destroy()
+    {
+
+    }
 }
