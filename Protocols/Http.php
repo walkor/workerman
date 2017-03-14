@@ -162,7 +162,10 @@ class Http
             if (isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] === 'multipart/form-data') {
                 self::parseUploadFiles($http_body, $http_post_boundary);
             } else {
-                parse_str($http_body, $_POST);
+                // 判断提交的数据是否为json
+                if(!self::isJson($http_body)){
+                    parse_str($http_body, $_POST);
+                }
                 // $GLOBALS['HTTP_RAW_POST_DATA']
                 $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
             }
@@ -491,6 +494,21 @@ class Http
                 unlink($file);
             }
         }
+    }
+    
+    /**
+     * 判断字符串是否为json
+     * @param $string
+     * @return bool
+     */
+    public static function isJson($string) {
+        $first = substr($string, 0, 1);
+        $last = substr($string, -1);
+        if('{' != $first || '}' != $last){
+            return false;
+        }
+        json_decode($string);
+        return (json_last_error() == JSON_ERROR_NONE);
     }
 }
 
