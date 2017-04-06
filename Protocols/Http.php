@@ -108,6 +108,7 @@ class Http
             'HTTP_CONNECTION'      => '',
             'REMOTE_ADDR'          => '',
             'REMOTE_PORT'          => '0',
+            'REQUEST_TIME'         => time()
         );
 
         // Parse headers.
@@ -437,16 +438,19 @@ class Http
             list($boundary_header_buffer, $boundary_value) = explode("\r\n\r\n", $boundary_data_buffer, 2);
             // Remove \r\n from the end of buffer.
             $boundary_value = substr($boundary_value, 0, -2);
+            $key = -1;
             foreach (explode("\r\n", $boundary_header_buffer) as $item) {
                 list($header_key, $header_value) = explode(": ", $item);
                 $header_key = strtolower($header_key);
                 switch ($header_key) {
                     case "content-disposition":
+                        $key ++;
                         // Is file data.
-                        if (preg_match('/name=".*?"; filename="(.*?)"$/', $header_value, $match)) {
+                        if (preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)) {
                             // Parse $_FILES.
-                            $_FILES[] = array(
-                                'file_name' => $match[1],
+                            $_FILES[$key] = array(
+                                'name' => $match[1],
+                                'file_name' => $match[2],
                                 'file_data' => $boundary_value,
                                 'file_size' => strlen($boundary_value),
                             );
@@ -458,6 +462,10 @@ class Http
                                 $_POST[$match[1]] = $boundary_value;
                             }
                         }
+                        break;
+                    case "content-type":
+                        // add file_type
+                        $_FILES[$key]['file_type'] = trim($header_value);
                         break;
                 }
             }

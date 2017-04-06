@@ -83,4 +83,11 @@ interface EventInterface
      * @return void
      */
     public function loop();
+
+    /**
+     * Destroy loop.
+     *
+     * @return mixed
+     */
+    public function destroy();
 }
