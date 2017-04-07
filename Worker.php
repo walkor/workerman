@@ -811,7 +811,7 @@ class Worker
      *
      * @throws Exception
      */
-    protected static function resetStd()
+    public static function resetStd()
     {
         if (!self::$daemonize) {
             return;
