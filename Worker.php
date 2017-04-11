@@ -606,7 +606,7 @@ class Worker
         if (self::$daemonize) {
             global $argv;
             $start_file = $argv[0];
-            self::safeEcho("Input \"php $start_file stop\" to quit. Start success.\n");
+            self::safeEcho("Input \"php $start_file stop\" to quit. Start success.\n\n");
         } else {
             self::safeEcho("Press Ctrl-C to quit. Start success.\n");
         }
