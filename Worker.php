@@ -878,7 +878,7 @@ class Worker
                 self::$eventLoopClass = self::$_availableEventLoops[$loop_name];
             }
         } else {
-            self::$eventLoopClass = '\Workerman\Events\Select';
+            self::$eventLoopClass = interface_exists('\React\EventLoop\LoopInterface')? '\Workerman\Events\React\StreamSelectLoop':'\Workerman\Events\Select';
         }
         return self::$eventLoopClass;
     }
