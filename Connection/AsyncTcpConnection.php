@@ -277,8 +277,9 @@ class AsyncTcpConnection extends TcpConnection
             if ($this->_sendBuffer) {
                 Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             }
-            $this->_status        = self::STATUS_ESTABLISH;
-            $this->_remoteAddress = $address;
+            $this->_status                = self::STATUS_ESTABLISH;
+            $this->_remoteAddress         = $address;
+            $this->_sslHandshakeCompleted = true;
 
             // Try to emit onConnect callback.
             if ($this->onConnect) {
