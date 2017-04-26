@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.4.0';
+    const VERSION = '3.4.1';
 
     /**
      * Status starting.
@@ -606,7 +606,7 @@ class Worker
         if (self::$daemonize) {
             global $argv;
             $start_file = $argv[0];
-            self::safeEcho("Input \"php $start_file stop\" to quit. Start success.\n");
+            self::safeEcho("Input \"php $start_file stop\" to quit. Start success.\n\n");
         } else {
             self::safeEcho("Press Ctrl-C to quit. Start success.\n");
         }
@@ -811,7 +811,7 @@ class Worker
      *
      * @throws Exception
      */
-    protected static function resetStd()
+    public static function resetStd()
     {
         if (!self::$daemonize) {
             return;
@@ -878,7 +878,7 @@ class Worker
                 self::$eventLoopClass = self::$_availableEventLoops[$loop_name];
             }
         } else {
-            self::$eventLoopClass = '\Workerman\Events\Select';
+            self::$eventLoopClass = interface_exists('\React\EventLoop\LoopInterface')? '\Workerman\Events\React\StreamSelectLoop':'\Workerman\Events\Select';
         }
         return self::$eventLoopClass;
     }

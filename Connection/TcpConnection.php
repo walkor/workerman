@@ -403,10 +403,10 @@ class TcpConnection extends ConnectionInterface
                 try {
                     call_user_func($this->onSslHandshake, $this);
                 } catch (\Exception $e) {
-                    self::log($e);
+                    Worker::log($e);
                     exit(250);
                 } catch (\Error $e) {
-                    self::log($e);
+                    Worker::log($e);
                     exit(250);
                 }
             }
