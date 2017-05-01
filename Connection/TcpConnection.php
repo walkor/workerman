@@ -557,16 +557,16 @@ class TcpConnection extends ConnectionInterface
     public function pipe($dest)
     {
         $source              = $this;
-        $this->onMessage     = function ($source, $data) use ($dest) {
+        $this->onMessage     = function ($data) use ($dest) {
             $dest->send($data);
         };
-        $this->onClose       = function ($source) use ($dest) {
+        $this->onClose       = function () use ($dest) {
             $dest->destroy();
         };
-        $dest->onBufferFull  = function ($dest) use ($source) {
+        $dest->onBufferFull  = function () use ($source) {
             $source->pauseRecv();
         };
-        $dest->onBufferDrain = function ($dest) use ($source) {
+        $dest->onBufferDrain = function () use ($source) {
             $source->resumeRecv();
         };
     }
