@@ -561,7 +561,7 @@ class HttpCache
     public static function init()
     {
         self::$sessionName = ini_get('session.name');
-        self::$sessionPath = session_save_path();
+        self::$sessionPath = @session_save_path();
         if (!self::$sessionPath || strpos(self::$sessionPath, 'tcp://') === 0) {
             self::$sessionPath = sys_get_temp_dir();
         }
