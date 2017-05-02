@@ -60,7 +60,7 @@ class Select implements EventInterface
      *
      * @var array
      */
-    protected $_task = array();
+    protected $_eventTimer = array();
 
     /**
      * Timer id.
@@ -124,7 +124,7 @@ class Select implements EventInterface
             case self::EV_TIMER_ONCE:
                 $run_time = microtime(true) + $fd;
                 $this->_scheduler->insert($this->_timerId, -$run_time);
-                $this->_task[$this->_timerId] = array($func, (array)$args, $flag, $fd);
+                $this->_eventTimer[$this->_timerId] = array($func, (array)$args, $flag, $fd);
                 $this->tick();
                 return $this->_timerId++;
         }
@@ -167,7 +167,7 @@ class Select implements EventInterface
                 break;
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE;
-                unset($this->_task[$fd_key]);
+                unset($this->_eventTimer[$fd_key]);
                 return true;
         }
         return false;
@@ -189,18 +189,18 @@ class Select implements EventInterface
             if ($this->_selectTimeout <= 0) {
                 $this->_scheduler->extract();
 
-                if (!isset($this->_task[$timer_id])) {
+                if (!isset($this->_eventTimer[$timer_id])) {
                     continue;
                 }
 
                 // [func, args, flag, timer_interval]
-                $task_data = $this->_task[$timer_id];
+                $task_data = $this->_eventTimer[$timer_id];
                 if ($task_data[2] === self::EV_TIMER) {
                     $next_run_time = $time_now + $task_data[3];
                     $this->_scheduler->insert($timer_id, -$next_run_time);
                 }
                 call_user_func_array($task_data[0], $task_data[1]);
-                if (isset($this->_task[$timer_id]) && $task_data[2] === self::EV_TIMER_ONCE) {
+                if (isset($this->_eventTimer[$timer_id]) && $task_data[2] === self::EV_TIMER_ONCE) {
                     $this->del($timer_id, self::EV_TIMER_ONCE);
                 }
                 continue;
@@ -217,7 +217,7 @@ class Select implements EventInterface
     {
         $this->_scheduler = new \SplPriorityQueue();
         $this->_scheduler->setExtractFlags(\SplPriorityQueue::EXTR_BOTH);
-        $this->_task = array();
+        $this->_eventTimer = array();
     }
 
     /**
