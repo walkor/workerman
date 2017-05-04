@@ -159,21 +159,30 @@ class Http
 
         // Parse $_POST.
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (isset($_SERVER['CONTENT_TYPE']) && $_SERVER['CONTENT_TYPE'] === 'multipart/form-data') {
-                self::parseUploadFiles($http_body, $http_post_boundary);
+            if (isset($_SERVER['CONTENT_TYPE'])) {
+                switch ($_SERVER['CONTENT_TYPE']) {
+                    case 'multipart/form-data':
+                        self::parseUploadFiles($http_body, $http_post_boundary);
+                        break;
+                    case 'application/x-www-form-urlencoded':
+                        parse_str($http_body, $_POST);
+                        break;
+                    default:
+                        // $GLOBALS['HTTP_RAW_POST_DATA']
+                        $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
+                }
             } else {
-                parse_str($http_body, $_POST);
                 // $GLOBALS['HTTP_RAW_POST_DATA']
                 $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
             }
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-                $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $http_body;
+            $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $http_body;
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-                $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $http_body;
+            $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $http_body;
         }
 
         // QUERY_STRING
