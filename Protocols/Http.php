@@ -65,7 +65,7 @@ class Http
       */
     protected static function getRequestSize($header, $method)
     {
-        if($method=='GET') {
+        if($method === 'GET' || $method === 'OPTIONS' || $method === 'HEAD') {
             return strlen($header) + 4;
         }
         $match = array();
