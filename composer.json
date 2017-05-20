@@ -24,7 +24,7 @@
         "php": ">=5.3"
     },
     "suggest": {
-	"ext-event": "For better performance."
+	"ext-event": "For better performance. "
     },
     "autoload": {
         "psr-4": {"Workerman\\": "./"}
