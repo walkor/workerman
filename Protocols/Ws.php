@@ -289,7 +289,7 @@ class Ws
      */
     public static function decode($bytes, $connection)
     {
-        $masked = $bytes[1] >> 7;
+        $masked = ord($bytes[1]) >> 7;
         $data_length = $masked ? ord($bytes[1]) & 127 : ord($bytes[1]);
         $decoded_data = '';
         if ($masked === true) {
