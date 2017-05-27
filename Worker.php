@@ -134,6 +134,13 @@ class Worker
     public $reusePort = false;
 
     /**
+     * lockFp
+     *
+     * @var resource
+     */
+    public $lockFp;
+
+    /**
      * Emitted when worker processes start.
      *
      * @var callback
@@ -1594,8 +1601,19 @@ class Worker
     public function acceptConnection($socket)
     {
         // Accept a connection on server socket.
-        $new_socket = @stream_socket_accept($socket, 0, $remote_address);
-        // Thundering herd.
+        if($this->count>1 && $this->reusePort==false){
+            if(!$this->lockFp) {
+                $this->lockFp = fopen(self::$pidFile, "r");
+            }
+            if(flock($this->lockFp,LOCK_EX | LOCK_NB)){
+                $new_socket = @stream_socket_accept($socket, 0, $remote_address);
+                flock($this->lockFp,LOCK_UN);
+            }else{
+                return;
+            }
+        }else{
+            $new_socket = @stream_socket_accept($socket, 0, $remote_address);
+        }
         if (!$new_socket) {
             return;
         }
