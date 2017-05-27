@@ -104,7 +104,7 @@ class AsyncTcpConnection extends TcpConnection
      */
     public function __construct($remote_address, $context_option = null)
     {
-        $address_info = parse_url($remote_address);
+        list($scheme, $address) = explode(':', $this->_socketName, 2);
         if (!$address_info) {
             list($scheme, $this->_remoteAddress) = explode(':', $remote_address, 2);
             if (!$this->_remoteAddress) {
