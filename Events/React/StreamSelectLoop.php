@@ -113,7 +113,7 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
      */
     public function addSignal($signal, $callback)
     {
-        if(PHP_EOL !== "\r\n") {
+        if(DIRECTORY_SEPARATOR === '/') {
             pcntl_signal($signal, $callback);
         }
     }
@@ -125,7 +125,7 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
      */
     public function removeSignal($signal)
     {
-        if(PHP_EOL !== "\r\n") {
+        if(DIRECTORY_SEPARATOR === '/') {
             pcntl_signal($signal, SIG_IGN);
         }
     }
@@ -146,13 +146,15 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
         if ($read || $write) {
             $except = null;
             // Calls signal handlers for pending signals
-            pcntl_signal_dispatch();
+            if(DIRECTORY_SEPARATOR === '/') {
+                pcntl_signal_dispatch();
+            }
             // suppress warnings that occur, when stream_select is interrupted by a signal
             return @stream_select($read, $write, $except, $timeout === null ? null : 0, $timeout);
         }
 
         // Calls signal handlers for pending signals
-        if(PHP_EOL !== "\r\n") {
+        if(DIRECTORY_SEPARATOR === '/') {
             pcntl_signal_dispatch();
         }
         $timeout && usleep($timeout);
