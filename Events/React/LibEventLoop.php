@@ -25,24 +25,24 @@ class LibEventLoop extends \React\EventLoop\LibEventLoop
      *
      * @var event_base resource
      */
-    protected $_eventBase = null;
+    protected $eventBase = null;
 
     /**
      * All signal Event instances.
      *
      * @var array
      */
-    protected $_signalEvents = array();
+    protected $signalEvents = array();
 
     /**
      * @var array
      */
-    protected $_timerIdMap = array();
+    protected $timerIdMap = array();
 
     /**
      * @var int
      */
-    protected $_timerIdIndex = 0;
+    protected $timerIdIndex = 0;
 
     /**
      * Add event listener to event loop.
@@ -67,14 +67,14 @@ class LibEventLoop extends \React\EventLoop\LibEventLoop
                 $timer_obj = $this->addPeriodicTimer($fd, function() use ($func, $args) {
                     call_user_func_array($func, $args);
                 });
-                $this->_timerIdMap[++$this->_timerIdIndex] = $timer_obj;
-                return $this->_timerIdIndex;
+                $this->timerIdMap[++$this->timerIdIndex] = $timer_obj;
+                return $this->timerIdIndex;
             case EventInterface::EV_TIMER_ONCE:
                 $timer_obj = $this->addTimer($fd, function() use ($func, $args) {
                     call_user_func_array($func, $args);
                 });
-                $this->_timerIdMap[++$this->_timerIdIndex] = $timer_obj;
-                return $this->_timerIdIndex;
+                $this->timerIdMap[++$this->timerIdIndex] = $timer_obj;
+                return $this->timerIdIndex;
         }
         return false;
     }
@@ -97,9 +97,9 @@ class LibEventLoop extends \React\EventLoop\LibEventLoop
                 return $this->removeSignal($fd);
             case EventInterface::EV_TIMER:
             case EventInterface::EV_TIMER_ONCE;
-                if (isset($this->_timerIdMap[$fd])){
-                    $timer_obj = $this->_timerIdMap[$fd];
-                    unset($this->_timerIdMap[$fd]);
+                if (isset($this->timerIdMap[$fd])){
+                    $timer_obj = $this->timerIdMap[$fd];
+                    unset($this->timerIdMap[$fd]);
                     $this->cancelTimer($timer_obj);
                     return true;
                 }
@@ -127,7 +127,7 @@ class LibEventLoop extends \React\EventLoop\LibEventLoop
         $class = new \ReflectionClass('\React\EventLoop\LibEventLoop');
         $property = $class->getProperty('eventBase');
         $property->setAccessible(true);
-        $this->_eventBase = $property->getValue($this);
+        $this->eventBase = $property->getValue($this);
     }
 
     /**
@@ -140,9 +140,9 @@ class LibEventLoop extends \React\EventLoop\LibEventLoop
     public function addSignal($signal, $callback)
     {
         $event = event_new();
-        $this->_signalEvents[$signal] = $event;
+        $this->signalEvents[$signal] = $event;
         event_set($event, $signal, EV_SIGNAL | EV_PERSIST, $callback);
-        event_base_set($event, $this->_eventBase);
+        event_base_set($event, $this->eventBase);
         event_add($event);
     }
 
@@ -153,10 +153,10 @@ class LibEventLoop extends \React\EventLoop\LibEventLoop
      */
     public function removeSignal($signal)
     {
-        if (isset($this->_signalEvents[$signal])) {
-            $event = $this->_signalEvents[$signal];
+        if (isset($this->signalEvents[$signal])) {
+            $event = $this->signalEvents[$signal];
             event_del($event);
-            unset($this->_signalEvents[$signal]);
+            unset($this->signalEvents[$signal]);
         }
     }
 
@@ -167,7 +167,7 @@ class LibEventLoop extends \React\EventLoop\LibEventLoop
      */
     public function destroy()
     {
-        foreach ($this->_signalEvents as $event) {
+        foreach ($this->signalEvents as $event) {
             event_del($event);
         }
     }

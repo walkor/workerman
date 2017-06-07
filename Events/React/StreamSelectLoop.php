@@ -23,12 +23,12 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
     /**
      * @var array
      */
-    protected $_timerIdMap = array();
+    protected $timerIdMap = array();
 
     /**
      * @var int
      */
-    protected $_timerIdIndex = 0;
+    protected $timerIdIndex = 0;
 
     /**
      * Add event listener to event loop.
@@ -53,14 +53,14 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
                 $timer_obj = $this->addPeriodicTimer($fd, function() use ($func, $args) {
                     call_user_func_array($func, $args);
                 });
-                $this->_timerIdMap[++$this->_timerIdIndex] = $timer_obj;
-                return $this->_timerIdIndex;
+                $this->timerIdMap[++$this->timerIdIndex] = $timer_obj;
+                return $this->timerIdIndex;
             case EventInterface::EV_TIMER_ONCE:
                 $timer_obj = $this->addTimer($fd, function() use ($func, $args) {
                     call_user_func_array($func, $args);
                 });
-                $this->_timerIdMap[++$this->_timerIdIndex] = $timer_obj;
-                return $this->_timerIdIndex;
+                $this->timerIdMap[++$this->timerIdIndex] = $timer_obj;
+                return $this->timerIdIndex;
         }
         return false;
     }
@@ -83,9 +83,9 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
                 return $this->removeSignal($fd);
             case EventInterface::EV_TIMER:
             case EventInterface::EV_TIMER_ONCE;
-                if (isset($this->_timerIdMap[$fd])){
-                    $timer_obj = $this->_timerIdMap[$fd];
-                    unset($this->_timerIdMap[$fd]);
+                if (isset($this->timerIdMap[$fd])){
+                    $timer_obj = $this->timerIdMap[$fd];
+                    unset($this->timerIdMap[$fd]);
                     $this->cancelTimer($timer_obj);
                     return true;
                 }
