@@ -24,14 +24,14 @@ class Ev implements EventInterface
      *
      * @var array
      */
-    protected $_allEvents = array();
+    protected $allEvents = array();
 
     /**
      * Event listeners of signal.
      *
      * @var array
      */
-    protected $_eventSignal = array();
+    protected $eventSignal = array();
 
     /**
      * All timer event listeners.
@@ -39,14 +39,14 @@ class Ev implements EventInterface
      *
      * @var array
      */
-    protected $_eventTimer = array();
+    protected $eventTimer = array();
 
     /**
      * Timer id.
      *
      * @var int
      */
-    protected static $_timerId = 1;
+    protected static $timerId = 1;
 
     /**
      * Add a timer.
@@ -68,20 +68,20 @@ class Ev implements EventInterface
         switch ($flag) {
             case self::EV_SIGNAL:
                 $event                   = new \EvSignal($fd, $callback);
-                $this->_eventSignal[$fd] = $event;
+                $this->eventSignal[$fd] = $event;
                 return true;
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
                 $repeat                             = $flag == self::EV_TIMER_ONCE ? 0 : $fd;
-                $param                              = array($func, (array)$args, $flag, $fd, self::$_timerId);
+                $param                              = array($func, (array)$args, $flag, $fd, self::$timerId);
                 $event                              = new \EvTimer($fd, $repeat, array($this, 'timerCallback'), $param);
-                $this->_eventTimer[self::$_timerId] = $event;
-                return self::$_timerId++;
+                $this->eventTimer[self::$timerId] = $event;
+                return self::$timerId++;
             default :
                 $fd_key                           = (int)$fd;
                 $real_flag                        = $flag === self::EV_READ ? \Ev::READ : \Ev::WRITE;
                 $event                            = new \EvIo($fd, $real_flag, $callback);
-                $this->_allEvents[$fd_key][$flag] = $event;
+                $this->allEvents[$fd_key][$flag] = $event;
                 return true;
         }
 
@@ -97,26 +97,26 @@ class Ev implements EventInterface
             case self::EV_READ:
             case self::EV_WRITE:
                 $fd_key = (int)$fd;
-                if (isset($this->_allEvents[$fd_key][$flag])) {
-                    $this->_allEvents[$fd_key][$flag]->stop();
-                    unset($this->_allEvents[$fd_key][$flag]);
+                if (isset($this->allEvents[$fd_key][$flag])) {
+                    $this->allEvents[$fd_key][$flag]->stop();
+                    unset($this->allEvents[$fd_key][$flag]);
                 }
-                if (empty($this->_allEvents[$fd_key])) {
-                    unset($this->_allEvents[$fd_key]);
+                if (empty($this->allEvents[$fd_key])) {
+                    unset($this->allEvents[$fd_key]);
                 }
                 break;
             case  self::EV_SIGNAL:
                 $fd_key = (int)$fd;
-                if (isset($this->_eventSignal[$fd_key])) {
-                    $this->_eventSignal[$fd_key]->stop();
-                    unset($this->_eventSignal[$fd_key]);
+                if (isset($this->eventSignal[$fd_key])) {
+                    $this->eventSignal[$fd_key]->stop();
+                    unset($this->eventSignal[$fd_key]);
                 }
                 break;
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
-                if (isset($this->_eventTimer[$fd])) {
-                    $this->_eventTimer[$fd]->stop();
-                    unset($this->_eventTimer[$fd]);
+                if (isset($this->eventTimer[$fd])) {
+                    $this->eventTimer[$fd]->stop();
+                    unset($this->eventTimer[$fd]);
                 }
                 break;
         }
@@ -133,8 +133,8 @@ class Ev implements EventInterface
         $param    = $event->data;
         $timer_id = $param[4];
         if ($param[2] === self::EV_TIMER_ONCE) {
-            $this->_eventTimer[$timer_id]->stop();
-            unset($this->_eventTimer[$timer_id]);
+            $this->eventTimer[$timer_id]->stop();
+            unset($this->eventTimer[$timer_id]);
         }
         try {
             call_user_func_array($param[0], $param[1]);
@@ -154,10 +154,10 @@ class Ev implements EventInterface
      */
     public function clearAllTimer()
     {
-        foreach ($this->_eventTimer as $event) {
+        foreach ($this->eventTimer as $event) {
             $event->stop();
         }
-        $this->_eventTimer = array();
+        $this->eventTimer = array();
     }
 
     /**
@@ -177,7 +177,7 @@ class Ev implements EventInterface
      */
     public function destroy()
     {
-        foreach ($this->_allEvents as $event) {
+        foreach ($this->allEvents as $event) {
             $event->stop();
         }
     }

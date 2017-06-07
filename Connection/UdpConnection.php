@@ -31,14 +31,14 @@ class UdpConnection extends ConnectionInterface
      *
      * @var resource
      */
-    protected $_socket = null;
+    protected $socket = null;
 
     /**
      * Remote address.
      *
      * @var string
      */
-    protected $_remoteAddress = '';
+    protected $remoteAddress = '';
 
     /**
      * Construct.
@@ -48,8 +48,8 @@ class UdpConnection extends ConnectionInterface
      */
     public function __construct($socket, $remote_address)
     {
-        $this->_socket        = $socket;
-        $this->_remoteAddress = $remote_address;
+        $this->socket        = $socket;
+        $this->remoteAddress = $remote_address;
     }
 
     /**
@@ -68,7 +68,7 @@ class UdpConnection extends ConnectionInterface
                 return null;
             }
         }
-        return strlen($send_buffer) === stream_socket_sendto($this->_socket, $send_buffer, 0, $this->_remoteAddress);
+        return strlen($send_buffer) === stream_socket_sendto($this->socket, $send_buffer, 0, $this->remoteAddress);
     }
 
     /**
@@ -78,9 +78,9 @@ class UdpConnection extends ConnectionInterface
      */
     public function getRemoteIp()
     {
-        $pos = strrpos($this->_remoteAddress, ':');
+        $pos = strrpos($this->remoteAddress, ':');
         if ($pos) {
-            return trim(substr($this->_remoteAddress, 0, $pos), '[]');
+            return trim(substr($this->remoteAddress, 0, $pos), '[]');
         }
         return '';
     }
@@ -92,8 +92,8 @@ class UdpConnection extends ConnectionInterface
      */
     public function getRemotePort()
     {
-        if ($this->_remoteAddress) {
-            return (int)substr(strrchr($this->_remoteAddress, ':'), 1);
+        if ($this->remoteAddress) {
+            return (int)substr(strrchr($this->remoteAddress, ':'), 1);
         }
         return 0;
     }

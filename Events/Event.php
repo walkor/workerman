@@ -24,32 +24,32 @@ class Event implements EventInterface
      * Event base.
      * @var object
      */
-    protected $_eventBase = null;
+    protected $eventBase = null;
     
     /**
      * All listeners for read/write event.
      * @var array
      */
-    protected $_allEvents = array();
+    protected $allEvents = array();
     
     /**
      * Event listeners of signal.
      * @var array
      */
-    protected $_eventSignal = array();
+    protected $eventSignal = array();
     
     /**
      * All timer event listeners.
      * [func, args, event, flag, time_interval]
      * @var array
      */
-    protected $_eventTimer = array();
+    protected $eventTimer = array();
 
     /**
      * Timer id.
      * @var int
      */
-    protected static $_timerId = 1;
+    protected static $timerId = 1;
     
     /**
      * construct
@@ -57,7 +57,7 @@ class Event implements EventInterface
      */
     public function __construct()
     {
-        $this->_eventBase = new \EventBase();
+        $this->eventBase = new \EventBase();
     }
    
     /**
@@ -69,32 +69,32 @@ class Event implements EventInterface
             case self::EV_SIGNAL:
 
                 $fd_key = (int)$fd;
-                $event = \Event::signal($this->_eventBase, $fd, $func);
+                $event = \Event::signal($this->eventBase, $fd, $func);
                 if (!$event||!$event->add()) {
                     return false;
                 }
-                $this->_eventSignal[$fd_key] = $event;
+                $this->eventSignal[$fd_key] = $event;
                 return true;
 
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
 
-                $param = array($func, (array)$args, $flag, $fd, self::$_timerId);
-                $event = new \Event($this->_eventBase, -1, \Event::TIMEOUT|\Event::PERSIST, array($this, "timerCallback"), $param);
+                $param = array($func, (array)$args, $flag, $fd, self::$timerId);
+                $event = new \Event($this->eventBase, -1, \Event::TIMEOUT|\Event::PERSIST, array($this, "timerCallback"), $param);
                 if (!$event||!$event->addTimer($fd)) {
                     return false;
                 }
-                $this->_eventTimer[self::$_timerId] = $event;
-                return self::$_timerId++;
+                $this->eventTimer[self::$timerId] = $event;
+                return self::$timerId++;
                 
             default :
                 $fd_key = (int)$fd;
                 $real_flag = $flag === self::EV_READ ? \Event::READ | \Event::PERSIST : \Event::WRITE | \Event::PERSIST;
-                $event = new \Event($this->_eventBase, $fd, $real_flag, $func, $fd);
+                $event = new \Event($this->eventBase, $fd, $real_flag, $func, $fd);
                 if (!$event||!$event->add()) {
                     return false;
                 }
-                $this->_allEvents[$fd_key][$flag] = $event;
+                $this->allEvents[$fd_key][$flag] = $event;
                 return true;
         }
     }
@@ -110,28 +110,28 @@ class Event implements EventInterface
             case self::EV_WRITE:
 
                 $fd_key = (int)$fd;
-                if (isset($this->_allEvents[$fd_key][$flag])) {
-                    $this->_allEvents[$fd_key][$flag]->del();
-                    unset($this->_allEvents[$fd_key][$flag]);
+                if (isset($this->allEvents[$fd_key][$flag])) {
+                    $this->allEvents[$fd_key][$flag]->del();
+                    unset($this->allEvents[$fd_key][$flag]);
                 }
-                if (empty($this->_allEvents[$fd_key])) {
-                    unset($this->_allEvents[$fd_key]);
+                if (empty($this->allEvents[$fd_key])) {
+                    unset($this->allEvents[$fd_key]);
                 }
                 break;
 
             case  self::EV_SIGNAL:
                 $fd_key = (int)$fd;
-                if (isset($this->_eventSignal[$fd_key])) {
-                    $this->_eventSignal[$fd_key]->del();
-                    unset($this->_eventSignal[$fd_key]);
+                if (isset($this->eventSignal[$fd_key])) {
+                    $this->eventSignal[$fd_key]->del();
+                    unset($this->eventSignal[$fd_key]);
                 }
                 break;
 
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
-                if (isset($this->_eventTimer[$fd])) {
-                    $this->_eventTimer[$fd]->del();
-                    unset($this->_eventTimer[$fd]);
+                if (isset($this->eventTimer[$fd])) {
+                    $this->eventTimer[$fd]->del();
+                    unset($this->eventTimer[$fd]);
                 }
                 break;
         }
@@ -149,8 +149,8 @@ class Event implements EventInterface
         $timer_id = $param[4];
         
         if ($param[2] === self::EV_TIMER_ONCE) {
-            $this->_eventTimer[$timer_id]->del();
-            unset($this->_eventTimer[$timer_id]);
+            $this->eventTimer[$timer_id]->del();
+            unset($this->eventTimer[$timer_id]);
         }
 
         try {
@@ -170,10 +170,10 @@ class Event implements EventInterface
      */
     public function clearAllTimer()
     {
-        foreach ($this->_eventTimer as $event) {
+        foreach ($this->eventTimer as $event) {
             $event->del();
         }
-        $this->_eventTimer = array();
+        $this->eventTimer = array();
     }
      
 
@@ -182,7 +182,7 @@ class Event implements EventInterface
      */
     public function loop()
     {
-        $this->_eventBase->loop();
+        $this->eventBase->loop();
     }
 
     /**
@@ -192,7 +192,7 @@ class Event implements EventInterface
      */
     public function destroy()
     {
-        foreach ($this->_eventSignal as $event) {
+        foreach ($this->eventSignal as $event) {
             $event->del();
         }
     }

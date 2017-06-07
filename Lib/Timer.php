@@ -34,14 +34,14 @@ class Timer
      *
      * @var array
      */
-    protected static $_tasks = array();
+    protected static $tasks = array();
 
     /**
      * event
      *
      * @var \Workerman\Events\EventInterface
      */
-    protected static $_event = null;
+    protected static $event = null;
 
     /**
      * Init.
@@ -52,7 +52,7 @@ class Timer
     public static function init($event = null)
     {
         if ($event) {
-            self::$_event = $event;
+            self::$event = $event;
         } else {
             pcntl_signal(SIGALRM, array('\Workerman\Lib\Timer', 'signalHandle'), false);
         }
@@ -65,7 +65,7 @@ class Timer
      */
     public static function signalHandle()
     {
-        if (!self::$_event) {
+        if (!self::$event) {
             pcntl_alarm(1);
             self::tick();
         }
@@ -87,8 +87,8 @@ class Timer
             return false;
         }
 
-        if (self::$_event) {
-            return self::$_event->add($time_interval,
+        if (self::$event) {
+            return self::$event->add($time_interval,
                 $persistent ? EventInterface::EV_TIMER : EventInterface::EV_TIMER_ONCE, $func, $args);
         }
 
@@ -97,16 +97,16 @@ class Timer
             return false;
         }
 
-        if (empty(self::$_tasks)) {
+        if (empty(self::$tasks)) {
             pcntl_alarm(1);
         }
 
         $time_now = time();
         $run_time = $time_now + $time_interval;
-        if (!isset(self::$_tasks[$run_time])) {
-            self::$_tasks[$run_time] = array();
+        if (!isset(self::$tasks[$run_time])) {
+            self::$tasks[$run_time] = array();
         }
-        self::$_tasks[$run_time][] = array($func, (array)$args, $persistent, $time_interval);
+        self::$tasks[$run_time][] = array($func, (array)$args, $persistent, $time_interval);
         return 1;
     }
 
@@ -118,13 +118,13 @@ class Timer
      */
     public static function tick()
     {
-        if (empty(self::$_tasks)) {
+        if (empty(self::$tasks)) {
             pcntl_alarm(0);
             return;
         }
 
         $time_now = time();
-        foreach (self::$_tasks as $run_time => $task_data) {
+        foreach (self::$tasks as $run_time => $task_data) {
             if ($time_now >= $run_time) {
                 foreach ($task_data as $index => $one_task) {
                     $task_func     = $one_task[0];
@@ -140,7 +140,7 @@ class Timer
                         self::add($time_interval, $task_func, $task_args);
                     }
                 }
-                unset(self::$_tasks[$run_time]);
+                unset(self::$tasks[$run_time]);
             }
         }
     }
@@ -153,8 +153,8 @@ class Timer
      */
     public static function del($timer_id)
     {
-        if (self::$_event) {
-            return self::$_event->del($timer_id, EventInterface::EV_TIMER);
+        if (self::$event) {
+            return self::$event->del($timer_id, EventInterface::EV_TIMER);
         }
 
         return false;
@@ -167,10 +167,10 @@ class Timer
      */
     public static function delAll()
     {
-        self::$_tasks = array();
+        self::$tasks = array();
         pcntl_alarm(0);
-        if (self::$_event) {
-            self::$_event->clearAllTimer();
+        if (self::$event) {
+            self::$event->clearAllTimer();
         }
     }
 }
