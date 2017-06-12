@@ -47,6 +47,13 @@ class Select implements EventInterface
     protected $_writeFds = array();
 
     /**
+     * Fds waiting for except event.
+     *
+     * @var array
+     */
+    protected $_exceptFds = array();
+
+    /**
      * Timer scheduler.
      * {['data':timer_id, 'priority':run_timestamp], ..}
      *
@@ -89,8 +96,9 @@ class Select implements EventInterface
     public function __construct()
     {
         // Create a pipeline and put into the collection of the read to read the descriptor to avoid empty polling.
-        $this->channel = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
-        if ($this->channel) {
+        $this->channel = stream_socket_pair(DIRECTORY_SEPARATOR === '/' ? STREAM_PF_UNIX : STREAM_PF_INET,
+            STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        if($this->channel) {
             stream_set_blocking($this->channel[0], 0);
             $this->_readFds[0] = $this->channel[0];
         }
@@ -115,7 +123,16 @@ class Select implements EventInterface
                 $this->_allEvents[$fd_key][$flag] = array($func, $fd);
                 $this->_writeFds[$fd_key]         = $fd;
                 break;
+            case self::EV_EXCEPT:
+                $fd_key = (int)$fd;
+                $this->_allEvents[$fd_key][$flag] = array($func, $fd);
+                $this->_exceptFds[$fd_key] = $fd;
+                break;
             case self::EV_SIGNAL:
+                // Windows not support signal.
+                if(DIRECTORY_SEPARATOR !== '/') {
+                    return false;
+                }
                 $fd_key                              = (int)$fd;
                 $this->_signalEvents[$fd_key][$flag] = array($func, $fd);
                 pcntl_signal($fd, array($this, 'signalHandler'));
@@ -161,7 +178,17 @@ class Select implements EventInterface
                     unset($this->_allEvents[$fd_key]);
                 }
                 return true;
+            case self::EV_EXCEPT:
+                unset($this->_allEvents[$fd_key][$flag], $this->_exceptFds[$fd_key]);
+                if(empty($this->_allEvents[$fd_key]))
+                {
+                    unset($this->_allEvents[$fd_key]);
+                }
+                return true;
             case self::EV_SIGNAL:
+                if(DIRECTORY_SEPARATOR !== '/') {
+                    return false;
+                }
                 unset($this->_signalEvents[$fd_key]);
                 pcntl_signal($fd, SIG_IGN);
                 break;
@@ -227,13 +254,17 @@ class Select implements EventInterface
     {
         $e = null;
         while (1) {
-            // Calls signal handlers for pending signals
-            pcntl_signal_dispatch();
+            if(DIRECTORY_SEPARATOR === '/') {
+                // Calls signal handlers for pending signals
+                pcntl_signal_dispatch();
+            }
 
             $read  = $this->_readFds;
             $write = $this->_writeFds;
+            $except = $this->_writeFds;
+
             // Waiting read/write/signal/timeout events.
-            $ret = @stream_select($read, $write, $e, 0, $this->_selectTimeout);
+            $ret = @stream_select($read, $write, $except, 0, $this->_selectTimeout);
 
             if (!$this->_scheduler->isEmpty()) {
                 $this->tick();
@@ -243,19 +274,33 @@ class Select implements EventInterface
                 continue;
             }
 
-            foreach ($read as $fd) {
-                $fd_key = (int)$fd;
-                if (isset($this->_allEvents[$fd_key][self::EV_READ])) {
-                    call_user_func_array($this->_allEvents[$fd_key][self::EV_READ][0],
-                        array($this->_allEvents[$fd_key][self::EV_READ][1]));
+            if ($read) {
+                foreach ($read as $fd) {
+                    $fd_key = (int)$fd;
+                    if (isset($this->_allEvents[$fd_key][self::EV_READ])) {
+                        call_user_func_array($this->_allEvents[$fd_key][self::EV_READ][0],
+                            array($this->_allEvents[$fd_key][self::EV_READ][1]));
+                    }
                 }
             }
 
-            foreach ($write as $fd) {
-                $fd_key = (int)$fd;
-                if (isset($this->_allEvents[$fd_key][self::EV_WRITE])) {
-                    call_user_func_array($this->_allEvents[$fd_key][self::EV_WRITE][0],
-                        array($this->_allEvents[$fd_key][self::EV_WRITE][1]));
+            if ($write) {
+                foreach ($write as $fd) {
+                    $fd_key = (int)$fd;
+                    if (isset($this->_allEvents[$fd_key][self::EV_WRITE])) {
+                        call_user_func_array($this->_allEvents[$fd_key][self::EV_WRITE][0],
+                            array($this->_allEvents[$fd_key][self::EV_WRITE][1]));
+                    }
+                }
+            }
+
+            if($except) {
+                foreach($except as $fd) {
+                    $fd_key = (int) $fd;
+                    if(isset($this->_allEvents[$fd_key][self::EV_EXCEPT])) {
+                        call_user_func_array($this->_allEvents[$fd_key][self::EV_EXCEPT][0],
+                            array($this->_allEvents[$fd_key][self::EV_EXCEPT][1]));
+                    }
                 }
             }
         }

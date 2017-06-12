@@ -184,6 +184,10 @@ class AsyncTcpConnection extends TcpConnection
         }
         // Add socket to global event loop waiting connection is successfully established or faild. 
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'checkConnection'));
+        // For windows.
+        if(DIRECTORY_SEPARATOR === '\\') {
+            Worker::$globalEvent->add($this->_socket, EventInterface::EV_EXCEPT, array($this, 'checkConnection'));
+        }
     }
 
     /**
@@ -201,7 +205,7 @@ class AsyncTcpConnection extends TcpConnection
             $this->_reconnectTimer = Timer::add($after, array($this, 'connect'), null, false);
             return;
         }
-        return $this->connect();
+        $this->connect();
     }
 
     /**
@@ -255,6 +259,10 @@ class AsyncTcpConnection extends TcpConnection
      */
     public function checkConnection($socket)
     {
+        // Remove EV_EXPECT for windows.
+        if(DIRECTORY_SEPARATOR === '\\') {
+            Worker::$globalEvent->del($socket, EventInterface::EV_EXCEPT);
+        }
         // Check socket state.
         if ($address = stream_socket_get_name($socket, true)) {
             // Remove write listener.
