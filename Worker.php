@@ -1550,9 +1550,13 @@ class Worker
                 call_user_func($this->onWorkerStart, $this);
             } catch (\Exception $e) {
                 self::log($e);
+                // Avoid rapid infinite loop exit.
+                sleep(1);
                 exit(250);
             } catch (\Error $e) {
                 self::log($e);
+                // Avoid rapid infinite loop exit.
+                sleep(1);
                 exit(250);
             }
         }
