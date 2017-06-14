@@ -377,7 +377,7 @@ class Http
         if (HttpCache::$instance->sessionFile) {
             $raw = file_get_contents(HttpCache::$instance->sessionFile);
             if ($raw) {
-                session_decode($raw);
+                $_SESSION = unserialize($raw);
             }
         }
         return true;
@@ -394,7 +394,7 @@ class Http
             return session_write_close();
         }
         if (!empty(HttpCache::$instance->sessionStarted) && !empty($_SESSION)) {
-            $session_str = session_encode();
+            $session_str = serialize($_SESSION);
             if ($session_str && HttpCache::$instance->sessionFile) {
                 return file_put_contents(HttpCache::$instance->sessionFile, $session_str);
             }
