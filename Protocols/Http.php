@@ -145,7 +145,11 @@ class Http
                 // content-type
                 case 'CONTENT_TYPE':
                     if (!preg_match('/boundary="?(\S+)"?/', $value, $match)) {
-                        $_SERVER['CONTENT_TYPE'] = $value;
+                        if ($pos = strpos($value, ';')) {
+                            $_SERVER['CONTENT_TYPE'] = substr($value, 0, $pos);
+                        } else {
+                            $_SERVER['CONTENT_TYPE'] = $value;
+                        }
                     } else {
                         $_SERVER['CONTENT_TYPE'] = 'multipart/form-data';
                         $http_post_boundary      = '--' . $match[1];
