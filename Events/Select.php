@@ -139,11 +139,12 @@ class Select implements EventInterface
                 break;
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
+                $timer_id = $this->_timerId++;
                 $run_time = microtime(true) + $fd;
-                $this->_scheduler->insert($this->_timerId, -$run_time);
-                $this->_eventTimer[$this->_timerId] = array($func, (array)$args, $flag, $fd);
+                $this->_scheduler->insert($timer_id, -$run_time);
+                $this->_eventTimer[$timer_id] = array($func, (array)$args, $flag, $fd);
                 $this->tick();
-                return $this->_timerId++;
+                return $timer_id;
         }
 
         return true;
