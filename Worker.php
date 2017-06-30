@@ -1306,7 +1306,7 @@ class Worker
     public static function checkErrors()
     {
         if (self::STATUS_SHUTDOWN != self::$_status) {
-            $error_msg = "WORKER EXIT UNEXPECTED ";
+            $error_msg = 'Worker['. posix_getpid() .'] process terminated with ';
             $errors    = error_get_last();
             if ($errors && ($errors['type'] === E_ERROR ||
                     $errors['type'] === E_PARSE ||
@@ -1314,7 +1314,9 @@ class Worker
                     $errors['type'] === E_COMPILE_ERROR ||
                     $errors['type'] === E_RECOVERABLE_ERROR)
             ) {
-                $error_msg .= self::getErrorType($errors['type']) . " {$errors['message']} in {$errors['file']} on line {$errors['line']}";
+                $error_msg .= self::getErrorType($errors['type']) . " \"{$errors['message']} in {$errors['file']} on line {$errors['line']}\"";
+            } else {
+                $error_msg .= 'exit()/die(). Please do not call exit()/die() in workerman.';
             }
             self::log($error_msg);
         }
