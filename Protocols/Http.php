@@ -171,23 +171,12 @@ class Http
                     case 'application/x-www-form-urlencoded':
                         parse_str($http_body, $_POST);
                         break;
-                    default:
-                        // $GLOBALS['HTTP_RAW_POST_DATA']
-                        $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
                 }
-            } else {
-                // $GLOBALS['HTTP_RAW_POST_DATA']
-                $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
             }
         }
 
-        if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-            $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $http_body;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-            $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $http_body;
-        }
+        // HTTP_RAW_REQUEST_DATA HTTP_RAW_POST_DATA
+        $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
 
         // QUERY_STRING
         $_SERVER['QUERY_STRING'] = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
