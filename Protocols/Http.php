@@ -436,17 +436,17 @@ class Http
         if ($boundary_data_array[0] === '') {
             unset($boundary_data_array[0]);
         }
+        $key = -1;
         foreach ($boundary_data_array as $boundary_data_buffer) {
             list($boundary_header_buffer, $boundary_value) = explode("\r\n\r\n", $boundary_data_buffer, 2);
             // Remove \r\n from the end of buffer.
             $boundary_value = substr($boundary_value, 0, -2);
-            $key = -1;
+            $key ++;
             foreach (explode("\r\n", $boundary_header_buffer) as $item) {
                 list($header_key, $header_value) = explode(": ", $item);
                 $header_key = strtolower($header_key);
                 switch ($header_key) {
                     case "content-disposition":
-                        $key ++;
                         // Is file data.
                         if (preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)) {
                             // Parse $_FILES.
