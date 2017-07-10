@@ -579,8 +579,6 @@ class HttpCache
         if ($gc_max_life_time = ini_get('session.gc_maxlifetime')) {
             self::$sessionGcMaxLifeTime = $gc_max_life_time;
         }
-
-        @\session_start();
     }
 }
 
