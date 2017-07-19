@@ -643,7 +643,7 @@ class Worker
         self::log("Workerman[$start_file] $command $mode");
 
         // Get master process PID.
-        $master_pid      = @file_get_contents(self::$pidFile);
+        $master_pid      = is_file(self::$pidFile) ? file_get_contents(self::$pidFile) : 0;
         $master_is_alive = $master_pid && @posix_kill($master_pid, 0);
         // Master is still alive?
         if ($master_is_alive) {
