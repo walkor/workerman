@@ -56,10 +56,12 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
                 $this->_timerIdMap[++$this->_timerIdIndex] = $timer_obj;
                 return $this->_timerIdIndex;
             case EventInterface::EV_TIMER_ONCE:
-                $timer_obj = $this->addTimer($fd, function() use ($func, $args) {
+                $index = ++$this->_timerIdIndex;
+                $timer_obj = $this->addTimer($fd, function() use ($func, $args, $index) {
+                    $this->del($index,EventInterface::EV_TIMER_ONCE);
                     call_user_func_array($func, $args);
                 });
-                $this->_timerIdMap[++$this->_timerIdIndex] = $timer_obj;
+                $this->_timerIdMap[$index] = $timer_obj;
                 return $this->_timerIdIndex;
         }
         return false;
