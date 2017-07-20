@@ -143,7 +143,7 @@ class Select implements EventInterface
                 $run_time = microtime(true) + $fd;
                 $this->_scheduler->insert($timer_id, -$run_time);
                 $this->_eventTimer[$timer_id] = array($func, (array)$args, $flag, $fd);
-                $this->_selectTimeout = ($run_time - time()) * 1000000;  
+                $this->tick();
                 return $timer_id;
         }
 
