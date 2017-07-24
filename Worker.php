@@ -623,8 +623,15 @@ class Worker
         global $argv;
         // Check argv;
         $start_file = $argv[0];
-        if (!isset($argv[1])) {
-            exit("Usage: php yourfile.php {start|stop|restart|reload|status}\n");
+        $available_commands = array(
+            'start',
+            'stop',
+            'restart',
+            'reload',
+            'status',
+        );
+        if (!isset($argv[1]) || !in_array($argv[1], $available_commands)) {
+            exit("Usage: php yourfile.php {" . implode('|', $available_commands) . "}\n");
         }
 
         // Get command.
@@ -644,10 +651,10 @@ class Worker
 
         // Get master process PID.
         $master_pid      = is_file(self::$pidFile) ? file_get_contents(self::$pidFile) : 0;
-        $master_is_alive = $master_pid && @posix_kill($master_pid, 0);
+        $master_is_alive = $master_pid && @posix_kill($master_pid, 0) && posix_getpid() != $master_pid;
         // Master is still alive?
         if ($master_is_alive) {
-            if ($command === 'start' && posix_getpid() != $master_pid) {
+            if ($command === 'start') {
                 self::log("Workerman[$start_file] already running");
                 exit;
             }
@@ -711,7 +718,7 @@ class Worker
                 self::log("Workerman[$start_file] reload");
                 exit;
             default :
-                exit("Usage: php yourfile.php {start|stop|restart|reload|status}\n");
+                exit("Usage: php yourfile.php {" . implode('|', $available_commands) . "}\n");
         }
     }
 
