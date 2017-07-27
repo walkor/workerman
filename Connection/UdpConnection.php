@@ -34,20 +34,6 @@ class UdpConnection extends ConnectionInterface
     protected $_socket = null;
 
     /**
-     * Remote ip.
-     *
-     * @var string
-     */
-    protected $_remoteIp = '';
-
-    /**
-     * Remote port.
-     *
-     * @var int
-     */
-    protected $_remotePort = 0;
-
-    /**
      * Remote address.
      *
      * @var string
@@ -92,10 +78,11 @@ class UdpConnection extends ConnectionInterface
      */
     public function getRemoteIp()
     {
-        if (!$this->_remoteIp) {
-            list($this->_remoteIp, $this->_remotePort) = explode(':', $this->_remoteAddress, 2);
+        $pos = strrpos($this->_remoteAddress, ':');
+        if ($pos) {
+            return trim(substr($this->_remoteAddress, 0, $pos), '[]');
         }
-        return $this->_remoteIp;
+        return '';
     }
 
     /**
@@ -105,22 +92,23 @@ class UdpConnection extends ConnectionInterface
      */
     public function getRemotePort()
     {
-        if (!$this->_remotePort) {
-            list($this->_remoteIp, $this->_remotePort) = explode(':', $this->_remoteAddress, 2);
+        if ($this->_remoteAddress) {
+            return (int)substr(strrchr($this->_remoteAddress, ':'), 1);
         }
-        return $this->_remotePort;
+        return 0;
     }
 
     /**
      * Close connection.
      *
      * @param mixed $data
+     * @param bool  $raw
      * @return bool
      */
-    public function close($data = null)
+    public function close($data = null, $raw = false)
     {
         if ($data !== null) {
-            $this->send($data);
+            $this->send($data, $raw);
         }
         return true;
     }

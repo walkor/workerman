@@ -120,10 +120,9 @@ class Event implements EventInterface
                 break;
 
             case  self::EV_SIGNAL:
-
                 $fd_key = (int)$fd;
                 if (isset($this->_eventSignal[$fd_key])) {
-                    $this->_allEvents[$fd_key][$flag]->del();
+                    $this->_eventSignal[$fd_key]->del();
                     unset($this->_eventSignal[$fd_key]);
                 }
                 break;
@@ -184,5 +183,17 @@ class Event implements EventInterface
     public function loop()
     {
         $this->_eventBase->loop();
+    }
+
+    /**
+     * Destroy loop.
+     *
+     * @return void
+     */
+    public function destroy()
+    {
+        foreach ($this->_eventSignal as $event) {
+            $event->del();
+        }
     }
 }

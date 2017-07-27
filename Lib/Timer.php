@@ -78,7 +78,7 @@ class Timer
      * @param callback $func
      * @param mixed    $args
      * @param bool     $persistent
-     * @return bool
+     * @return int/false
      */
     public static function add($time_interval, $func, $args = array(), $persistent = true)
     {
@@ -107,7 +107,7 @@ class Timer
             self::$_tasks[$run_time] = array();
         }
         self::$_tasks[$run_time][] = array($func, (array)$args, $persistent, $time_interval);
-        return true;
+        return 1;
     }
 
 

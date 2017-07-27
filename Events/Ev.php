@@ -65,7 +65,6 @@ class Ev implements EventInterface
                 exit(250);
             }
         };
-
         switch ($flag) {
             case self::EV_SIGNAL:
                 $event                   = new \EvSignal($fd, $callback);
@@ -109,7 +108,7 @@ class Ev implements EventInterface
             case  self::EV_SIGNAL:
                 $fd_key = (int)$fd;
                 if (isset($this->_eventSignal[$fd_key])) {
-                    $this->_allEvents[$fd_key][$flag]->stop();
+                    $this->_eventSignal[$fd_key]->stop();
                     unset($this->_eventSignal[$fd_key]);
                 }
                 break;
@@ -169,5 +168,17 @@ class Ev implements EventInterface
     public function loop()
     {
         \Ev::run();
+    }
+
+    /**
+     * Destroy loop.
+     *
+     * @return void
+     */
+    public function destroy()
+    {
+        foreach ($this->_allEvents as $event) {
+            $event->stop();
+        }
     }
 }

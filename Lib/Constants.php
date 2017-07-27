@@ -21,6 +21,11 @@ ini_set('display_errors', 'on');
 // Reporting all.
 error_reporting(E_ALL);
 
+// Reset opcache.
+if (function_exists('opcache_reset')) {
+    opcache_reset();
+}
+
 // For onError callback.
 define('WORKERMAN_CONNECT_FAIL', 1);
 // For onError callback.

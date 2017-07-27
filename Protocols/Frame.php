@@ -37,7 +37,7 @@ class Frame
     }
 
     /**
-     * Encode.
+     * Decode.
      *
      * @param string $buffer
      * @return string
@@ -48,7 +48,7 @@ class Frame
     }
 
     /**
-     * Decode.
+     * Encode.
      *
      * @param string $buffer
      * @return string

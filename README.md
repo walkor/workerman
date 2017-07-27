@@ -2,10 +2,9 @@
 [![Gitter](https://badges.gitter.im/walkor/Workerman.svg)](https://gitter.im/walkor/Workerman?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge)
 
 ## What is it
-Workerman is a library for event-driven programming in PHP. It has a huge number of features. Each worker is able to handle thousands of connections.
+Workerman is an asynchronous event driven PHP framework with high performance for easily building fast, scalable network applications. Supports HTTP, Websocket, SSL and other custom protocols. Supports libevent, [HHVM](https://github.com/facebook/hhvm) , [ReactPHP](https://github.com/reactphp/react).
 
 ## Requires
-
 PHP 5.3 or Higher  
 A POSIX compatible operating system (Linux, OSX, BSD)  
 POSIX and PCNTL extensions for PHP  
@@ -19,11 +18,10 @@ composer require workerman/workerman
 ## Basic Usage
 
 ### A websocket server 
-test.php
 ```php
 <?php
+require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
-require_once './Workerman/Autoloader.php';
 
 // Create a Websocket server
 $ws_worker = new Worker("websocket://0.0.0.0:2346");
@@ -55,9 +53,8 @@ Worker::runAll();
 ```
 
 ### An http server
-test.php
 ```php
-require_once './Workerman/Autoloader.php';
+require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
 
 // #### http worker ####
@@ -80,10 +77,10 @@ Worker::runAll();
 ```
 
 ### A WebServer
-test.php
 ```php
-require_once './Workerman/Autoloader.php';
+require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\WebServer;
+use Workerman\Worker;
 
 // WebServer
 $web = new WebServer("http://0.0.0.0:80");
@@ -99,9 +96,8 @@ Worker::runAll();
 ```
 
 ### A tcp server
-test.php
 ```php
-require_once './Workerman/Autoloader.php';
+require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
 
 // #### create socket and listen 1234 port ####
@@ -127,6 +123,36 @@ $tcp_worker->onMessage = function($connection, $data)
 $tcp_worker->onClose = function($connection)
 {
     echo "Connection closed\n";
+};
+
+Worker::runAll();
+```
+
+### Enable SSL.
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+
+// SSL context.
+$context = array(
+    'ssl' => array(
+        'local_cert' => '/your/path/of/server.pem',
+        'local_pk'   => '/your/path/of/server.key',
+    )
+);
+
+// Create a Websocket server with ssl context.
+$ws_worker = new Worker("websocket://0.0.0.0:2346", $context);
+
+// Enable SSL. WebSocket+SSL means that Secure WebSocket (wss://). 
+// The similar approaches for Https etc.
+$ws_worker->transport = 'ssl';
+
+$ws_worker->onMessage = function($connection, $data)
+{
+    // Send hello $data
+    $connection->send('hello ' . $data);
 };
 
 Worker::runAll();
@@ -167,9 +193,8 @@ class MyTextProtocol
 }
 ```
 
-test.php
 ```php
-require_once './Workerman/Autoloader.php';
+require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
 
 // #### MyTextProtocol worker ####
@@ -196,9 +221,8 @@ Worker::runAll();
 ```
 
 ### Timer
-test.php
 ```php
-require_once './Workerman/Autoloader.php';
+require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
 use Workerman\Lib\Timer;
 
@@ -219,9 +243,251 @@ $task->onWorkerStart = function($task)
 Worker::runAll();
 ```
 
-run with:
+### AsyncTcpConnection (tcp/ws/text/frame etc...)
+```php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+use Workerman\Connection\AsyncTcpConnection;
 
-```php test.php start```
+$worker = new Worker();
+$worker->onWorkerStart = function()
+{
+    // Websocket protocol for client.
+    $ws_connection = new AsyncTcpConnection("ws://echo.websocket.org:80");
+    $ws_connection->onConnect = function($connection){
+        $connection->send('hello');
+    };
+    $ws_connection->onMessage = function($connection, $data){
+        echo "recv: $data\n";
+    };
+    $ws_connection->onError = function($connection, $code, $msg){
+        echo "error: $msg\n";
+    };
+    $ws_connection->onClose = function($connection){
+        echo "connection closed\n";
+    };
+    $ws_connection->connect();
+};
+Worker::runAll();
+```
+
+### Async Mysql of ReactPHP
+```
+composer require react/mysql
+```
+
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+
+$worker = new Worker('tcp://0.0.0.0:6161');
+$worker->onWorkerStart = function() {
+    global $mysql;
+    $loop  = Worker::getEventLoop();
+    $mysql = new React\MySQL\Connection($loop, array(
+        'host'   => '127.0.0.1',
+        'dbname' => 'dbname',
+        'user'   => 'user',
+        'passwd' => 'passwd',
+    ));
+    $mysql->on('error', function($e){
+        echo $e;
+    });
+    $mysql->connect(function ($e) {
+        if($e) {
+            echo $e;
+        } else {
+            echo "connect success\n";
+        }
+    });
+};
+$worker->onMessage = function($connection, $data) {
+    global $mysql;
+    $mysql->query('show databases' /*trim($data)*/, function ($command, $mysql) use ($connection) {
+        if ($command->hasError()) {
+            $error = $command->getError();
+        } else {
+            $results = $command->resultRows;
+            $fields  = $command->resultFields;
+            $connection->send(json_encode($results));
+        }
+    });
+};
+Worker::runAll();
+```
+
+### Async Redis of ReactPHP
+```
+composer require clue/redis-react
+```
+
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Clue\React\Redis\Factory;
+use Clue\React\Redis\Client;
+use Workerman\Worker;
+
+$worker = new Worker('tcp://0.0.0.0:6161');
+
+$worker->onWorkerStart = function() {
+    global $factory;
+    $loop    = Worker::getEventLoop();
+    $factory = new Factory($loop);
+};
+
+$worker->onMessage = function($connection, $data) {
+    global $factory;
+    $factory->createClient('localhost:6379')->then(function (Client $client) use ($connection) {
+        $client->set('greeting', 'Hello world');
+        $client->append('greeting', '!');
+
+        $client->get('greeting')->then(function ($greeting) use ($connection){
+            // Hello world!
+            echo $greeting . PHP_EOL;
+            $connection->send($greeting);
+        });
+
+        $client->incr('invocation')->then(function ($n) use ($connection){
+            echo 'This is invocation #' . $n . PHP_EOL;
+            $connection->send($n);
+        });
+    });
+};
+
+Worker::runAll();
+```
+
+### Aysnc dns of ReactPHP
+```
+composer require react/dns
+```
+
+```php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+$worker = new Worker('tcp://0.0.0.0:6161');
+$worker->onWorkerStart = function() {
+    global   $dns;
+    // Get event-loop.
+    $loop    = Worker::getEventLoop();
+    $factory = new React\Dns\Resolver\Factory();
+    $dns     = $factory->create('8.8.8.8', $loop);
+};
+$worker->onMessage = function($connection, $host) {
+    global $dns;
+    $host = trim($host);
+    $dns->resolve($host)->then(function($ip) use($host, $connection) {
+        $connection->send("$host: $ip");
+    },function($e) use($host, $connection){
+        $connection->send("$host: {$e->getMessage()}");
+    });
+};
+
+Worker::runAll();
+```
+
+### Http client of ReactPHP
+```
+composer require react/http-client
+```
+
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+
+$worker = new Worker('tcp://0.0.0.0:6161');
+
+$worker->onWorkerStart = function() {
+    global   $client;
+    $loop    = Worker::getEventLoop();
+    $factory = new React\Dns\Resolver\Factory();
+    $dns     = $factory->createCached('8.8.8.8', $loop);
+    $factory = new React\HttpClient\Factory();
+    $client = $factory->create($loop, $dns);
+};
+
+$worker->onMessage = function($connection, $host) {
+    global     $client;
+    $request = $client->request('GET', trim($host));
+    $request->on('error', function(Exception $e) use ($connection) {
+        $connection->send($e);
+    });
+    $request->on('response', function ($response) use ($connection) {
+        $response->on('data', function ($data, $response) use ($connection) {
+            $connection->send($data);
+        });
+    });
+    $request->end();
+};
+
+Worker::runAll();
+```
+
+### ZMQ of ReactPHP
+```
+composer require react/zmq
+```
+
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+
+$worker = new Worker('text://0.0.0.0:6161');
+
+$worker->onWorkerStart = function() {
+    global   $pull;
+    $loop    = Worker::getEventLoop();
+    $context = new React\ZMQ\Context($loop);
+    $pull    = $context->getSocket(ZMQ::SOCKET_PULL);
+    $pull->bind('tcp://127.0.0.1:5555');
+
+    $pull->on('error', function ($e) {
+        var_dump($e->getMessage());
+    });
+
+    $pull->on('message', function ($msg) {
+        echo "Received: $msg\n";
+    });
+};
+
+Worker::runAll();
+```
+
+### STOMP of ReactPHP
+```
+composer require react/stomp
+```
+
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+use Workerman\Worker;
+
+$worker = new Worker('text://0.0.0.0:6161');
+
+$worker->onWorkerStart = function() {
+    global   $client;
+    $loop    = Worker::getEventLoop();
+    $factory = new React\Stomp\Factory($loop);
+    $client  = $factory->createClient(array('vhost' => '/', 'login' => 'guest', 'passcode' => 'guest'));
+
+    $client
+        ->connect()
+        ->then(function ($client) use ($loop) {
+            $client->subscribe('/topic/foo', function ($frame) {
+                echo "Message received: {$frame->body}\n";
+            });
+        });
+};
+
+Worker::runAll();
+```
+
+
 
 ## Available commands
 ```php test.php start  ```  
@@ -324,7 +590,12 @@ Percentage of the requests served within a certain time (ms)
 ```
 
 
-# Demos
+## Other links with workerman
+
+## [PHPSocket.IO](https://github.com/walkor/phpsocket.io)  
+[Live demo](http://www.workerman.net/demos/phpsocketio-chat/)  
+[Source code](https://github.com/walkor/phpsocket.io)  
+![phpsocket.io](http://www.workerman.net/img/socket.io.png)  
 
 ## [tadpole](http://kedou.workerman.net/)  
 [Live demo](http://kedou.workerman.net/)  
@@ -357,11 +628,6 @@ Percentage of the requests served within a certain time (ms)
 [Live demo](http://chat.workerman.net/)  
 [Source code](https://github.com/walkor/workerman-chat)  
 ![workerman-chat](http://www.workerman.net/img/workerman-chat.png)  
-
-## [PHPSocket.IO](https://github.com/walkor/phpsocket.io)  
-[Live demo](http://www.workerman.net/demos/phpsocketio-chat/)  
-[Source code](https://github.com/walkor/phpsocket.io)  
-![phpsocket.io](http://www.workerman.net/img/socket.io.png)  
 
 ## [statistics](http://www.workerman.net:55757/)  
 [Live demo](http://www.workerman.net:55757/)  

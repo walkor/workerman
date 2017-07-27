@@ -22,13 +22,6 @@ use Workerman\Protocols\HttpCache;
 class WebServer extends Worker
 {
     /**
-     * Mime.
-     *
-     * @var string
-     */
-    protected static $defaultMimeType = 'text/html; charset=utf-8';
-
-    /**
      * Virtual host to path mapping.
      *
      * @var array ['workerman.net'=>'/home', 'www.workerman.net'=>'home/www']
@@ -96,10 +89,10 @@ class WebServer extends Worker
     public function onWorkerStart()
     {
         if (empty($this->serverRoot)) {
-            throw new \Exception('server root not set, please use WebServer::addRoot($domain, $root_path) to set server root path');
+            echo new \Exception('server root not set, please use WebServer::addRoot($domain, $root_path) to set server root path');
+            exit(250);
         }
-        // Init HttpCache.
-        HttpCache::init();
+
         // Init mimeMap.
         $this->initMimeTypeMap();
 
@@ -216,7 +209,11 @@ class WebServer extends Worker
                 }
                 $content = ob_get_clean();
                 ini_set('display_errors', 'on');
-                $connection->close($content);
+                if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+                    $connection->send($content);
+                } else {
+                    $connection->close($content);
+                }
                 chdir($workerman_cwd);
                 return;
             }
@@ -231,11 +228,11 @@ class WebServer extends Worker
         }
     }
 
-    public static function sendFile($connection, $file_name)
+    public static function sendFile($connection, $file_path)
     {
         // Check 304.
-        $info = stat($file_name);
-        $modified_time = $info ? date('D, d M Y H:i:s', $info['mtime']) . ' GMT' : '';
+        $info = stat($file_path);
+        $modified_time = $info ? date('D, d M Y H:i:s', $info['mtime']) . ' ' . date_default_timezone_get() : '';
         if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $info) {
             // Http 304.
             if ($modified_time === $_SERVER['HTTP_IF_MODIFIED_SINCE']) {
@@ -251,22 +248,28 @@ class WebServer extends Worker
         if ($modified_time) {
             $modified_time = "Last-Modified: $modified_time\r\n";
         }
-        $file_size = filesize($file_name);
-        $extension = pathinfo($file_name, PATHINFO_EXTENSION);
-        $content_type = isset(self::$mimeTypeMap[$extension]) ? self::$mimeTypeMap[$extension] : self::$defaultMimeType;
+        $file_size = filesize($file_path);
+        $file_info = pathinfo($file_path);
+        $extension = isset($file_info['extension']) ? $file_info['extension'] : '';
+        $file_name = isset($file_info['filename']) ? $file_info['filename'] : '';
         $header = "HTTP/1.1 200 OK\r\n";
-        $header .= "Content-Type: $content_type\r\n";
+        if (isset(self::$mimeTypeMap[$extension])) {
+            $header .= "Content-Type: " . self::$mimeTypeMap[$extension] . "\r\n";
+        } else {
+            $header .= "Content-Type: application/octet-stream\r\n";
+            $header .= "Content-Disposition: attachment; filename=\"$file_name\"\r\n";
+        }
         $header .= "Connection: keep-alive\r\n";
         $header .= $modified_time;
         $header .= "Content-Length: $file_size\r\n\r\n";
         $trunk_limit_size = 1024*1024;
         if ($file_size < $trunk_limit_size) {
-            return $connection->send($header.file_get_contents($file_name), true);
+            return $connection->send($header.file_get_contents($file_path), true);
         }
         $connection->send($header, true);
 
         // Read file content from disk piece by piece and send to client.
-        $connection->fileHandler = fopen($file_name, 'r');
+        $connection->fileHandler = fopen($file_path, 'r');
         $do_write = function()use($connection)
         {
             // Send buffer not full.
