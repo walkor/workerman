@@ -173,4 +173,14 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
     {
 
     }
+
+    /**
+     * Get timer count.
+     *
+     * @return integer
+     */
+    public function getTimerCount()
+    {
+        return count($this->_timerIdMap);
+    }
 }

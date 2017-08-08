@@ -319,4 +319,14 @@ class Select implements EventInterface
     {
 
     }
+
+    /**
+     * Get timer count.
+     *
+     * @return integer
+     */
+    public function getTimerCount()
+    {
+        return count($this->_eventTimer);
+    }
 }

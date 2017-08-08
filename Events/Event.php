@@ -196,4 +196,14 @@ class Event implements EventInterface
             $event->del();
         }
     }
+
+    /**
+     * Get timer count.
+     *
+     * @return integer
+     */
+    public function getTimerCount()
+    {
+        return count($this->_eventTimer);
+    }
 }
