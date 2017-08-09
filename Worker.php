@@ -1329,7 +1329,7 @@ class Worker
         // For master process.
         if (self::$_masterPid === posix_getpid()) {
             file_put_contents(self::$_statisticsFile, "------------------------------------------------------------ WORKERMAN CONNECTION STATUS --------------------------------------------------------------------------------\n", FILE_APPEND);
-            file_put_contents(self::$_statisticsFile, "Trans   ipv4   ipv6   Recv-Q       Send-Q       Bytes-R      Bytes-W      Local Address          Foreign Address        Status      PID     ID        Protocol     Worker\n", FILE_APPEND);
+            file_put_contents(self::$_statisticsFile, "Trans   ipv4   ipv6   Recv-Q       Send-Q       Bytes-R      Bytes-W      Local Address          Foreign Address        Status        PID     ID        Protocol        Worker\n", FILE_APPEND);
             chmod(self::$_statisticsFile, 0722);
             foreach (self::getAllWorkerPids() as $worker_pid) {
                 posix_kill($worker_pid, SIGIO);
@@ -1384,8 +1384,8 @@ class Worker
                 $worker_name = isset($connection->worker) ? $connection->worker->name : $default_worker_name;
                 $str .= str_pad($transport, 8).str_pad($ipv4, 7).str_pad($ipv6, 7)
                     .str_pad($recv_q, 13).str_pad($send_q, 13).str_pad($bytes_read, 13).str_pad($bytes_written, 13)
-                    .str_pad($local_address, 22).' '.str_pad($remote_address, 22).' ' . str_pad($state, 12) . str_pad($pid, 8).str_pad($id, 10)
-                    .str_pad($protocol, 12).' '.$worker_name."\n" ;
+                    .str_pad($local_address, 22).' '.str_pad($remote_address, 22).' ' . str_pad($state, 14) . str_pad($pid, 8).str_pad($id, 10)
+                    .str_pad($protocol, 15).' '.$worker_name."\n" ;
 
         }
         if ($str) {
