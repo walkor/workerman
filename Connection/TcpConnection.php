@@ -122,6 +122,20 @@ class TcpConnection extends ConnectionInterface
     public $worker = null;
 
     /**
+     * Bytes read.
+     *
+     * @var int
+     */
+    public $bytesRead = 0;
+
+    /**
+     * Bytes written.
+     *
+     * @var int
+     */
+    public $bytesWritten = 0;
+
+    /**
      * Connection->id.
      *
      * @var int
@@ -214,7 +228,7 @@ class TcpConnection extends ConnectionInterface
     protected $_isPaused = false;
 
     /**
-     * SSL handshake completed or not
+     * SSL handshake completed or not.
      *
      * @var bool
      */
@@ -283,11 +297,13 @@ class TcpConnection extends ConnectionInterface
             $len = @fwrite($this->_socket, $send_buffer, 8192);
             // send successful.
             if ($len === strlen($send_buffer)) {
+                $this->bytesWritten += $len;
                 return true;
             }
             // Send only part of the data.
             if ($len > 0) {
                 $this->_sendBuffer = substr($send_buffer, $len);
+                $this->bytesWritten += $len;
             } else {
                 // Connection closed?
                 if (!is_resource($this->_socket) || feof($this->_socket)) {
@@ -333,7 +349,7 @@ class TcpConnection extends ConnectionInterface
     {
         $pos = strrpos($this->_remoteAddress, ':');
         if ($pos) {
-            return trim(substr($this->_remoteAddress, 0, $pos), '[]');
+            return substr($this->_remoteAddress, 0, $pos);
         }
         return '';
     }
@@ -349,6 +365,102 @@ class TcpConnection extends ConnectionInterface
             return (int)substr(strrchr($this->_remoteAddress, ':'), 1);
         }
         return 0;
+    }
+
+    /**
+     * Get remote address.
+     *
+     * @return string
+     */
+    public function getRemoteAddress()
+    {
+        return $this->_remoteAddress;
+    }
+
+    /**
+     * Get local IP.
+     *
+     * @return string
+     */
+    public function getLocalIp()
+    {
+        $address = $this->getLocalAddress();
+        $pos = strrpos($address, ':');
+        if (!$pos) {
+            return '';
+        }
+        return substr($address, 0, $pos);
+    }
+
+    /**
+     * Get local port.
+     *
+     * @return int
+     */
+    public function getLocalPort()
+    {
+        $address = $this->getLocalAddress();
+        $pos = strrpos($address, ':');
+        if (!$pos) {
+            return 0;
+        }
+        return (int)substr(strrchr($address, ':'), 1);
+    }
+
+    /**
+     * Get local address.
+     *
+     * @return string
+     */
+    public function getLocalAddress()
+    {
+        return (string)@stream_socket_get_name($this->_socket, false);
+    }
+
+    /**
+     * Get send buffer queue size.
+     *
+     * @return integer
+     */
+    public function getSendBufferQueueSize()
+    {
+        return strlen($this->_sendBuffer);
+    }
+
+    /**
+     * Get recv buffer queue size.
+     *
+     * @return integer
+     */
+    public function getRecvBufferQueueSize()
+    {
+        return strlen($this->_recvBuffer);
+    }
+
+    /**
+     * Is ipv4.
+     *
+     * return bool.
+     */
+    public function isIpV4()
+    {
+        if ($this->transport === 'unix') {
+            return false;
+        }
+        return strpos($this->getRemoteIp(), ':') === false;
+    }
+
+    /**
+     * Is ipv6.
+     *
+     * return bool.
+     */
+    public function isIpV6()
+    {
+        if ($this->transport === 'unix') {
+            return false;
+        }
+        return strpos($this->getRemoteIp(), ':') !== false;
     }
 
     /**
@@ -417,7 +529,7 @@ class TcpConnection extends ConnectionInterface
             return;
         }
 
-        $buffer = fread($socket, self::READ_BUFFER_SIZE);
+        $buffer = @fread($socket, self::READ_BUFFER_SIZE);
 
         // Check connection closed.
         if ($buffer === '' || $buffer === false) {
@@ -426,6 +538,7 @@ class TcpConnection extends ConnectionInterface
                 return;
             }
         } else {
+            $this->bytesRead += strlen($buffer);
             $this->_recvBuffer .= $buffer;
         }
 
@@ -521,6 +634,7 @@ class TcpConnection extends ConnectionInterface
     {
         $len = @fwrite($this->_socket, $this->_sendBuffer, 8192);
         if ($len === strlen($this->_sendBuffer)) {
+            $this->bytesWritten += $len;
             Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
             $this->_sendBuffer = '';
             // Try to emit onBufferDrain callback when the send buffer becomes empty. 
@@ -541,6 +655,7 @@ class TcpConnection extends ConnectionInterface
             return true;
         }
         if ($len > 0) {
+            $this->bytesWritten += $len;
             $this->_sendBuffer = substr($this->_sendBuffer, $len);
         } else {
             self::$statistics['send_fail']++;

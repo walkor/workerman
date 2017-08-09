@@ -629,6 +629,7 @@ class Worker
             'restart',
             'reload',
             'status',
+            'connections',
         );
         if (!isset($argv[1]) || !in_array($argv[1], $available_commands)) {
             exit("Usage: php yourfile.php {" . implode('|', $available_commands) . "}\n");
@@ -671,11 +672,13 @@ class Worker
                 }
                 break;
             case 'status':
+            case 'connections':
                 if (is_file(self::$_statisticsFile)) {
                     @unlink(self::$_statisticsFile);
                 }
                 // Master process will send status signal to all child processes.
-                posix_kill($master_pid, SIGUSR2);
+                $signal = $command === 'status' ? SIGUSR2 : SIGIO;
+                posix_kill($master_pid, $signal);
                 // Waiting amoment.
                 usleep(500000);
                 // Display statisitcs data from a disk file.
@@ -735,6 +738,8 @@ class Worker
         pcntl_signal(SIGUSR1, array('\Workerman\Worker', 'signalHandler'), false);
         // status
         pcntl_signal(SIGUSR2, array('\Workerman\Worker', 'signalHandler'), false);
+        // connection status
+        pcntl_signal(SIGIO, array('\Workerman\Worker', 'signalHandler'), false);
         // ignore
         pcntl_signal(SIGPIPE, SIG_IGN, false);
     }
@@ -758,6 +763,8 @@ class Worker
         self::$globalEvent->add(SIGUSR1, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall  status signal handler
         self::$globalEvent->add(SIGUSR2, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        // reinstall connection status signal handler
+        self::$globalEvent->add(SIGIO, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
     }
 
     /**
@@ -780,6 +787,10 @@ class Worker
             // Show status.
             case SIGUSR2:
                 self::writeStatisticsToStatusFile();
+                break;
+            // Show connection status.
+            case SIGIO:
+                self::writeConnectionsStatisticsToStatusFile();
                 break;
         }
     }
@@ -1303,6 +1314,77 @@ class Worker
                 14) . " " . str_pad(ConnectionInterface::$statistics['send_fail'],
                 9) . " " . str_pad(self::$globalEvent->getTimerCount(), 15) . "\n";
         file_put_contents(self::$_statisticsFile, $worker_status_str, FILE_APPEND);
+    }
+
+    /**
+     * Write statistics data to disk.
+     *
+     * @return void
+     */
+    protected static function writeConnectionsStatisticsToStatusFile()
+    {
+        // For master process.
+        if (self::$_masterPid === posix_getpid()) {
+            file_put_contents(self::$_statisticsFile, "Trans   ipv4   ipv6   Recv-Q       Send-Q       Bytes-R      Bytes-W      Local Address          Foreign Address        PID     ID        Protocol     Worker\n", FILE_APPEND);
+            chmod(self::$_statisticsFile, 0722);
+            foreach (self::getAllWorkerPids() as $worker_pid) {
+                posix_kill($worker_pid, SIGIO);
+            }
+            return;
+        }
+
+        // For child processes.
+        $bytes_format = function($bytes)
+        {
+            if($bytes > 1024*1024*1024*1024) {
+                return round($bytes/(1024*1024*1024*1024), 1)."TB";
+            }
+            if($bytes > 1024*1024*1024) {
+                return round($bytes/(1024*1024*1024), 1)."GB";
+            }
+            if($bytes > 1024*1024) {
+                return round($bytes/(1024*1024), 1)."MB";
+            }
+            if($bytes > 1024) {
+                return round($bytes/(1024), 1)."KB";
+            }
+            return $bytes."B";
+        };
+
+        $pid = posix_getpid();
+        $str = '';
+        /** @var Worker $worker */
+        foreach(self::$_workers as $worker) {
+            foreach($worker->connections as $connection) {
+                /** @var Connection\TcpConnection $connection */
+                $transport = $connection->transport;
+                $ipv4 = $connection->isIpV4() ? ' 1' : ' 0';
+                $ipv6 = $connection->isIpV6() ? ' 1' : ' 0';
+                $recv_q = $bytes_format($connection->getRecvBufferQueueSize());
+                $send_q = $bytes_format($connection->getSendBufferQueueSize());
+                $local_address = $connection->getLocalAddress();
+                $remote_address = $connection->getRemoteAddress();
+                $bytes_read = $bytes_format($connection->bytesRead);
+                $bytes_written = $bytes_format($connection->bytesWritten);
+                $id = $connection->id;
+                $pos = strrpos($connection->protocol, '\\');
+                if ($pos) {
+                    $protocol = substr($connection->protocol, $pos+1);
+                } else {
+                    $protocol = $connection->protocol;
+                }
+
+                $str .= str_pad($transport, 8).str_pad($ipv4, 7).str_pad($ipv6, 7)
+                    .str_pad($recv_q, 13).str_pad($send_q, 13).str_pad($bytes_read, 13).str_pad($bytes_written, 13)
+                    .str_pad($local_address, 22).' '.str_pad($remote_address, 22).' '.str_pad($pid, 8).str_pad($id, 10)
+                    .str_pad($protocol, 12).' '.$worker->name."\n" ;
+            }
+        }
+        if ($str) {
+            file_put_contents(self::$_statisticsFile, $str, FILE_APPEND);
+        }
+
+        reset(self::$_workers);
     }
 
     /**
