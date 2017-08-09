@@ -48,7 +48,7 @@ class TcpConnection extends ConnectionInterface
      *
      * @var int
      */
-    const STATUS_ESTABLISH = 2;
+    const STATUS_ESTABLISHED = 2;
 
     /**
      * Status closing.
@@ -105,7 +105,7 @@ class TcpConnection extends ConnectionInterface
      *
      * @var \Workerman\Protocols\ProtocolInterface
      */
-    public $protocol = null;
+    public $protocol = 'tcp';
 
     /**
      * Transport (tcp/udp/unix/ssl).
@@ -211,7 +211,7 @@ class TcpConnection extends ConnectionInterface
      *
      * @var int
      */
-    protected $_status = self::STATUS_ESTABLISH;
+    protected $_status = self::STATUS_ESTABLISHED;
 
     /**
      * Remote address.
@@ -235,6 +235,26 @@ class TcpConnection extends ConnectionInterface
     protected $_sslHandshakeCompleted = false;
 
     /**
+     * All connection instances.
+     *
+     * @var array
+     */
+    public static $connections = array();
+
+    /**
+     * Status to string.
+     *
+     * @var array
+     */
+    public static $_statusToString = array(
+        self::STATUS_INITIAL     => 'INITIAL',
+        self::STATUS_CONNECTING  => 'CONNECTING',
+        self::STATUS_ESTABLISHED => 'ESTABLISHED',
+        self::STATUS_CLOSING     => 'CLOSING',
+        self::STATUS_CLOSED      => 'CLOSED',
+    );
+
+    /**
      * Construct.
      *
      * @param resource $socket
@@ -253,6 +273,22 @@ class TcpConnection extends ConnectionInterface
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
         $this->_remoteAddress    = $remote_address;
+        static::$connections[$this->id] = $this;
+    }
+
+    /**
+     * Get status.
+     *
+     * @param bool $raw_output
+     *
+     * @return int
+     */
+    public function getStatus($raw_output = true)
+    {
+        if ($raw_output) {
+            return $this->_status;
+        }
+        return self::$_statusToString[$this->_status];
     }
 
     /**
@@ -269,7 +305,7 @@ class TcpConnection extends ConnectionInterface
         }
 
         // Try to call protocol::encode($send_buffer) before sending.
-        if (false === $raw && $this->protocol) {
+        if (false === $raw && $this->protocol !== 'tcp') {
             $parser      = $this->protocol;
             $send_buffer = $parser::encode($send_buffer, $this);
             if ($send_buffer === '') {
@@ -277,7 +313,7 @@ class TcpConnection extends ConnectionInterface
             }
         }
 
-        if ($this->_status !== self::STATUS_ESTABLISH ||
+        if ($this->_status !== self::STATUS_ESTABLISHED ||
             ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true)
         ) {
             if ($this->_sendBuffer) {
@@ -543,7 +579,7 @@ class TcpConnection extends ConnectionInterface
         }
 
         // If the application layer protocol has been set up.
-        if ($this->protocol) {
+        if ($this->protocol !== 'tcp') {
             $parser = $this->protocol;
             while ($this->_recvBuffer !== '' && !$this->_isPaused) {
                 // The current packet length is known.
@@ -796,6 +832,7 @@ class TcpConnection extends ConnectionInterface
         if ($this->worker) {
             unset($this->worker->connections[$this->_id]);
         }
+        unset(static::$connections[$this->_id]);
         $this->_status = self::STATUS_CLOSED;
         // Try to emit onClose callback.
         if ($this->onClose) {

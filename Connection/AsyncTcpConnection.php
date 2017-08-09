@@ -128,7 +128,7 @@ class AsyncTcpConnection extends TcpConnection
             $scheme               = isset($address_info['scheme']) ? $address_info['scheme'] : 'tcp';
         }
 
-        $this->id             = self::$_idRecorder++;
+        $this->id = $this->_id = self::$_idRecorder++;
         // Check application layer protocol class.
         if (!isset(self::$_builtinTransports[$scheme])) {
             $scheme         = ucfirst($scheme);
@@ -145,8 +145,9 @@ class AsyncTcpConnection extends TcpConnection
 
         // For statistics.
         self::$statistics['connection_count']++;
-        $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
-        $this->_contextOption    = $context_option;
+        $this->maxSendBufferSize        = self::$defaultMaxSendBufferSize;
+        $this->_contextOption           = $context_option;
+        static::$connections[$this->id] = $this;
     }
 
     /**
@@ -285,7 +286,7 @@ class AsyncTcpConnection extends TcpConnection
             if ($this->_sendBuffer) {
                 Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             }
-            $this->_status                = self::STATUS_ESTABLISH;
+            $this->_status                = self::STATUS_ESTABLISHED;
             $this->_remoteAddress         = $address;
             $this->_sslHandshakeCompleted = true;
 
