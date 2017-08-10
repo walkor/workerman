@@ -215,7 +215,7 @@ class Worker
      *
      * @var Protocols\ProtocolInterface
      */
-    public $protocol = 'tcp';
+    public $protocol = null;
 
     /**
      * Root path for autoload.
@@ -1363,29 +1363,30 @@ class Worker
 
         /** @var Worker $worker */
         foreach(TcpConnection::$connections as $connection) {
-                /** @var Connection\TcpConnection $connection */
-                $transport = $connection->transport;
-                $ipv4 = $connection->isIpV4() ? ' 1' : ' 0';
-                $ipv6 = $connection->isIpV6() ? ' 1' : ' 0';
-                $recv_q = $bytes_format($connection->getRecvBufferQueueSize());
-                $send_q = $bytes_format($connection->getSendBufferQueueSize());
-                $local_address = $connection->getLocalAddress();
-                $remote_address = $connection->getRemoteAddress();
-                $state = $connection->getStatus(false);
-                $bytes_read = $bytes_format($connection->bytesRead);
-                $bytes_written = $bytes_format($connection->bytesWritten);
-                $id = $connection->id;
-                $pos = strrpos($connection->protocol, '\\');
-                if ($pos) {
-                    $protocol = substr($connection->protocol, $pos+1);
-                } else {
-                    $protocol = $connection->protocol;
-                }
-                $worker_name = isset($connection->worker) ? $connection->worker->name : $default_worker_name;
-                $str .= str_pad($transport, 8).str_pad($ipv4, 7).str_pad($ipv6, 7)
-                    .str_pad($recv_q, 13).str_pad($send_q, 13).str_pad($bytes_read, 13).str_pad($bytes_written, 13)
-                    .str_pad($local_address, 22).' '.str_pad($remote_address, 22).' ' . str_pad($state, 14) . str_pad($pid, 8).str_pad($id, 10)
-                    .str_pad($protocol, 15).' '.$worker_name."\n" ;
+            /** @var Connection\TcpConnection $connection */
+            $transport      = $connection->transport;
+            $ipv4           = $connection->isIpV4() ? ' 1' : ' 0';
+            $ipv6           = $connection->isIpV6() ? ' 1' : ' 0';
+            $recv_q         = $bytes_format($connection->getRecvBufferQueueSize());
+            $send_q         = $bytes_format($connection->getSendBufferQueueSize());
+            $local_address  = trim($connection->getLocalAddress());
+            $remote_address = trim($connection->getRemoteAddress());
+            $state          = $connection->getStatus(false);
+            $bytes_read     = $bytes_format($connection->bytesRead);
+            $bytes_written  = $bytes_format($connection->bytesWritten);
+            $id             = $connection->id;
+            $protocol       = $connection->protocol ? $connection->protocol : $connection->transport;
+            $pos            = strrpos($protocol, '\\');
+            if ($pos) {
+                $protocol = substr($protocol, $pos+1);
+            }
+
+            $worker_name = isset($connection->worker) ? $connection->worker->name : $default_worker_name;
+            $str .= str_pad($transport, 8) . str_pad($ipv4, 7) . str_pad($ipv6, 7)
+                . str_pad($recv_q, 13) . str_pad($send_q, 13) . str_pad($bytes_read, 13)
+                . str_pad($bytes_written, 13) . str_pad($local_address, 22) . ' '
+                . str_pad($remote_address, 22) . ' ' . str_pad($state, 14) . str_pad($pid, 8)
+                . str_pad($id, 10) . str_pad($protocol, 15) . ' ' . $worker_name."\n" ;
 
         }
         if ($str) {
@@ -1536,18 +1537,15 @@ class Worker
         list($scheme, $address) = explode(':', $this->_socketName, 2);
         // Check application layer protocol class.
         if (!isset(self::$_builtinTransports[$scheme])) {
-            if(class_exists($scheme)){
-                $this->protocol = $scheme;
-            } else {
-                $scheme         = ucfirst($scheme);
-                $this->protocol = '\\Protocols\\' . $scheme;
+            $scheme         = ucfirst($scheme);
+            $this->protocol = '\\Protocols\\' . $scheme;
+            if (!class_exists($this->protocol)) {
+                $this->protocol = "\\Workerman\\Protocols\\$scheme";
                 if (!class_exists($this->protocol)) {
-                    $this->protocol = "\\Workerman\\Protocols\\$scheme";
-                    if (!class_exists($this->protocol)) {
-                        throw new Exception("class \\Protocols\\$scheme not exist");
-                    }
+                    throw new Exception("class \\Protocols\\$scheme not exist");
                 }
             }
+
             if (!isset(self::$_builtinTransports[$this->transport])) {
                 throw new \Exception('Bad worker->transport ' . var_export($this->transport, true));
             }
@@ -1749,7 +1747,7 @@ class Worker
         $connection           = new UdpConnection($socket, $remote_address);
         $connection->protocol = $this->protocol;
         if ($this->onMessage) {
-            if ($this->protocol) {
+            if ($this->protocol !== null) {
                 $parser      = $this->protocol;
                 $recv_buffer = $parser::decode($recv_buffer, $connection);
                 // Discard bad packets.

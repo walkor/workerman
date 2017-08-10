@@ -61,7 +61,7 @@ class UdpConnection extends ConnectionInterface
      */
     public function send($send_buffer, $raw = false)
     {
-        if (false === $raw && $this->protocol) {
+        if (false === $raw && $this->protocol !== 'udp') {
             $parser      = $this->protocol;
             $send_buffer = $parser::encode($send_buffer, $this);
             if ($send_buffer === '') {

@@ -105,7 +105,7 @@ class TcpConnection extends ConnectionInterface
      *
      * @var \Workerman\Protocols\ProtocolInterface
      */
-    public $protocol = 'tcp';
+    public $protocol = null;
 
     /**
      * Transport (tcp/udp/unix/ssl).
@@ -305,7 +305,7 @@ class TcpConnection extends ConnectionInterface
         }
 
         // Try to call protocol::encode($send_buffer) before sending.
-        if (false === $raw && $this->protocol !== 'tcp') {
+        if (false === $raw && $this->protocol !== null) {
             $parser      = $this->protocol;
             $send_buffer = $parser::encode($send_buffer, $this);
             if ($send_buffer === '') {
@@ -579,7 +579,7 @@ class TcpConnection extends ConnectionInterface
         }
 
         // If the application layer protocol has been set up.
-        if ($this->protocol !== 'tcp') {
+        if ($this->protocol !== null) {
             $parser = $this->protocol;
             while ($this->_recvBuffer !== '' && !$this->_isPaused) {
                 // The current packet length is known.
