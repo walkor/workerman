@@ -682,7 +682,11 @@ class Worker
                 // Waiting amoment.
                 usleep(500000);
                 // Display statisitcs data from a disk file.
-                @readfile(self::$_statisticsFile);
+                if ($command !== 'status') {
+                    @readfile(self::$_statisticsFile);
+                    exit(0);
+                }
+                echo self::formatStatusData();
                 exit(0);
             case 'restart':
             case 'stop':
@@ -724,6 +728,46 @@ class Worker
                 exit("Usage: php yourfile.php {" . implode('|', $available_commands) . "}\n");
         }
     }
+
+    /**
+     * Format status data.
+     *
+     * @return string
+     */
+    protected static function formatStatusData()
+    {
+        $info = @file(self::$_statisticsFile, FILE_IGNORE_NEW_LINES);
+        if (!$info) {
+            return '';
+        }
+        $status_str = '';
+        $worker_info = json_decode($info[0], true);
+        ksort($worker_info, SORT_NUMERIC);
+        unset($info[0]);
+        $data_waiting_sort = array();
+        foreach($info as $key => $value) {
+            if ($key < 10) {
+                $status_str .= $value . "\n";
+                continue;
+            }
+            if(preg_match('/^[0-9]+/', $value, $pid)) {
+                $data_waiting_sort[$pid[0]] = $value;
+            }
+        }
+        foreach($worker_info as $pid => $info) {
+            if (!isset($data_waiting_sort[$pid])) {
+                $status_str .= "$pid\t" . str_pad('N/A', 7) . " "
+                    . str_pad($info['listen'], self::$_maxSocketNameLength) . " "
+                    . str_pad($info['name'], self::$_maxWorkerNameLength) . " "
+                    . str_pad('N/A', 11) . " " . str_pad('N/A', 14) . " "
+                    . str_pad('N/A', 9) . " " . str_pad('N/A', 9) . "[busy]\n";
+                continue;
+            }
+            $status_str .= $data_waiting_sort[$pid]. "[idle]\n";
+        }
+        return $status_str;
+    }
+
 
     /**
      * Install signal handler.
@@ -1259,9 +1303,19 @@ class Worker
     {
         // For master process.
         if (self::$_masterPid === posix_getpid()) {
+            $all_worker_info = array();
+            foreach(self::$_pidMap as $worker_id => $pid_array) {
+                /** @var Worker $worker */
+                $worker = self::$_workers[$worker_id];
+                foreach($pid_array as $pid) {
+                    $all_worker_info[$pid] = array('name' => $worker->name, 'listen' => $worker->getSocketName());
+                }
+            }
+
+            file_put_contents(self::$_statisticsFile, json_encode($all_worker_info)."\n", FILE_APPEND);
             $loadavg = function_exists('sys_getloadavg') ? array_map('round', sys_getloadavg(), array(2)) : array('-', '-', '-');
             file_put_contents(self::$_statisticsFile,
-                "---------------------------------------GLOBAL STATUS--------------------------------------------\n");
+                "---------------------------------------GLOBAL STATUS--------------------------------------------\n", FILE_APPEND);
             file_put_contents(self::$_statisticsFile,
                 'Workerman version:' . Worker::VERSION . "          PHP version:" . PHP_VERSION . "\n", FILE_APPEND);
             file_put_contents(self::$_statisticsFile, 'start time:' . date('Y-m-d H:i:s',
@@ -1295,7 +1349,7 @@ class Worker
             file_put_contents(self::$_statisticsFile,
                 "pid\tmemory  " . str_pad('listening', self::$_maxSocketNameLength) . " " . str_pad('worker_name',
                     self::$_maxWorkerNameLength) . " connections " . str_pad('total_request',
-                    13) . " " . str_pad('send_fail', 9) . " " . str_pad('timers', 15) . "\n", FILE_APPEND);
+                    13) . " " . str_pad('send_fail', 9) . " " . str_pad('timers', 9) . " status\n", FILE_APPEND);
 
             chmod(self::$_statisticsFile, 0722);
 
@@ -1307,7 +1361,7 @@ class Worker
 
         // For child processes.
         /** @var Worker $worker */
-        $worker           = current(self::$_workers);
+        $worker            = current(self::$_workers);
         $worker_status_str = posix_getpid() . "\t" . str_pad(round(memory_get_usage(true) / (1024 * 1024), 2) . "M",
                 7) . " " . str_pad($worker->getSocketName(),
                 self::$_maxSocketNameLength) . " " . str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name),
@@ -1315,7 +1369,7 @@ class Worker
         $worker_status_str .= str_pad(ConnectionInterface::$statistics['connection_count'],
                 11) . " " . str_pad(ConnectionInterface::$statistics['total_request'],
                 14) . " " . str_pad(ConnectionInterface::$statistics['send_fail'],
-                9) . " " . str_pad(self::$globalEvent->getTimerCount(), 15) . "\n";
+                9) . " " . str_pad(self::$globalEvent->getTimerCount(), 9) . "\n";
         file_put_contents(self::$_statisticsFile, $worker_status_str, FILE_APPEND);
     }
 
