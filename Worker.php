@@ -759,11 +759,11 @@ class Worker
                 $status_str .= "$pid\t" . str_pad('N/A', 7) . " "
                     . str_pad($info['listen'], self::$_maxSocketNameLength) . " "
                     . str_pad($info['name'], self::$_maxWorkerNameLength) . " "
-                    . str_pad('N/A', 11) . " " . str_pad('N/A', 14) . " "
-                    . str_pad('N/A', 9) . " " . str_pad('N/A', 9) . "[busy]\n";
+                    . str_pad('N/A', 11) . " " . str_pad('N/A', 13) . " "
+                    . str_pad('N/A', 9) . " " . str_pad('N/A', 8) . " [busy] \n";
                 continue;
             }
-            $status_str .= $data_waiting_sort[$pid]. "[idle]\n";
+            $status_str .= $data_waiting_sort[$pid]. " [idle] \n";
         }
         return $status_str;
     }
@@ -1328,7 +1328,7 @@ class Worker
                 count(self::$_pidMap) . ' workers       ' . count(self::getAllWorkerPids()) . " processes\n",
                 FILE_APPEND);
             file_put_contents(self::$_statisticsFile,
-                str_pad('worker_name', self::$_maxWorkerNameLength) . " exit_status     exit_count\n", FILE_APPEND);
+                str_pad('worker_name', self::$_maxWorkerNameLength) . " exit_status      exit_count\n", FILE_APPEND);
             foreach (self::$_pidMap as $worker_id => $worker_pid_array) {
                 $worker = self::$_workers[$worker_id];
                 if (isset(self::$_globalStatistics['worker_exit_info'][$worker_id])) {
@@ -1349,7 +1349,7 @@ class Worker
             file_put_contents(self::$_statisticsFile,
                 "pid\tmemory  " . str_pad('listening', self::$_maxSocketNameLength) . " " . str_pad('worker_name',
                     self::$_maxWorkerNameLength) . " connections " . str_pad('total_request',
-                    13) . " " . str_pad('send_fail', 9) . " " . str_pad('timers', 9) . " status\n", FILE_APPEND);
+                    13) . " " . str_pad('send_fail', 9) . " " . str_pad('timers', 8) . " status\n", FILE_APPEND);
 
             chmod(self::$_statisticsFile, 0722);
 
@@ -1368,8 +1368,8 @@ class Worker
                 self::$_maxWorkerNameLength) . " ";
         $worker_status_str .= str_pad(ConnectionInterface::$statistics['connection_count'],
                 11) . " " . str_pad(ConnectionInterface::$statistics['total_request'],
-                14) . " " . str_pad(ConnectionInterface::$statistics['send_fail'],
-                9) . " " . str_pad(self::$globalEvent->getTimerCount(), 9) . "\n";
+                13) . " " . str_pad(ConnectionInterface::$statistics['send_fail'],
+                9) . " " . str_pad(self::$globalEvent->getTimerCount(), 8) . "\n";
         file_put_contents(self::$_statisticsFile, $worker_status_str, FILE_APPEND);
     }
 
@@ -1382,8 +1382,8 @@ class Worker
     {
         // For master process.
         if (self::$_masterPid === posix_getpid()) {
-            file_put_contents(self::$_statisticsFile, "------------------------------------------------------------ WORKERMAN CONNECTION STATUS --------------------------------------------------------------------------------\n", FILE_APPEND);
-            file_put_contents(self::$_statisticsFile, "Trans   ipv4   ipv6   Recv-Q       Send-Q       Bytes-R      Bytes-W      Local Address          Foreign Address        Status        PID     ID        Protocol        Worker\n", FILE_APPEND);
+            file_put_contents(self::$_statisticsFile, "--------------------------------------------------------------------- WORKERMAN CONNECTION STATUS --------------------------------------------------------------------------------\n", FILE_APPEND);
+            file_put_contents(self::$_statisticsFile, "PID      Worker          CID       Trans   Protocol        ipv4   ipv6   Recv-Q       Send-Q       Bytes-R      Bytes-W       Status        Local Address          Foreign Address\n", FILE_APPEND);
             chmod(self::$_statisticsFile, 0722);
             foreach (self::getAllWorkerPids() as $worker_pid) {
                 posix_kill($worker_pid, SIGIO);
@@ -1434,14 +1434,17 @@ class Worker
             if ($pos) {
                 $protocol = substr($protocol, $pos+1);
             }
-
+            if (strlen($protocol) > 15) {
+                $protocol = substr($protocol, 0, 13) . '..';
+            }
             $worker_name = isset($connection->worker) ? $connection->worker->name : $default_worker_name;
-            $str .= str_pad($transport, 8) . str_pad($ipv4, 7) . str_pad($ipv6, 7)
-                . str_pad($recv_q, 13) . str_pad($send_q, 13) . str_pad($bytes_read, 13)
-                . str_pad($bytes_written, 13) . str_pad($local_address, 22) . ' '
-                . str_pad($remote_address, 22) . ' ' . str_pad($state, 14) . str_pad($pid, 8)
-                . str_pad($id, 10) . str_pad($protocol, 15) . ' ' . $worker_name."\n" ;
-
+            if (strlen($worker_name) > 14) {
+                $worker_name = substr($worker_name, 0, 12) . '..';
+            }
+            $str .= str_pad($pid, 9) . str_pad($worker_name, 16) .  str_pad($id, 10) . str_pad($transport, 8)
+                . str_pad($protocol, 16) . str_pad($ipv4, 7) . str_pad($ipv6, 7) . str_pad($recv_q, 13)
+                . str_pad($send_q, 13) . str_pad($bytes_read, 13) . str_pad($bytes_written, 13) . ' '
+                . str_pad($state, 14) . ' ' . str_pad($local_address, 22) . ' ' . str_pad($remote_address, 22) ."\n";
         }
         if ($str) {
             file_put_contents(self::$_statisticsFile, $str, FILE_APPEND);
