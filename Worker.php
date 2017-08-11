@@ -1459,7 +1459,7 @@ class Worker
     public static function checkErrors()
     {
         if (self::STATUS_SHUTDOWN != self::$_status) {
-            $error_msg = 'Worker['. posix_getpid() .'] process terminated with ';
+            $error_msg = 'Worker['. posix_getpid() .'] process terminated';
             $errors    = error_get_last();
             if ($errors && ($errors['type'] === E_ERROR ||
                     $errors['type'] === E_PARSE ||
@@ -1467,9 +1467,7 @@ class Worker
                     $errors['type'] === E_COMPILE_ERROR ||
                     $errors['type'] === E_RECOVERABLE_ERROR)
             ) {
-                $error_msg .= self::getErrorType($errors['type']) . " \"{$errors['message']} in {$errors['file']} on line {$errors['line']}\"";
-            } else {
-                $error_msg .= 'exit()/die(). Please do not call exit()/die() in workerman.';
+                $error_msg .= ' with ERROR: ' . self::getErrorType($errors['type']) . " \"{$errors['message']} in {$errors['file']} on line {$errors['line']}\"";
             }
             self::log($error_msg);
         }
