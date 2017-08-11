@@ -77,6 +77,7 @@ class Worker
      * @var int
      */
     const DEFAULT_BACKLOG = 102400;
+
     /**
      * Max udp package size.
      *
@@ -414,6 +415,27 @@ class Worker
     );
 
     /**
+     * PHP back trace.
+     * 
+     * @var null
+     */
+    protected static $_backtrace = null;
+
+    /**
+     * Available commands.
+     * 
+     * @var array
+     */
+    protected static $_availableCommands = array(
+        'start',
+        'stop',
+        'restart',
+        'reload',
+        'status',
+        'connections',
+    );
+
+    /**
      * Run all worker instances.
      *
      * @return void
@@ -454,8 +476,7 @@ class Worker
     protected static function init()
     {
         // Start file.
-        $backtrace        = debug_backtrace();
-        self::$_startFile = $backtrace[count($backtrace) - 1]['file'];
+        self::$_startFile = self::$_backtrace[count(self::$_backtrace) - 1]['file'];
 
         // Pid file.
         if (empty(self::$pidFile)) {
@@ -623,16 +644,8 @@ class Worker
         global $argv;
         // Check argv;
         $start_file = $argv[0];
-        $available_commands = array(
-            'start',
-            'stop',
-            'restart',
-            'reload',
-            'status',
-            'connections',
-        );
-        if (!isset($argv[1]) || !in_array($argv[1], $available_commands)) {
-            exit("Usage: php yourfile.php {" . implode('|', $available_commands) . "}\n");
+        if (!isset($argv[1]) || !in_array($argv[1], self::$_availableCommands)) {
+            exit("Usage: php yourfile.php {" . implode('|', self::$_availableCommands) . "}\n");
         }
 
         // Get command.
@@ -725,7 +738,7 @@ class Worker
                 self::log("Workerman[$start_file] reload");
                 exit;
             default :
-                exit("Usage: php yourfile.php {" . implode('|', $available_commands) . "}\n");
+                exit("Usage: php yourfile.php {" . implode('|', self::$_availableCommands) . "}\n");
         }
     }
 
@@ -1557,8 +1570,8 @@ class Worker
         self::$_pidMap[$this->workerId]  = array();
 
         // Get autoload root path.
-        $backtrace                = debug_backtrace();
-        $this->_autoloadRootPath = dirname($backtrace[0]['file']);
+        self::$_backtrace        = debug_backtrace();
+        $this->_autoloadRootPath = dirname(self::$_backtrace[0]['file']);
 
         // Context for socket.
         if ($socket_name) {
@@ -1644,8 +1657,7 @@ class Worker
             if ($this->transport !== 'udp') {
                 self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ, array($this, 'acceptConnection'));
             } else {
-                self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ,
-                    array($this, 'acceptUdpConnection'));
+                self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ, array($this, 'acceptUdpConnection'));
             }
         }
     }
