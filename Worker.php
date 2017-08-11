@@ -1383,7 +1383,7 @@ class Worker
         // For master process.
         if (self::$_masterPid === posix_getpid()) {
             file_put_contents(self::$_statisticsFile, "--------------------------------------------------------------------- WORKERMAN CONNECTION STATUS --------------------------------------------------------------------------------\n", FILE_APPEND);
-            file_put_contents(self::$_statisticsFile, "PID      Worker          CID       Trans   Protocol        ipv4   ipv6   Recv-Q       Send-Q       Bytes-R      Bytes-W       Status        Local Address          Foreign Address\n", FILE_APPEND);
+            file_put_contents(self::$_statisticsFile, "PID      Worker          CID       Trans   Protocol        ipv4   ipv6   Recv-Q       Send-Q       Bytes-R      Bytes-W       Status         Local Address          Foreign Address\n", FILE_APPEND);
             chmod(self::$_statisticsFile, 0722);
             foreach (self::getAllWorkerPids() as $worker_pid) {
                 posix_kill($worker_pid, SIGIO);
