@@ -745,9 +745,13 @@ class Worker
         ksort($worker_info, SORT_NUMERIC);
         unset($info[0]);
         $data_waiting_sort = array();
+        $read_process_status = false;
         foreach($info as $key => $value) {
-            if ($key < 10) {
+            if (!$read_process_status) {
                 $status_str .= $value . "\n";
+                if (preg_match('/^pid.*?memory.*?listening/', $value)) {
+                    $read_process_status = true;
+                }
                 continue;
             }
             if(preg_match('/^[0-9]+/', $value, $pid)) {
@@ -1315,7 +1319,7 @@ class Worker
             file_put_contents(self::$_statisticsFile, json_encode($all_worker_info)."\n", FILE_APPEND);
             $loadavg = function_exists('sys_getloadavg') ? array_map('round', sys_getloadavg(), array(2)) : array('-', '-', '-');
             file_put_contents(self::$_statisticsFile,
-                "---------------------------------------GLOBAL STATUS--------------------------------------------\n", FILE_APPEND);
+                "----------------------------------------------GLOBAL STATUS----------------------------------------------------\n", FILE_APPEND);
             file_put_contents(self::$_statisticsFile,
                 'Workerman version:' . Worker::VERSION . "          PHP version:" . PHP_VERSION . "\n", FILE_APPEND);
             file_put_contents(self::$_statisticsFile, 'start time:' . date('Y-m-d H:i:s',
@@ -1344,7 +1348,7 @@ class Worker
                 }
             }
             file_put_contents(self::$_statisticsFile,
-                "---------------------------------------PROCESS STATUS-------------------------------------------\n",
+                "----------------------------------------------PROCESS STATUS---------------------------------------------------\n",
                 FILE_APPEND);
             file_put_contents(self::$_statisticsFile,
                 "pid\tmemory  " . str_pad('listening', self::$_maxSocketNameLength) . " " . str_pad('worker_name',
