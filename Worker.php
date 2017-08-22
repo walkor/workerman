@@ -427,8 +427,8 @@ class Worker
         self::initWorkers();
         self::installSignal();
         self::saveMasterPid();
-        self::forkWorkers();
         self::displayUI();
+        self::forkWorkers();
         self::resetStd();
         self::monitorWorkers();
     }
