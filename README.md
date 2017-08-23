@@ -490,14 +490,15 @@ Worker::runAll();
 
 
 ## Available commands
-```php test.php start  ```  
-```php test.php start -d  ```  
+```php start.php start  ```  
+```php start.php start -d  ```  
 ![workerman start](http://www.workerman.net/img/workerman-start.png)  
-```php test.php status  ```  
+```php start.php status  ```  
 ![workerman satus](http://www.workerman.net/img/workerman-status.png?a=123)
-```php test.php stop  ```  
-```php test.php restart  ```  
-```php test.php reload  ```  
+```php start.php connections
+```php start.php stop  ```  
+```php start.php restart  ```  
+```php start.php reload  ```  
 
 ## Documentation
 
