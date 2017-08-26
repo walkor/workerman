@@ -213,5 +213,15 @@ class Libevent implements EventInterface
             event_del($event);
         }
     }
+
+    /**
+     * Get timer count.
+     *
+     * @return integer
+     */
+    public function getTimerCount()
+    {
+        return count($this->_eventTimer);
+    }
 }
 

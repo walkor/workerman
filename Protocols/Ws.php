@@ -289,7 +289,7 @@ class Ws
      */
     public static function decode($bytes, $connection)
     {
-        $masked = $bytes[1] >> 7;
+        $masked = ord($bytes[1]) >> 7;
         $data_length = $masked ? ord($bytes[1]) & 127 : ord($bytes[1]);
         $decoded_data = '';
         if ($masked === true) {
@@ -375,7 +375,7 @@ class Ws
         "Upgrade: websocket\r\n".
         "Origin: ". (isset($connection->websocketOrigin) ? $connection->websocketOrigin : '*') ."\r\n".
         "Sec-WebSocket-Version: 13\r\n".
-        "Sec-WebSocket-Key: ".base64_encode(sha1(uniqid(mt_rand(), true), true))."\r\n\r\n";
+        "Sec-WebSocket-Key: " . base64_encode(md5(mt_rand(), true)) . "\r\n\r\n";
         $connection->send($header, true);
         $connection->handshakeStep               = 1;
         $connection->websocketCurrentFrameLength = 0;

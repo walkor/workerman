@@ -56,10 +56,12 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
                 $this->_timerIdMap[++$this->_timerIdIndex] = $timer_obj;
                 return $this->_timerIdIndex;
             case EventInterface::EV_TIMER_ONCE:
-                $timer_obj = $this->addTimer($fd, function() use ($func, $args) {
+                $index = ++$this->_timerIdIndex;
+                $timer_obj = $this->addTimer($fd, function() use ($func, $args, $index) {
+                    $this->del($index,EventInterface::EV_TIMER_ONCE);
                     call_user_func_array($func, $args);
                 });
-                $this->_timerIdMap[++$this->_timerIdIndex] = $timer_obj;
+                $this->_timerIdMap[$index] = $timer_obj;
                 return $this->_timerIdIndex;
         }
         return false;
@@ -113,7 +115,7 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
      */
     public function addSignal($signal, $callback)
     {
-        if(PHP_EOL !== "\r\n") {
+        if(DIRECTORY_SEPARATOR === '/') {
             pcntl_signal($signal, $callback);
         }
     }
@@ -125,7 +127,7 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
      */
     public function removeSignal($signal)
     {
-        if(PHP_EOL !== "\r\n") {
+        if(DIRECTORY_SEPARATOR === '/') {
             pcntl_signal($signal, SIG_IGN);
         }
     }
@@ -146,13 +148,15 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
         if ($read || $write) {
             $except = null;
             // Calls signal handlers for pending signals
-            pcntl_signal_dispatch();
+            if(DIRECTORY_SEPARATOR === '/') {
+                pcntl_signal_dispatch();
+            }
             // suppress warnings that occur, when stream_select is interrupted by a signal
             return @stream_select($read, $write, $except, $timeout === null ? null : 0, $timeout);
         }
 
         // Calls signal handlers for pending signals
-        if(PHP_EOL !== "\r\n") {
+        if(DIRECTORY_SEPARATOR === '/') {
             pcntl_signal_dispatch();
         }
         $timeout && usleep($timeout);
@@ -168,5 +172,15 @@ class StreamSelectLoop extends \React\EventLoop\StreamSelectLoop
     public function destroy()
     {
 
+    }
+
+    /**
+     * Get timer count.
+     *
+     * @return integer
+     */
+    public function getTimerCount()
+    {
+        return count($this->_timerIdMap);
     }
 }

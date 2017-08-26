@@ -2,10 +2,9 @@
 [![Gitter](https://badges.gitter.im/walkor/Workerman.svg)](https://gitter.im/walkor/Workerman?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge)
 
 ## What is it
-Workerman is an asynchronous event driven PHP framework with high performance for easily building fast, scalable network applications.Supports HTTP, Websocket and other custom protocols. Supports libevent, HHVM, [ReactPHP](https://github.com/reactphp/react).
+Workerman is an asynchronous event driven PHP framework with high performance for easily building fast, scalable network applications. Supports HTTP, Websocket, SSL and other custom protocols. Supports libevent, [HHVM](https://github.com/facebook/hhvm) , [ReactPHP](https://github.com/reactphp/react).
 
 ## Requires
-
 PHP 5.3 or Higher  
 A POSIX compatible operating system (Linux, OSX, BSD)  
 POSIX and PCNTL extensions for PHP  
@@ -491,14 +490,15 @@ Worker::runAll();
 
 
 ## Available commands
-```php test.php start  ```  
-```php test.php start -d  ```  
+```php start.php start  ```  
+```php start.php start -d  ```  
 ![workerman start](http://www.workerman.net/img/workerman-start.png)  
-```php test.php status  ```  
+```php start.php status  ```  
 ![workerman satus](http://www.workerman.net/img/workerman-status.png?a=123)
-```php test.php stop  ```  
-```php test.php restart  ```  
-```php test.php reload  ```  
+```php start.php connections
+```php start.php stop  ```  
+```php start.php restart  ```  
+```php start.php reload  ```  
 
 ## Documentation
 

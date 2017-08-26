@@ -74,6 +74,48 @@ abstract class  ConnectionInterface
     abstract public function getRemotePort();
 
     /**
+     * Get remote address.
+     *
+     * @return string
+     */
+    abstract public function getRemoteAddress();
+
+    /**
+     * Get remote IP.
+     *
+     * @return string
+     */
+    abstract public function getLocalIp();
+
+    /**
+     * Get remote port.
+     *
+     * @return int
+     */
+    abstract public function getLocalPort();
+
+    /**
+     * Get remote address.
+     *
+     * @return string
+     */
+    abstract public function getLocalAddress();
+
+    /**
+     * Is ipv4.
+     *
+     * @return bool
+     */
+    abstract public function isIPv4();
+
+    /**
+     * Is ipv6.
+     *
+     * @return bool
+     */
+    abstract public function isIPv6();
+
+    /**
      * Close connection.
      *
      * @param $data
