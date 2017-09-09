@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.1';
+    const VERSION = '3.5.2';
 
     /**
      * Status starting.
@@ -672,21 +672,30 @@ class Worker
                 }
                 break;
             case 'status':
+                while (1) {
+                    if (is_file(self::$_statisticsFile)) {
+                        @unlink(self::$_statisticsFile);
+                    }
+                    // Master process will send SIGUSR2 signal to all child processes.
+                    posix_kill($master_pid, SIGUSR2);
+                    // Sleep 1 second.
+                    sleep(1);
+                    // Clear terminal.
+                    echo chr(27).chr(91).chr(72).chr(27).chr(91).chr(50).chr(74);
+                    // Echo status data.
+                    echo self::formatStatusData();
+                }
+                exit(0);
             case 'connections':
                 if (is_file(self::$_statisticsFile)) {
                     @unlink(self::$_statisticsFile);
                 }
-                // Master process will send status signal to all child processes.
-                $signal = $command === 'status' ? SIGUSR2 : SIGIO;
-                posix_kill($master_pid, $signal);
+                // Master process will send SIGIO signal to all child processes.
+                posix_kill($master_pid, SIGIO);
                 // Waiting amoment.
                 usleep(500000);
                 // Display statisitcs data from a disk file.
-                if ($command !== 'status') {
-                    @readfile(self::$_statisticsFile);
-                    exit(0);
-                }
-                echo self::formatStatusData();
+                @readfile(self::$_statisticsFile);
                 exit(0);
             case 'restart':
             case 'stop':
@@ -736,11 +745,13 @@ class Worker
      */
     protected static function formatStatusData()
     {
+        static $total_request_cache = array();
         $info = @file(self::$_statisticsFile, FILE_IGNORE_NEW_LINES);
         if (!$info) {
             return '';
         }
         $status_str = '';
+        $current_total_request = array();
         $worker_info = json_decode($info[0], true);
         ksort($worker_info, SORT_NUMERIC);
         unset($info[0]);
@@ -754,8 +765,12 @@ class Worker
                 }
                 continue;
             }
-            if(preg_match('/^[0-9]+/', $value, $pid)) {
-                $data_waiting_sort[$pid[0]] = $value;
+            if(preg_match('/^[0-9]+/', $value, $pid_math)) {
+                $pid = $pid_math[0];
+                $data_waiting_sort[$pid] = $value;
+                if(preg_match('/^\S+?\s+?\S+?\s+?\S+?\s+?\S+?\s+?\S+?\s+?\S+?\s+?\S+?\s+?(\S+?)\s+?/', $value, $match)) {
+                    $current_total_request[$pid] = $match[1];
+                }
             }
         }
         foreach($worker_info as $pid => $info) {
@@ -763,12 +778,19 @@ class Worker
                 $status_str .= "$pid\t" . str_pad('N/A', 7) . " "
                     . str_pad($info['listen'], self::$_maxSocketNameLength) . " "
                     . str_pad($info['name'], self::$_maxWorkerNameLength) . " "
-                    . str_pad('N/A', 11) . " " . str_pad('N/A', 13) . " "
-                    . str_pad('N/A', 9) . " " . str_pad('N/A', 8) . " [busy] \n";
+                    . str_pad('N/A', 11) . " " . str_pad('N/A', 9) . " "
+                    . str_pad('N/A', 7) . " " . str_pad('N/A', 13) . " N/A    [busy] \n";
                 continue;
             }
-            $status_str .= $data_waiting_sort[$pid]. " [idle] \n";
+            //$qps = isset($total_request_cache[$pid]) ? $current_total_request[$pid]
+            if (!isset($total_request_cache[$pid]) || !isset($current_total_request[$pid])) {
+                $qps = 0;
+            } else {
+                $qps = $current_total_request[$pid] - $total_request_cache[$pid];
+            }
+            $status_str .= $data_waiting_sort[$pid]. " " . str_pad($qps, 6) ." [idle]\n";
         }
+        $total_request_cache = $current_total_request;
         return $status_str;
     }
 
@@ -1352,8 +1374,8 @@ class Worker
                 FILE_APPEND);
             file_put_contents(self::$_statisticsFile,
                 "pid\tmemory  " . str_pad('listening', self::$_maxSocketNameLength) . " " . str_pad('worker_name',
-                    self::$_maxWorkerNameLength) . " connections " . str_pad('total_request',
-                    13) . " " . str_pad('send_fail', 9) . " " . str_pad('timers', 8) . " status\n", FILE_APPEND);
+                    self::$_maxWorkerNameLength) . " connections " . str_pad('send_fail', 9) . " "
+                . str_pad('timers', 8) . str_pad('total_request', 13) ." qps    status\n", FILE_APPEND);
 
             chmod(self::$_statisticsFile, 0722);
 
@@ -1366,14 +1388,14 @@ class Worker
         // For child processes.
         /** @var Worker $worker */
         $worker            = current(self::$_workers);
-        $worker_status_str = posix_getpid() . "\t" . str_pad(round(memory_get_usage(true) / (1024 * 1024), 2) . "M",
-                7) . " " . str_pad($worker->getSocketName(),
-                self::$_maxSocketNameLength) . " " . str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name),
-                self::$_maxWorkerNameLength) . " ";
-        $worker_status_str .= str_pad(ConnectionInterface::$statistics['connection_count'],
-                11) . " " . str_pad(ConnectionInterface::$statistics['total_request'],
-                13) . " " . str_pad(ConnectionInterface::$statistics['send_fail'],
-                9) . " " . str_pad(self::$globalEvent->getTimerCount(), 8) . "\n";
+        $worker_status_str = posix_getpid() . "\t" . str_pad(round(memory_get_usage(true) / (1024 * 1024), 2) . "M", 7)
+            . " " . str_pad($worker->getSocketName(), self::$_maxSocketNameLength) . " "
+            . str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name), self::$_maxWorkerNameLength)
+            . " ";
+        $worker_status_str .= str_pad(ConnectionInterface::$statistics['connection_count'], 11)
+            . " " .  str_pad(ConnectionInterface::$statistics['send_fail'], 9)
+            . " " . str_pad(self::$globalEvent->getTimerCount(), 7)
+            . " " . str_pad(ConnectionInterface::$statistics['total_request'], 13) . "\n";
         file_put_contents(self::$_statisticsFile, $worker_status_str, FILE_APPEND);
     }
 
