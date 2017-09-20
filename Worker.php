@@ -614,7 +614,7 @@ class Worker
 
     /**
      * Parse command.
-     * php yourfile.php start | stop | restart | reload | status
+     * php yourfile.php start | stop | restart | reload | status [-d]
      *
      * @return void
      */
@@ -631,8 +631,9 @@ class Worker
             'status',
             'connections',
         );
+        $usage = "Usage: php yourfile.php {" . implode('|', $available_commands) . "} [-d]\n";
         if (!isset($argv[1]) || !in_array($argv[1], $available_commands)) {
-            exit("Usage: php yourfile.php {" . implode('|', $available_commands) . "}\n");
+            exit($usage);
         }
 
         // Get command.
@@ -734,7 +735,7 @@ class Worker
                 self::log("Workerman[$start_file] reload");
                 exit;
             default :
-                exit("Usage: php yourfile.php {" . implode('|', $available_commands) . "}\n");
+                exit($usage);
         }
     }
 
