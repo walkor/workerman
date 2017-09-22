@@ -264,6 +264,9 @@ class TcpConnection extends ConnectionInterface
     {
         self::$statistics['connection_count']++;
         $this->id      = $this->_id = self::$_idRecorder++;
+        if(self::$_idRecorder===PHP_INT_MAX){
+            self::$_idRecorder=0;
+        }
         $this->_socket = $socket;
         stream_set_blocking($this->_socket, 0);
         // Compatible with hhvm
