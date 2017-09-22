@@ -263,9 +263,9 @@ class TcpConnection extends ConnectionInterface
     public function __construct($socket, $remote_address = '')
     {
         self::$statistics['connection_count']++;
-        $this->id      = $this->_id = self::$_idRecorder++;
-        if(self::$_idRecorder===PHP_INT_MAX){
-            self::$_idRecorder=0;
+        $this->id = $this->_id = self::$_idRecorder++;
+        if(self::$_idRecorder === PHP_INT_MAX){
+            self::$_idRecorder = 0;
         }
         $this->_socket = $socket;
         stream_set_blocking($this->_socket, 0);
