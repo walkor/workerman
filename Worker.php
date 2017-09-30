@@ -1654,6 +1654,14 @@ class Worker
 
         if ($this->transport === 'ssl') {
             stream_socket_enable_crypto($this->_mainSocket, false);
+        } elseif ($this->transport === 'unix') {
+            $socketFile = substr($address, 2);
+            if ($this->user) {
+                chown($socketFile, $this->user);
+            }
+            if ($this->group) {
+                chgrp($socketFile, $this->group);
+            }
         }
 
         // Try to open keepalive for tcp and disable Nagle algorithm.
