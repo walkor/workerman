@@ -133,7 +133,7 @@ $tcp_worker->onClose = function($connection)
 Worker::runAll();
 ```
 
-### Enable SSL.
+### Enable SSL
 ```php
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
@@ -142,8 +142,9 @@ use Workerman\Worker;
 // SSL context.
 $context = array(
     'ssl' => array(
-        'local_cert' => '/your/path/of/server.pem',
-        'local_pk'   => '/your/path/of/server.key',
+        'local_cert'  => '/your/path/of/server.pem',
+        'local_pk'    => '/your/path/of/server.key',
+        'verify_peer' => false,
     )
 );
 
