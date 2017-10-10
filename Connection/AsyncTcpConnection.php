@@ -52,6 +52,13 @@ class AsyncTcpConnection extends TcpConnection
     protected $_remoteHost = '';
 
     /**
+     * Remote port.
+     *
+     * @var int
+     */
+    protected $_remotePort = 80;
+
+    /**
      * Connect start time.
      *
      * @var string
@@ -124,6 +131,7 @@ class AsyncTcpConnection extends TcpConnection
             }
             $this->_remoteAddress = "{$address_info['host']}:{$address_info['port']}";
             $this->_remoteHost    = $address_info['host'];
+            $this->_remotePort    = $address_info['port'];
             $this->_remoteURI     = "{$address_info['path']}{$address_info['query']}";
             $scheme               = isset($address_info['scheme']) ? $address_info['scheme'] : 'tcp';
         }
@@ -166,10 +174,10 @@ class AsyncTcpConnection extends TcpConnection
         // Open socket connection asynchronously.
         if ($this->_contextOption) {
             $context = stream_context_create($this->_contextOption);
-            $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
+            $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteHost}:{$this->_remotePort}", $errno, $errstr, 0,
                 STREAM_CLIENT_ASYNC_CONNECT, $context);
         } else {
-            $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
+            $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteHost}:{$this->_remotePort}", $errno, $errstr, 0,
                 STREAM_CLIENT_ASYNC_CONNECT);
         }
         // If failed attempt to emit onError callback.
