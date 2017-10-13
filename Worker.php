@@ -891,6 +891,7 @@ class Worker
             case SIGTERM:
                 self::$_gracefulStop = true;
                 self::stopAll();
+                break;
             // Reload.
             case SIGUSR1:
                 self::$_pidsToRestart = self::getAllWorkerPids();
