@@ -1330,7 +1330,9 @@ class Worker
             // Send reload signal to a worker process.
             posix_kill($one_worker_pid, $sig);
             // If the process does not exit after self::KILL_WORKER_TIMER_TIME seconds try to kill it.
-            Timer::add(self::KILL_WORKER_TIMER_TIME, 'posix_kill', array($one_worker_pid, SIGKILL), false);
+            if(!self::$_gracefulStop){
+                Timer::add(self::KILL_WORKER_TIMER_TIME, 'posix_kill', array($one_worker_pid, SIGKILL), false);
+            }
         } // For child processes.
         else {
             reset(self::$_workers);
