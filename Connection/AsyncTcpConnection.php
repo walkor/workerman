@@ -137,6 +137,9 @@ class AsyncTcpConnection extends TcpConnection
         }
 
         $this->id = $this->_id = self::$_idRecorder++;
+        if(PHP_INT_MAX === self::$_idRecorder){
+            self::$_idRecorder = 0;
+        }
         // Check application layer protocol class.
         if (!isset(self::$_builtinTransports[$scheme])) {
             $scheme         = ucfirst($scheme);
