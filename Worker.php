@@ -761,7 +761,12 @@ class Worker
                 }
                 break;
             case 'reload':
-                posix_kill($master_pid, SIGUSR1);
+                if($command2 === '-g'){
+                    $sig = SIGQUIT;
+                }else{
+                    $sig = SIGUSR1;
+                }
+                posix_kill($master_pid, $sig);
                 self::log("Workerman[$start_file] reload");
                 exit;
             default :
@@ -839,6 +844,8 @@ class Worker
         pcntl_signal(SIGTERM, array('\Workerman\Worker', 'signalHandler'), false);
         // reload
         pcntl_signal(SIGUSR1, array('\Workerman\Worker', 'signalHandler'), false);
+        // graceful reload
+        pcntl_signal(SIGQUIT, array('\Workerman\Worker', 'signalHandler'), false);
         // status
         pcntl_signal(SIGUSR2, array('\Workerman\Worker', 'signalHandler'), false);
         // connection status
@@ -860,14 +867,18 @@ class Worker
         pcntl_signal(SIGTERM, SIG_IGN, false);
         // uninstall reload signal handler
         pcntl_signal(SIGUSR1, SIG_IGN, false);
-        // uninstall  status signal handler
+        // uninstall graceful reload signal handler
+        pcntl_signal(SIGQUIT, SIG_IGN, false);
+        // uninstall status signal handler
         pcntl_signal(SIGUSR2, SIG_IGN, false);
         // reinstall stop signal handler
         self::$globalEvent->add(SIGINT, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall graceful stop signal handler
         self::$globalEvent->add(SIGTERM, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
-        // reinstall  reload signal handler
+        // reinstall reload signal handler
         self::$globalEvent->add(SIGUSR1, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        // reinstall graceful reload signal handler
+        self::$globalEvent->add(SIGQUIT, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall  status signal handler
         self::$globalEvent->add(SIGUSR2, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall connection status signal handler
@@ -893,7 +904,13 @@ class Worker
                 self::stopAll();
                 break;
             // Reload.
+            case SIGQUIT:
             case SIGUSR1:
+                if($signal === SIGQUIT){
+                    self::$_gracefulStop = true;
+                }else{
+                    self::$_gracefulStop = false;
+                }
                 self::$_pidsToRestart = self::getAllWorkerPids();
                 self::reload();
                 break;
@@ -1275,6 +1292,12 @@ class Worker
                     self::initId();
                 }
             }
+            
+            if(self::$_gracefulStop){
+                $sig = SIGQUIT;
+            }else{
+                $sig = SIGUSR1;
+            }
 
             // Send reload signal to all child processes.
             $reloadable_pid_array = array();
@@ -1287,7 +1310,7 @@ class Worker
                 } else {
                     foreach ($worker_pid_array as $pid) {
                         // Send reload signal to a worker process which reloadable is false.
-                        posix_kill($pid, SIGUSR1);
+                        posix_kill($pid, $sig);
                     }
                 }
             }
@@ -1305,7 +1328,7 @@ class Worker
             // Continue reload.
             $one_worker_pid = current(self::$_pidsToRestart);
             // Send reload signal to a worker process.
-            posix_kill($one_worker_pid, SIGUSR1);
+            posix_kill($one_worker_pid, $sig);
             // If the process does not exit after self::KILL_WORKER_TIMER_TIME seconds try to kill it.
             Timer::add(self::KILL_WORKER_TIMER_TIME, 'posix_kill', array($one_worker_pid, SIGKILL), false);
         } // For child processes.
