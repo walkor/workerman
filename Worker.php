@@ -1377,7 +1377,8 @@ class Worker
      *
      * @return number
      */
-    public static function getStatus(){
+    public static function getStatus()
+    {
         return self::$_status;
     }
     
@@ -1386,7 +1387,8 @@ class Worker
      *
      * @return number
      */
-    public static function getGracefulStop(){
+    public static function getGracefulStop()
+    {
         return self::$_gracefulStop;
     }
 
