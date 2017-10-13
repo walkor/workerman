@@ -464,9 +464,12 @@ class Worker
         $backtrace        = debug_backtrace();
         self::$_startFile = $backtrace[count($backtrace) - 1]['file'];
 
+
+        $unique_prefix = str_replace('/', '_', self::$_startFile);
+
         // Pid file.
         if (empty(self::$pidFile)) {
-            self::$pidFile = __DIR__ . "/../" . str_replace('/', '_', self::$_startFile) . ".pid";
+            self::$pidFile = __DIR__ . "/../$unique_prefix.pid";
         }
 
         // Log file.
@@ -484,7 +487,7 @@ class Worker
 
         // For statistics.
         self::$_globalStatistics['start_timestamp'] = time();
-        self::$_statisticsFile                      = sys_get_temp_dir() . '/workerman.status';
+        self::$_statisticsFile                      = sys_get_temp_dir() . "/$unique_prefix.status";
 
         // Process title.
         self::setProcessTitle('WorkerMan: master process  start_file=' . self::$_startFile);
@@ -615,7 +618,7 @@ class Worker
             $start_file = $argv[0];
             self::safeEcho("Input \"php $start_file stop\" to quit. Start success.\n\n");
         } else {
-            self::safeEcho("Press Ctrl-C to quit. Start success.\n");
+            self::safeEcho("Press Ctrl+C to quit. Start success.\n");
         }
     }
 
@@ -689,9 +692,15 @@ class Worker
                     // Sleep 1 second.
                     sleep(1);
                     // Clear terminal.
-                    echo chr(27).chr(91).chr(72).chr(27).chr(91).chr(50).chr(74);
+                    if ($command2 === '-d') {
+                        echo "\33[H\33[2J\33(B\33[m";
+                    }
                     // Echo status data.
                     echo self::formatStatusData();
+                    if ($command2 !== '-d') {
+                        exit(0);
+                    }
+                    echo "\nPress Ctrl+C to quit.\n\n";
                 }
                 exit(0);
             case 'connections':
