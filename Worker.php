@@ -223,6 +223,13 @@ class Worker
      * @var string
      */
     protected $_autoloadRootPath = '';
+    
+    /**
+     * Pause listening or not.
+     *
+     * @var string
+     */
+    protected $_pauseListen = false;
 
     /**
      * Daemonize.
@@ -1608,7 +1615,7 @@ class Worker
      */
     public function listen()
     {
-        if (!$this->_socketName || $this->_mainSocket) {
+        if (!$this->_socketName) {
             return;
         }
 
@@ -1677,13 +1684,14 @@ class Worker
         }
 
         // Register a listener to be notified when server socket is ready to read.
-        if (self::$globalEvent) {
+        if (self::$globalEvent || $this->_pauseListen) {
             if ($this->transport !== 'udp') {
                 self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ, array($this, 'acceptConnection'));
             } else {
                 self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ,
                     array($this, 'acceptUdpConnection'));
             }
+            $this->_pauseListen = false;
         }
     }
 
@@ -1695,6 +1703,7 @@ class Worker
     public function unlisten() {
         if (self::$globalEvent && $this->_mainSocket) {
             self::$globalEvent->del($this->_mainSocket, EventInterface::EV_READ);
+            $this->_pauseListen = true;
         }
     }
 
@@ -1787,10 +1796,7 @@ class Worker
             }
         }
         // Remove listener for server socket.
-        if ($this->_mainSocket) {
-            self::$globalEvent->del($this->_mainSocket, EventInterface::EV_READ);
-            @fclose($this->_mainSocket);
-        }
+        $this->unlisten();
     }
 
     /**
