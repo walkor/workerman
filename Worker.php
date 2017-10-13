@@ -767,7 +767,6 @@ class Worker
                     $sig = SIGUSR1;
                 }
                 posix_kill($master_pid, $sig);
-                self::log("Workerman[$start_file] reload");
                 exit;
             default :
                 exit($usage);
