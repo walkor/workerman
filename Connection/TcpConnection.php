@@ -881,7 +881,7 @@ class TcpConnection extends ConnectionInterface
                 $mod=round((self::$statistics['connection_count']+1)/3);
             }
             if(0 === self::$statistics['connection_count']%$mod){
-                Worker::log('worker('.posix_getpid().') remains '.self::$statistics['connection_count'].' connection(s)'."\r");
+                Worker::log('worker('.posix_getpid().') remains '.self::$statistics['connection_count'].' connection(s)');
             }
             if(0 === self::$statistics['connection_count']){
                 Worker::$globalEvent->destroy();
