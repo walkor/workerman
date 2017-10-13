@@ -419,6 +419,13 @@ class Worker
         'unix'  => 'unix',
         'ssl'   => 'tcp'
     );
+    
+    /**
+     * Graceful stop or not.
+     *
+     * @var string
+     */
+    protected static $_gracefulStop = false;
 
     /**
      * Run all worker instances.
@@ -716,9 +723,16 @@ class Worker
                 exit(0);
             case 'restart':
             case 'stop':
+                if($command2 === '-g'){
+                    self::$_gracefulStop = true;
+                    $sig = SIGTERM;
+                }else{
+                    self::$_gracefulStop = false;
+                    $sig = SIGINT;
+                }
                 self::log("Workerman[$start_file] is stoping ...");
                 // Send stop signal to master process.
-                $master_pid && posix_kill($master_pid, SIGINT);
+                $master_pid && posix_kill($master_pid, $sig);
                 // Timeout.
                 $timeout    = 5;
                 $start_time = time();
@@ -727,7 +741,7 @@ class Worker
                     $master_is_alive = $master_pid && posix_kill($master_pid, 0);
                     if ($master_is_alive) {
                         // Timeout?
-                        if (time() - $start_time >= $timeout) {
+                        if (!self::$_gracefulStop && time() - $start_time >= $timeout) {
                             self::log("Workerman[$start_file] stop fail");
                             exit;
                         }
@@ -821,6 +835,8 @@ class Worker
     {
         // stop
         pcntl_signal(SIGINT, array('\Workerman\Worker', 'signalHandler'), false);
+        // graceful stop
+        pcntl_signal(SIGTERM, array('\Workerman\Worker', 'signalHandler'), false);
         // reload
         pcntl_signal(SIGUSR1, array('\Workerman\Worker', 'signalHandler'), false);
         // status
@@ -840,12 +856,16 @@ class Worker
     {
         // uninstall stop signal handler
         pcntl_signal(SIGINT, SIG_IGN, false);
+        // uninstall graceful stop signal handler
+        pcntl_signal(SIGTERM, SIG_IGN, false);
         // uninstall reload signal handler
         pcntl_signal(SIGUSR1, SIG_IGN, false);
         // uninstall  status signal handler
         pcntl_signal(SIGUSR2, SIG_IGN, false);
         // reinstall stop signal handler
         self::$globalEvent->add(SIGINT, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        // reinstall graceful stop signal handler
+        self::$globalEvent->add(SIGTERM, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall  reload signal handler
         self::$globalEvent->add(SIGUSR1, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall  status signal handler
@@ -864,8 +884,13 @@ class Worker
         switch ($signal) {
             // Stop.
             case SIGINT:
+                self::$_gracefulStop = false;
                 self::stopAll();
                 break;
+            // Graceful stop.
+            case SIGTERM:
+                self::$_gracefulStop = true;
+                self::stopAll();
             // Reload.
             case SIGUSR1:
                 self::$_pidsToRestart = self::getAllWorkerPids();
@@ -1318,9 +1343,16 @@ class Worker
             self::log("Workerman[" . basename(self::$_startFile) . "] Stopping ...");
             $worker_pid_array = self::getAllWorkerPids();
             // Send stop signal to all child processes.
+            if(self::$_gracefulStop){
+                $sig = SIGTERM;
+            }else{
+                $sig = SIGINT;
+            }
             foreach ($worker_pid_array as $worker_pid) {
-                posix_kill($worker_pid, SIGINT);
-                Timer::add(self::KILL_WORKER_TIMER_TIME, 'posix_kill', array($worker_pid, SIGKILL), false);
+                posix_kill($worker_pid, $sig);
+                if(!self::$_gracefulStop){
+                    Timer::add(self::KILL_WORKER_TIMER_TIME, 'posix_kill', array($worker_pid, SIGKILL), false);
+                }
             }
             // Remove statistics file.
             if (is_file(self::$_statisticsFile)) {
@@ -1332,9 +1364,29 @@ class Worker
             foreach (self::$_workers as $worker) {
                 $worker->stop();
             }
-            self::$globalEvent->destroy();
-            exit(0);
+            if(!self::$_gracefulStop) {
+                self::$globalEvent->destroy();
+                exit(0);
+            }
         }
+    }
+    
+    /**
+     * Get process status.
+     *
+     * @return number
+     */
+    public static function getStatus(){
+        return self::$_status;
+    }
+    
+    /**
+     * If stop gracefully.
+     *
+     * @return number
+     */
+    public static function getGracefulStop(){
+        return self::$_gracefulStop;
     }
 
     /**
