@@ -1788,7 +1788,8 @@ class Worker
      *
      * @return void
      */
-    public function unlisten() {
+    public function unlisten()
+    {
         if (self::$globalEvent && $this->_mainSocket) {
             self::$globalEvent->del($this->_mainSocket, EventInterface::EV_READ);
             $this->_pauseListen = true;
