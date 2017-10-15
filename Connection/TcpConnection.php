@@ -876,14 +876,16 @@ class TcpConnection extends ConnectionInterface
     {
         static $mod;
         self::$statistics['connection_count']--;
-        if(Worker::getGracefulStop() && Worker::getStatus() === Worker::STATUS_SHUTDOWN){
-            if(!isset($mod)){
-                $mod=round((self::$statistics['connection_count']+1)/3);
+        if (Worker::getGracefulStop()) {
+            if (!isset($mod)) {
+                $mod = ceil((self::$statistics['connection_count'] + 1) / 3);
             }
-            if(0 === self::$statistics['connection_count']%$mod){
-                Worker::log('worker('.posix_getpid().') remains '.self::$statistics['connection_count'].' connection(s)');
+
+            if (0 === self::$statistics['connection_count'] % $mod) {
+                Worker::log('worker[' . posix_getpid() . '] remains ' . self::$statistics['connection_count'] . ' connection(s)');
             }
-            if(0 === self::$statistics['connection_count']){
+
+            if(0 === self::$statistics['connection_count']) {
                 Worker::$globalEvent->destroy();
                 exit(0);
             }
