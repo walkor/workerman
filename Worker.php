@@ -1368,9 +1368,9 @@ class Worker
             self::log("Workerman[" . basename(self::$_startFile) . "] Stopping ...");
             $worker_pid_array = self::getAllWorkerPids();
             // Send stop signal to all child processes.
-            if(self::$_gracefulStop){
+            if (self::$_gracefulStop) {
                 $sig = SIGTERM;
-            }else{
+            } else {
                 $sig = SIGINT;
             }
             foreach ($worker_pid_array as $worker_pid) {
@@ -1389,7 +1389,7 @@ class Worker
             foreach (self::$_workers as $worker) {
                 $worker->stop();
             }
-            if(!self::$_gracefulStop) {
+            if(!self::$_gracefulStop || ConnectionInterface::$statistics['connection_count'] <= 0) {
                 self::$globalEvent->destroy();
                 exit(0);
             }
@@ -1409,7 +1409,7 @@ class Worker
     /**
      * If stop gracefully.
      *
-     * @return number
+     * @return boolean
      */
     public static function getGracefulStop()
     {
