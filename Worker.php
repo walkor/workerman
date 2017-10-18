@@ -229,7 +229,7 @@ class Worker
      *
      * @var string
      */
-    protected $_pauseAccept = false;
+    protected $_pauseAccept = true;
 
     /**
      * Daemonize.
@@ -1792,7 +1792,7 @@ class Worker
      */
     public function pauseAccept()
     {
-        if (self::$globalEvent && $this->_mainSocket && false === $this->_pauseAccept) {
+        if (self::$globalEvent && false === $this->_pauseAccept && $this->_mainSocket) {
             self::$globalEvent->del($this->_mainSocket, EventInterface::EV_READ);
             $this->_pauseAccept = true;
         }
@@ -1806,7 +1806,7 @@ class Worker
     public function resumeAccept()
     {
         // Register a listener to be notified when server socket is ready to read.
-        if (self::$globalEvent && $this->_pauseAccept && $this->_mainSocket) {
+        if (self::$globalEvent && true === $this->_pauseAccept && $this->_mainSocket) {
             if ($this->transport !== 'udp') {
                 self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ, array($this, 'acceptConnection'));
             } else {
@@ -1847,16 +1847,7 @@ class Worker
         if (!self::$globalEvent) {
             $event_loop_class = self::getEventLoopName();
             self::$globalEvent = new $event_loop_class;
-            // Register a listener to be notified when server socket is ready to read.
-            if ($this->_socketName) {
-                if ($this->transport !== 'udp') {
-                    self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ,
-                        array($this, 'acceptConnection'));
-                } else {
-                    self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ,
-                        array($this, 'acceptUdpConnection'));
-                }
-            }
+            $this->resumeAccept();
         }
 
         // Reinstall signal.
