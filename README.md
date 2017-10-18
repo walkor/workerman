@@ -1,5 +1,10 @@
 # Workerman
 [![Gitter](https://badges.gitter.im/walkor/Workerman.svg)](https://gitter.im/walkor/Workerman?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge)
+[![Latest Stable Version](https://poser.pugx.org/workerman/workerman/v/stable)](https://packagist.org/packages/workerman/workerman)
+[![Total Downloads](https://poser.pugx.org/workerman/workerman/downloads)](https://packagist.org/packages/workerman/workerman)
+[![Monthly Downloads](https://poser.pugx.org/workerman/workerman/d/monthly)](https://packagist.org/packages/workerman/workerman)
+[![Daily Downloads](https://poser.pugx.org/workerman/workerman/d/daily)](https://packagist.org/packages/workerman/workerman)
+[![License](https://poser.pugx.org/workerman/workerman/license)](https://packagist.org/packages/workerman/workerman)
 
 ## What is it
 Workerman is an asynchronous event driven PHP framework with high performance for easily building fast, scalable network applications. Supports HTTP, Websocket, SSL and other custom protocols. Supports libevent, [HHVM](https://github.com/facebook/hhvm) , [ReactPHP](https://github.com/reactphp/react).
@@ -128,7 +133,7 @@ $tcp_worker->onClose = function($connection)
 Worker::runAll();
 ```
 
-### Enable SSL.
+### Enable SSL
 ```php
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
@@ -137,8 +142,9 @@ use Workerman\Worker;
 // SSL context.
 $context = array(
     'ssl' => array(
-        'local_cert' => '/your/path/of/server.pem',
-        'local_pk'   => '/your/path/of/server.key',
+        'local_cert'  => '/your/path/of/server.pem',
+        'local_pk'    => '/your/path/of/server.key',
+        'verify_peer' => false,
     )
 );
 
@@ -494,8 +500,8 @@ Worker::runAll();
 ```php start.php start -d  ```  
 ![workerman start](http://www.workerman.net/img/workerman-start.png)  
 ```php start.php status  ```  
-![workerman satus](http://www.workerman.net/img/workerman-status.png?a=123)
-```php start.php connections
+![workerman satus](http://www.workerman.net/img/workerman-status.png?a=123)  
+```php start.php connections```  
 ```php start.php stop  ```  
 ```php start.php restart  ```  
 ```php start.php reload  ```  
@@ -504,7 +510,7 @@ Worker::runAll();
 
 中文主页:[http://www.workerman.net](http://www.workerman.net)
 
-中文文档: [http://doc3.workerman.net](http://doc3.workerman.net)
+中文文档: [http://doc.workerman.net](http://doc.workerman.net)
 
 Documentation:[https://github.com/walkor/workerman-manual](https://github.com/walkor/workerman-manual/blob/master/english/src/SUMMARY.md)
 
@@ -593,73 +599,12 @@ Percentage of the requests served within a certain time (ms)
 
 ## Other links with workerman
 
-## [PHPSocket.IO](https://github.com/walkor/phpsocket.io)  
-[Live demo](http://www.workerman.net/demos/phpsocketio-chat/)  
-[Source code](https://github.com/walkor/phpsocket.io)  
-![phpsocket.io](http://www.workerman.net/img/socket.io.png)  
+[PHPSocket.IO](https://github.com/walkor/phpsocket.io)   
+[php-socks5](https://github.com/walkor/php-socks5)  
+[php-http-proxy](https://github.com/walkor/php-http-proxy)  
 
-## [tadpole](http://kedou.workerman.net/)  
-[Live demo](http://kedou.workerman.net/)  
-[Source code](https://github.com/walkor/workerman)  
-![workerman todpole](http://www.workerman.net/img/workerman-todpole.png)  
-
-## [BrowserQuest](http://www.workerman.net/demos/browserquest/)   
-[Live demo](http://www.workerman.net/demos/browserquest/)  
-[Source code](https://github.com/walkor/BrowserQuest-PHP)  
-![BrowserQuest width workerman](http://www.workerman.net/img/browserquest.jpg) 
-
-## [web vmstat](http://www.workerman.net/demos/vmstat/)   
-[Live demo](http://www.workerman.net/demos/vmstat/)  
-[Source code](https://github.com/walkor/workerman-vmstat)  
-![web vmstat](http://www.workerman.net/img/workerman-vmstat.png)   
-
-## [live-ascii-camera](https://github.com/walkor/live-ascii-camera)   
-[Live demo camera page](http://www.workerman.net/demos/live-ascii-camera/camera.html)  
-[Live demo receive page](http://www.workerman.net/demos/live-ascii-camera/)  
-[Source code](https://github.com/walkor/live-ascii-camera)  
-![live-ascii-camera](http://www.workerman.net/img/live-ascii-camera.png)   
-
-## [live-camera](https://github.com/walkor/live-camera)   
-[Live demo camera page](http://www.workerman.net/demos/live-camera/camera.html)  
-[Live demo receive page](http://www.workerman.net/demos/live-camera/)  
-[Source code](https://github.com/walkor/live-camera)  
-![live-camera](http://www.workerman.net/img/live-camera.jpg)  
-
-## [chat room](http://chat.workerman.net/)  
-[Live demo](http://chat.workerman.net/)  
-[Source code](https://github.com/walkor/workerman-chat)  
-![workerman-chat](http://www.workerman.net/img/workerman-chat.png)  
-
-## [statistics](http://www.workerman.net:55757/)  
-[Live demo](http://www.workerman.net:55757/)  
-[Source code](https://github.com/walkor/workerman-statistics)  
-![workerman-statistics](http://www.workerman.net/img/workerman-statistics.png)  
-
-## [flappybird](http://workerman.net/demos/flappy-bird/)  
-[Live demo](http://workerman.net/demos/flappy-bird/)  
-[Source code](https://github.com/walkor/workerman-flappy-bird)  
-![workerman-statistics](http://www.workerman.net/img/workerman-flappy-bird.png)  
-
-## [jsonRpc](https://github.com/walkor/workerman-JsonRpc)  
-[Source code](https://github.com/walkor/workerman-JsonRpc)  
-![workerman-jsonRpc](http://www.workerman.net/img/workerman-json-rpc.png)  
-
-## [thriftRpc](https://github.com/walkor/workerman-thrift)  
-[Source code](https://github.com/walkor/workerman-thrift)  
-![workerman-thriftRpc](http://www.workerman.net/img/workerman-thrift.png)  
-
-## [web-msg-sender](https://github.com/walkor/web-msg-sender)  
-[Live demo send page](http://workerman.net:3333/)  
-[Live demo receive page](http://workerman.net/web-msg-sender.html)  
-[Source code](https://github.com/walkor/web-msg-sender)  
-![web-msg-sender](http://www.workerman.net/img/web-msg-sender.png)  
-
-## [shadowsocks-php](https://github.com/walkor/shadowsocks-php)
-[Source code](https://github.com/walkor/shadowsocks-php)  
-![shadowsocks-php](http://www.workerman.net/img/shadowsocks-php.png)  
-
-## [queue](https://github.com/walkor/workerman-queue)
-[Source code](https://github.com/walkor/workerman-queue)  
+## Donate
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UQGGS9UB35WWG"><img src="http://donate.workerman.net/img/donate.png"></a>
 
 ## LICENSE
 

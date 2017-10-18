@@ -225,6 +225,13 @@ class Worker
     protected $_autoloadRootPath = '';
 
     /**
+     * Pause accept new connections or not.
+     *
+     * @var string
+     */
+    protected $_pauseAccept = true;
+
+    /**
      * Daemonize.
      *
      * @var bool
@@ -414,6 +421,13 @@ class Worker
     );
 
     /**
+     * Graceful stop or not.
+     *
+     * @var string
+     */
+    protected static $_gracefulStop = false;
+
+    /**
      * Run all worker instances.
      *
      * @return void
@@ -457,9 +471,12 @@ class Worker
         $backtrace        = debug_backtrace();
         self::$_startFile = $backtrace[count($backtrace) - 1]['file'];
 
+
+        $unique_prefix = str_replace('/', '_', self::$_startFile);
+
         // Pid file.
         if (empty(self::$pidFile)) {
-            self::$pidFile = __DIR__ . "/../" . str_replace('/', '_', self::$_startFile) . ".pid";
+            self::$pidFile = __DIR__ . "/../$unique_prefix.pid";
         }
 
         // Log file.
@@ -477,7 +494,7 @@ class Worker
 
         // For statistics.
         self::$_globalStatistics['start_timestamp'] = time();
-        self::$_statisticsFile                      = sys_get_temp_dir() . '/workerman.status';
+        self::$_statisticsFile                      = sys_get_temp_dir() . "/$unique_prefix.status";
 
         // Process title.
         self::setProcessTitle('WorkerMan: master process  start_file=' . self::$_startFile);
@@ -593,14 +610,14 @@ class Worker
         self::safeEcho('Workerman version:'. Worker::VERSION. "          PHP version:". PHP_VERSION. "\n");
         self::safeEcho("------------------------\033[47;30m WORKERS \033[0m-------------------------------\n");
         self::safeEcho("\033[47;30muser\033[0m". str_pad('',
-            self::$_maxUserNameLength + 2 - strlen('user')). "\033[47;30mworker\033[0m". str_pad('',
-            self::$_maxWorkerNameLength + 2 - strlen('worker')). "\033[47;30mlisten\033[0m". str_pad('',
-            self::$_maxSocketNameLength + 2 - strlen('listen')). "\033[47;30mprocesses\033[0m \033[47;30m". "status\033[0m\n");
+                self::$_maxUserNameLength + 2 - strlen('user')). "\033[47;30mworker\033[0m". str_pad('',
+                self::$_maxWorkerNameLength + 2 - strlen('worker')). "\033[47;30mlisten\033[0m". str_pad('',
+                self::$_maxSocketNameLength + 2 - strlen('listen')). "\033[47;30mprocesses\033[0m \033[47;30m". "status\033[0m\n");
 
         foreach (self::$_workers as $worker) {
             self::safeEcho(str_pad($worker->user, self::$_maxUserNameLength + 2). str_pad($worker->name,
-                self::$_maxWorkerNameLength + 2). str_pad($worker->getSocketName(),
-                self::$_maxSocketNameLength + 2). str_pad(' ' . $worker->count, 9). " \033[32;40m [OK] \033[0m\n");
+                    self::$_maxWorkerNameLength + 2). str_pad($worker->getSocketName(),
+                    self::$_maxSocketNameLength + 2). str_pad(' ' . $worker->count, 9). " \033[32;40m [OK] \033[0m\n");
         }
         self::safeEcho("----------------------------------------------------------------\n");
         if (self::$daemonize) {
@@ -608,7 +625,7 @@ class Worker
             $start_file = $argv[0];
             self::safeEcho("Input \"php $start_file stop\" to quit. Start success.\n\n");
         } else {
-            self::safeEcho("Press Ctrl-C to quit. Start success.\n");
+            self::safeEcho("Press Ctrl+C to quit. Start success.\n");
         }
     }
 
@@ -682,9 +699,15 @@ class Worker
                     // Sleep 1 second.
                     sleep(1);
                     // Clear terminal.
-                    echo chr(27).chr(91).chr(72).chr(27).chr(91).chr(50).chr(74);
+                    if ($command2 === '-d') {
+                        echo "\33[H\33[2J\33(B\33[m";
+                    }
                     // Echo status data.
                     echo self::formatStatusData();
+                    if ($command2 !== '-d') {
+                        exit(0);
+                    }
+                    echo "\nPress Ctrl+C to quit.\n\n";
                 }
                 exit(0);
             case 'connections':
@@ -700,9 +723,17 @@ class Worker
                 exit(0);
             case 'restart':
             case 'stop':
-                self::log("Workerman[$start_file] is stoping ...");
+                if ($command2 === '-g') {
+                    self::$_gracefulStop = true;
+                    $sig = SIGTERM;
+                    self::log("Workerman[$start_file] is gracefully stoping ...");
+                } else {
+                    self::$_gracefulStop = false;
+                    $sig = SIGINT;
+                    self::log("Workerman[$start_file] is stoping ...");
+                }
                 // Send stop signal to master process.
-                $master_pid && posix_kill($master_pid, SIGINT);
+                $master_pid && posix_kill($master_pid, $sig);
                 // Timeout.
                 $timeout    = 5;
                 $start_time = time();
@@ -711,7 +742,7 @@ class Worker
                     $master_is_alive = $master_pid && posix_kill($master_pid, 0);
                     if ($master_is_alive) {
                         // Timeout?
-                        if (time() - $start_time >= $timeout) {
+                        if (!self::$_gracefulStop && time() - $start_time >= $timeout) {
                             self::log("Workerman[$start_file] stop fail");
                             exit;
                         }
@@ -731,8 +762,12 @@ class Worker
                 }
                 break;
             case 'reload':
-                posix_kill($master_pid, SIGUSR1);
-                self::log("Workerman[$start_file] reload");
+                if($command2 === '-g'){
+                    $sig = SIGQUIT;
+                }else{
+                    $sig = SIGUSR1;
+                }
+                posix_kill($master_pid, $sig);
                 exit;
             default :
                 exit($usage);
@@ -805,8 +840,12 @@ class Worker
     {
         // stop
         pcntl_signal(SIGINT, array('\Workerman\Worker', 'signalHandler'), false);
+        // graceful stop
+        pcntl_signal(SIGTERM, array('\Workerman\Worker', 'signalHandler'), false);
         // reload
         pcntl_signal(SIGUSR1, array('\Workerman\Worker', 'signalHandler'), false);
+        // graceful reload
+        pcntl_signal(SIGQUIT, array('\Workerman\Worker', 'signalHandler'), false);
         // status
         pcntl_signal(SIGUSR2, array('\Workerman\Worker', 'signalHandler'), false);
         // connection status
@@ -824,14 +863,22 @@ class Worker
     {
         // uninstall stop signal handler
         pcntl_signal(SIGINT, SIG_IGN, false);
+        // uninstall graceful stop signal handler
+        pcntl_signal(SIGTERM, SIG_IGN, false);
         // uninstall reload signal handler
         pcntl_signal(SIGUSR1, SIG_IGN, false);
-        // uninstall  status signal handler
+        // uninstall graceful reload signal handler
+        pcntl_signal(SIGQUIT, SIG_IGN, false);
+        // uninstall status signal handler
         pcntl_signal(SIGUSR2, SIG_IGN, false);
         // reinstall stop signal handler
         self::$globalEvent->add(SIGINT, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
-        // reinstall  reload signal handler
+        // reinstall graceful stop signal handler
+        self::$globalEvent->add(SIGTERM, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        // reinstall reload signal handler
         self::$globalEvent->add(SIGUSR1, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        // reinstall graceful reload signal handler
+        self::$globalEvent->add(SIGQUIT, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall  status signal handler
         self::$globalEvent->add(SIGUSR2, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall connection status signal handler
@@ -848,10 +895,22 @@ class Worker
         switch ($signal) {
             // Stop.
             case SIGINT:
+                self::$_gracefulStop = false;
+                self::stopAll();
+                break;
+            // Graceful stop.
+            case SIGTERM:
+                self::$_gracefulStop = true;
                 self::stopAll();
                 break;
             // Reload.
+            case SIGQUIT:
             case SIGUSR1:
+                if($signal === SIGQUIT){
+                    self::$_gracefulStop = true;
+                }else{
+                    self::$_gracefulStop = false;
+                }
                 self::$_pidsToRestart = self::getAllWorkerPids();
                 self::reload();
                 break;
@@ -1234,6 +1293,12 @@ class Worker
                 }
             }
 
+            if (self::$_gracefulStop) {
+                $sig = SIGQUIT;
+            } else {
+                $sig = SIGUSR1;
+            }
+
             // Send reload signal to all child processes.
             $reloadable_pid_array = array();
             foreach (self::$_pidMap as $worker_id => $worker_pid_array) {
@@ -1245,7 +1310,7 @@ class Worker
                 } else {
                     foreach ($worker_pid_array as $pid) {
                         // Send reload signal to a worker process which reloadable is false.
-                        posix_kill($pid, SIGUSR1);
+                        posix_kill($pid, $sig);
                     }
                 }
             }
@@ -1263,9 +1328,11 @@ class Worker
             // Continue reload.
             $one_worker_pid = current(self::$_pidsToRestart);
             // Send reload signal to a worker process.
-            posix_kill($one_worker_pid, SIGUSR1);
+            posix_kill($one_worker_pid, $sig);
             // If the process does not exit after self::KILL_WORKER_TIMER_TIME seconds try to kill it.
-            Timer::add(self::KILL_WORKER_TIMER_TIME, 'posix_kill', array($one_worker_pid, SIGKILL), false);
+            if(!self::$_gracefulStop){
+                Timer::add(self::KILL_WORKER_TIMER_TIME, 'posix_kill', array($one_worker_pid, SIGKILL), false);
+            }
         } // For child processes.
         else {
             reset(self::$_workers);
@@ -1299,12 +1366,19 @@ class Worker
         self::$_status = self::STATUS_SHUTDOWN;
         // For master process.
         if (self::$_masterPid === posix_getpid()) {
-            self::log("Workerman[" . basename(self::$_startFile) . "] Stopping ...");
+            self::log("Workerman[" . basename(self::$_startFile) . "] stopping ...");
             $worker_pid_array = self::getAllWorkerPids();
             // Send stop signal to all child processes.
+            if (self::$_gracefulStop) {
+                $sig = SIGTERM;
+            } else {
+                $sig = SIGINT;
+            }
             foreach ($worker_pid_array as $worker_pid) {
-                posix_kill($worker_pid, SIGINT);
-                Timer::add(self::KILL_WORKER_TIMER_TIME, 'posix_kill', array($worker_pid, SIGKILL), false);
+                posix_kill($worker_pid, $sig);
+                if(!self::$_gracefulStop){
+                    Timer::add(self::KILL_WORKER_TIMER_TIME, 'posix_kill', array($worker_pid, SIGKILL), false);
+                }
             }
             // Remove statistics file.
             if (is_file(self::$_statisticsFile)) {
@@ -1316,9 +1390,31 @@ class Worker
             foreach (self::$_workers as $worker) {
                 $worker->stop();
             }
-            self::$globalEvent->destroy();
-            exit(0);
+            if (!self::$_gracefulStop || ConnectionInterface::$statistics['connection_count'] <= 0) {
+                self::$globalEvent->destroy();
+                exit(0);
+            }
         }
+    }
+
+    /**
+     * Get process status.
+     *
+     * @return number
+     */
+    public static function getStatus()
+    {
+        return self::$_status;
+    }
+
+    /**
+     * If stop gracefully.
+     *
+     * @return boolean
+     */
+    public static function getGracefulStop()
+    {
+        return self::$_gracefulStop;
     }
 
     /**
@@ -1595,93 +1691,129 @@ class Worker
             }
             $this->_context = stream_context_create($context_option);
         }
-
-        // Set an empty onMessage callback.
-        $this->onMessage = function () {
-        };
     }
 
+
     /**
-     * Listen port.
+     * Listen.
      *
      * @throws Exception
      */
     public function listen()
     {
-        if (!$this->_socketName || $this->_mainSocket) {
+        if (!$this->_socketName) {
             return;
         }
 
         // Autoload.
         Autoloader::setRootPath($this->_autoloadRootPath);
 
-        // Get the application layer communication protocol and listening address.
-        list($scheme, $address) = explode(':', $this->_socketName, 2);
-        // Check application layer protocol class.
-        if (!isset(self::$_builtinTransports[$scheme])) {
-            $scheme         = ucfirst($scheme);
-            $this->protocol = '\\Protocols\\' . $scheme;
-            if (!class_exists($this->protocol)) {
-                $this->protocol = "\\Workerman\\Protocols\\$scheme";
+        if (!$this->_mainSocket) {
+            // Get the application layer communication protocol and listening address.
+            list($scheme, $address) = explode(':', $this->_socketName, 2);
+            // Check application layer protocol class.
+            if (!isset(self::$_builtinTransports[$scheme])) {
+                $scheme         = ucfirst($scheme);
+                $this->protocol = '\\Protocols\\' . $scheme;
                 if (!class_exists($this->protocol)) {
-                    throw new Exception("class \\Protocols\\$scheme not exist");
+                    $this->protocol = "\\Workerman\\Protocols\\$scheme";
+                    if (!class_exists($this->protocol)) {
+                        throw new Exception("class \\Protocols\\$scheme not exist");
+                    }
+                }
+
+                if (!isset(self::$_builtinTransports[$this->transport])) {
+                    throw new \Exception('Bad worker->transport ' . var_export($this->transport, true));
+                }
+            } else {
+                $this->transport = $scheme;
+            }
+
+            $local_socket = self::$_builtinTransports[$this->transport] . ":" . $address;
+
+            // Flag.
+            $flags = $this->transport === 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
+            $errno = 0;
+            $errmsg = '';
+            // SO_REUSEPORT.
+            if ($this->reusePort) {
+                stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
+            }
+
+            // Create an Internet or Unix domain server socket.
+            $this->_mainSocket = stream_socket_server($local_socket, $errno, $errmsg, $flags, $this->_context);
+            if (!$this->_mainSocket) {
+                throw new Exception($errmsg);
+            }
+
+            if ($this->transport === 'ssl') {
+                stream_socket_enable_crypto($this->_mainSocket, false);
+            } elseif ($this->transport === 'unix') {
+                $socketFile = substr($address, 2);
+                if ($this->user) {
+                    chown($socketFile, $this->user);
+                }
+                if ($this->group) {
+                    chgrp($socketFile, $this->group);
                 }
             }
 
-            if (!isset(self::$_builtinTransports[$this->transport])) {
-                throw new \Exception('Bad worker->transport ' . var_export($this->transport, true));
+            // Try to open keepalive for tcp and disable Nagle algorithm.
+            if (function_exists('socket_import_stream') && self::$_builtinTransports[$this->transport] === 'tcp') {
+                $socket = socket_import_stream($this->_mainSocket);
+                @socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
+                @socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
             }
-        } else {
-            $this->transport = $scheme;
+
+            // Non blocking.
+            stream_set_blocking($this->_mainSocket, 0);
         }
 
-        $local_socket = self::$_builtinTransports[$this->transport] . ":" . $address;
+        $this->resumeAccept();
+    }
 
-        // Flag.
-        $flags  = $this->transport === 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
-        $errno  = 0;
-        $errmsg = '';
-        // SO_REUSEPORT.
-        if ($this->reusePort) {
-            stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
+    /**
+     * Unlisten.
+     *
+     * @return void
+     */
+    public function unlisten() {
+        $this->pauseAccept();
+        if ($this->_mainSocket) {
+            @fclose($this->_mainSocket);
+            $this->_mainSocket = null;
         }
+    }
 
-        // Create an Internet or Unix domain server socket.
-        $this->_mainSocket = stream_socket_server($local_socket, $errno, $errmsg, $flags, $this->_context);
-        if (!$this->_mainSocket) {
-            throw new Exception($errmsg);
+    /**
+     * Pause accept new connections.
+     *
+     * @return void
+     */
+    public function pauseAccept()
+    {
+        if (self::$globalEvent && false === $this->_pauseAccept && $this->_mainSocket) {
+            self::$globalEvent->del($this->_mainSocket, EventInterface::EV_READ);
+            $this->_pauseAccept = true;
         }
+    }
 
-        if ($this->transport === 'ssl') {
-            stream_socket_enable_crypto($this->_mainSocket, false);
-        } elseif ($this->transport === 'unix') {
-            $socketFile = substr($address, 2);
-            if ($this->user) {
-                chown($socketFile, $this->user);
-            }
-            if ($this->group) {
-                chgrp($socketFile, $this->group);
-            }
-        }
-
-        // Try to open keepalive for tcp and disable Nagle algorithm.
-        if (function_exists('socket_import_stream') && self::$_builtinTransports[$this->transport] === 'tcp') {
-            $socket = socket_import_stream($this->_mainSocket);
-            @socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
-            @socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
-        }
-
-        // Non blocking.
-        stream_set_blocking($this->_mainSocket, 0);
-
+    /**
+     * Resume accept new connections.
+     *
+     * @return void
+     */
+    public function resumeAccept()
+    {
         // Register a listener to be notified when server socket is ready to read.
-        if (self::$globalEvent) {
+        if (self::$globalEvent && true === $this->_pauseAccept && $this->_mainSocket) {
             if ($this->transport !== 'udp') {
                 self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ, array($this, 'acceptConnection'));
             } else {
                 self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ,
                     array($this, 'acceptUdpConnection'));
             }
+            $this->_pauseAccept = false;
         }
     }
 
@@ -1715,16 +1847,7 @@ class Worker
         if (!self::$globalEvent) {
             $event_loop_class = self::getEventLoopName();
             self::$globalEvent = new $event_loop_class;
-            // Register a listener to be notified when server socket is ready to read.
-            if ($this->_socketName) {
-                if ($this->transport !== 'udp') {
-                    self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ,
-                        array($this, 'acceptConnection'));
-                } else {
-                    self::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ,
-                        array($this, 'acceptUdpConnection'));
-                }
-            }
+            $this->resumeAccept();
         }
 
         // Reinstall signal.
@@ -1732,6 +1855,11 @@ class Worker
 
         // Init Timer.
         Timer::init(self::$globalEvent);
+
+        // Set an empty onMessage callback.
+        if (empty($this->onMessage)) {
+            $this->onMessage = function () {};
+        }
 
         // Try to emit onWorkerStart callback.
         if ($this->onWorkerStart) {
@@ -1774,10 +1902,17 @@ class Worker
             }
         }
         // Remove listener for server socket.
-        if ($this->_mainSocket) {
-            self::$globalEvent->del($this->_mainSocket, EventInterface::EV_READ);
-            @fclose($this->_mainSocket);
+        $this->unlisten();
+        // Close all connections for the worker.
+        if (!self::$_gracefulStop) {
+            foreach ($this->connections as $connection) {
+                $connection->close();
+            }
         }
+        // Clear callback.
+        $this->onMessage = $this->onClose = $this->onError = $this->onBufferDrain = $this->onBufferFull = null;
+        // Remove worker instance from self::$_workers.
+        unset(self::$_workers[$this->workerId]);
     }
 
     /**
