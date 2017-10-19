@@ -374,6 +374,7 @@ class Ws
         "Connection: Upgrade\r\n".
         "Upgrade: websocket\r\n".
         "Origin: ". (isset($connection->websocketOrigin) ? $connection->websocketOrigin : '*') ."\r\n".
+	(isset($connection->WSClientProtocol)?"Sec-WebSocket-Protocol: ".$connection->WSClientProtocol."\r\n":'').
         "Sec-WebSocket-Version: 13\r\n".
         "Sec-WebSocket-Key: " . base64_encode(md5(mt_rand(), true)) . "\r\n\r\n";
         $connection->send($header, true);
@@ -395,6 +396,16 @@ class Ws
         $pos = strpos($buffer, "\r\n\r\n");
         if ($pos) {
             // handshake complete
+
+	    // Get WebSocket subprotocol (if specified by server)
+    	    $header = explode("\r\n", substr($buffer, 0, $pos));
+	    foreach ($header as $hrow) {
+		if (preg_match("#^(.+?)\:(.+?)$#", $hrow, $m) && ($m[1] == "Sec-WebSocket-Protocol")) {
+		    $connection->WSServerProtocol = trim($m[2]);
+		}
+
+	    }
+
             $connection->handshakeStep = 2;
             $handshake_response_length = $pos + 4;
             // Try to emit onWebSocketConnect callback.
@@ -430,4 +441,13 @@ class Ws
         }
         return 0;
     }
+
+    public static function WSSetProtocol($connection, $params) {
+	$connection->WSClientProtocol = $params[0];
+    }
+
+    public static function WSGetServerProtocol($connection) {
+	return (property_exists($connection, 'WSServerProtocol')?$connection->WSServerProtocol:null);
+    }
+
 }
