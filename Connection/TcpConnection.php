@@ -254,6 +254,31 @@ class TcpConnection extends ConnectionInterface
         self::STATUS_CLOSED      => 'CLOSED',
     );
 
+
+    /**
+     * Adding support of custom functions within protocols
+     *
+     * @param string $name
+     * @param array  $arguments
+     */
+    public function __call($name, $arguments) {
+        // Try to emit custom function within protocol
+        if (method_exists($this->protocol, $name)) {
+            try {
+                return call_user_func(array($this->protocol, $name), $this, $arguments);
+            } catch (\Exception $e) {
+                Worker::log($e);
+                exit(250);
+            } catch (\Error $e) {
+                Worker::log($e);
+                exit(250);
+            }
+	} else {
+	    trigger_error('Call to undefined method '.__CLASS__.'::'.$name.'()', E_USER_ERROR);
+	}
+
+    }
+
     /**
      * Construct.
      *
