@@ -75,7 +75,7 @@ class Timer
      * Add a timer.
      *
      * @param int      $time_interval
-     * @param callback $func
+     * @param callable $func
      * @param mixed    $args
      * @param bool     $persistent
      * @return int/false
