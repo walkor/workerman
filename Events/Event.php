@@ -13,7 +13,6 @@
  */
 namespace Workerman\Events;
 
-use Mockery\Generator\Generator;
 use Workerman\Worker;
 
 /**
@@ -52,8 +51,6 @@ class Event implements EventInterface
      * @var int
      */
     protected static $_timerId = 1;
-
-    public $taskMap = [];
 
     /**
      * construct
