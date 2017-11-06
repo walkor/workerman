@@ -20,6 +20,7 @@ use Workerman\Worker;
  */
 class Libevent implements EventInterface
 {
+    use scheduler;
     /**
      * Event base.
      *

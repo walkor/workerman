@@ -21,7 +21,7 @@ use Workerman\Connection\UdpConnection;
 use Workerman\Lib\Timer;
 use Workerman\Events\Select;
 use Exception;
-
+use Workerman\lib\Task;
 /**
  * Worker class
  * A container for listening ports
@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.3';
+    const VERSION = '3.5.4';
 
     /**
      * Status starting.
@@ -411,6 +411,8 @@ class Worker
         'start_timestamp'  => 0,
         'worker_exit_info' => array()
     );
+
+    public  $isYield = false;
 
     /**
      * Available event loops.
@@ -2156,10 +2158,17 @@ class Worker
         $connection->onBufferDrain          = $this->onBufferDrain;
         $connection->onBufferFull           = $this->onBufferFull;
 
+
         // Try to emit onConnect callback.
         if ($this->onConnect) {
             try {
-                call_user_func($this->onConnect, $connection);
+                //if the mode is yield\the connection should be Generator
+                if($this->isYield){
+                    $task = new Task($this->onConnect($new_socket,$connection));
+                    self::$globalEvent->taskMap[$connection->id] = $task;
+                }else{
+                    call_user_func($this->onConnect, $connection);
+                }
             } catch (\Exception $e) {
                 static::log($e);
                 exit(250);
@@ -2169,6 +2178,8 @@ class Worker
             }
         }
     }
+
+
 
     /**
      * For udp package.

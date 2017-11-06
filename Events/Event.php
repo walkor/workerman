@@ -13,6 +13,7 @@
  */
 namespace Workerman\Events;
 
+use Mockery\Generator\Generator;
 use Workerman\Worker;
 
 /**
@@ -20,6 +21,7 @@ use Workerman\Worker;
  */
 class Event implements EventInterface
 {
+    use scheduler;
     /**
      * Event base.
      * @var object
@@ -50,7 +52,9 @@ class Event implements EventInterface
      * @var int
      */
     protected static $_timerId = 1;
-    
+
+    public $taskMap = [];
+
     /**
      * construct
      * @return void
@@ -59,6 +63,9 @@ class Event implements EventInterface
     {
         $this->_eventBase = new \EventBase();
     }
+
+
+
    
     /**
      * @see EventInterface::add()
