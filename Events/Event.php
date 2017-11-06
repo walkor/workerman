@@ -60,9 +60,6 @@ class Event implements EventInterface
     {
         $this->_eventBase = new \EventBase();
     }
-
-
-
    
     /**
      * @see EventInterface::add()

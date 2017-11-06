@@ -2179,8 +2179,6 @@ class Worker
         }
     }
 
-
-
     /**
      * For udp package.
      *
