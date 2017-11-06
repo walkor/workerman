@@ -20,7 +20,7 @@ use Workerman\Worker;
  */
 class Event implements EventInterface
 {
-    use scheduler;
+    use Scheduler;
     /**
      * Event base.
      * @var object

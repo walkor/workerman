@@ -7,7 +7,7 @@ namespace Workerman\Events;
 
 use Workerman\lib\Task;
 
-trait scheduler
+trait Scheduler
 {
     /**
      * id=>task
