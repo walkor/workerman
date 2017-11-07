@@ -23,7 +23,7 @@ trait Scheduler
      * @param $fd
      * @param $id
      */
-    public function commonFunc($fd,$connect_id){
+    public function commonFunc($fd,$what,$connect_id){
         $task = $func = $this->taskMap[$connect_id];
         if($task instanceof Task){
             $task->exec();
@@ -48,7 +48,7 @@ trait Scheduler
             case 'event':
                 $fd_key = (int)$fd;
                 $real_flag = $flag === self::EV_READ ? \Event::READ | \Event::PERSIST : \Event::WRITE | \Event::PERSIST;
-                $event = new \Event($this->_eventBase, $fd, $real_flag, array($this,'commonFunc'), array($fd,$connect_id));
+                $event = new \Event($this->_eventBase, $fd, $real_flag, array($this,'commonFunc'), $connect_id);
                 if (!$event||!$event->add()) {
                     return false;
                 }
@@ -58,7 +58,7 @@ trait Scheduler
                 $fd_key    = (int)$fd;
                 $real_flag = $flag === self::EV_READ ? EV_READ | EV_PERSIST : EV_WRITE | EV_PERSIST;
                 $event = event_new();
-                if (!event_set($event, $fd, $real_flag, array($this,'commonFunc'), array($fd,$connect_id))) {
+                if (!event_set($event, $fd, $real_flag, array($this,'commonFunc'), $connect_id)) {
                     return false;
                 }
                 if (!event_base_set($event, $this->_eventBase)) {

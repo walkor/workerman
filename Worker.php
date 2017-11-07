@@ -2164,7 +2164,7 @@ class Worker
             try {
                 //if the mode is yield\the connection should be Generator
                 if($this->isYield){
-                    $task = new Task($this->onConnect($new_socket,$connection));
+                    $task = new Task(($this->onConnect)($new_socket,$connection));
                     self::$globalEvent->taskMap[$connection->id] = $task;
                 }else{
                     call_user_func($this->onConnect, $connection);

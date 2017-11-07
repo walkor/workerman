@@ -12,7 +12,7 @@ class Task
     private $sendValue = null;
 
 
-    public function __construct($taskid,Generator $coroutine)
+    public function __construct(Generator $coroutine)
     {
         $this->coroutine = $coroutine;
     }
