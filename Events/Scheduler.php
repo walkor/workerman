@@ -23,56 +23,20 @@ trait Scheduler
      * @param $fd
      * @param $id
      */
-    public function commonFunc($fd,$what,$connect_id){
-        $task = $func = $this->taskMap[$connect_id];
-        if($task instanceof Task){
+    public function commonFunc($fd,$what,$params){
+        $connect_id = isset($params[0]) ? $params[0] : 0;
+        $task = isset($this->taskMap[$connect_id]) ? $this->taskMap[$connect_id] : NULL;
+        $func = isset($params[1]) ? $params[1] : NULL;
+
+        if($func && is_callable($func)){
+            call_user_func($func,$fd);
+        }
+        if($task && $task instanceof Task){
             $task->exec();
             if($task->isFinished()){
                 unset($this->taskMap[$connect_id]);
             }
-        }else{
-            $func($fd,$connect_id);
         }
     }
 
-    /**
-     * add fd to react.event is best
-     * @param $fd
-     * @param $flag
-     * @param $connect_id
-     * @return bool
-     */
-    public function addTaskEvent($fd,$flag,$connect_id,$event = 'event',$func = NULL){
-        //$this->taskMap[$connect_id] = $func; //you should use old function
-        switch ($event){
-            case 'event':
-                $fd_key = (int)$fd;
-                $real_flag = $flag === self::EV_READ ? \Event::READ | \Event::PERSIST : \Event::WRITE | \Event::PERSIST;
-                $event = new \Event($this->_eventBase, $fd, $real_flag, array($this,'commonFunc'), $connect_id);
-                if (!$event||!$event->add()) {
-                    return false;
-                }
-                $this->_allEvents[$fd_key][$flag] = $event;
-                return true;
-            case 'libevent':
-                $fd_key    = (int)$fd;
-                $real_flag = $flag === self::EV_READ ? EV_READ | EV_PERSIST : EV_WRITE | EV_PERSIST;
-                $event = event_new();
-                if (!event_set($event, $fd, $real_flag, array($this,'commonFunc'), $connect_id)) {
-                    return false;
-                }
-                if (!event_base_set($event, $this->_eventBase)) {
-                    return false;
-                }
-
-                if (!event_add($event)) {
-                    return false;
-                }
-                $this->_allEvents[$fd_key][$flag] = $event;
-
-                return true;
-
-        }
-
-    }
 }

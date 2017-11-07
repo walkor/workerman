@@ -100,10 +100,12 @@ class Libevent implements EventInterface
             default :
                 $fd_key    = (int)$fd;
                 $real_flag = $flag === self::EV_READ ? EV_READ | EV_PERSIST : EV_WRITE | EV_PERSIST;
-
+                if(empty($args)){
+                    $args[1] = $func;
+                }
                 $event = event_new();
 
-                if (!event_set($event, $fd, $real_flag, $func, null)) {
+                if (!event_set($event, $fd, $real_flag,  array($this,'commonFunc'), $args)) {
                     return false;
                 }
 
