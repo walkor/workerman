@@ -64,7 +64,7 @@ class Event implements EventInterface
     /**
      * @see EventInterface::add()
      */
-    public function add($fd,$flag,$func,$args=array())
+    public function add($fd,$flag,$func,$args = array())
     {
         switch ($flag) {
             case self::EV_SIGNAL:
@@ -91,7 +91,7 @@ class Event implements EventInterface
             default :
                 $fd_key = (int)$fd;
                 //to be  compatible
-                if(empty($args)){
+                if(!$args || empty($args) || !isset($args[1])){
                     $args[1] = $func;
                 }
                 $real_flag = $flag === self::EV_READ ? \Event::READ | \Event::PERSIST : \Event::WRITE | \Event::PERSIST;

@@ -86,6 +86,12 @@ class AsyncTcpConnection extends TcpConnection
      */
     protected $_reconnectTimer = null;
 
+    /**
+     *
+     */
+
+    protected $connectid = 0;
+
 
     /**
      * PHP built-in protocols.
@@ -109,7 +115,7 @@ class AsyncTcpConnection extends TcpConnection
      * @param array $context_option
      * @throws Exception
      */
-    public function __construct($remote_address, $context_option = null)
+    public function __construct($remote_address, $context_option = null,$connectid)
     {
         $address_info = parse_url($remote_address);
         if (!$address_info) {
@@ -153,7 +159,7 @@ class AsyncTcpConnection extends TcpConnection
         } else {
             $this->transport = self::$_builtinTransports[$scheme];
         }
-
+        $this->connecid = $connectid;
         // For statistics.
         self::$statistics['connection_count']++;
         $this->maxSendBufferSize        = self::$defaultMaxSendBufferSize;
@@ -200,10 +206,10 @@ class AsyncTcpConnection extends TcpConnection
             return;
         }
         // Add socket to global event loop waiting connection is successfully established or faild. 
-        Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'checkConnection'));
+        Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'checkConnection'),array($this->connectid));
         // For windows.
         if(DIRECTORY_SEPARATOR === '\\') {
-            Worker::$globalEvent->add($this->_socket, EventInterface::EV_EXCEPT, array($this, 'checkConnection'));
+            Worker::$globalEvent->add($this->_socket, EventInterface::EV_EXCEPT, array($this, 'checkConnection'),array($this->connectid));
         }
     }
 
@@ -297,10 +303,10 @@ class AsyncTcpConnection extends TcpConnection
                 socket_set_option($raw_socket, SOL_TCP, TCP_NODELAY, 1);
             }
             // Register a listener waiting read event.
-            Worker::$globalEvent->add($socket, EventInterface::EV_READ, array($this, 'baseRead'));
+            Worker::$globalEvent->add($socket, EventInterface::EV_READ, array($this, 'baseRead'),array($this->connectid));
             // There are some data waiting to send.
             if ($this->_sendBuffer) {
-                Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+                Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'),array($this->connectid));
             }
             $this->_status                = self::STATUS_ESTABLISHED;
             $this->_remoteAddress         = $address;
