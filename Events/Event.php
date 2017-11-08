@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * This file is part of workerman.
  *
@@ -20,24 +20,25 @@ use Workerman\Worker;
  */
 class Event implements EventInterface
 {
+    use Scheduler;
     /**
      * Event base.
      * @var object
      */
     protected $_eventBase = null;
-    
+
     /**
      * All listeners for read/write event.
      * @var array
      */
     protected $_allEvents = array();
-    
+
     /**
      * Event listeners of signal.
      * @var array
      */
     protected $_eventSignal = array();
-    
+
     /**
      * All timer event listeners.
      * [func, args, event, flag, time_interval]
@@ -50,7 +51,7 @@ class Event implements EventInterface
      * @var int
      */
     protected static $_timerId = 1;
-    
+
     /**
      * construct
      * @return void
@@ -59,11 +60,11 @@ class Event implements EventInterface
     {
         $this->_eventBase = new \EventBase();
     }
-   
+
     /**
      * @see EventInterface::add()
      */
-    public function add($fd, $flag, $func, $args=array())
+    public function add($fd,$flag,$func,$args = array())
     {
         switch ($flag) {
             case self::EV_SIGNAL:
@@ -86,11 +87,15 @@ class Event implements EventInterface
                 }
                 $this->_eventTimer[self::$_timerId] = $event;
                 return self::$_timerId++;
-                
+
             default :
                 $fd_key = (int)$fd;
+                //to be  compatible
+                if(!$args || empty($args) || !isset($args[1])){
+                    $args[1] = $func;
+                }
                 $real_flag = $flag === self::EV_READ ? \Event::READ | \Event::PERSIST : \Event::WRITE | \Event::PERSIST;
-                $event = new \Event($this->_eventBase, $fd, $real_flag, $func, $fd);
+                $event = new \Event($this->_eventBase, $fd, $real_flag, array($this,'commonFunc'), $args);
                 if (!$event||!$event->add()) {
                     return false;
                 }
@@ -98,7 +103,7 @@ class Event implements EventInterface
                 return true;
         }
     }
-    
+
     /**
      * @see Events\EventInterface::del()
      */
@@ -137,7 +142,7 @@ class Event implements EventInterface
         }
         return true;
     }
-    
+
     /**
      * Timer callback.
      * @param null $fd
@@ -147,7 +152,7 @@ class Event implements EventInterface
     public function timerCallback($fd, $what, $param)
     {
         $timer_id = $param[4];
-        
+
         if ($param[2] === self::EV_TIMER_ONCE) {
             $this->_eventTimer[$timer_id]->del();
             unset($this->_eventTimer[$timer_id]);
@@ -163,9 +168,9 @@ class Event implements EventInterface
             exit(250);
         }
     }
-    
+
     /**
-     * @see Events\EventInterface::clearAllTimer() 
+     * @see Events\EventInterface::clearAllTimer()
      * @return void
      */
     public function clearAllTimer()
@@ -175,7 +180,7 @@ class Event implements EventInterface
         }
         $this->_eventTimer = array();
     }
-     
+
 
     /**
      * @see EventInterface::loop()

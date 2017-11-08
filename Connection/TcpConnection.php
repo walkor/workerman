@@ -298,7 +298,7 @@ class TcpConnection extends ConnectionInterface
         if (function_exists('stream_set_read_buffer')) {
             stream_set_read_buffer($this->_socket, 0);
         }
-        Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
+        Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this,'baseRead'),array($this->_id));
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
         $this->_remoteAddress    = $remote_address;
         static::$connections[$this->id] = $this;
@@ -359,11 +359,11 @@ class TcpConnection extends ConnectionInterface
         // Attempt to send data directly.
         if ($this->_sendBuffer === '') {
             $len = @fwrite($this->_socket, $send_buffer, 8192);
-            // send successful.
-            if ($len === strlen($send_buffer)) {
-                $this->bytesWritten += $len;
-                return true;
-            }
+//            // send successful.
+//            if ($len === strlen($send_buffer)) {
+//                $this->bytesWritten += $len;
+//                return true;
+//            }
             // Send only part of the data.
             if ($len > 0) {
                 $this->_sendBuffer = substr($send_buffer, $len);
@@ -388,7 +388,7 @@ class TcpConnection extends ConnectionInterface
                 }
                 $this->_sendBuffer = $send_buffer;
             }
-            Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+            Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'),array($this->_id));
             // Check if the send buffer will be full.
             $this->checkBufferWillFull();
             return null;
@@ -546,7 +546,7 @@ class TcpConnection extends ConnectionInterface
     public function resumeRecv()
     {
         if ($this->_isPaused === true) {
-            Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
+            Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ,array($this, 'baseRead'),array($this->_id));
             $this->_isPaused = false;
             $this->baseRead($this->_socket, false);
         }
@@ -588,7 +588,7 @@ class TcpConnection extends ConnectionInterface
             }
             $this->_sslHandshakeCompleted = true;
             if ($this->_sendBuffer) {
-                Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+                Worker::$globalEvent->add($socket, EventInterface::EV_WRITE,array($this, 'baseWrite'),array($this->_id));
             }
             return;
         }

@@ -20,6 +20,7 @@ use Workerman\Worker;
  */
 class Libevent implements EventInterface
 {
+    use Scheduler;
     /**
      * Event base.
      *
@@ -100,9 +101,12 @@ class Libevent implements EventInterface
                 $fd_key    = (int)$fd;
                 $real_flag = $flag === self::EV_READ ? EV_READ | EV_PERSIST : EV_WRITE | EV_PERSIST;
 
+                if(!$args || empty($args) || !isset($args[1])){
+                    $args[1] = $func;
+                }
                 $event = event_new();
 
-                if (!event_set($event, $fd, $real_flag, $func, null)) {
+                if (!event_set($event, $fd, $real_flag,  array($this,'commonFunc'), $args)) {
                     return false;
                 }
 
