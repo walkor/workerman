@@ -159,7 +159,7 @@ class AsyncTcpConnection extends TcpConnection
         } else {
             $this->transport = self::$_builtinTransports[$scheme];
         }
-        $this->connecid = $connectid;
+        $this->connectid = $connectid;
         // For statistics.
         self::$statistics['connection_count']++;
         $this->maxSendBufferSize        = self::$defaultMaxSendBufferSize;
