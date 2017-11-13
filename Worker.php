@@ -971,7 +971,7 @@ class Worker
      */
     protected static function daemonize()
     {
-        if (!static::$daemonize) {
+        if (!static::$daemonize || static::$_OS !== 'linux') {
             return;
         }
         umask(0);
@@ -1000,7 +1000,7 @@ class Worker
      */
     public static function resetStd()
     {
-        if (!static::$daemonize) {
+        if (!static::$daemonize || static::$_OS !== 'linux') {
             return;
         }
         global $STDOUT, $STDERR;
