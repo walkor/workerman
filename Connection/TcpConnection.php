@@ -563,8 +563,15 @@ class TcpConnection extends ConnectionInterface
     {
         // SSL handshake.
         if ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true) {
-            $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_SERVER |
-                STREAM_CRYPTO_METHOD_SSLv3_SERVER | STREAM_CRYPTO_METHOD_SSLv23_SERVER);
+            $ret = stream_socket_enable_crypto(
+		    $socket, 
+		    true, 
+		    STREAM_CRYPTO_METHOD_SSLv2_SERVER
+                  | STREAM_CRYPTO_METHOD_SSLv23_SERVER
+                  | STREAM_CRYPTO_METHOD_TLSv1_0_SERVER
+                  | STREAM_CRYPTO_METHOD_TLSv1_1_SERVER
+                  | STREAM_CRYPTO_METHOD_TLSv1_2_SERVER
+		  );
             // Negotiation has failed.
             if(false === $ret) {
                 if (!feof($socket)) {
