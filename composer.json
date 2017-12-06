@@ -24,9 +24,7 @@
         "source": "https://github.com/walkor/workerman"
     },
     "require": {
-        "php": ">=5.3",
-        "ext-pcntl": "*",
-        "ext-posix": "*"
+        "php": ">=5.3"
     },
     "suggest": {
         "ext-event": "For better performance. "
