@@ -653,9 +653,9 @@ class Worker
         if (static::$daemonize) {
             global $argv;
             $start_file = $argv[0];
-            static::safeEcho("Input \"php $start_file stop\" to quit. Start success.\n\n");
+            static::safeEcho("Input \"php $start_file stop\" to stop. Start success.\n\n");
         } else {
-            static::safeEcho("Press Ctrl+C to quit. Start success.\n");
+            static::safeEcho("Press Ctrl+C to stop. Start success.\n");
         }
     }
 
