@@ -1928,7 +1928,7 @@ class Worker
             // Check application layer protocol class.
             if (!isset(static::$_builtinTransports[$scheme])) {
                 $scheme         = ucfirst($scheme);
-                $this->protocol = '\\Protocols\\' . $scheme;
+                $this->protocol = substr($scheme,0,1)==='\\'?$scheme:'\\Protocols\\' . $scheme;
                 if (!class_exists($this->protocol)) {
                     $this->protocol = "\\Workerman\\Protocols\\$scheme";
                     if (!class_exists($this->protocol)) {
