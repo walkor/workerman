@@ -13,6 +13,8 @@
  */
 namespace Workerman\Events;
 
+use Workerman\Worker;
+
 /**
  * libevent eventloop
  */
@@ -118,10 +120,9 @@ class Event implements EventInterface
                 break;
 
             case  self::EV_SIGNAL:
-
                 $fd_key = (int)$fd;
                 if (isset($this->_eventSignal[$fd_key])) {
-                    $this->_allEvents[$fd_key][$flag]->del();
+                    $this->_eventSignal[$fd_key]->del();
                     unset($this->_eventSignal[$fd_key]);
                 }
                 break;
@@ -155,7 +156,10 @@ class Event implements EventInterface
         try {
             call_user_func_array($param[0], $param[1]);
         } catch (\Exception $e) {
-            echo $e;
+            Worker::log($e);
+            exit(250);
+        } catch (\Error $e) {
+            Worker::log($e);
             exit(250);
         }
     }
@@ -179,5 +183,27 @@ class Event implements EventInterface
     public function loop()
     {
         $this->_eventBase->loop();
+    }
+
+    /**
+     * Destroy loop.
+     *
+     * @return void
+     */
+    public function destroy()
+    {
+        foreach ($this->_eventSignal as $event) {
+            $event->del();
+        }
+    }
+
+    /**
+     * Get timer count.
+     *
+     * @return integer
+     */
+    public function getTimerCount()
+    {
+        return count($this->_eventTimer);
     }
 }

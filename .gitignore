@@ -3,3 +3,4 @@ logs
 .project
 .settings
 .idea
+.DS_Store
