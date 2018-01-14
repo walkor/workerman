@@ -629,8 +629,13 @@ class Worker
     protected static function displayUI()
     {
         global $argv;
-        if (isset($argv[1]) && $argv[1] === '-q') {
-            return;
+        if (isset($argv[1])) {
+            // not dispaly ui support: php server.php start/restart -q ; php server.php start/restart -d -q 
+            if ( (isset($argv[2]) && ($argv[2] === '-q')) || 
+                 (isset($argv[2]) && ($argv[2] === '-d') && isset($argv[3]) && ($argv[3] == '-q'))
+            ) {
+                return;
+            }
         }
         static::safeEcho("\033[1A\n\033[K-----------------------\033[47;30m WORKERMAN \033[0m-----------------------------\r\n\033[0m");
         static::safeEcho('Workerman version:'. static::VERSION. "          PHP version:". PHP_VERSION. "\r\n");
@@ -650,13 +655,11 @@ class Worker
                     static::$_maxSocketNameLength + 2). str_pad(' ' . $worker->count, 9). " \033[32;40m [OK] \033[0m\n");
         }
         static::safeEcho("----------------------------------------------------------------\n");
+        $way_to_stop = "Press Ctrl+C to stop. Start success.\n";
         if (static::$daemonize) {
-            global $argv;
-            $start_file = $argv[0];
-            static::safeEcho("Input \"php $start_file stop\" to stop. Start success.\n\n");
-        } else {
-            static::safeEcho("Press Ctrl+C to stop. Start success.\n");
+            $way_to_stop = "Input \"php $argv[0] stop\" to stop. Start success.\n\n";
         }
+        static::safeEcho($way_to_stop);
     }
 
     /**
