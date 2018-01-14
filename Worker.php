@@ -629,8 +629,11 @@ class Worker
     protected static function displayUI()
     {
         global $argv;
-        if (isset($argv[1]) && $argv[1] === '-q') {
-            return;
+        if (isset($argv[1])) {
+            // Support not display ui: php serv.php start/restart -q , php serv.php start/restart -d -q
+            if ( (isset($argv[2]) && ($argv[2] === '-q')) || (isset($argv[2]) && ($argv[2] === '-d') && isset($argv[3]) && ($argv[3] === '-q')) ) {
+                return;
+            }
         }
         static::safeEcho("\033[1A\n\033[K-----------------------\033[47;30m WORKERMAN \033[0m-----------------------------\r\n\033[0m");
         static::safeEcho('Workerman version:'. static::VERSION. "          PHP version:". PHP_VERSION. "\r\n");
@@ -651,9 +654,7 @@ class Worker
         }
         static::safeEcho("----------------------------------------------------------------\n");
         if (static::$daemonize) {
-            global $argv;
-            $start_file = $argv[0];
-            static::safeEcho("Input \"php $start_file stop\" to stop. Start success.\n\n");
+            static::safeEcho("Input \"php $argv[0] stop\" to stop. Start success.\n\n");
         } else {
             static::safeEcho("Press Ctrl+C to stop. Start success.\n");
         }
@@ -1928,7 +1929,7 @@ class Worker
             // Check application layer protocol class.
             if (!isset(static::$_builtinTransports[$scheme])) {
                 $scheme         = ucfirst($scheme);
-                $this->protocol = substr($scheme,0,1)==='\\'?$scheme:'\\Protocols\\' . $scheme;
+                $this->protocol = substr($scheme,0,1)==='\\' ? $scheme : '\\Protocols\\' . $scheme;
                 if (!class_exists($this->protocol)) {
                     $this->protocol = "\\Workerman\\Protocols\\$scheme";
                     if (!class_exists($this->protocol)) {
