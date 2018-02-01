@@ -875,7 +875,7 @@ class TcpConnection extends ConnectionInterface
             }
         }
         // Try to emit protocol::onClose
-        if (method_exists($this->protocol, 'onClose')) {
+        if (is_object($this->protocol) && method_exists($this->protocol, 'onClose')) {
             try {
                 call_user_func(array($this->protocol, 'onClose'), $this);
             } catch (\Exception $e) {
