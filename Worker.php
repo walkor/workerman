@@ -682,7 +682,7 @@ class Worker
             'status',
             'connections',
         );
-        $usage = "Usage: php yourfile.php {" . implode('|', $available_commands) . "} [-d]\n";
+        $usage = "Usage: php yourfile <command> [mode]\nCommands: \n    start  Start worker in DEBUG mode.\n           Use mode -d to start in DAEMON mode.\n    stop  Stop worker.\n          Use mode -g to stop gracefully.\n    restart  Restart workers.\n             Use mode -d to start in DAEMON mode.\n             Use mode -g to stop gracefully.\n    reload  Reload codes.\n            Use mode -g to reload gracefully.\n    status  Get worker status.\n            Use mode -d to show live status.\n    connections  Get worker connections.\n";
         if (!isset($argv[1]) || !in_array($argv[1], $available_commands)) {
             exit($usage);
         }
@@ -703,7 +703,7 @@ class Worker
         static::log("Workerman[$start_file] $command $mode");
 
         // Get master process PID.
-        $master_pid      = is_file(static::$pidFile) ? file_get_contents(static::$pidFile) : 0;
+        $master_pid      = file_get_contents(static::$pidFile);
         $master_is_alive = $master_pid && @posix_kill($master_pid, 0) && posix_getpid() != $master_pid;
         // Master is still alive?
         if ($master_is_alive) {
@@ -777,7 +777,7 @@ class Worker
                     if ($master_is_alive) {
                         // Timeout?
                         if (!static::$_gracefulStop && time() - $start_time >= $timeout) {
-                            static::log("Workerman[$start_file] stop fail");
+                            static::log("Workerman[$start_file] stop fail (Timed out)");
                             exit;
                         }
                         // Waiting amoment.
