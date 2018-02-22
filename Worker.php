@@ -631,7 +631,7 @@ class Worker
         global $argv;
         if (isset($argv[1])) {
             // Support not display ui: php serv.php start/restart -q , php serv.php start/restart -d -q
-            if ( (isset($argv[2]) && ($argv[2] === '-q')) || (isset($argv[2]) && ($argv[2] === '-d') && isset($argv[3]) && ($argv[3] === '-q')) ) {
+            if ( $argv[1] === '-q' || (isset($argv[2]) && ($argv[2] === '-q')) || (isset($argv[2]) && ($argv[2] === '-d') && isset($argv[3]) && ($argv[3] === '-q')) ) {
                 return;
             }
         }
