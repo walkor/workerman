@@ -629,19 +629,19 @@ class Worker
     protected static function displayUI()
     {
         global $argv;
-        if (isset($argv[1])) {
-            // Support not display ui: php serv.php start/restart -q , php serv.php start/restart -d -q
-            if ( $argv[1] === '-q' || (isset($argv[2]) && ($argv[2] === '-q')) || (isset($argv[2]) && ($argv[2] === '-d') && isset($argv[3]) && ($argv[3] === '-q')) ) {
-                return;
-            }
+        if (in_array('-q', $argv)) {
+            return;
+        }
+        if (static::$_OS !== 'linux') {
+            static::safeEcho("----------------------- WORKERMAN -----------------------------\r\n");
+            static::safeEcho('Workerman version:'. static::VERSION. "          PHP version:". PHP_VERSION. "\r\n");
+            static::safeEcho("------------------------ WORKERS -------------------------------\r\n");
+            static::safeEcho("worker               listen                              processes status\r\n");
+            return;
         }
         static::safeEcho("\033[1A\n\033[K-----------------------\033[47;30m WORKERMAN \033[0m-----------------------------\r\n\033[0m");
         static::safeEcho('Workerman version:'. static::VERSION. "          PHP version:". PHP_VERSION. "\r\n");
         static::safeEcho("------------------------\033[47;30m WORKERS \033[0m-------------------------------\r\n");
-        if (static::$_OS !== 'linux') {
-            static::safeEcho("worker               listen                              processes status\r\n");
-            return;
-        }
         static::safeEcho("\033[47;30muser\033[0m". str_pad('',
                 static::$_maxUserNameLength + 2 - strlen('user')). "\033[47;30mworker\033[0m". str_pad('',
                 static::$_maxWorkerNameLength + 2 - strlen('worker')). "\033[47;30mlisten\033[0m". str_pad('',
