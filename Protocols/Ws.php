@@ -411,14 +411,10 @@ class Ws
 
             // handshake complete
 
-	    // Get WebSocket subprotocol (if specified by server)
-    	    $header = explode("\r\n", substr($buffer, 0, $pos));
-	    foreach ($header as $hrow) {
-		if (preg_match("#^(.+?)\:(.+?)$#", $hrow, $m) && ($m[1] == "Sec-WebSocket-Protocol")) {
-		    $connection->WSServerProtocol = trim($m[2]);
-		}
-
-	    }
+            // Get WebSocket subprotocol (if specified by server)
+            if (preg_match("/Sec-WebSocket-Protocol: *(.*?)\r\n/i", $buffer, $match)) {
+                $connection->WSServerProtocol = trim($match[1]);
+            }
 
             $connection->handshakeStep = 2;
             $handshake_response_length = $pos + 4;
