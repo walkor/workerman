@@ -369,14 +369,15 @@ class Ws
         $port = $connection->getRemotePort();
         $host = $port === 80 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
         // Handshake header.
+        $connection->websocketSecKey = base64_encode(md5(mt_rand(), true));
         $header = 'GET ' . $connection->getRemoteURI() . " HTTP/1.1\r\n".
         "Host: $host\r\n".
         "Connection: Upgrade\r\n".
         "Upgrade: websocket\r\n".
         "Origin: ". (isset($connection->websocketOrigin) ? $connection->websocketOrigin : '*') ."\r\n".
-	(isset($connection->WSClientProtocol)?"Sec-WebSocket-Protocol: ".$connection->WSClientProtocol."\r\n":'').
+        (isset($connection->WSClientProtocol)?"Sec-WebSocket-Protocol: ".$connection->WSClientProtocol."\r\n":'').
         "Sec-WebSocket-Version: 13\r\n".
-        "Sec-WebSocket-Key: " . base64_encode(md5(mt_rand(), true)) . "\r\n\r\n";
+        "Sec-WebSocket-Key: " . $connection->websocketSecKey . "\r\n\r\n";
         $connection->send($header, true);
         $connection->handshakeStep               = 1;
         $connection->websocketCurrentFrameLength = 0;
@@ -395,16 +396,25 @@ class Ws
     {
         $pos = strpos($buffer, "\r\n\r\n");
         if ($pos) {
+            //checking Sec-WebSocket-Accept
+            if (preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $buffer, $match)) {
+                if ($match[1] !== base64_encode(sha1($connection->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
+                    echo "Sec-WebSocket-Accept not match. Header:\n" . substr($buffer, 0, $pos) . "\n";
+                    $connection->close();
+                    return 0;
+                }
+            } else {
+                echo "Sec-WebSocket-Accept not found. Header:\n" . substr($buffer, 0, $pos) . "\n";
+                $connection->close();
+                return 0;
+            }
+
             // handshake complete
 
-	    // Get WebSocket subprotocol (if specified by server)
-    	    $header = explode("\r\n", substr($buffer, 0, $pos));
-	    foreach ($header as $hrow) {
-		if (preg_match("#^(.+?)\:(.+?)$#", $hrow, $m) && ($m[1] == "Sec-WebSocket-Protocol")) {
-		    $connection->WSServerProtocol = trim($m[2]);
-		}
-
-	    }
+            // Get WebSocket subprotocol (if specified by server)
+            if (preg_match("/Sec-WebSocket-Protocol: *(.*?)\r\n/i", $buffer, $match)) {
+                $connection->WSServerProtocol = trim($match[1]);
+            }
 
             $connection->handshakeStep = 2;
             $handshake_response_length = $pos + 4;
