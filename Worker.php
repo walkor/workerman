@@ -552,13 +552,11 @@ class Worker
             }
 
             // Get unix user of the worker process.
-            if (static::$_OS === 'linux') {
-                if (empty($worker->user)) {
-                    $worker->user = static::getCurrentUser();
-                } else {
-                    if (posix_getuid() !== 0 && $worker->user != static::getCurrentUser()) {
-                        static::log('Warning: You must have the root privileges to change uid and gid.');
-                    }
+            if (empty($worker->user)) {
+                $worker->user = static::getCurrentUser();
+            } else {
+                if (posix_getuid() !== 0 && $worker->user != static::getCurrentUser()) {
+                    static::log('Warning: You must have the root privileges to change uid and gid.');
                 }
             }
 
