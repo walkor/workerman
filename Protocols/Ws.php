@@ -399,12 +399,12 @@ class Ws
             //checking Sec-WebSocket-Accept
             if (preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $buffer, $match)) {
                 if ($match[1] !== base64_encode(sha1($connection->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
-                    echo "Sec-WebSocket-Accept not match. Buffer:" . $buffer . "\n";
+                    echo "Sec-WebSocket-Accept not match. Header:\n" . substr($buffer, 0, $pos) . "\n";
                     $connection->close();
                     return 0;
                 }
             } else {
-                echo "Sec-WebSocket-Accept not found. Buffer:" . $buffer . "\n";
+                echo "Sec-WebSocket-Accept not found. Header:\n" . substr($buffer, 0, $pos) . "\n";
                 $connection->close();
                 return 0;
             }
