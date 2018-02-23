@@ -680,7 +680,7 @@ class Worker
             'status',
             'connections',
         );
-        $usage = "Usage: php yourfile.php {" . implode('|', $available_commands) . "} [-d]\n";
+        $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in DEBUG mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
         if (!isset($argv[1]) || !in_array($argv[1], $available_commands)) {
             exit($usage);
         }
