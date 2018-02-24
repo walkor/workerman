@@ -48,7 +48,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         // Receive length.
         $recv_len = strlen($buffer);
         // We need more data.
-        if ($recv_len < 2) {
+        if ($recv_len < 6) {
             return 0;
         }
 
@@ -125,7 +125,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
 
                     // Consume data from receive buffer.
                     if (!$data_len) {
-                        $head_len = $masked ? 6 : 2;
+                        $head_len = 6;
                         $connection->consumeRecvBuffer($head_len);
                         if ($recv_len > $head_len) {
                             return static::input(substr($buffer, $head_len), $connection);
@@ -149,7 +149,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     }
                     //  Consume data from receive buffer.
                     if (!$data_len) {
-                        $head_len = $masked ? 6 : 2;
+                        $head_len = 6;
                         $connection->consumeRecvBuffer($head_len);
                         if ($recv_len > $head_len) {
                             return static::input(substr($buffer, $head_len), $connection);
