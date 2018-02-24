@@ -70,6 +70,13 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $data_len     = $secondbyte & 127;
             $is_fin_frame = $firstbyte >> 7;
             $masked       = $secondbyte >> 7;
+
+            if (!$masked) {
+                echo "frame not masked\n";
+                $connection->close();
+                return 0;
+            }
+
             $opcode       = $firstbyte & 0xf;
             switch ($opcode) {
                 case 0x0:
