@@ -81,21 +81,21 @@ abstract class  ConnectionInterface
     abstract public function getRemoteAddress();
 
     /**
-     * Get remote IP.
+     * Get local IP.
      *
      * @return string
      */
     abstract public function getLocalIp();
 
     /**
-     * Get remote port.
+     * Get local port.
      *
      * @return int
      */
     abstract public function getLocalPort();
 
     /**
-     * Get remote address.
+     * Get local address.
      *
      * @return string
      */

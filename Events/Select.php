@@ -265,7 +265,7 @@ class Select implements EventInterface
 
             $read  = $this->_readFds;
             $write = $this->_writeFds;
-            $except = $this->_writeFds;
+            $except = $this->_exceptFds;
 
             // Waiting read/write/signal/timeout events.
             $ret = @stream_select($read, $write, $except, 0, $this->_selectTimeout);

@@ -174,13 +174,18 @@ class AsyncTcpConnection extends TcpConnection
         }
         $this->_status           = self::STATUS_CONNECTING;
         $this->_connectStartTime = microtime(true);
-        // Open socket connection asynchronously.
-        if ($this->_contextOption) {
-            $context = stream_context_create($this->_contextOption);
-            $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteHost}:{$this->_remotePort}", $errno, $errstr, 0,
-                STREAM_CLIENT_ASYNC_CONNECT, $context);
+        if ($this->transport !== 'unix') {
+            // Open socket connection asynchronously.
+            if ($this->_contextOption) {
+                $context = stream_context_create($this->_contextOption);
+                $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteHost}:{$this->_remotePort}",
+                    $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT, $context);
+            } else {
+                $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteHost}:{$this->_remotePort}",
+                    $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT);
+            }
         } else {
-            $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteHost}:{$this->_remotePort}", $errno, $errstr, 0,
+            $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
                 STREAM_CLIENT_ASYNC_CONNECT);
         }
         // If failed attempt to emit onError callback.

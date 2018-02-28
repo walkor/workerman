@@ -254,6 +254,31 @@ class TcpConnection extends ConnectionInterface
         self::STATUS_CLOSED      => 'CLOSED',
     );
 
+
+    /**
+     * Adding support of custom functions within protocols
+     *
+     * @param string $name
+     * @param array  $arguments
+     */
+    public function __call($name, $arguments) {
+        // Try to emit custom function within protocol
+        if (method_exists($this->protocol, $name)) {
+            try {
+                return call_user_func(array($this->protocol, $name), $this, $arguments);
+            } catch (\Exception $e) {
+                Worker::log($e);
+                exit(250);
+            } catch (\Error $e) {
+                Worker::log($e);
+                exit(250);
+            }
+	} else {
+	    trigger_error('Call to undefined method '.__CLASS__.'::'.$name.'()', E_USER_ERROR);
+	}
+
+    }
+
     /**
      * Construct.
      *
@@ -538,8 +563,8 @@ class TcpConnection extends ConnectionInterface
     {
         // SSL handshake.
         if ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true) {
-            $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_SERVER |
-                STREAM_CRYPTO_METHOD_SSLv3_SERVER | STREAM_CRYPTO_METHOD_SSLv23_SERVER);
+            $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_SERVER | 
+					       STREAM_CRYPTO_METHOD_SSLv23_SERVER);
             // Negotiation has failed.
             if(false === $ret) {
                 if (!feof($socket)) {

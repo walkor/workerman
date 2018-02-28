@@ -168,6 +168,9 @@ class Http
                     case 'multipart/form-data':
                         self::parseUploadFiles($http_body, $http_post_boundary);
                         break;
+                    case 'application/json':
+                        $_POST = json_decode($http_body, true);
+                        break;
                     case 'application/x-www-form-urlencoded':
                         parse_str($http_body, $_POST);
                         break;
