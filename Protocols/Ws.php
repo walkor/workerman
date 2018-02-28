@@ -158,7 +158,7 @@ class Ws
                         return 0;
                     }
                     break;
-                // Wrong opcode. 
+                // Wrong opcode.
                 default :
                     echo "error opcode $opcode and close websocket connection. Buffer:" . $buffer . "\n";
                     $connection->close();
@@ -348,7 +348,7 @@ class Ws
      * Send websocket handshake.
      *
      * @param \Workerman\Connection\TcpConnection $connection
-     * @return void 
+     * @return void
      */
     public static function sendHandshake($connection)
     {
@@ -360,6 +360,17 @@ class Ws
         $host = $port === 80 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
         // Handshake header.
         $connection->websocketSecKey = base64_encode(md5(mt_rand(), true));
+        $userHeader = '';
+        if (!empty($connection->wsHttpHeader)) {
+            if (is_array($connection->wsHttpHeader)){
+                foreach($connection->wsHttpHeader as $k=>$v){
+                    $userHeader .= "$k: $v\r\n";
+                }
+            }else{
+                $userHeader .= $connection->wsHttpHeader;
+            }
+            $userHeader = "\r\n".trim($userHeader);
+        }
         $header = 'GET ' . $connection->getRemoteURI() . " HTTP/1.1\r\n".
         "Host: $host\r\n".
         "Connection: Upgrade\r\n".
@@ -367,7 +378,7 @@ class Ws
         "Origin: ". (isset($connection->websocketOrigin) ? $connection->websocketOrigin : '*') ."\r\n".
         (isset($connection->WSClientProtocol)?"Sec-WebSocket-Protocol: ".$connection->WSClientProtocol."\r\n":'').
         "Sec-WebSocket-Version: 13\r\n".
-        "Sec-WebSocket-Key: " . $connection->websocketSecKey . "\r\n\r\n";
+        "Sec-WebSocket-Key: " . $connection->websocketSecKey . $userHeader . "\r\n\r\n";
         $connection->send($header, true);
         $connection->handshakeStep               = 1;
         $connection->websocketCurrentFrameLength = 0;
