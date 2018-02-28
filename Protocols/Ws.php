@@ -71,6 +71,13 @@ class Ws
             $data_len     = $secondbyte & 127;
             $is_fin_frame = $firstbyte >> 7;
             $masked       = $secondbyte >> 7;
+
+            if ($masked) {
+                echo "frame masked\n";
+                $connection->close();
+                return 0;
+            }
+
             $opcode       = $firstbyte & 0xf;
 
             switch ($opcode) {
@@ -119,7 +126,7 @@ class Ws
                     }
                     // Consume data from receive buffer.
                     if (!$data_len) {
-                        $head_len = $masked ? 6 : 2;
+                        $head_len = 2;
                         $connection->consumeRecvBuffer($head_len);
                         if ($recv_len > $head_len) {
                             return self::input(substr($buffer, $head_len), $connection);
@@ -143,7 +150,7 @@ class Ws
                     }
                     //  Consume data from receive buffer.
                     if (!$data_len) {
-                        $head_len = $masked ? 6 : 2;
+                        $head_len = 2;
                         $connection->consumeRecvBuffer($head_len);
                         if ($recv_len > $head_len) {
                             return self::input(substr($buffer, $head_len), $connection);
@@ -159,7 +166,7 @@ class Ws
             }
             // Calculate packet length.
             if ($data_len === 126) {
-                if (strlen($buffer) < 6) {
+                if (strlen($buffer) < 4) {
                     return 0;
                 }
                 $pack = unpack('nn/ntotal_len', $buffer);
@@ -289,31 +296,14 @@ class Ws
      */
     public static function decode($bytes, $connection)
     {
-        $masked = ord($bytes[1]) >> 7;
-        $data_length = $masked ? ord($bytes[1]) & 127 : ord($bytes[1]);
-        $decoded_data = '';
-        if ($masked === true) {
-            if ($data_length === 126) {
-                $mask = substr($bytes, 4, 4);
-                $coded_data = substr($bytes, 8);
-            } else if ($data_length === 127) {
-                $mask = substr($bytes, 10, 4);
-                $coded_data = substr($bytes, 14);
-            } else {
-                $mask = substr($bytes, 2, 4);
-                $coded_data = substr($bytes, 6);
-            }
-            for ($i = 0; $i < strlen($coded_data); $i++) {
-                $decoded_data .= $coded_data[$i] ^ $mask[$i % 4];
-            }
+        $data_length = ord($bytes[1]);
+
+        if ($data_length === 126) {
+            $decoded_data = substr($bytes, 4);
+        } else if ($data_length === 127) {
+            $decoded_data = substr($bytes, 10);
         } else {
-            if ($data_length === 126) {
-                $decoded_data = substr($bytes, 4);
-            } else if ($data_length === 127) {
-                $decoded_data = substr($bytes, 10);
-            } else {
-                $decoded_data = substr($bytes, 2);
-            }
+            $decoded_data = substr($bytes, 2);
         }
         if ($connection->websocketCurrentFrameLength) {
             $connection->websocketDataBuffer .= $decoded_data;
