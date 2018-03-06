@@ -54,7 +54,9 @@ class Timer
         if ($event) {
             self::$_event = $event;
         } else {
-            pcntl_signal(SIGALRM, array('\Workerman\Lib\Timer', 'signalHandle'), false);
+            if (function_exists('pcntl_signal')) {
+                pcntl_signal(SIGALRM, array('\Workerman\Lib\Timer', 'signalHandle'), false);
+            }
         }
     }
 
@@ -74,8 +76,8 @@ class Timer
     /**
      * Add a timer.
      *
-     * @param int      $time_interval
-     * @param callback $func
+     * @param float    $time_interval
+     * @param callable $func
      * @param mixed    $args
      * @param bool     $persistent
      * @return int/false

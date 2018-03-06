@@ -97,4 +97,11 @@ interface EventInterface
      * @return mixed
      */
     public function destroy();
+
+    /**
+     * Get Timer count.
+     *
+     * @return mixed
+     */
+    public function getTimerCount();
 }

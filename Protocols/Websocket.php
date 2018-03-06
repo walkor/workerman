@@ -48,7 +48,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         // Receive length.
         $recv_len = strlen($buffer);
         // We need more data.
-        if ($recv_len < 2) {
+        if ($recv_len < 6) {
             return 0;
         }
 
@@ -70,6 +70,13 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $data_len     = $secondbyte & 127;
             $is_fin_frame = $firstbyte >> 7;
             $masked       = $secondbyte >> 7;
+
+            if (!$masked) {
+                echo "frame not masked\n";
+                $connection->close();
+                return 0;
+            }
+
             $opcode       = $firstbyte & 0xf;
             switch ($opcode) {
                 case 0x0:
@@ -83,9 +90,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 // Close package.
                 case 0x8:
                     // Try to emit onWebSocketClose callback.
-                    if (isset($connection->onWebSocketClose)) {
+                    if (isset($connection->onWebSocketClose) || isset($connection->worker->onWebSocketClose)) {
                         try {
-                            call_user_func($connection->onWebSocketClose, $connection);
+                            call_user_func(isset($connection->onWebSocketClose)?$connection->onWebSocketClose:$connection->worker->onWebSocketClose, $connection);
                         } catch (\Exception $e) {
                             Worker::log($e);
                             exit(250);
@@ -101,9 +108,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 // Ping package.
                 case 0x9:
                     // Try to emit onWebSocketPing callback.
-                    if (isset($connection->onWebSocketPing)) {
+                    if (isset($connection->onWebSocketPing) || isset($connection->worker->onWebSocketPing)) {
                         try {
-                            call_user_func($connection->onWebSocketPing, $connection);
+                            call_user_func(isset($connection->onWebSocketPing)?$connection->onWebSocketPing:$connection->worker->onWebSocketPing, $connection);
                         } catch (\Exception $e) {
                             Worker::log($e);
                             exit(250);
@@ -118,7 +125,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
 
                     // Consume data from receive buffer.
                     if (!$data_len) {
-                        $head_len = $masked ? 6 : 2;
+                        $head_len = 6;
                         $connection->consumeRecvBuffer($head_len);
                         if ($recv_len > $head_len) {
                             return static::input(substr($buffer, $head_len), $connection);
@@ -129,9 +136,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 // Pong package.
                 case 0xa:
                     // Try to emit onWebSocketPong callback.
-                    if (isset($connection->onWebSocketPong)) {
+                    if (isset($connection->onWebSocketPong) || isset($connection->worker->onWebSocketPong)) {
                         try {
-                            call_user_func($connection->onWebSocketPong, $connection);
+                            call_user_func(isset($connection->onWebSocketPong)?$connection->onWebSocketPong:$connection->worker->onWebSocketPong, $connection);
                         } catch (\Exception $e) {
                             Worker::log($e);
                             exit(250);
@@ -142,7 +149,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     }
                     //  Consume data from receive buffer.
                     if (!$data_len) {
-                        $head_len = $masked ? 6 : 2;
+                        $head_len = 6;
                         $connection->consumeRecvBuffer($head_len);
                         if ($recv_len > $head_len) {
                             return static::input(substr($buffer, $head_len), $connection);
@@ -382,10 +389,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 $connection->websocketType = static::BINARY_TYPE_BLOB;
             }
             // Try to emit onWebSocketConnect callback.
-            if (isset($connection->onWebSocketConnect)) {
+            if (isset($connection->onWebSocketConnect) || isset($connection->worker->onWebSocketConnect)) {
                 static::parseHttpHeader($buffer);
                 try {
-                    call_user_func($connection->onWebSocketConnect, $connection, $buffer);
+                    call_user_func(isset($connection->onWebSocketConnect)?$connection->onWebSocketConnect:$connection->worker->onWebSocketConnect, $connection, $buffer);
                 } catch (\Exception $e) {
                     Worker::log($e);
                     exit(250);
