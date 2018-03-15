@@ -174,8 +174,22 @@ class Http
                     case 'application/x-www-form-urlencoded':
                         parse_str($http_body, $_POST);
                         break;
+                    case 'application/json':
+                    	$_POST = json_decode($http_body, true);
+                    	break;
                 }
             }
+        }
+        
+        // 解析其他HTTP动作参数
+        if ($_SERVER['REQUEST_METHOD'] != 'GET' && $_SERVER['REQUEST_METHOD'] != "POST") {
+        	$data = array();
+        	if ($_SERVER['HTTP_CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
+        		parse_str($http_body, $data);
+        	} elseif ($_SERVER['HTTP_CONTENT_TYPE'] === "application/json") {
+        		$data = json_decode($http_body, true);
+        	}
+        	$_REQUEST = array_merge($_REQUEST, $data);
         }
 
         // HTTP_RAW_REQUEST_DATA HTTP_RAW_POST_DATA
@@ -191,7 +205,7 @@ class Http
         }
 
         // REQUEST
-        $_REQUEST = array_merge($_GET, $_POST);
+        $_REQUEST = array_merge($_GET, $_POST, $_REQUEST);
 
         // REMOTE_ADDR REMOTE_PORT
         $_SERVER['REMOTE_ADDR'] = $connection->getRemoteIp();
