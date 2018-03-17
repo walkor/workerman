@@ -21,6 +21,8 @@ class Swoole implements EventInterface
 
     protected $_timer = array();
 
+    protected $_fd = array();
+
     /**
      *
      * {@inheritdoc}
@@ -45,9 +47,16 @@ class Swoole implements EventInterface
                 $this->_timer[] = $timer_id;
                 return $timer_id;
             case self::EV_READ:
-                return Event::add($fd, $func, null, SWOOLE_EVENT_READ);
             case self::EV_WRITE:
-                return Event::add($fd, null, $func, SWOOLE_EVENT_WRITE);
+                if ($flag == self::EV_READ) {
+                    $res = Event::add($fd, $func, null, SWOOLE_EVENT_READ);
+                } else {
+                    $res = Event::add($fd, null, $func, SWOOLE_EVENT_WRITE);
+                }
+                if (! in_array((int) $fd, $this->_fd) && $res) {
+                    $this->_fd[] = (int) $fd;
+                }
+                return $res;
         }
     }
 
@@ -67,7 +76,14 @@ class Swoole implements EventInterface
                 return Timer::clear($fd);
             case self::EV_READ:
             case self::EV_WRITE:
-                return Event::del($fd);
+                $key = array_search((int) $fd, $this->_fd);
+                if (false !== $key) {
+                    $res = Event::del($fd);
+                    if ($res) {
+                        unset($this->_fd[$key]);
+                    }
+                    return $res;
+                }
         }
     }
 
