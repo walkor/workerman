@@ -7,7 +7,6 @@
  * Redistributions of files must retain the above copyright notice.
  *
  * @author    Ares<aresrr#qq.com>
- * @copyright Ares<aresrr#qq.com>
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
@@ -46,15 +45,9 @@ class Swoole implements EventInterface
                 $this->_timer[] = $timer_id;
                 return $timer_id;
             case self::EV_READ:
-                return Event::add($fd,
-                    function ($fd) use ($func, $args) {
-                        call_user_func_array($func, $args);
-                    }, null, SWOOLE_EVENT_READ);
+                return Event::add($fd, $func, null, SWOOLE_EVENT_READ);
             case self::EV_WRITE:
-                return Event::add($fd, null,
-                    function ($fd) use ($func, $args) {
-                        call_user_func_array($func, $args);
-                    }, SWOOLE_EVENT_WRITE);
+                return Event::add($fd, null, $func, SWOOLE_EVENT_WRITE);
         }
     }
 
