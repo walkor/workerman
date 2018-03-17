@@ -758,11 +758,11 @@ class Worker
                 if ($command2 === '-g') {
                     static::$_gracefulStop = true;
                     $sig = SIGTERM;
-                    static::log("Workerman[$start_file] is gracefully stoping ...");
+                    static::log("Workerman[$start_file] is gracefully stopping ...");
                 } else {
                     static::$_gracefulStop = false;
                     $sig = SIGINT;
-                    static::log("Workerman[$start_file] is stoping ...");
+                    static::log("Workerman[$start_file] is stopping ...");
                 }
                 // Send stop signal to master process.
                 $master_pid && posix_kill($master_pid, $sig);
