@@ -54,7 +54,7 @@ class Swoole implements EventInterface
                 return Event::add($fd, null,
                     function ($fd) use ($func, $args) {
                         call_user_func_array($func, $args);
-                    });
+                    }, SWOOLE_EVENT_WRITE);
         }
     }
 
