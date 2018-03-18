@@ -225,10 +225,10 @@ class WebServer extends Worker
         } else {
             // 404
             Http::header("HTTP/1.1 404 Not Found");
-			if(isset($workerman_siteConfig['custom404'])){
-				$html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
-			}else{
+			if(isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
 				$html404 = file_get_contents($workerman_siteConfig['custom404']);
+			}else{
+				$html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
 			}
             $connection->close($html404);
             return;
