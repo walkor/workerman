@@ -563,7 +563,7 @@ class TcpConnection extends ConnectionInterface
     {
         // SSL handshake.
         if ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true) {
-            $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_SERVER | 
+            $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_SERVER |
 					       STREAM_CRYPTO_METHOD_SSLv23_SERVER);
             // Negotiation has failed.
             if(false === $ret) {
@@ -701,7 +701,7 @@ class TcpConnection extends ConnectionInterface
             $this->bytesWritten += $len;
             Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
             $this->_sendBuffer = '';
-            // Try to emit onBufferDrain callback when the send buffer becomes empty. 
+            // Try to emit onBufferDrain callback when the send buffer becomes empty.
             if ($this->onBufferDrain) {
                 try {
                     call_user_func($this->onBufferDrain, $this);
@@ -911,8 +911,7 @@ class TcpConnection extends ConnectionInterface
             }
 
             if(0 === self::$statistics['connection_count']) {
-                Worker::$globalEvent->destroy();
-                exit(0);
+                Worker::stopAll();
             }
         }
     }
