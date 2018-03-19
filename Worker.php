@@ -825,6 +825,10 @@ class Worker
         unset($info[0]);
         $data_waiting_sort = array();
         $read_process_status = false;
+		$total_requests = 0;
+		$total_qps = 0;
+		$maxLen1 = static::$_maxSocketNameLength;
+		$maxLen2 = static::$_maxWorkerNameLength;
         foreach($info as $key => $value) {
             if (!$read_process_status) {
                 $status_str .= $value . "\n";
@@ -836,8 +840,15 @@ class Worker
             if(preg_match('/^[0-9]+/', $value, $pid_math)) {
                 $pid = $pid_math[0];
                 $data_waiting_sort[$pid] = $value;
-                if(preg_match('/^\S+?\s+?\S+?\s+?\S+?\s+?\S+?\s+?\S+?\s+?\S+?\s+?\S+?\s+?(\S+?)\s+?/', $value, $match)) {
-                    $current_total_request[$pid] = $match[1];
+                if(preg_match('/^\S+?\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?/', $value, $match)) {
+					$total_memory += intval(str_ireplace('M','',$match[1]));
+					$maxLen1 = max($maxLen1,strlen($match[2]));
+					$maxLen2 = max($maxLen2,strlen($match[3]));
+					$total_connections += intval($match[4]);
+					$total_fails += intval($match[5]);
+					$total_timers += intval($match[6]);
+                    $current_total_request[$pid] = $match[7];
+					$total_requests += intval($match[7]);
                 }
             }
         }
@@ -855,10 +866,18 @@ class Worker
                 $qps = 0;
             } else {
                 $qps = $current_total_request[$pid] - $total_request_cache[$pid];
+				$total_qps += $qps;
             }
             $status_str .= $data_waiting_sort[$pid]. " " . str_pad($qps, 6) ." [idle]\n";
         }
         $total_request_cache = $current_total_request;
+		$status_str .= "----------------------------------------------PROCESS STATUS---------------------------------------------------\n";
+		$status_str .= "Summary\t" . str_pad($total_memory.'M', 7) . " "
+			. str_pad('-', $maxLen1) . " "
+			. str_pad('-', $maxLen2) . " "
+			. str_pad($total_connections, 11) . " " . str_pad($total_fails, 9) . " "
+			. str_pad($total_timers, 7) . " " . str_pad($total_requests, 13) . " "
+			. str_pad($total_qps,6)." [Summary] \n";
         return $status_str;
     }
 
