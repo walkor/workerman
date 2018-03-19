@@ -52,6 +52,9 @@ class WebServer extends Worker
      */
     public function addRoot($domain, $config)
     {
+	if (is_string($config)) {
+            $config = array('root' => $config);
+	}
         $this->serverRoot[$domain] = $config;
     }
 
