@@ -827,6 +827,10 @@ class Worker
         $read_process_status = false;
 		$total_requests = 0;
 		$total_qps = 0;
+		$total_connections = 0;
+		$total_fails = 0;
+		$total_memory = 0;
+		$total_timers = 0;
 		$maxLen1 = static::$_maxSocketNameLength;
 		$maxLen2 = static::$_maxWorkerNameLength;
         foreach($info as $key => $value) {
