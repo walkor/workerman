@@ -14,6 +14,7 @@ namespace Workerman\Events;
 
 use Swoole\Event;
 use Swoole\Timer;
+use Swoole\Process;
 
 class Swoole implements EventInterface
 {
@@ -35,7 +36,7 @@ class Swoole implements EventInterface
         }
         switch ($flag) {
             case self::EV_SIGNAL:
-                return pcntl_signal($fd, $func, false);
+                return Process::signal($fd, $func);
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
                 $method = self::EV_TIMER == $flag ? 'tick' : 'after';
@@ -69,7 +70,7 @@ class Swoole implements EventInterface
     {
         switch ($flag) {
             case self::EV_SIGNAL:
-                return pcntl_signal($fd, SIG_IGN, false);
+                return Process::signal($fd, null);
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
                 return Timer::clear($fd);
