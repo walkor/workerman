@@ -552,6 +552,8 @@ class TcpConnection extends ConnectionInterface
         }
     }
 
+
+
     /**
      * Base read handler.
      *
@@ -563,32 +565,8 @@ class TcpConnection extends ConnectionInterface
     {
         // SSL handshake.
         if ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true) {
-            $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_SERVER |
-					       STREAM_CRYPTO_METHOD_SSLv23_SERVER);
-            // Negotiation has failed.
-            if(false === $ret) {
-                if (!feof($socket)) {
-                    echo "\nSSL Handshake fail. \nBuffer:".bin2hex(fread($socket, 8182))."\n";
-                }
-                return $this->destroy();
-            } elseif(0 === $ret) {
-                // There isn't enough data and should try again.
-                return;
-            }
-            if (isset($this->onSslHandshake)) {
-                try {
-                    call_user_func($this->onSslHandshake, $this);
-                } catch (\Exception $e) {
-                    Worker::log($e);
-                    exit(250);
-                } catch (\Error $e) {
-                    Worker::log($e);
-                    exit(250);
-                }
-            }
-            $this->_sslHandshakeCompleted = true;
-            if ($this->_sendBuffer) {
-                Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+            if ($this->doSslHandshake($socket)) {
+                $this->_sslHandshakeCompleted = true;
             }
             return;
         }
@@ -728,6 +706,48 @@ class TcpConnection extends ConnectionInterface
     }
 
     /**
+     * SSL handshake.
+     *
+     * @param $socket
+     * @return bool
+     */
+    public function doSslHandshake($socket){
+        if (feof($socket)) {
+            $this->destroy();
+            return false;
+        }
+        $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_SERVER |
+            STREAM_CRYPTO_METHOD_SSLv23_SERVER);
+        // Negotiation has failed.
+        if(false === $ret) {
+            if (!feof($socket)) {
+                echo "\nSSL Handshake fail. \nBuffer:".bin2hex(fread($socket, 8182))."\n";
+            }
+            $this->destroy();
+            return false;
+        } elseif(0 === $ret) {
+            // There isn't enough data and should try again.
+            return false;
+        }
+        if (isset($this->onSslHandshake)) {
+            try {
+                call_user_func($this->onSslHandshake, $this);
+            } catch (\Exception $e) {
+                Worker::log($e);
+                exit(250);
+            } catch (\Error $e) {
+                Worker::log($e);
+                exit(250);
+            }
+        }
+
+        if ($this->_sendBuffer) {
+            Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+        }
+        return true;
+    }
+
+    /**
      * This method pulls all the data out of a readable stream, and writes it to the supplied destination.
      *
      * @param TcpConnection $dest
@@ -839,6 +859,16 @@ class TcpConnection extends ConnectionInterface
         }
         return false;
     }
+    
+    /**
+     * Whether send buffer is Empty.
+     *
+     * @return bool
+     */
+    public function bufferIsEmpty()
+    {
+    	return empty($this->_sendBuffer);
+    }
 
     /**
      * Destroy connection.
@@ -875,7 +905,7 @@ class TcpConnection extends ConnectionInterface
             }
         }
         // Try to emit protocol::onClose
-        if (method_exists($this->protocol, 'onClose')) {
+        if ($this->protocol && method_exists($this->protocol, 'onClose')) {
             try {
                 call_user_func(array($this->protocol, 'onClose'), $this);
             } catch (\Exception $e) {

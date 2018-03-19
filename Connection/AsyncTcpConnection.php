@@ -178,10 +178,10 @@ class AsyncTcpConnection extends TcpConnection
             // Open socket connection asynchronously.
             if ($this->_contextOption) {
                 $context = stream_context_create($this->_contextOption);
-                $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteHost}:{$this->_remotePort}",
+                $this->_socket = stream_socket_client("tcp://{$this->_remoteHost}:{$this->_remotePort}",
                     $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT, $context);
             } else {
-                $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteHost}:{$this->_remotePort}",
+                $this->_socket = stream_socket_client("tcp://{$this->_remoteHost}:{$this->_remotePort}",
                     $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT);
             }
         } else {
@@ -296,15 +296,20 @@ class AsyncTcpConnection extends TcpConnection
                 socket_set_option($raw_socket, SOL_SOCKET, SO_KEEPALIVE, 1);
                 socket_set_option($raw_socket, SOL_TCP, TCP_NODELAY, 1);
             }
+
+            // SSL handshake.
+            if ($this->transport === 'ssl' && $this->doSslHandshake($socket)) {
+                $this->_sslHandshakeCompleted = true;
+            }
+
             // Register a listener waiting read event.
             Worker::$globalEvent->add($socket, EventInterface::EV_READ, array($this, 'baseRead'));
             // There are some data waiting to send.
-            if ($this->_sendBuffer) {
+            if ($this->_sendBuffer && $this->transport !== 'ssl') {
                 Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             }
             $this->_status                = self::STATUS_ESTABLISHED;
             $this->_remoteAddress         = $address;
-            $this->_sslHandshakeCompleted = true;
 
             // Try to emit onConnect callback.
             if ($this->onConnect) {
@@ -340,5 +345,46 @@ class AsyncTcpConnection extends TcpConnection
                 $this->onConnect = null;
             }
         }
+    }
+
+    /**
+     * SSL handshake.
+     *
+     * @param $socket
+     * @return bool
+     */
+    public function doSslHandshake($socket){
+        if (feof($socket)) {
+            $this->destroy();
+            return false;
+        }
+        $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_CLIENT |
+            STREAM_CRYPTO_METHOD_SSLv23_CLIENT);
+        // Negotiation has failed.
+        if(false === $ret) {
+            if (!feof($socket)) {
+                echo "\nSSL Handshake as client fail. \nBuffer:".bin2hex(fread($socket, 8182))."\n";
+            }
+            $this->destroy();
+            return false;
+        } elseif(0 === $ret) {
+            // There isn't enough data and should try again.
+            return false;
+        }
+        if (isset($this->onSslHandshake)) {
+            try {
+                call_user_func($this->onSslHandshake, $this);
+            } catch (\Exception $e) {
+                Worker::log($e);
+                exit(250);
+            } catch (\Error $e) {
+                Worker::log($e);
+                exit(250);
+            }
+        }
+        if ($this->_sendBuffer) {
+            Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+        }
+        return true;
     }
 }
