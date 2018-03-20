@@ -24,10 +24,9 @@ class Swoole implements EventInterface
 
     protected $_fd = array();
 
-    public static $usePcntl = true;
+    // milisecond
+    public static $signalDispatchInterval = 200;
 
-    // Swoole\Process::signal() is not stable in some version of php and swoole.
-    // The problem may be caused by using pcntl_signal() and pcntl_fork() and Swoole\Process::signal() together.
     protected $_hasSignal = false;
 
     /**
@@ -43,19 +42,15 @@ class Swoole implements EventInterface
         }
         switch ($flag) {
             case self::EV_SIGNAL:
-                if (static::$usePcntl) {
-                    $res = pcntl_signal($fd, $func, false);
-                    if (! $this->_hasSignal && $res) {
-                        Timer::tick(800,
-                            function () {
-                                pcntl_signal_dispatch();
-                            });
-                        $this->_hasSignal = true;
-                    }
-                    return $res;
-                } else {
-                    return Process::signal($fd, $func);
+                $res = pcntl_signal($fd, $func, false);
+                if (! $this->_hasSignal && $res) {
+                    Timer::tick(static::$signalDispatchInterval,
+                        function () {
+                            pcntl_signal_dispatch();
+                        });
+                    $this->_hasSignal = true;
                 }
+                return $res;
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
                 $method = self::EV_TIMER == $flag ? 'tick' : 'after';
@@ -89,11 +84,7 @@ class Swoole implements EventInterface
     {
         switch ($flag) {
             case self::EV_SIGNAL:
-                if (static::$usePcntl) {
-                    return pcntl_signal($fd, SIG_IGN, false);
-                } else {
-                    return Process::signal($fd, null);
-                }
+                return pcntl_signal($fd, SIG_IGN, false);
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
                 return Timer::clear($fd);
