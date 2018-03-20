@@ -24,7 +24,8 @@ class Swoole implements EventInterface
 
     protected $_fd = array();
 
-    public static $usePcntl = true;
+    // milisecond, set to null will use swoole signal.
+    public static $signalDispatchInterval = 200;
 
     // Swoole\Process::signal() is not stable in some version of php and swoole.
     // The problem may be caused by using pcntl_signal() and pcntl_fork() and Swoole\Process::signal() together.
@@ -43,10 +44,10 @@ class Swoole implements EventInterface
         }
         switch ($flag) {
             case self::EV_SIGNAL:
-                if (static::$usePcntl) {
+                if (isset(static::$signalDispatchInterval)) {
                     $res = pcntl_signal($fd, $func, false);
                     if (! $this->_hasSignal && $res) {
-                        Timer::tick(800,
+                        Timer::tick(static::$signalDispatchInterval,
                             function () {
                                 pcntl_signal_dispatch();
                             });
@@ -89,7 +90,7 @@ class Swoole implements EventInterface
     {
         switch ($flag) {
             case self::EV_SIGNAL:
-                if (static::$usePcntl) {
+                if (isset(static::$signalDispatchInterval)) {
                     return pcntl_signal($fd, SIG_IGN, false);
                 } else {
                     return Process::signal($fd, null);
