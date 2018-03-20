@@ -679,7 +679,7 @@ class TcpConnection extends ConnectionInterface
             $this->bytesWritten += $len;
             Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
             $this->_sendBuffer = '';
-            // Try to emit onBufferDrain callback when the send buffer becomes empty. 
+            // Try to emit onBufferDrain callback when the send buffer becomes empty.
             if ($this->onBufferDrain) {
                 try {
                     call_user_func($this->onBufferDrain, $this);
@@ -941,8 +941,7 @@ class TcpConnection extends ConnectionInterface
             }
 
             if(0 === self::$statistics['connection_count']) {
-                Worker::$globalEvent->destroy();
-                exit(0);
+                Worker::stopAll();
             }
         }
     }

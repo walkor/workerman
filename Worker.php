@@ -227,9 +227,15 @@ class Worker
     /**
      * Pause accept new connections or not.
      *
-     * @var string
+     * @var bool
      */
     protected $_pauseAccept = true;
+    
+    /**
+     * Is worker stopping ?
+     * @var bool
+     */
+    public $stopping = false;
 
     /**
      * Daemonize.
@@ -601,6 +607,7 @@ class Worker
     {
         foreach (static::$_workers as $worker_id => $worker) {
             $new_id_map = array();
+            $worker->count = $worker->count <= 0 ? 1 : $worker->count;
             for($key = 0; $key < $worker->count; $key++) {
                 $new_id_map[$key] = isset(static::$_idMap[$worker_id][$key]) ? static::$_idMap[$worker_id][$key] : 0;
             }
@@ -758,11 +765,11 @@ class Worker
                 if ($command2 === '-g') {
                     static::$_gracefulStop = true;
                     $sig = SIGTERM;
-                    static::log("Workerman[$start_file] is gracefully stoping ...");
+                    static::log("Workerman[$start_file] is gracefully stopping ...");
                 } else {
                     static::$_gracefulStop = false;
                     $sig = SIGINT;
-                    static::log("Workerman[$start_file] is stoping ...");
+                    static::log("Workerman[$start_file] is stopping ...");
                 }
                 // Send stop signal to master process.
                 $master_pid && posix_kill($master_pid, $sig);
@@ -917,7 +924,7 @@ class Worker
         static::$globalEvent->add(SIGUSR1, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall graceful reload signal handler
         static::$globalEvent->add(SIGQUIT, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
-        // reinstall  status signal handler
+        // reinstall status signal handler
         static::$globalEvent->add(SIGUSR2, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall connection status signal handler
         static::$globalEvent->add(SIGIO, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
@@ -1121,7 +1128,6 @@ class Worker
                 }
             }
 
-            $worker->count = $worker->count <= 0 ? 1 : $worker->count;
             while (count(static::$_pidMap[$worker->workerId]) < $worker->count) {
                 static::forkOneWorkerForLinux($worker);
             }
@@ -1600,9 +1606,13 @@ class Worker
         else {
             // Execute exit.
             foreach (static::$_workers as $worker) {
-                $worker->stop();
+                if(!$worker->stopping){
+                    $worker->stop();
+                    $worker->stopping = true;
+                }
             }
             if (!static::$_gracefulStop || ConnectionInterface::$statistics['connection_count'] <= 0) {
+                static::$_workers = array();
                 static::$globalEvent->destroy();
                 exit(0);
             }
@@ -2124,8 +2134,6 @@ class Worker
         }
         // Clear callback.
         $this->onMessage = $this->onClose = $this->onError = $this->onBufferDrain = $this->onBufferFull = null;
-        // Remove worker instance from static::$_workers.
-        unset(static::$_workers[$this->workerId]);
     }
 
     /**
