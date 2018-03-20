@@ -24,7 +24,7 @@ class Swoole implements EventInterface
 
     protected $_fd = array();
 
-    // milisecond, set to null will use swoole signal.
+    // milisecond. Set to null will use swoole signal.
     public static $signalDispatchInterval = 200;
 
     // Swoole\Process::signal() is not stable in some version of php and swoole.
