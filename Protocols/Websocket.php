@@ -364,10 +364,8 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $handshake_message .= "Upgrade: websocket\r\n";
             $handshake_message .= "Sec-WebSocket-Version: 13\r\n";
             $handshake_message .= "Connection: Upgrade\r\n";
-            $handshake_message .= "Server: workerman/".Worker::VERSION."\r\n";
-            $handshake_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n\r\n";
-            // Mark handshake complete..
-            $connection->websocketHandshake = true;
+            $handshake_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n";
+
             // Websocket data buffer.
             $connection->websocketDataBuffer = '';
             // Current websocket frame length.
@@ -376,18 +374,14 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $connection->websocketCurrentFrameBuffer = '';
             // Consume handshake data.
             $connection->consumeRecvBuffer($header_length);
-            // Send handshake response.
-            $connection->send($handshake_message, true);
 
-            // There are data waiting to be sent.
-            if (!empty($connection->tmpWebsocketData)) {
-                $connection->send($connection->tmpWebsocketData, true);
-                $connection->tmpWebsocketData = '';
-            }
             // blob or arraybuffer
             if (empty($connection->websocketType)) {
                 $connection->websocketType = static::BINARY_TYPE_BLOB;
             }
+
+            $has_server_header = false;
+
             // Try to emit onWebSocketConnect callback.
             if (isset($connection->onWebSocketConnect) || isset($connection->worker->onWebSocketConnect)) {
                 static::parseHttpHeader($buffer);
@@ -404,10 +398,36 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     $connection->session = \GatewayWorker\Lib\Context::sessionEncode($_SESSION);
                 }
                 $_GET = $_SERVER = $_SESSION = $_COOKIE = array();
+
+                if (isset($connection->headers)) {
+                    if (is_array($connection->headers))  {
+                        foreach ($connection->headers as $header) {
+                            if (strpos($header, 'Server:') === 0) {
+                                $has_server_header = true;
+                            }
+                            $handshake_message .= "$header\r\n";
+                        }
+                    } else {
+                        $handshake_message .= "$connection->headers\r\n";
+                    }
+                }
+            }
+            if (!$has_server_header) {
+                $handshake_message .= "Server: workerman/".Worker::VERSION."\r\n";
+            }
+            $handshake_message .= "\r\n";
+            // Send handshake response.
+            $connection->send($handshake_message, true);
+            // Mark handshake complete..
+            $connection->websocketHandshake = true;
+            // There are data waiting to be sent.
+            if (!empty($connection->tmpWebsocketData)) {
+                $connection->send($connection->tmpWebsocketData, true);
+                $connection->tmpWebsocketData = '';
             }
             if (strlen($buffer) > $header_length) {
                 return static::input(substr($buffer, $header_length), $connection);
-            } 
+            }
             return 0;
         } // Is flash policy-file-request.
         elseif (0 === strpos($buffer, '<polic')) {
