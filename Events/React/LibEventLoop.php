@@ -99,7 +99,7 @@ class LibEventLoop extends \React\EventLoop\LibEventLoop
             case EventInterface::EV_SIGNAL:
                 return $this->removeSignal($fd);
             case EventInterface::EV_TIMER:
-            case EventInterface::EV_TIMER_ONCE;
+            case EventInterface::EV_TIMER_ONCE:
                 if (isset($this->_timerIdMap[$fd])){
                     $timer_obj = $this->_timerIdMap[$fd];
                     unset($this->_timerIdMap[$fd]);
