@@ -292,7 +292,7 @@ class AsyncTcpConnection extends TcpConnection
 
             // SSL handshake.
             if ($this->transport === 'ssl') {
-                $this->_sslHandshakeCompleted = $this->doSslHandshake($socket);
+                $this->_sslHandshakeCompleted = $this->doSslHandshake($socket,true);
                 if(!$this->_sslHandshakeCompleted){
                     return;
                 }
@@ -349,43 +349,5 @@ class AsyncTcpConnection extends TcpConnection
                 $this->onConnect = null;
             }
         }
-    }
-
-    /**
-     * SSL handshake.
-     *
-     * @param $socket
-     * @return bool
-     */
-    public function doSslHandshake($socket){
-        if (feof($socket)) {
-            $this->destroy();
-            return false;
-        }
-        $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_CLIENT |
-            STREAM_CRYPTO_METHOD_SSLv23_CLIENT);
-        // Negotiation has failed.
-        if(false === $ret) {
-            if (!feof($socket)) {
-                echo "\nSSL Handshake as client fail. \nBuffer:".bin2hex(fread($socket, 8182))."\n";
-            }
-            $this->destroy();
-            return false;
-        } elseif(0 === $ret) {
-            // There isn't enough data and should try again.
-            return false;
-        }
-        if (isset($this->onSslHandshake)) {
-            try {
-                call_user_func($this->onSslHandshake, $this);
-            } catch (\Exception $e) {
-                Worker::log($e);
-                exit(250);
-            } catch (\Error $e) {
-                Worker::log($e);
-                exit(250);
-            }
-        }
-        return true;
     }
 }

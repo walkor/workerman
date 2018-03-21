@@ -565,10 +565,14 @@ class TcpConnection extends ConnectionInterface
     {
         // SSL handshake.
         if ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true) {
-            if ($this->doSslHandshake($socket)) {
+            if ($this->doSslHandshake($socket,false)) {
                 $this->_sslHandshakeCompleted = true;
+                if ($this->_sendBuffer) {
+                    Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+                }
+            }else{
+                return;
             }
-            return;
         }
 
         $buffer = @fread($socket, self::READ_BUFFER_SIZE);
@@ -711,17 +715,21 @@ class TcpConnection extends ConnectionInterface
      * @param $socket
      * @return bool
      */
-    public function doSslHandshake($socket){
+    public function doSslHandshake($socket,$async){
         if (feof($socket)) {
             $this->destroy();
             return false;
         }
-        $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_SERVER |
-            STREAM_CRYPTO_METHOD_SSLv23_SERVER);
+        if($async){
+            $type=STREAM_CRYPTO_METHOD_SSLv2_CLIENT | STREAM_CRYPTO_METHOD_SSLv23_CLIENT;
+        }else{
+            $type=STREAM_CRYPTO_METHOD_SSLv2_SERVER | STREAM_CRYPTO_METHOD_SSLv23_SERVER;
+        }
+        $ret = stream_socket_enable_crypto($socket, true, $type);
         // Negotiation has failed.
         if(false === $ret) {
             if (!feof($socket)) {
-                echo "\nSSL Handshake fail. \nBuffer:".bin2hex(fread($socket, 8182))."\n";
+                echo "\nSSL Handshake fail as ".($async?'client':'server').". \nBuffer:".bin2hex(fread($socket, 8182))."\n";
             }
             $this->destroy();
             return false;
@@ -739,10 +747,6 @@ class TcpConnection extends ConnectionInterface
                 Worker::log($e);
                 exit(250);
             }
-        }
-
-        if ($this->_sendBuffer) {
-            Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
         }
         return true;
     }
