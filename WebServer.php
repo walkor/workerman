@@ -52,9 +52,9 @@ class WebServer extends Worker
      */
     public function addRoot($domain, $config)
     {
-	if (is_string($config)) {
+        if (is_string($config)) {
             $config = array('root' => $config);
-	}
+        }
         $this->serverRoot[$domain] = $config;
     }
 
@@ -168,11 +168,11 @@ class WebServer extends Worker
         }
 
         $workerman_siteConfig = isset($this->serverRoot[$_SERVER['SERVER_NAME']]) ? $this->serverRoot[$_SERVER['SERVER_NAME']] : current($this->serverRoot);
-		$workerman_root_dir = $workerman_siteConfig['root'];
+        $workerman_root_dir = $workerman_siteConfig['root'];
         $workerman_file = "$workerman_root_dir/$workerman_path";
-		if(isset($workerman_siteConfig['additionHeader'])){
-			Http::header($workerman_siteConfig['additionHeader']);
-		}
+        if (isset($workerman_siteConfig['additionHeader'])) {
+            Http::header($workerman_siteConfig['additionHeader']);
+        }
         if ($workerman_file_extension === 'php' && !is_file($workerman_file)) {
             $workerman_file = "$workerman_root_dir/index.php";
             if (!is_file($workerman_file)) {
@@ -184,8 +184,10 @@ class WebServer extends Worker
         // File exsits.
         if (is_file($workerman_file)) {
             // Security check.
-            if ((!($workerman_request_realpath = realpath($workerman_file)) || !($workerman_root_dir_realpath = realpath($workerman_root_dir))) || 0 !== strpos($workerman_request_realpath,
-                    $workerman_root_dir_realpath)
+            if ((!($workerman_request_realpath = realpath($workerman_file)) || !($workerman_root_dir_realpath = realpath($workerman_root_dir))) || 0 !== strpos(
+                $workerman_request_realpath,
+                    $workerman_root_dir_realpath
+            )
             ) {
                 Http::header('HTTP/1.1 400 Bad Request');
                 $connection->close('<h1>400 Bad Request</h1>');
@@ -228,11 +230,11 @@ class WebServer extends Worker
         } else {
             // 404
             Http::header("HTTP/1.1 404 Not Found");
-			if(isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
-				$html404 = file_get_contents($workerman_siteConfig['custom404']);
-			}else{
-				$html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
-			}
+            if (isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])) {
+                $html404 = file_get_contents($workerman_siteConfig['custom404']);
+            } else {
+                $html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
+            }
             $connection->close($html404);
             return;
         }
@@ -280,29 +282,24 @@ class WebServer extends Worker
 
         // Read file content from disk piece by piece and send to client.
         $connection->fileHandler = fopen($file_path, 'r');
-        $do_write = function()use($connection)
-        {
+        $do_write = function () use ($connection) {
             // Send buffer not full.
-            while(empty($connection->bufferFull))
-            {
+            while (empty($connection->bufferFull)) {
                 // Read from disk.
                 $buffer = fread($connection->fileHandler, 8192);
                 // Read eof.
-                if($buffer === '' || $buffer === false)
-                {
+                if ($buffer === '' || $buffer === false) {
                     return;
                 }
                 $connection->send($buffer, true);
             }
         };
         // Send buffer full.
-        $connection->onBufferFull = function($connection)
-        {
+        $connection->onBufferFull = function ($connection) {
             $connection->bufferFull = true;
         };
         // Send buffer drain.
-        $connection->onBufferDrain = function($connection)use($do_write)
-        {
+        $connection->onBufferDrain = function ($connection) use ($do_write) {
             $connection->bufferFull = false;
             $do_write();
         };

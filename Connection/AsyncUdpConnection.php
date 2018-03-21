@@ -183,5 +183,4 @@ class AsyncUdpConnection extends UdpConnection
             }
         }
     }
-
 }

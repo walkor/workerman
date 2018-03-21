@@ -45,12 +45,12 @@ class Http
             return 0;
         }
 
-        list($header,) = explode("\r\n\r\n", $recv_buffer, 2);
+        list($header, ) = explode("\r\n\r\n", $recv_buffer, 2);
         $method = substr($header, 0, strpos($header, ' '));
 
-        if(in_array($method, static::$methods)) {
+        if (in_array($method, static::$methods)) {
             return static::getRequestSize($header, $method);
-        }else{
+        } else {
             $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
@@ -65,7 +65,7 @@ class Http
       */
     protected static function getRequestSize($header, $method)
     {
-        if($method === 'GET' || $method === 'OPTIONS' || $method === 'HEAD') {
+        if ($method === 'GET' || $method === 'OPTIONS' || $method === 'HEAD') {
             return strlen($header) + 4;
         }
         $match = array();
@@ -115,8 +115,10 @@ class Http
         list($http_header, $http_body) = explode("\r\n\r\n", $recv_buffer, 2);
         $header_data = explode("\r\n", $http_header);
 
-        list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(' ',
-            $header_data[0]);
+        list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(
+            ' ',
+            $header_data[0]
+        );
 
         $http_post_boundary = '';
         unset($header_data[0]);
@@ -175,21 +177,21 @@ class Http
                         parse_str($http_body, $_POST);
                         break;
                     case 'application/json':
-                    	$_POST = json_decode($http_body, true);
-                    	break;
+                        $_POST = json_decode($http_body, true);
+                        break;
                 }
             }
         }
         
         // 解析其他HTTP动作参数
         if ($_SERVER['REQUEST_METHOD'] != 'GET' && $_SERVER['REQUEST_METHOD'] != "POST") {
-        	$data = array();
-        	if ($_SERVER['HTTP_CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
-        		parse_str($http_body, $data);
-        	} elseif ($_SERVER['HTTP_CONTENT_TYPE'] === "application/json") {
-        		$data = json_decode($http_body, true);
-        	}
-        	$_REQUEST = array_merge($_REQUEST, $data);
+            $data = array();
+            if ($_SERVER['HTTP_CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
+                parse_str($http_body, $data);
+            } elseif ($_SERVER['HTTP_CONTENT_TYPE'] === "application/json") {
+                $data = json_decode($http_body, true);
+            }
+            $_REQUEST = array_merge($_REQUEST, $data);
         }
 
         // HTTP_RAW_REQUEST_DATA HTTP_RAW_POST_DATA
@@ -341,7 +343,9 @@ class Http
             . (empty($maxage) ? '' : '; Max-Age=' . $maxage)
             . (empty($path) ? '' : '; Path=' . $path)
             . (!$secure ? '' : '; Secure')
-            . (!$HTTPOnly ? '' : '; HttpOnly'), false);
+            . (!$HTTPOnly ? '' : '; HttpOnly'),
+            false
+        );
     }
 
     /**
@@ -371,13 +375,13 @@ class Http
             HttpCache::$instance->sessionFile = $file_name;
             $session_id                       = substr(basename($file_name), strlen('ses'));
             return self::setcookie(
-                HttpCache::$sessionName
-                , $session_id
-                , ini_get('session.cookie_lifetime')
-                , ini_get('session.cookie_path')
-                , ini_get('session.cookie_domain')
-                , ini_get('session.cookie_secure')
-                , ini_get('session.cookie_httponly')
+                HttpCache::$sessionName,
+                $session_id,
+                ini_get('session.cookie_lifetime'),
+                ini_get('session.cookie_path'),
+                ini_get('session.cookie_domain'),
+                ini_get('session.cookie_secure'),
+                ini_get('session.cookie_httponly')
             );
         }
         if (!HttpCache::$instance->sessionFile) {
@@ -505,8 +509,8 @@ class Http
         }
 
         $time_now = time();
-        foreach(glob(HttpCache::$sessionPath.'/ses*') as $file) {
-            if(is_file($file) && $time_now - filemtime($file) > HttpCache::$sessionGcMaxLifeTime) {
+        foreach (glob(HttpCache::$sessionPath.'/ses*') as $file) {
+            if (is_file($file) && $time_now - filemtime($file) > HttpCache::$sessionGcMaxLifeTime) {
                 unlink($file);
             }
         }

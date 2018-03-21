@@ -19,7 +19,6 @@ use Swoole\Process;
 
 class Swoole implements EventInterface
 {
-
     protected $_timer = array();
 
     protected $_fd = array();
@@ -44,20 +43,24 @@ class Swoole implements EventInterface
             case self::EV_SIGNAL:
                 $res = pcntl_signal($fd, $func, false);
                 if (! $this->_hasSignal && $res) {
-                    Timer::tick(static::$signalDispatchInterval,
+                    Timer::tick(
+                        static::$signalDispatchInterval,
                         function () {
                             pcntl_signal_dispatch();
-                        });
+                        }
+                    );
                     $this->_hasSignal = true;
                 }
                 return $res;
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
                 $method = self::EV_TIMER == $flag ? 'tick' : 'after';
-                $timer_id = Timer::$method($fd * 1000,
+                $timer_id = Timer::$method(
+                    $fd * 1000,
                     function ($timer_id = null) use ($func, $args) {
                         call_user_func_array($func, $args);
-                    });
+                    }
+                );
                 $this->_timer[] = $timer_id;
                 return $timer_id;
             case self::EV_READ:

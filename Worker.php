@@ -427,7 +427,7 @@ class Worker
     protected static $_availableEventLoops = array(
         'libevent' => '\Workerman\Events\Libevent',
         'event'    => '\Workerman\Events\Event',
-        'swoole'    => '\Workerman\Events\Swoole'
+        'swoole'   => '\Workerman\Events\Swoole'
     );
 
     /**

@@ -137,7 +137,7 @@ class AsyncTcpConnection extends TcpConnection
         }
 
         $this->id = $this->_id = self::$_idRecorder++;
-        if(PHP_INT_MAX === self::$_idRecorder){
+        if (PHP_INT_MAX === self::$_idRecorder) {
             self::$_idRecorder = 0;
         }
         // Check application layer protocol class.
@@ -164,7 +164,7 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Do connect.
      *
-     * @return void 
+     * @return void
      */
     public function connect()
     {
@@ -178,15 +178,31 @@ class AsyncTcpConnection extends TcpConnection
             // Open socket connection asynchronously.
             if ($this->_contextOption) {
                 $context = stream_context_create($this->_contextOption);
-                $this->_socket = stream_socket_client("tcp://{$this->_remoteHost}:{$this->_remotePort}",
-                    $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT, $context);
+                $this->_socket = stream_socket_client(
+                    "tcp://{$this->_remoteHost}:{$this->_remotePort}",
+                    $errno,
+                    $errstr,
+                    0,
+                    STREAM_CLIENT_ASYNC_CONNECT,
+                    $context
+                );
             } else {
-                $this->_socket = stream_socket_client("tcp://{$this->_remoteHost}:{$this->_remotePort}",
-                    $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT);
+                $this->_socket = stream_socket_client(
+                    "tcp://{$this->_remoteHost}:{$this->_remotePort}",
+                    $errno,
+                    $errstr,
+                    0,
+                    STREAM_CLIENT_ASYNC_CONNECT
+                );
             }
         } else {
-            $this->_socket = stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
-                STREAM_CLIENT_ASYNC_CONNECT);
+            $this->_socket = stream_socket_client(
+                "{$this->transport}://{$this->_remoteAddress}",
+                $errno,
+                $errstr,
+                0,
+                STREAM_CLIENT_ASYNC_CONNECT
+            );
         }
         // If failed attempt to emit onError callback.
         if (!$this->_socket) {
@@ -199,10 +215,10 @@ class AsyncTcpConnection extends TcpConnection
             }
             return;
         }
-        // Add socket to global event loop waiting connection is successfully established or faild. 
+        // Add socket to global event loop waiting connection is successfully established or faild.
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'checkConnection'));
         // For windows.
-        if(DIRECTORY_SEPARATOR === '\\') {
+        if (DIRECTORY_SEPARATOR === '\\') {
             Worker::$globalEvent->add($this->_socket, EventInterface::EV_EXCEPT, array($this, 'checkConnection'));
         }
     }
@@ -213,7 +229,8 @@ class AsyncTcpConnection extends TcpConnection
      * @param int $after
      * @return void
      */
-    public function reConnect($after = 0) {
+    public function reConnect($after = 0)
+    {
         $this->_status = self::STATUS_INITIAL;
         if ($this->_reconnectTimer) {
             Timer::del($this->_reconnectTimer);
@@ -228,7 +245,7 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Get remote address.
      *
-     * @return string 
+     * @return string
      */
     public function getRemoteHost()
     {
@@ -277,7 +294,7 @@ class AsyncTcpConnection extends TcpConnection
     public function checkConnection($socket)
     {
         // Remove EV_EXPECT for windows.
-        if(DIRECTORY_SEPARATOR === '\\') {
+        if (DIRECTORY_SEPARATOR === '\\') {
             Worker::$globalEvent->del($socket, EventInterface::EV_EXCEPT);
         }
         // Check socket state.
@@ -353,7 +370,8 @@ class AsyncTcpConnection extends TcpConnection
      * @param $socket
      * @return bool
      */
-    public function doSslHandshake($socket){
+    public function doSslHandshake($socket)
+    {
         if (feof($socket)) {
             $this->destroy();
             return false;
@@ -361,13 +379,13 @@ class AsyncTcpConnection extends TcpConnection
         $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_CLIENT |
             STREAM_CRYPTO_METHOD_SSLv23_CLIENT);
         // Negotiation has failed.
-        if(false === $ret) {
+        if (false === $ret) {
             if (!feof($socket)) {
                 echo "\nSSL Handshake as client fail. \nBuffer:".bin2hex(fread($socket, 8182))."\n";
             }
             $this->destroy();
             return false;
-        } elseif(0 === $ret) {
+        } elseif (0 === $ret) {
             // There isn't enough data and should try again.
             return false;
         }

@@ -16,7 +16,7 @@ namespace Workerman\Connection;
 /**
  * ConnectionInterface.
  */
-abstract class  ConnectionInterface
+abstract class ConnectionInterface
 {
     /**
      * Statistics for status command.

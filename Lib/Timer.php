@@ -90,8 +90,12 @@ class Timer
         }
 
         if (self::$_event) {
-            return self::$_event->add($time_interval,
-                $persistent ? EventInterface::EV_TIMER : EventInterface::EV_TIMER_ONCE, $func, $args);
+            return self::$_event->add(
+                $time_interval,
+                $persistent ? EventInterface::EV_TIMER : EventInterface::EV_TIMER_ONCE,
+                $func,
+                $args
+            );
         }
 
         if (!is_callable($func)) {
