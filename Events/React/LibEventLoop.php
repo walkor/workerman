@@ -12,6 +12,7 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 namespace Workerman\Events\React;
+
 use Workerman\Events\EventInterface;
 
 /**
@@ -65,14 +66,14 @@ class LibEventLoop extends \React\EventLoop\LibEventLoop
                 return $this->addSignal($fd, $func);
             case EventInterface::EV_TIMER:
                 $timer_id = ++$this->_timerIdIndex;
-                $timer_obj = $this->addPeriodicTimer($fd, function() use ($func, $args) {
+                $timer_obj = $this->addPeriodicTimer($fd, function () use ($func, $args) {
                     call_user_func_array($func, $args);
                 });
                 $this->_timerIdMap[$timer_id] = $timer_obj;
                 return $timer_id;
             case EventInterface::EV_TIMER_ONCE:
                 $timer_id = ++$this->_timerIdIndex;
-                $timer_obj = $this->addTimer($fd, function() use ($func, $args, $timer_id) {
+                $timer_obj = $this->addTimer($fd, function () use ($func, $args, $timer_id) {
                     unset($this->_timerIdMap[$timer_id]);
                     call_user_func_array($func, $args);
                 });
@@ -100,7 +101,7 @@ class LibEventLoop extends \React\EventLoop\LibEventLoop
                 return $this->removeSignal($fd);
             case EventInterface::EV_TIMER:
             case EventInterface::EV_TIMER_ONCE:
-                if (isset($this->_timerIdMap[$fd])){
+                if (isset($this->_timerIdMap[$fd])) {
                     $timer_obj = $this->_timerIdMap[$fd];
                     unset($this->_timerIdMap[$fd]);
                     $this->cancelTimer($timer_obj);

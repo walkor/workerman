@@ -261,7 +261,8 @@ class TcpConnection extends ConnectionInterface
      * @param string $name
      * @param array  $arguments
      */
-    public function __call($name, $arguments) {
+    public function __call($name, $arguments)
+    {
         // Try to emit custom function within protocol
         if (method_exists($this->protocol, $name)) {
             try {
@@ -273,10 +274,9 @@ class TcpConnection extends ConnectionInterface
                 Worker::log($e);
                 exit(250);
             }
-	} else {
-	    trigger_error('Call to undefined method '.__CLASS__.'::'.$name.'()', E_USER_ERROR);
-	}
-
+        } else {
+            trigger_error('Call to undefined method '.__CLASS__.'::'.$name.'()', E_USER_ERROR);
+        }
     }
 
     /**
@@ -289,7 +289,7 @@ class TcpConnection extends ConnectionInterface
     {
         self::$statistics['connection_count']++;
         $this->id = $this->_id = self::$_idRecorder++;
-        if(self::$_idRecorder === PHP_INT_MAX){
+        if (self::$_idRecorder === PHP_INT_MAX) {
             self::$_idRecorder = 0;
         }
         $this->_socket = $socket;
@@ -711,7 +711,8 @@ class TcpConnection extends ConnectionInterface
      * @param $socket
      * @return bool
      */
-    public function doSslHandshake($socket){
+    public function doSslHandshake($socket)
+    {
         if (feof($socket)) {
             $this->destroy();
             return false;
@@ -719,13 +720,13 @@ class TcpConnection extends ConnectionInterface
         $ret = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_SSLv2_SERVER |
             STREAM_CRYPTO_METHOD_SSLv23_SERVER);
         // Negotiation has failed.
-        if(false === $ret) {
+        if (false === $ret) {
             if (!feof($socket)) {
                 echo "\nSSL Handshake fail. \nBuffer:".bin2hex(fread($socket, 8182))."\n";
             }
             $this->destroy();
             return false;
-        } elseif(0 === $ret) {
+        } elseif (0 === $ret) {
             // There isn't enough data and should try again.
             return false;
         }
@@ -867,7 +868,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function bufferIsEmpty()
     {
-    	return empty($this->_sendBuffer);
+        return empty($this->_sendBuffer);
     }
 
     /**
@@ -940,7 +941,7 @@ class TcpConnection extends ConnectionInterface
                 Worker::log('worker[' . posix_getpid() . '] remains ' . self::$statistics['connection_count'] . ' connection(s)');
             }
 
-            if(0 === self::$statistics['connection_count']) {
+            if (0 === self::$statistics['connection_count']) {
                 Worker::stopAll();
             }
         }

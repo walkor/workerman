@@ -87,7 +87,7 @@ class Event implements EventInterface
                 $this->_eventTimer[self::$_timerId] = $event;
                 return self::$_timerId++;
                 
-            default :
+            default:
                 $fd_key = (int)$fd;
                 $real_flag = $flag === self::EV_READ ? \Event::READ | \Event::PERSIST : \Event::WRITE | \Event::PERSIST;
                 $event = new \Event($this->_eventBase, $fd, $real_flag, $func, $fd);
@@ -165,7 +165,7 @@ class Event implements EventInterface
     }
     
     /**
-     * @see Events\EventInterface::clearAllTimer() 
+     * @see Events\EventInterface::clearAllTimer()
      * @return void
      */
     public function clearAllTimer()

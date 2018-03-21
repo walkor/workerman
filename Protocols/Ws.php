@@ -65,7 +65,6 @@ class Ws
                 return 0;
             }
         } else {
-
             $firstbyte    = ord($buffer[0]);
             $secondbyte   = ord($buffer[1]);
             $data_len     = $secondbyte & 127;
@@ -159,7 +158,7 @@ class Ws
                     }
                     break;
                 // Wrong opcode.
-                default :
+                default:
                     echo "error opcode $opcode and close websocket connection. Buffer:" . $buffer . "\n";
                     $connection->close();
                     return 0;
@@ -171,7 +170,7 @@ class Ws
                 }
                 $pack = unpack('nn/ntotal_len', $buffer);
                 $current_frame_length = $pack['total_len'] + 4;
-            } else if ($data_len === 127) {
+            } elseif ($data_len === 127) {
                 if (strlen($buffer) < 10) {
                     return 0;
                 }
@@ -238,7 +237,7 @@ class Ws
         if (65535 < $length) {
             $pack   = pack('NN', ($length & 0xFFFFFFFF00000000) >> 32, $length & 0x00000000FFFFFFFF);
             $length_flag = 127;
-        } else if (125 < $length) {
+        } elseif (125 < $length) {
             $pack   = pack('n*', $length);
             $length_flag = 126;
         }
@@ -300,7 +299,7 @@ class Ws
 
         if ($data_length === 126) {
             $decoded_data = substr($bytes, 4);
-        } else if ($data_length === 127) {
+        } elseif ($data_length === 127) {
             $decoded_data = substr($bytes, 10);
         } else {
             $decoded_data = substr($bytes, 2);
@@ -362,11 +361,11 @@ class Ws
         $connection->websocketSecKey = base64_encode(md5(mt_rand(), true));
         $userHeader = '';
         if (!empty($connection->wsHttpHeader)) {
-            if (is_array($connection->wsHttpHeader)){
-                foreach($connection->wsHttpHeader as $k=>$v){
+            if (is_array($connection->wsHttpHeader)) {
+                foreach ($connection->wsHttpHeader as $k=>$v) {
                     $userHeader .= "$k: $v\r\n";
                 }
-            }else{
+            } else {
                 $userHeader .= $connection->wsHttpHeader;
             }
             $userHeader = "\r\n".trim($userHeader);
@@ -433,7 +432,7 @@ class Ws
             }
             // Headbeat.
             if (!empty($connection->websocketPingInterval)) {
-                $connection->websocketPingTimer = Timer::add($connection->websocketPingInterval, function() use ($connection){
+                $connection->websocketPingTimer = Timer::add($connection->websocketPingInterval, function () use ($connection) {
                     if (false === $connection->send(pack('H*', '898000000000'), true)) {
                         Timer::del($connection->websocketPingTimer);
                         $connection->websocketPingTimer = null;
@@ -453,12 +452,13 @@ class Ws
         return 0;
     }
 
-    public static function WSSetProtocol($connection, $params) {
-	$connection->WSClientProtocol = $params[0];
+    public static function WSSetProtocol($connection, $params)
+    {
+        $connection->WSClientProtocol = $params[0];
     }
 
-    public static function WSGetServerProtocol($connection) {
-	return (property_exists($connection, 'WSServerProtocol')?$connection->WSServerProtocol:null);
+    public static function WSGetServerProtocol($connection)
+    {
+        return (property_exists($connection, 'WSServerProtocol')?$connection->WSServerProtocol:null);
     }
-
 }

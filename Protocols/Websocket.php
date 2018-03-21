@@ -157,8 +157,8 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         return 0;
                     }
                     break;
-                // Wrong opcode. 
-                default :
+                // Wrong opcode.
+                default:
                     echo "error opcode $opcode and close websocket connection. Buffer:" . bin2hex($buffer) . "\n";
                     $connection->close();
                     return 0;
@@ -352,8 +352,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             if (preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
                 $Sec_WebSocket_Key = $match[1];
             } else {
-                $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Sec-WebSocket-Key not found.<br>This is a WebSocket service and can not be accessed via HTTP.<br>See <a href=\"http://wiki.workerman.net/Error1\">http://wiki.workerman.net/Error1</a> for detail.",
-                    true);
+                $connection->send(
+                    "HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Sec-WebSocket-Key not found.<br>This is a WebSocket service and can not be accessed via HTTP.<br>See <a href=\"http://wiki.workerman.net/Error1\">http://wiki.workerman.net/Error1</a> for detail.",
+                    true
+                );
                 $connection->close();
                 return 0;
             }
@@ -400,7 +402,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 $_GET = $_SERVER = $_SESSION = $_COOKIE = array();
 
                 if (isset($connection->headers)) {
-                    if (is_array($connection->headers))  {
+                    if (is_array($connection->headers)) {
                         foreach ($connection->headers as $header) {
                             if (strpos($header, 'Server:') === 0) {
                                 $has_server_header = true;
@@ -437,8 +439,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             return 0;
         }
         // Bad websocket handshake request.
-        $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Invalid handshake data for websocket. <br> See <a href=\"http://wiki.workerman.net/Error1\">http://wiki.workerman.net/Error1</a> for detail.",
-            true);
+        $connection->send(
+            "HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Invalid handshake data for websocket. <br> See <a href=\"http://wiki.workerman.net/Error1\">http://wiki.workerman.net/Error1</a> for detail.",
+            true
+        );
         $connection->close();
         return 0;
     }
@@ -459,8 +463,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $_SERVER = array();
         }
 
-        list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(' ',
-            $header_data[0]);
+        list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(
+            ' ',
+            $header_data[0]
+        );
 
         unset($header_data[0]);
         foreach ($header_data as $content) {
