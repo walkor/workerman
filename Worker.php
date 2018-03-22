@@ -1729,6 +1729,7 @@ class Worker
         }
 
         // For child processes.
+        reset(static::$_workers);
         /** @var \Workerman\Worker $worker */
         $worker            = current(static::$_workers);
         $worker_status_str = posix_getpid() . "\t" . str_pad(round(memory_get_usage(true) / (1024 * 1024), 2) . "M", 7)
