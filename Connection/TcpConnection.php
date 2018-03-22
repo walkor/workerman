@@ -565,12 +565,12 @@ class TcpConnection extends ConnectionInterface
     {
         // SSL handshake.
         if ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true) {
-            if ($this->doSslHandshake($socket,false)) {
+            if ($this->doSslHandshake($socket, false)) {
                 $this->_sslHandshakeCompleted = true;
                 if ($this->_sendBuffer) {
                     Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
                 }
-            }else{
+            } else {
                 return;
             }
         }
@@ -715,7 +715,7 @@ class TcpConnection extends ConnectionInterface
      * @param $socket
      * @return bool
      */
-    public function doSslHandshake($socket,$async){
+    public function doSslHandshake($socket, $async){
         if (feof($socket)) {
             $this->destroy();
             return false;
@@ -727,13 +727,13 @@ class TcpConnection extends ConnectionInterface
         }
         $ret = stream_socket_enable_crypto($socket, true, $type);
         // Negotiation has failed.
-        if(false === $ret) {
+        if (false === $ret) {
             if (!feof($socket)) {
                 echo "\nSSL Handshake fail as ".($async?'client':'server').". \nBuffer:".bin2hex(fread($socket, 8182))."\n";
             }
             $this->destroy();
             return false;
-        } elseif(0 === $ret) {
+        } elseif (0 === $ret) {
             // There isn't enough data and should try again.
             return false;
         }
