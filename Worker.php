@@ -424,9 +424,9 @@ class Worker
      * @var array
      */
     protected static $_availableEventLoops = array(
+	'swoole'   => '\Workerman\Events\Swoole'
         'libevent' => '\Workerman\Events\Libevent',
         'event'    => '\Workerman\Events\Event',
-	'swoole'   => '\Workerman\Events\Swoole'
     );
 
     /**
@@ -1089,6 +1089,9 @@ class Worker
                         break;
                     case 'event':
                         static::$eventLoopClass = '\Workerman\Events\React\ExtEventLoop';
+                        break;
+                    case 'swoole':
+                        static::$eventLoopClass = '\Workerman\Events\Swoole';
                         break;
                     default :
                         static::$eventLoopClass = '\Workerman\Events\React\StreamSelectLoop';
