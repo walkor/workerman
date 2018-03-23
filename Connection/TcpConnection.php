@@ -565,7 +565,7 @@ class TcpConnection extends ConnectionInterface
     {
         // SSL handshake.
         if ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true) {
-            if ($this->doSslHandshake($socket, false)) {
+            if ($this->doSslHandshake($socket)) {
                 $this->_sslHandshakeCompleted = true;
                 if ($this->_sendBuffer) {
                     Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
@@ -715,11 +715,12 @@ class TcpConnection extends ConnectionInterface
      * @param $socket
      * @return bool
      */
-    public function doSslHandshake($socket, $async){
+    public function doSslHandshake($socket){
         if (feof($socket)) {
             $this->destroy();
             return false;
         }
+        $async=$this instanceof AsyncTcpConnection;
         if($async){
             $type=STREAM_CRYPTO_METHOD_SSLv2_CLIENT | STREAM_CRYPTO_METHOD_SSLv23_CLIENT;
         }else{
