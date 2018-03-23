@@ -449,6 +449,21 @@ class Worker
     protected static $_gracefulStop = false;
 
     /**
+     * coroutine queue
+     * @var array
+     */
+    public static $g_coroutine_array = array();
+
+    /**
+     * function coroutineMessage
+     * for process onMessage
+     * @param resource $connection
+     * @param resource $recv_buffer
+     * @return void
+     */
+    public $coroutineMessage = null;
+
+    /**
      * Run all worker instances.
      *
      * @return void
@@ -571,6 +586,18 @@ class Worker
             $user_name_length = strlen($worker->user);
             if (static::$_maxUserNameLength < $user_name_length) {
                 static::$_maxUserNameLength = $user_name_length;
+            }
+
+            if(empty($worker->coroutineMessage)){
+                $worker->coroutineMessage = function($connection,$recv_buffer) use ($worker){
+                    //process request，if have commond yied push to coroutine queue
+                    $r = call_user_func($worker->onMessage, $connection, $recv_buffer);
+                    if(method_exists($r,"current")){
+                        $r->current();//first triger coroutine
+                        //将任务加入到协程队列
+                        array_push(static::$g_coroutine_array,$r);
+                    }
+                };
             }
 
             // Listen.
@@ -2125,7 +2152,7 @@ class Worker
                 exit(250);
             }
         }
-
+        $this->coroutinesLoopController();
         // Main loop.
         static::$globalEvent->loop();
     }
@@ -2182,7 +2209,7 @@ class Worker
         $connection->worker                 = $this;
         $connection->protocol               = $this->protocol;
         $connection->transport              = $this->transport;
-        $connection->onMessage              = $this->onMessage;
+        $connection->onMessage              = $this->coroutineMessage;
         $connection->onClose                = $this->onClose;
         $connection->onError                = $this->onError;
         $connection->onBufferDrain          = $this->onBufferDrain;
@@ -2228,7 +2255,7 @@ class Worker
             }
             ConnectionInterface::$statistics['total_request']++;
             try {
-                call_user_func($this->onMessage, $connection, $recv_buffer);
+                call_user_func($this->coroutineMessage, $connection, $recv_buffer);
             } catch (\Exception $e) {
                 static::log($e);
                 exit(250);
@@ -2238,5 +2265,23 @@ class Worker
             }
         }
         return true;
+    }
+
+    /**
+     * croutines Loop
+     * @return void
+     */
+    public function coroutinesLoopController(){
+        //check and push coroutine
+        for($i=count(static::$g_coroutine_array)-1;$i>=0;$i--){
+            $it = static::$g_coroutine_array[$i];
+            if($it->valid()){
+                $it->next();
+            }else{
+                //coroutine done，delete coroutine from queue
+                array_splice(static::$g_coroutine_array,$i,1);
+            }
+        }
+        static::$globalEvent->add(SIGINT, EventInterface::EV_TIMER_ONCE, array($this, 'coroutinesLoopController'));
     }
 }
