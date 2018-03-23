@@ -22,6 +22,8 @@ class Swoole implements EventInterface
 
     protected $_timer = array();
 
+    protected $_timerOnceMap = array();
+
     protected $_fd = array();
 
     // milisecond
@@ -54,11 +56,26 @@ class Swoole implements EventInterface
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
                 $method = self::EV_TIMER == $flag ? 'tick' : 'after';
+                $mapId = count($this->_timerOnceMap);
                 $timer_id = Timer::$method($fd * 1000,
-                    function ($timer_id = null) use ($func, $args) {
+                    function ($timer_id = null) use ($func, $args, $mapId) {
                         call_user_func_array($func, $args);
+                        // EV_TIMER_ONCE
+                        if (! isset($timer_id)) {
+                            //may be deleted in $func
+                            if (array_key_exists($mapId, $this->_timerOnceMap)) {
+                                $timer_id = $this->_timerOnceMap[$mapId];
+                                unset($this->_timer[$timer_id],
+                                    $this->_timerOnceMap[$mapId]);
+                            }
+                        }
                     });
-                $this->_timer[] = $timer_id;
+                if ($flag == self::EV_TIMER_ONCE) {
+                    $this->_timerOnceMap[$mapId] = $timer_id;
+                    $this->_timer[$timer_id] = $mapId;
+                } else {
+                    $this->_timer[$timer_id] = null;
+                }
                 return $timer_id;
             case self::EV_READ:
             case self::EV_WRITE:
@@ -87,7 +104,19 @@ class Swoole implements EventInterface
                 return pcntl_signal($fd, SIG_IGN, false);
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
-                return Timer::clear($fd);
+                // already remove in EV_TIMER_ONCE callback.
+                if (! array_key_exists($fd, $this->_timer)) {
+                    return true;
+                }
+                $res = Timer::clear($fd);
+                if ($res) {
+                    $mapId = $this->_timer[$fd];
+                    if (isset($mapId)) {
+                        unset($this->_timerOnceMap[$mapId]);
+                    }
+                    unset($this->_timer[$fd]);
+                }
+                return $res;
             case self::EV_READ:
             case self::EV_WRITE:
                 $key = array_search((int) $fd, $this->_fd);
@@ -109,10 +138,11 @@ class Swoole implements EventInterface
      */
     public function clearAllTimer()
     {
-        foreach ($this->_timer as $v) {
+        foreach (array_keys($this->_timer) as $v) {
             Timer::clear($v);
         }
         $this->_timer = array();
+        $this->_timerOnceMap = array();
     }
 
     /**
