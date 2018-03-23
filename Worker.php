@@ -454,6 +454,14 @@ class Worker
      */
     public static $g_coroutine_array = array();
 
+    /**
+     * function coroutineMessage
+     * for process onMessage
+     * @param resource $connection
+     * @param resource $recv_buffer
+     * @return void
+     */
+    public $coroutineMessage = null;
 
     /**
      * Run all worker instances.
@@ -578,6 +586,18 @@ class Worker
             $user_name_length = strlen($worker->user);
             if (static::$_maxUserNameLength < $user_name_length) {
                 static::$_maxUserNameLength = $user_name_length;
+            }
+
+            if(empty($worker->coroutineMessage)){
+                $worker->coroutineMessage = function($connection,$recv_buffer) use ($worker){
+                    //process request，if have commond yied push to coroutine queue
+                    $r = call_user_func($worker->onMessage, $connection, $recv_buffer);
+                    if(method_exists($r,"current")){
+                        $r->current();//first triger coroutine
+                        //将任务加入到协程队列
+                        array_push(static::$g_coroutine_array,$r);
+                    }
+                };
             }
 
             // Listen.
@@ -2176,15 +2196,6 @@ class Worker
      */
     public function acceptConnection($socket)
     {
-        $this->coroutineMessage = function($connection,$recv_buffer){
-            //process request，if have commond yied push to coroutine queue
-            $r = call_user_func($this->onMessage, $connection, $recv_buffer);
-            if(method_exists($r,"current")){
-                $r->current();//first triger coroutine
-                //将任务加入到协程队列
-                array_push(static::$g_coroutine_array,$r);
-            }
-        };
         // Accept a connection on server socket.
         $new_socket = @stream_socket_accept($socket, 0, $remote_address);
         // Thundering herd.
@@ -2272,16 +2283,5 @@ class Worker
             }
         }
         static::$globalEvent->add(SIGINT, EventInterface::EV_TIMER_ONCE, array($this, 'coroutinesLoopController'));
-    }
-
-    /**
-     * CoroutineMessage
-     * for process onMessage
-     * @param resource $connection
-     * @param resource $recv_buffer
-     * @return void
-     */
-    public function coroutineMessage($connection,$recv_buffer){
-
     }
 }
