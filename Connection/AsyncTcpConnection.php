@@ -156,9 +156,9 @@ class AsyncTcpConnection extends TcpConnection
 
         // For statistics.
         self::$statistics['connection_count']++;
-        $this->maxSendBufferSize        = self::$defaultMaxSendBufferSize;
-        $this->_contextOption           = $context_option;
-        static::$connections[$this->id] = $this;
+        $this->maxSendBufferSize         = self::$defaultMaxSendBufferSize;
+        $this->_contextOption            = $context_option;
+        static::$connections[$this->_id] = $this;
     }
 
     /**
@@ -214,7 +214,8 @@ class AsyncTcpConnection extends TcpConnection
      * @return void
      */
     public function reConnect($after = 0) {
-        $this->_status = self::STATUS_INITIAL;
+        $this->_status                   = self::STATUS_INITIAL;
+        static::$connections[$this->_id] = $this;
         if ($this->_reconnectTimer) {
             Timer::del($this->_reconnectTimer);
         }
