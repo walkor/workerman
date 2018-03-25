@@ -15,7 +15,6 @@ namespace Workerman\Events;
 
 use Swoole\Event;
 use Swoole\Timer;
-use Swoole\Process;
 
 class Swoole implements EventInterface
 {
@@ -62,7 +61,7 @@ class Swoole implements EventInterface
                         call_user_func_array($func, $args);
                         // EV_TIMER_ONCE
                         if (! isset($timer_id)) {
-                            //may be deleted in $func
+                            // may be deleted in $func
                             if (array_key_exists($mapId, $this->_timerOnceMap)) {
                                 $timer_id = $this->_timerOnceMap[$mapId];
                                 unset($this->_timer[$timer_id],
@@ -79,13 +78,34 @@ class Swoole implements EventInterface
                 return $timer_id;
             case self::EV_READ:
             case self::EV_WRITE:
-                if ($flag == self::EV_READ) {
-                    $res = Event::add($fd, $func, null, SWOOLE_EVENT_READ);
+                $fd_key = (int) $fd;
+                if (! isset($this->_fd[$fd_key])) {
+                    if ($flag == self::EV_READ) {
+                        $res = Event::add($fd, $func, null, SWOOLE_EVENT_READ);
+                        $fd_type = SWOOLE_EVENT_READ;
+                    } else {
+                        $res = Event::add($fd, null, $func, SWOOLE_EVENT_WRITE);
+                        $fd_type = SWOOLE_EVENT_WRITE;
+                    }
+                    if ($res) {
+                        $this->_fd[$fd_key] = $fd_type;
+                    }
                 } else {
-                    $res = Event::add($fd, null, $func, SWOOLE_EVENT_WRITE);
-                }
-                if (! in_array((int) $fd, $this->_fd) && $res) {
-                    $this->_fd[] = (int) $fd;
+                    $fd_val = $this->_fd[$fd_key];
+                    $res = true;
+                    if ($flag == self::EV_READ) {
+                        if (($fd_val & SWOOLE_EVENT_READ) != SWOOLE_EVENT_READ) {
+                            $res = Event::set($fd, $func, null,
+                                SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
+                            $this->_fd[$fd_key] |= SWOOLE_EVENT_READ;
+                        }
+                    } else {
+                        if (($fd_val & SWOOLE_EVENT_WRITE) != SWOOLE_EVENT_WRITE) {
+                            $res = Event::set($fd, null, $func,
+                                SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
+                            $this->_fd[$fd_key] |= SWOOLE_EVENT_WRITE;
+                        }
+                    }
                 }
                 return $res;
         }
@@ -119,14 +139,30 @@ class Swoole implements EventInterface
                 return $res;
             case self::EV_READ:
             case self::EV_WRITE:
-                $key = array_search((int) $fd, $this->_fd);
-                if (false !== $key) {
-                    $res = Event::del($fd);
-                    if ($res) {
-                        unset($this->_fd[$key]);
+                $fd_key = (int) $fd;
+                if (isset($this->_fd[$fd_key])) {
+                    $fd_val = $this->_fd[$fd_key];
+                    if ($flag == self::EV_READ) {
+                        $flag_remove = ~ SWOOLE_EVENT_READ;
+                    } else {
+                        $flag_remove = ~ SWOOLE_EVENT_WRITE;
                     }
-                    return $res;
+                    $fd_val &= $flag_remove;
+                    if (0 === $fd_val) {
+                        $res = Event::del($fd);
+                        if ($res) {
+                            unset($this->_fd[$fd_key]);
+                        }
+                    } else {
+                        $res = Event::set($fd, null, null, $fd_val);
+                        if ($res) {
+                            $this->_fd[$fd_key] = $fd_val;
+                        }
+                    }
+                } else {
+                    $res = true;
                 }
+                return $res;
         }
     }
 
