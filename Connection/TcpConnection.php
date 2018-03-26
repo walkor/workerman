@@ -611,7 +611,7 @@ class TcpConnection extends ConnectionInterface
                         }
                     } // Wrong package.
                     else {
-                        echo 'error package. package_length=' . var_export($this->_currentPackageLength, true);
+                        echo 'error package. package_length=' . var_export($this->_currentPackageLength, true)."\n";
                         $this->destroy();
                         return;
                     }
