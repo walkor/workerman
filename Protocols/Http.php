@@ -345,6 +345,18 @@ class Http
     }
 
     /**
+     * sessionCreateId
+     *
+     * @param string|prefix  $prefix
+     *
+     * @return string
+     */
+    public static function sessionCreateId($prefix = null)
+    {
+        return session_create_id($prefix);
+    }
+
+    /**
      * sessionId
      *
      * @param string  $id
@@ -400,22 +412,6 @@ class Http
     }
 
     /**
-     * sessionStatus
-     *
-     * @return int
-     */
-    public static function sessionStatus()
-    {
-        if (PHP_SAPI != 'cli') {
-            return session_status();
-        }
-        if (!extension_loaded('session')) {
-            return PHP_SESSION_DISABLED;
-        }
-        return static::sessionStarted() ? PHP_SESSION_ACTIVE : PHP_SESSION_NONE;
-    }
-
-    /**
      * sessionStarted
      *
      * @return bool
@@ -449,7 +445,7 @@ class Http
         if (!isset($_COOKIE[HttpCache::$sessionName]) || !is_file(HttpCache::$sessionPath . '/ses' . $_COOKIE[HttpCache::$sessionName])) {
             // Create a new unique session_id and its associated file name.
             while (true) {
-                $session_id = session_create_id();
+                $session_id = static::sessionCreateId();
                 if (!is_file($file_name = HttpCache::$sessionPath . '/sess_' . $session_id)) break;
             }
             HttpCache::$instance->sessionFile = $file_name;
