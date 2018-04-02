@@ -443,7 +443,7 @@ class Http
         HttpCache::$instance->sessionStarted = true;
         // Generate a SID.
         if (!isset($_COOKIE[HttpCache::$sessionName]) || !is_file(HttpCache::$sessionPath . '/ses' . $_COOKIE[HttpCache::$sessionName])) {
-            // Create a new unique session_id and its associated file name.
+            // Create a unique session_id and the associated file name.
             while (true) {
                 $session_id = static::sessionCreateId();
                 if (!is_file($file_name = HttpCache::$sessionPath . '/sess_' . $session_id)) break;
