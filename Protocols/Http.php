@@ -368,7 +368,7 @@ class Http
         if (PHP_SAPI != 'cli') {
             return $id ? session_id($id) : session_id();
         }
-        if (static::sessionStarted()) {
+        if (static::sessionStarted() && HttpCache::$instance->sessionFile) {
             return str_replace('sess_', '', basename(HttpCache::$instance->sessionFile));
         }
         return '';
