@@ -175,21 +175,21 @@ class Http
                         parse_str($http_body, $_POST);
                         break;
                     case 'application/json':
-                    	$_POST = json_decode($http_body, true);
-                    	break;
+                        $_POST = json_decode($http_body, true);
+                        break;
                 }
             }
         }
 
-        // 解析其他HTTP动作参数
+        // Parse other HTTP action parameters
         if ($_SERVER['REQUEST_METHOD'] != 'GET' && $_SERVER['REQUEST_METHOD'] != "POST") {
-        	$data = array();
-        	if ($_SERVER['HTTP_CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
-        		parse_str($http_body, $data);
-        	} elseif ($_SERVER['HTTP_CONTENT_TYPE'] === "application/json") {
-        		$data = json_decode($http_body, true);
-        	}
-        	$_REQUEST = array_merge($_REQUEST, $data);
+            $data = array();
+            if ($_SERVER['HTTP_CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
+                parse_str($http_body, $data);
+            } elseif ($_SERVER['HTTP_CONTENT_TYPE'] === "application/json") {
+                $data = json_decode($http_body, true);
+            }
+            $_REQUEST = array_merge($_REQUEST, $data);
         }
 
         // HTTP_RAW_REQUEST_DATA HTTP_RAW_POST_DATA
@@ -661,9 +661,11 @@ class HttpCache
         if (!self::$sessionName) {
             self::$sessionName = ini_get('session.name');
         }
+
         if (!self::$sessionPath) {
             self::$sessionPath = @session_save_path();
         }
+
         if (!self::$sessionPath || strpos(self::$sessionPath, 'tcp://') === 0) {
             self::$sessionPath = sys_get_temp_dir();
         }
