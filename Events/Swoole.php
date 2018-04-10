@@ -200,7 +200,7 @@ class Swoole implements EventInterface
      */
     public function destroy()
     {
-        Event::exit();
+        //Event::exit();
     }
 
     /**
