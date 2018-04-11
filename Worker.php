@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.5';
+    const VERSION = '3.5.6';
 
     /**
      * Status starting.
@@ -426,7 +426,7 @@ class Worker
     protected static $_availableEventLoops = array(
         'libevent' => '\Workerman\Events\Libevent',
         'event'    => '\Workerman\Events\Event',
-	'swoole'   => '\Workerman\Events\Swoole'
+        'swoole'   => '\Workerman\Events\Swoole'
     );
 
     /**
@@ -1085,7 +1085,7 @@ class Worker
             if (interface_exists('\React\EventLoop\LoopInterface')) {
                 switch ($loop_name) {
                     case 'libevent':
-                        static::$eventLoopClass = '\Workerman\Events\React\LibEventLoop';
+                        static::$eventLoopClass = '\Workerman\Events\React\ExtLibEventLoop';
                         break;
                     case 'event':
                         static::$eventLoopClass = '\Workerman\Events\React\ExtEventLoop';
