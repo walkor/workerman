@@ -1315,7 +1315,13 @@ class Worker
                 static::resetStd();
             }
             static::$_pidMap  = array();
-            static::$_workers = array($worker->workerId => $worker);
+            // Remove other listener.
+            foreach(static::$_workers as $key => $one_worker) {
+                if ($one_worker->workerId !== $worker->workerId) {
+                    $one_worker->unlisten();
+                    unset(static::$_workers[$key]);
+                }
+            }
             Timer::delAll();
             static::setProcessTitle('WorkerMan: worker process  ' . $worker->name . ' ' . $worker->getSocketName());
             $worker->setUserAndGroup();
