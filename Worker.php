@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.5';
+    const VERSION = '3.5.6';
 
     /**
      * Status starting.
@@ -426,7 +426,7 @@ class Worker
     protected static $_availableEventLoops = array(
         'libevent' => '\Workerman\Events\Libevent',
         'event'    => '\Workerman\Events\Event',
-	'swoole'   => '\Workerman\Events\Swoole'
+        'swoole'   => '\Workerman\Events\Swoole'
     );
 
     /**
@@ -1085,7 +1085,7 @@ class Worker
             if (interface_exists('\React\EventLoop\LoopInterface')) {
                 switch ($loop_name) {
                     case 'libevent':
-                        static::$eventLoopClass = '\Workerman\Events\React\LibEventLoop';
+                        static::$eventLoopClass = '\Workerman\Events\React\ExtLibEventLoop';
                         break;
                     case 'event':
                         static::$eventLoopClass = '\Workerman\Events\React\ExtEventLoop';
@@ -1315,7 +1315,13 @@ class Worker
                 static::resetStd();
             }
             static::$_pidMap  = array();
-            static::$_workers = array($worker->workerId => $worker);
+            // Remove other listener.
+            foreach(static::$_workers as $key => $one_worker) {
+                if ($one_worker->workerId !== $worker->workerId) {
+                    $one_worker->unlisten();
+                    unset(static::$_workers[$key]);
+                }
+            }
             Timer::delAll();
             static::setProcessTitle('WorkerMan: worker process  ' . $worker->name . ' ' . $worker->getSocketName());
             $worker->setUserAndGroup();
