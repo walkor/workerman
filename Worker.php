@@ -1163,7 +1163,7 @@ class Worker
      *
      * @return void
      */
-    public static function forkWorkersForWindows()
+    protected static function forkWorkersForWindows()
     {
         $files = static::getStartFilesForWindows();
         global $argv;
