@@ -364,6 +364,12 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $handshake_message .= "Upgrade: websocket\r\n";
             $handshake_message .= "Sec-WebSocket-Version: 13\r\n";
             $handshake_message .= "Connection: Upgrade\r\n";
+            if(preg_match("/Origin: *(.*?)\r\n/", $buffer, $match))  {
+                $url_info = parse_url($match[1]);
+                if(isset($url_info['host'])) {
+                    $handshake_message .= "Sec-WebSocket-Protocol: " . $url_info['host'] . "\r\n";
+                }
+            }
             $handshake_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n";
 
             // Websocket data buffer.
