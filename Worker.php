@@ -811,7 +811,7 @@ class Worker
                 posix_kill($master_pid, $sig);
                 exit;
             default :
-		echo 'Unknown command: ' . $command . "\n";
+		if(isset($command)) echo 'Unknown command: ' . $command . "\n";
                 exit($usage);
         }
     }
