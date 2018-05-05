@@ -810,6 +810,7 @@ class Worker
                 posix_kill($master_pid, $sig);
                 exit;
             default :
+		echo 'Unknow command: ' . $command . '\n';
                 exit($usage);
         }
     }
