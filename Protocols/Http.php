@@ -106,6 +106,7 @@ class Http
             'HTTP_ACCEPT_ENCODING' => '',
             'HTTP_COOKIE'          => '',
             'HTTP_CONNECTION'      => '',
+            'CONTENT_TYPE'         => '',
             'REMOTE_ADDR'          => '',
             'REMOTE_PORT'          => '0',
             'REQUEST_TIME'         => time()
@@ -184,9 +185,9 @@ class Http
         // Parse other HTTP action parameters
         if ($_SERVER['REQUEST_METHOD'] != 'GET' && $_SERVER['REQUEST_METHOD'] != "POST") {
             $data = array();
-            if ($_SERVER['HTTP_CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
+            if ($_SERVER['CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
                 parse_str($http_body, $data);
-            } elseif ($_SERVER['HTTP_CONTENT_TYPE'] === "application/json") {
+            } elseif ($_SERVER['CONTENT_TYPE'] === "application/json") {
                 $data = json_decode($http_body, true);
             }
             $_REQUEST = array_merge($_REQUEST, $data);
