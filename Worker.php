@@ -399,7 +399,7 @@ class Worker
      *
      * @var string
      */
-    protected static $_OS = 'linux';
+    protected static $_OS = OS_TYPE_LINUX;
 
     /**
      * Processes for windows.
@@ -480,7 +480,7 @@ class Worker
             exit("only run in command line mode \n");
         }
         if (DIRECTORY_SEPARATOR === '\\') {
-            self::$_OS = 'windows';
+            self::$_OS = OS_TYPE_WINDOWS;
         }
     }
 
@@ -537,7 +537,7 @@ class Worker
      */
     protected static function initWorkers()
     {
-        if (static::$_OS !== 'linux') {
+        if (static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
         foreach (static::$_workers as $worker) {
@@ -638,7 +638,7 @@ class Worker
         if (in_array('-q', $argv)) {
             return;
         }
-        if (static::$_OS !== 'linux') {
+        if (static::$_OS !== OS_TYPE_LINUX) {
             static::safeEcho("----------------------- WORKERMAN -----------------------------\r\n");
             static::safeEcho('Workerman version:'. static::VERSION. "          PHP version:". PHP_VERSION. "\r\n");
             static::safeEcho("------------------------ WORKERS -------------------------------\r\n");
@@ -673,7 +673,7 @@ class Worker
      */
     protected static function parseCommand()
     {
-        if (static::$_OS !== 'linux') {
+        if (static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
         global $argv;
@@ -902,7 +902,7 @@ class Worker
      */
     protected static function installSignal()
     {
-        if (static::$_OS !== 'linux') {
+        if (static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
         // stop
@@ -928,7 +928,7 @@ class Worker
      */
     protected static function reinstallSignal()
     {
-        if (static::$_OS !== 'linux') {
+        if (static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
         // uninstall stop signal handler
@@ -1002,7 +1002,7 @@ class Worker
      */
     protected static function daemonize()
     {
-        if (!static::$daemonize || static::$_OS !== 'linux') {
+        if (!static::$daemonize || static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
         umask(0);
@@ -1031,7 +1031,7 @@ class Worker
      */
     public static function resetStd()
     {
-        if (!static::$daemonize || static::$_OS !== 'linux') {
+        if (!static::$daemonize || static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
         global $STDOUT, $STDERR;
@@ -1054,7 +1054,7 @@ class Worker
      */
     protected static function saveMasterPid()
     {
-        if (static::$_OS !== 'linux') {
+        if (static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
         static::$_masterPid = posix_getpid();
@@ -1127,7 +1127,7 @@ class Worker
      */
     protected static function forkWorkers()
     {
-        if (static::$_OS === 'linux') {
+        if (static::$_OS === OS_TYPE_LINUX) {
             static::forkWorkersForLinux();
         } else {
             static::forkWorkersForWindows();
@@ -1407,7 +1407,7 @@ class Worker
      */
     protected static function monitorWorkers()
     {
-        if (static::$_OS === 'linux') {
+        if (static::$_OS === OS_TYPE_LINUX) {
             static::monitorWorkersForLinux();
         } else {
             static::monitorWorkersForWindows();
@@ -1836,7 +1836,7 @@ class Worker
     public static function checkErrors()
     {
         if (static::STATUS_SHUTDOWN != static::$_status) {
-            $error_msg = static::$_OS === 'linux' ? 'Worker['. posix_getpid() .'] process terminated' : 'Worker process terminated';
+            $error_msg = static::$_OS === OS_TYPE_LINUX ? 'Worker['. posix_getpid() .'] process terminated' : 'Worker process terminated';
             $errors    = error_get_last();
             if ($errors && ($errors['type'] === E_ERROR ||
                     $errors['type'] === E_PARSE ||
@@ -1906,7 +1906,7 @@ class Worker
             static::safeEcho($msg);
         }
         file_put_contents((string)static::$logFile, date('Y-m-d H:i:s') . ' ' . 'pid:'
-            . (static::$_OS === 'linux' ? posix_getpid() : 1) . ' ' . $msg, FILE_APPEND | LOCK_EX);
+            . (static::$_OS === OS_TYPE_LINUX ? posix_getpid() : 1) . ' ' . $msg, FILE_APPEND | LOCK_EX);
     }
 
     /**
