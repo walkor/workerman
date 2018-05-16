@@ -1421,6 +1421,7 @@ class Worker
      */
     protected static function monitorWorkersForLinux()
     {
+        $checkTimes = 0;
         static::$_status = static::STATUS_RUNNING;
         while (1) {
             // Calls signal handlers for pending signals.
@@ -1432,6 +1433,8 @@ class Worker
             pcntl_signal_dispatch();
             // If a child has already exited.
             if ($pid > 0) {
+                // reset $checkTimes
+                $checkTimes = 0;
                 // Find out witch worker process exited.
                 foreach (static::$_pidMap as $worker_id => $worker_pid_array) {
                     if (isset($worker_pid_array[$pid])) {
@@ -1472,9 +1475,26 @@ class Worker
                     }
                 }
             } else {
+
                 // If shutdown state and all child processes exited then master process exit.
-                if (static::$_status === static::STATUS_SHUTDOWN && !static::getAllWorkerPids()) {
-                    static::exitAndClearAll();
+                if (static::$_status === static::STATUS_SHUTDOWN) {
+                    $pids = static::getAllWorkerPids();
+                    if (!$pids) {
+                        static::exitAndClearAll();
+                    } elseif ($checkTimes > 500) {
+                        // forced stop if all pid exited
+                        $allExited = true;
+                        foreach ($pids as $pid) {
+                            if (posix_kill($pid, 0)) {
+                                $allExited = false;
+                                break;
+                            }
+                        }
+                        if ($allExited) {
+                            static::exitAndClearAll();
+                        }
+                    }
+                    $checkTimes++;
                 }
             }
         }
