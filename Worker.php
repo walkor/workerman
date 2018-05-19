@@ -1211,11 +1211,6 @@ class Worker
         $files = array();
         foreach($argv as $file)
         {
-            $ext = pathinfo($file, PATHINFO_EXTENSION );
-            if($ext !== 'php')
-            {
-                continue;
-            }
             if(is_file($file))
             {
                 $files[$file] = $file;
