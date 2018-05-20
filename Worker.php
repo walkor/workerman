@@ -447,6 +447,18 @@ class Worker
      * @var string
      */
     protected static $_gracefulStop = false;
+	
+    /**
+     * output stream
+     * @var resource
+     */
+    protected static $outputStream = null;
+
+    /**
+     * if output stream support decorated
+     * @var bool
+     */
+    protected static $outputDecorated = false;
 
     /**
      * Run all worker instances.
@@ -645,18 +657,18 @@ class Worker
             static::safeEcho("worker               listen                              processes status\r\n");
             return;
         }
-        static::safeEcho("\033[1A\n\033[K-----------------------\033[47;30m WORKERMAN \033[0m-----------------------------\r\n\033[0m");
+        static::safeEcho("<n>-----------------------<w> WORKERMAN </w>-----------------------------</n>\r\n");
         static::safeEcho('Workerman version:'. static::VERSION. "          PHP version:". PHP_VERSION. "\r\n");
-        static::safeEcho("------------------------\033[47;30m WORKERS \033[0m-------------------------------\r\n");
-        static::safeEcho("\033[47;30muser\033[0m". str_pad('',
-                static::$_maxUserNameLength + 2 - strlen('user')). "\033[47;30mworker\033[0m". str_pad('',
-                static::$_maxWorkerNameLength + 2 - strlen('worker')). "\033[47;30mlisten\033[0m". str_pad('',
-                static::$_maxSocketNameLength + 2 - strlen('listen')). "\033[47;30mprocesses\033[0m \033[47;30m". "status\033[0m\n");
+        static::safeEcho("------------------------<w> WORKERS </w>-------------------------------\r\n");
+        static::safeEcho("<w>user</w>". str_pad('',
+                static::$_maxUserNameLength + 2 - strlen('user')). "<w>worker</w>". str_pad('',
+                static::$_maxWorkerNameLength + 2 - strlen('worker')). "<w>listen</w>". str_pad('',
+                static::$_maxSocketNameLength + 2 - strlen('listen')). "<w>processes</w> <w>status</w>\n");
 
         foreach (static::$_workers as $worker) {
             static::safeEcho(str_pad($worker->user, static::$_maxUserNameLength + 2). str_pad($worker->name,
                     static::$_maxWorkerNameLength + 2). str_pad($worker->getSocketName(),
-                    static::$_maxSocketNameLength + 2). str_pad(' ' . $worker->count, 9). " \033[32;40m [OK] \033[0m\n");
+                    static::$_maxSocketNameLength + 2). str_pad(' ' . $worker->count, 9). " <g> [OK] </g>\n");
         }
         static::safeEcho("----------------------------------------------------------------\n");
         if (static::$daemonize) {
@@ -689,7 +701,7 @@ class Worker
         );
         $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in DEBUG mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
         if (!isset($argv[1]) || !in_array($argv[1], $available_commands)) {
-	    if (isset($argv[1])) echo 'Unknown command: ' . $argv[1] . "\n";
+	    if (isset($argv[1])) static::safeEcho('Unknown command: ' . $argv[1] . "\n");
             exit($usage);
         }
 
@@ -740,14 +752,14 @@ class Worker
                     sleep(1);
                     // Clear terminal.
                     if ($command2 === '-d') {
-                        echo "\33[H\33[2J\33(B\33[m";
+						static::safeEcho("\33[H\33[2J\33(B\33[m", true);
                     }
                     // Echo status data.
-                    echo static::formatStatusData();
+					static::safeEcho(static::formatStatusData());
                     if ($command2 !== '-d') {
                         exit(0);
                     }
-                    echo "\nPress Ctrl+C to quit.\n\n";
+					static::safeEcho("\nPress Ctrl+C to quit.\n\n");
                 }
                 exit(0);
             case 'connections':
@@ -810,7 +822,7 @@ class Worker
                 posix_kill($master_pid, $sig);
                 exit;
             default :
-		if (isset($command)) echo 'Unknown command: ' . $command . "\n";
+		if (isset($command)) static::safeEcho('Unknown command: ' . $command . "\n");
                 exit($usage);
         }
     }
@@ -1172,8 +1184,8 @@ class Worker
         {
             if(count(static::$_workers) > 1)
             {
-                echo "@@@ Error: multi workers init in one php file are not support @@@\r\n";
-                echo "@@@ Please visit http://wiki.workerman.net/Multi_woker_for_win @@@\r\n";
+                static::safeEcho("@@@ Error: multi workers init in one php file are not support @@@\r\n");
+                static::safeEcho("@@@ Please visit http://wiki.workerman.net/Multi_woker_for_win @@@\r\n");
             }
             elseif(count(static::$_workers) <= 0)
             {
@@ -1185,7 +1197,7 @@ class Worker
             $worker = current(static::$_workers);
 
             // Display UI.
-            echo str_pad($worker->name, 21) . str_pad($worker->getSocketName(), 36) . str_pad($worker->count, 10) . "[ok]\n";
+			static::safeEcho(str_pad($worker->name, 21) . str_pad($worker->getSocketName(), 36) . str_pad($worker->count, 10) . "[ok]\n");
             $worker->listen();
             $worker->run();
             exit("@@@child exit@@@\r\n");
@@ -1247,7 +1259,7 @@ class Worker
         }
         $timer_id = Timer::add(1, function()use($std_handler)
         {
-            echo fread($std_handler, 65535);
+			static::safeEcho(fread($std_handler, 65535));
         });
 
         // 保存子进程句柄
@@ -1270,7 +1282,7 @@ class Worker
             {
                 if(!$status['running'])
                 {
-                    echo "process $start_file terminated and try to restart\n";
+					static::safeEcho("process $start_file terminated and try to restart\n");
                     Timer::del($timer_id);
                     @proc_close($process);
                     static::forkOneWorkerForWindows($start_file);
@@ -1278,7 +1290,7 @@ class Worker
             }
             else
             {
-                echo "proc_get_status fail\n";
+                static::safeEcho("proc_get_status fail\n");
             }
         }
     }
@@ -1928,14 +1940,80 @@ class Worker
 
     /**
      * Safe Echo.
-     *
      * @param $msg
+     * @param bool $decorated
      */
-    public static function safeEcho($msg)
+    public static function safeEcho($msg, $decorated = false)
     {
-        if (!function_exists('posix_isatty') || posix_isatty(STDOUT)) {
-            echo $msg;
+        $stream = static::getOutputStream();
+        if (!$decorated) {
+            $line = $white = $green = $end = '';
+            if (static::$outputDecorated) {
+                $line = "\033[1A\n\033[K";
+                $white = "\033[47;30m";
+                $green = "\033[32;40m";
+                $end = "\033[0m";
+            }
+            $msg = str_replace('<n>', $line, $msg);
+            $msg = str_replace('<w>', $white, $msg);
+            $msg = str_replace('<g>', $green, $msg);
+            $msg = str_replace(['</n>', '</w>', '</g>'], $end, $msg);
+        } elseif (!static::$outputDecorated) {
+            return;
         }
+        fwrite($stream, $msg);
+        fflush($stream);
+    }
+
+    /**
+     * get output stream
+     * @return bool|null|resource
+     */
+    protected static function getOutputStream()
+    {
+        if (static::$outputStream) {
+            return static::$outputStream;
+        }
+        $stream = !static::isRunningOS400() ? @fopen('php://stdout', 'w') : null;
+        if (!$stream) {
+            $stream = fopen('php://output', 'w');
+        }
+        $stat = fstat($stream);
+        if (($stat['mode'] & 0170000) === 0100000) {
+            // output to file
+            static::$outputDecorated = false;
+        } elseif (false !== getenv('BABUN_HOME')) {
+            // win Babun
+            static::$outputDecorated = true;
+        } elseif (static::$_OS === OS_TYPE_LINUX) {
+            // linux
+            static::$outputDecorated = function_exists('posix_isatty') && @posix_isatty($stream);
+        } else {
+            // window
+            static::$outputDecorated = '10.0.10586' === PHP_WINDOWS_VERSION_MAJOR.'.'.PHP_WINDOWS_VERSION_MINOR.'.'.PHP_WINDOWS_VERSION_BUILD
+            || false !== getenv('ANSICON')
+            || 'ON' === getenv('ConEmuANSI')
+            || stripos(getenv('TERM'), 'xterm') === 0;
+        }
+        return static::$outputStream = $stream;
+    }
+
+    /**
+     * Checks if current executing environment is IBM iSeries (OS400), which
+     * doesn't properly convert character-encodings between ASCII to EBCDIC.
+     * Licensed under the MIT/X11 License (http://opensource.org/licenses/MIT)
+     * (c) Fabien Potencier <fabien@symfony.com>
+     * @see https://github.com/symfony/console/blob/master/Output/ConsoleOutput.php#L121
+     * @return bool
+     */
+    private static function isRunningOS400()
+    {
+        $checks = array(
+            function_exists('php_uname') ? php_uname('s') : '',
+            getenv('OSTYPE'),
+            PHP_OS,
+        );
+        return false !== stripos(implode(';', $checks), 'OS400');
     }
 
     /**
