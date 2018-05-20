@@ -1487,6 +1487,8 @@ class Worker
                         }
                         if ($allExited) {
                             static::exitAndClearAll();
+                        } else {
+                            $checkTimes = 0;
                         }
                     }
                     $checkTimes++;
