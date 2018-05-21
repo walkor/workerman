@@ -452,13 +452,13 @@ class Worker
      * standard output stream
      * @var resource
      */
-    protected static $outputStream = null;
+    protected static $_outputStream = null;
 
     /**
-     * if outputStream support decorated
+     * if $outputStream support decorated
      * @var bool
      */
-    protected static $outputDecorated = null;
+    protected static $_outputDecorated = null;
 
     /**
      * Run all worker instances.
@@ -1057,7 +1057,7 @@ class Worker
             @fclose(STDERR);
             $STDOUT = fopen(static::$stdoutFile, "a");
             $STDERR = fopen(static::$stdoutFile, "a");
-            static::$outputStream = static::$outputDecorated = null;
+            static::$_outputStream = static::$_outputDecorated = null;
         } else {
             throw new Exception('can not open stdoutFile ' . static::$stdoutFile);
         }
@@ -1640,16 +1640,7 @@ class Worker
                     Timer::add(static::KILL_WORKER_TIMER_TIME, 'posix_kill', array($worker_pid, SIGKILL), false);
                 }
             }
-            // check if child processes is really running
-            Timer::add(1, function() {
-                foreach (static::$_pidMap as $worker_id => $worker_pid_array) {
-                    foreach ($worker_pid_array as $pid => $worker_pid) {
-                        if (!posix_kill($pid, 0)) {
-                            unset(static::$_pidMap[$worker_id][$pid]);
-                        }
-                    }
-                }
-            });
+            Timer::add(1, "\\Workerman\\Worker::checkIfChildRunning");
             // Remove statistics file.
             if (is_file(static::$_statisticsFile)) {
                 @unlink(static::$_statisticsFile);
@@ -1667,6 +1658,20 @@ class Worker
                 static::$_workers = array();
                 static::$globalEvent->destroy();
                 exit(0);
+            }
+        }
+    }
+
+    /**
+     * check if child processes is really running
+     */
+    public static function checkIfChildRunning()
+    {
+        foreach (static::$_pidMap as $worker_id => $worker_pid_array) {
+            foreach ($worker_pid_array as $pid => $worker_pid) {
+                if (!posix_kill($pid, 0)) {
+                    unset(static::$_pidMap[$worker_id][$pid]);
+                }
             }
         }
     }
@@ -1943,7 +1948,7 @@ class Worker
         }
         if (!$decorated) {
             $line = $white = $green = $end = '';
-            if (static::$outputDecorated) {
+            if (static::$_outputDecorated) {
                 $line = "\033[1A\n\033[K";
                 $white = "\033[47;30m";
                 $green = "\033[32;40m";
@@ -1951,7 +1956,7 @@ class Worker
             }
             $msg = str_replace(['<n>', '<w>', '<g>'], [$line, $white, $green], $msg);
             $msg = str_replace(['</n>', '</w>', '</g>'], $end, $msg);
-        } elseif (!static::$outputDecorated) {
+        } elseif (!static::$_outputDecorated) {
             return;
         }
         fwrite($stream, $msg);
@@ -1964,8 +1969,8 @@ class Worker
      */
     protected static function getOutputStream()
     {
-        if (static::$outputStream) {
-            return static::$outputStream;
+        if (static::$_outputStream) {
+            return static::$_outputStream;
         }
         $stream = !static::isRunningOS400() ? @fopen('php://stdout', 'w') : null;
         if (!$stream) {
@@ -1974,21 +1979,21 @@ class Worker
         $stat = fstat($stream);
         if (($stat['mode'] & 0170000) === 0100000) {
             // file
-            static::$outputDecorated = false;
+            static::$_outputDecorated = false;
         } elseif (false !== getenv('BABUN_HOME')) {
             // Babun
-            static::$outputDecorated = true;
+            static::$_outputDecorated = true;
         } elseif (static::$_OS === OS_TYPE_LINUX) {
             // linux
-            static::$outputDecorated = function_exists('posix_isatty') && @posix_isatty($stream);
+            static::$_outputDecorated = function_exists('posix_isatty') && @posix_isatty($stream);
         } else {
             // window
-            static::$outputDecorated = '10.0.10586' === PHP_WINDOWS_VERSION_MAJOR.'.'.PHP_WINDOWS_VERSION_MINOR.'.'.PHP_WINDOWS_VERSION_BUILD
+            static::$_outputDecorated = '10.0.10586' === PHP_WINDOWS_VERSION_MAJOR.'.'.PHP_WINDOWS_VERSION_MINOR.'.'.PHP_WINDOWS_VERSION_BUILD
                 || false !== getenv('ANSICON')
                 || 'ON' === getenv('ConEmuANSI')
                 || stripos(getenv('TERM'), 'xterm') === 0;
         }
-        return static::$outputStream = $stream;
+        return static::$_outputStream = $stream;
     }
 
     /**
