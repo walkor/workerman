@@ -1988,7 +1988,8 @@ class Worker
             static::$_outputDecorated = function_exists('posix_isatty') && @posix_isatty($stream);
         } else {
             // window
-            static::$_outputDecorated = '10.0.10586' === PHP_WINDOWS_VERSION_MAJOR.'.'.PHP_WINDOWS_VERSION_MINOR.'.'.PHP_WINDOWS_VERSION_BUILD
+            static::$_outputDecorated =
+                (function_exists('sapi_windows_vt100_support') && @sapi_windows_vt100_support($stream))
                 || false !== getenv('ANSICON')
                 || 'ON' === getenv('ConEmuANSI')
                 || stripos(getenv('TERM'), 'xterm') === 0;
