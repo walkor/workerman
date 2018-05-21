@@ -455,7 +455,7 @@ class Worker
     protected static $outputStream = null;
 
     /**
-     * if $outputStream support decorated
+     * if outputStream support decorated
      * @var bool
      */
     protected static $outputDecorated = null;
