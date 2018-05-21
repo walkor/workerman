@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.6';
+    const VERSION = '3.5.7';
 
     /**
      * Status starting.
@@ -449,13 +449,13 @@ class Worker
     protected static $_gracefulStop = false;
 
     /**
-     * standard output stream
+     * Standard output stream
      * @var resource
      */
     protected static $_outputStream = null;
 
     /**
-     * if $outputStream support decorated
+     * If $outputStream support decorated
      * @var bool
      */
     protected static $_outputDecorated = null;
@@ -503,6 +503,8 @@ class Worker
      */
     protected static function init()
     {
+        set_error_handler(null);
+
         // Start file.
         $backtrace        = debug_backtrace();
         static::$_startFile = $backtrace[count($backtrace) - 1]['file'];
@@ -1464,7 +1466,7 @@ class Worker
                         unset(static::$_pidMap[$worker_id][$pid]);
 
                         // Mark id is available.
-                        $id                            = static::getId($worker_id, $pid);
+                        $id                              = static::getId($worker_id, $pid);
                         static::$_idMap[$worker_id][$id] = 0;
 
                         break;
@@ -2001,7 +2003,7 @@ class Worker
     public function __construct($socket_name = '', $context_option = array())
     {
         // Save all worker instances.
-        $this->workerId                  = spl_object_hash($this);
+        $this->workerId                    = spl_object_hash($this);
         static::$_workers[$this->workerId] = $this;
         static::$_pidMap[$this->workerId]  = array();
 
@@ -2204,6 +2206,7 @@ class Worker
             }
         }
 
+        restore_error_handler();
         // Main loop.
         static::$globalEvent->loop();
     }
@@ -2248,7 +2251,10 @@ class Worker
     public function acceptConnection($socket)
     {
         // Accept a connection on server socket.
-        $new_socket = @stream_socket_accept($socket, 0, $remote_address);
+        set_error_handler(function(){});
+        $new_socket = stream_socket_accept($socket, 0, $remote_address);
+        restore_error_handler();
+
         // Thundering herd.
         if (!$new_socket) {
             return;
@@ -2288,7 +2294,9 @@ class Worker
      */
     public function acceptUdpConnection($socket)
     {
+        set_error_handler(function(){});
         $recv_buffer = stream_socket_recvfrom($socket, static::MAX_UDP_PACKAGE_SIZE, 0, $remote_address);
+        restore_error_handler();
         if (false === $recv_buffer || empty($remote_address)) {
             return false;
         }
@@ -2296,16 +2304,16 @@ class Worker
         $connection           = new UdpConnection($socket, $remote_address);
         $connection->protocol = $this->protocol;
         if ($this->onMessage) {
-            if ($this->protocol !== null) {
-                /** @var \Workerman\Protocols\ProtocolInterface $parser */
-                $parser      = $this->protocol;
-                $recv_buffer = $parser::decode($recv_buffer, $connection);
-                // Discard bad packets.
-                if ($recv_buffer === false)
-                    return true;
-            }
-            ConnectionInterface::$statistics['total_request']++;
             try {
+                if ($this->protocol !== null) {
+                    /** @var \Workerman\Protocols\ProtocolInterface $parser */
+                    $parser      = $this->protocol;
+                    $recv_buffer = $parser::decode($recv_buffer, $connection);
+                    // Discard bad packets.
+                    if ($recv_buffer === false)
+                        return true;
+                }
+                ConnectionInterface::$statistics['total_request']++;
                 call_user_func($this->onMessage, $connection, $recv_buffer);
             } catch (\Exception $e) {
                 static::log($e);
