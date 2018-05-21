@@ -1057,7 +1057,9 @@ class Worker
             @fclose(STDERR);
             $STDOUT = fopen(static::$stdoutFile, "a");
             $STDERR = fopen(static::$stdoutFile, "a");
-            static::$_outputStream = static::$_outputDecorated = null;
+            // change output stream
+            static::$_outputStream = null;
+            static::outputStream($STDOUT);
         } else {
             throw new Exception('can not open stdoutFile ' . static::$stdoutFile);
         }
@@ -1939,24 +1941,13 @@ class Worker
      * Safe Echo.
      * @param $msg
      * @param bool $decorated
+     * @return bool
      */
     public static function safeEcho($msg, $decorated = false)
     {
-        if (!static::$_outputStream) {
-            static::$_outputStream = STDOUT;
-            $stat = fstat(static::$_outputStream);
-            if (($stat['mode'] & 0170000) === 0100000) {
-                // file
-                static::$_outputDecorated = false;
-            } else {
-                static::$_outputDecorated =
-                    static::$_OS === OS_TYPE_LINUX &&
-                    function_exists('posix_isatty') &&
-                    @posix_isatty(static::$_outputStream);
-            }
-        }
-        if (!is_resource(static::$_outputStream) || 'stream' !== get_resource_type(static::$_outputStream)) {
-            return;
+        $stream = static::outputStream();
+        if (!$stream) {
+            return false;
         }
         if (!$decorated) {
             $line = $white = $green = $end = '';
@@ -1969,10 +1960,36 @@ class Worker
             $msg = str_replace(array('<n>', '<w>', '<g>'), array($line, $white, $green), $msg);
             $msg = str_replace(array('</n>', '</w>', '</g>'), $end, $msg);
         } elseif (!static::$_outputDecorated) {
-            return;
+            return false;
         }
-        fwrite(static::$_outputStream, $msg);
-        fflush(static::$_outputStream);
+        fwrite($stream, $msg);
+        fflush($stream);
+        return true;
+    }
+
+    /**
+     * @param null $stream
+     * @return bool|resource
+     */
+    private static function outputStream($stream = null)
+    {
+        if (!$stream) {
+            $stream = static::$_outputStream ? static::$_outputStream : STDOUT;
+        }
+        if (!$stream || !is_resource($stream) || 'stream' !== get_resource_type($stream)) {
+            return false;
+        }
+        $stat = fstat($stream);
+        if (($stat['mode'] & 0170000) === 0100000) {
+            // file
+            static::$_outputDecorated = false;
+        } else {
+            static::$_outputDecorated =
+                static::$_OS === OS_TYPE_LINUX &&
+                function_exists('posix_isatty') &&
+                @posix_isatty($stream);
+        }
+        return static::$_outputStream = $stream;
     }
 
     /**
