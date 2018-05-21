@@ -756,11 +756,11 @@ class Worker
                         static::safeEcho("\33[H\33[2J\33(B\33[m", true);
                     }
                     // Echo status data.
-                    self::safeEcho(static::formatStatusData());
+                    static::safeEcho(static::formatStatusData());
                     if ($command2 !== '-d') {
                         exit(0);
                     }
-                    self::safeEcho("\nPress Ctrl+C to quit.\n\n");
+                    static::safeEcho("\nPress Ctrl+C to quit.\n\n");
                 }
                 exit(0);
             case 'connections':
@@ -1263,7 +1263,7 @@ class Worker
         }
         $timer_id = Timer::add(1, function()use($std_handler)
         {
-            self::safeEcho(fread($std_handler, 65535));
+            Worker::safeEcho(fread($std_handler, 65535));
         });
 
         // 保存子进程句柄
@@ -1942,8 +1942,20 @@ class Worker
      */
     public static function safeEcho($msg, $decorated = false)
     {
-        $stream = static::getOutputStream();
-        if (!is_resource($stream) || 'stream' !== get_resource_type($stream)) {
+        if (!static::$_outputStream) {
+            static::$_outputStream = STDOUT;
+            $stat = fstat(static::$_outputStream);
+            if (($stat['mode'] & 0170000) === 0100000) {
+                // file
+                static::$_outputDecorated = false;
+            } else {
+                static::$_outputDecorated =
+                    static::$_OS === OS_TYPE_LINUX &&
+                    function_exists('posix_isatty') &&
+                    @posix_isatty(static::$_outputStream);
+            }
+        }
+        if (!is_resource(static::$_outputStream) || 'stream' !== get_resource_type(static::$_outputStream)) {
             return;
         }
         if (!$decorated) {
@@ -1954,65 +1966,13 @@ class Worker
                 $green = "\033[32;40m";
                 $end = "\033[0m";
             }
-            $msg = str_replace(['<n>', '<w>', '<g>'], [$line, $white, $green], $msg);
-            $msg = str_replace(['</n>', '</w>', '</g>'], $end, $msg);
+            $msg = str_replace(array('<n>', '<w>', '<g>'), array($line, $white, $green), $msg);
+            $msg = str_replace(array('</n>', '</w>', '</g>'), $end, $msg);
         } elseif (!static::$_outputDecorated) {
             return;
         }
-        fwrite($stream, $msg);
-        fflush($stream);
-    }
-
-    /**
-     * get output stream
-     * @return bool|null|resource
-     */
-    protected static function getOutputStream()
-    {
-        if (static::$_outputStream) {
-            return static::$_outputStream;
-        }
-        $stream = !static::isRunningOS400() ? @fopen('php://stdout', 'w') : null;
-        if (!$stream) {
-            $stream = fopen('php://output', 'w');
-        }
-        $stat = fstat($stream);
-        if (($stat['mode'] & 0170000) === 0100000) {
-            // file
-            static::$_outputDecorated = false;
-        } elseif (false !== getenv('BABUN_HOME')) {
-            // Babun
-            static::$_outputDecorated = true;
-        } elseif (static::$_OS === OS_TYPE_LINUX) {
-            // linux
-            static::$_outputDecorated = function_exists('posix_isatty') && @posix_isatty($stream);
-        } else {
-            // window
-            static::$_outputDecorated =
-                (function_exists('sapi_windows_vt100_support') && @sapi_windows_vt100_support($stream))
-                || false !== getenv('ANSICON')
-                || 'ON' === getenv('ConEmuANSI')
-                || stripos(getenv('TERM'), 'xterm') === 0;
-        }
-        return static::$_outputStream = $stream;
-    }
-
-    /**
-     * Checks if current executing environment is IBM iSeries (OS400), which
-     * doesn't properly convert character-encodings between ASCII to EBCDIC.
-     * Licensed under the MIT/X11 License (http://opensource.org/licenses/MIT)
-     * (c) Fabien Potencier <fabien@symfony.com>
-     * @see https://github.com/symfony/console/blob/master/Output/ConsoleOutput.php#L131
-     * @return bool
-     */
-    private static function isRunningOS400()
-    {
-        $checks = array(
-            function_exists('php_uname') ? php_uname('s') : '',
-            getenv('OSTYPE'),
-            PHP_OS,
-        );
-        return false !== stripos(implode(';', $checks), 'OS400');
+        fwrite(static::$_outputStream, $msg);
+        fflush(static::$_outputStream);
     }
 
     /**
