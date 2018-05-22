@@ -602,7 +602,9 @@ class TcpConnection extends ConnectionInterface
                     }
                 } else {
                     // Get current package length.
-                    set_error_handler(null);
+                    set_error_handler(function($code, $msg, $file, $line){
+                        echo "$msg in file $file on line $line\n";
+                    });
                     $this->_currentPackageLength = $parser::input($this->_recvBuffer, $this);
                     restore_error_handler();
                     // The packet length is unknown.
