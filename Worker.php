@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.7';
+    const VERSION = '3.5.8';
 
     /**
      * Status starting.
