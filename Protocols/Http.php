@@ -348,13 +348,12 @@ class Http
     /**
      * sessionCreateId
      *
-     * @param string|prefix  $prefix
-     *
      * @return string
      */
-    public static function sessionCreateId($prefix = null)
+    public static function sessionCreateId()
     {
-        return session_create_id($prefix);
+        mt_srand();
+        return bin2hex(pack('d', microtime(true)) . pack('N',mt_rand(0, 2147483647)));
     }
 
     /**

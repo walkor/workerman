@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.6';
+    const VERSION = '3.5.8';
 
     /**
      * Status starting.
@@ -449,13 +449,13 @@ class Worker
     protected static $_gracefulStop = false;
 
     /**
-     * standard output stream
+     * Standard output stream
      * @var resource
      */
     protected static $_outputStream = null;
 
     /**
-     * if $outputStream support decorated
+     * If $outputStream support decorated
      * @var bool
      */
     protected static $_outputDecorated = null;
@@ -503,6 +503,10 @@ class Worker
      */
     protected static function init()
     {
+        set_error_handler(function($code, $msg, $file, $line){
+            echo "$msg in file $file on line $line\n";
+        });
+
         // Start file.
         $backtrace        = debug_backtrace();
         static::$_startFile = $backtrace[count($backtrace) - 1]['file'];
@@ -723,7 +727,7 @@ class Worker
 
         // Get master process PID.
         $master_pid      = is_file(static::$pidFile) ? file_get_contents(static::$pidFile) : 0;
-        $master_is_alive = $master_pid && @posix_kill($master_pid, 0) && posix_getpid() != $master_pid;
+        $master_is_alive = $master_pid && posix_kill($master_pid, 0) && posix_getpid() != $master_pid;
         // Master is still alive?
         if ($master_is_alive) {
             if ($command === 'start') {
@@ -764,15 +768,17 @@ class Worker
                 }
                 exit(0);
             case 'connections':
-                if (is_file(static::$_statisticsFile)) {
-                    @unlink(static::$_statisticsFile);
+                if (is_file(static::$_statisticsFile) && is_writable(static::$_statisticsFile)) {
+                    unlink(static::$_statisticsFile);
                 }
                 // Master process will send SIGIO signal to all child processes.
                 posix_kill($master_pid, SIGIO);
                 // Waiting amoment.
                 usleep(500000);
                 // Display statisitcs data from a disk file.
-                @readfile(static::$_statisticsFile);
+                if(is_readable(static::$_statisticsFile)) {
+                    readfile(static::$_statisticsFile);
+                }
                 exit(0);
             case 'restart':
             case 'stop':
@@ -838,7 +844,10 @@ class Worker
     protected static function formatStatusData()
     {
         static $total_request_cache = array();
-        $info = @file(static::$_statisticsFile, FILE_IGNORE_NEW_LINES);
+        if (!is_readable(static::$_statisticsFile)) {
+            return '';
+        }
+        $info = file(static::$_statisticsFile, FILE_IGNORE_NEW_LINES);
         if (!$info) {
             return '';
         }
@@ -1053,8 +1062,8 @@ class Worker
         $handle = fopen(static::$stdoutFile, "a");
         if ($handle) {
             unset($handle);
-            @fclose(STDOUT);
-            @fclose(STDERR);
+            fclose(STDOUT);
+            fclose(STDERR);
             $STDOUT = fopen(static::$stdoutFile, "a");
             $STDERR = fopen(static::$stdoutFile, "a");
             // change output stream
@@ -1076,7 +1085,7 @@ class Worker
             return;
         }
         static::$_masterPid = posix_getpid();
-        if (false === @file_put_contents(static::$pidFile, static::$_masterPid)) {
+        if (false === file_put_contents(static::$pidFile, static::$_masterPid)) {
             throw new Exception('can not save pid to ' . static::$pidFile);
         }
     }
@@ -1290,7 +1299,7 @@ class Worker
                 {
                     static::safeEcho("process $start_file terminated and try to restart\n");
                     Timer::del($timer_id);
-                    @proc_close($process);
+                    proc_close($process);
                     static::forkOneWorkerForWindows($start_file);
                 }
             }
@@ -1404,13 +1413,15 @@ class Worker
      */
     protected static function setProcessTitle($title)
     {
+        set_error_handler(function(){});
         // >=php 5.5
         if (function_exists('cli_set_process_title')) {
-            @cli_set_process_title($title);
+            cli_set_process_title($title);
         } // Need proctitle when php<=5.5 .
         elseif (extension_loaded('proctitle') && function_exists('setproctitle')) {
-            @setproctitle($title);
+            setproctitle($title);
         }
+        restore_error_handler();
     }
 
     /**
@@ -1464,7 +1475,7 @@ class Worker
                         unset(static::$_pidMap[$worker_id][$pid]);
 
                         // Mark id is available.
-                        $id                            = static::getId($worker_id, $pid);
+                        $id                              = static::getId($worker_id, $pid);
                         static::$_idMap[$worker_id][$id] = 0;
 
                         break;
@@ -1658,7 +1669,9 @@ class Worker
             }
             if (!static::$_gracefulStop || ConnectionInterface::$statistics['connection_count'] <= 0) {
                 static::$_workers = array();
-                static::$globalEvent->destroy();
+                if (static::$globalEvent) {
+                    static::$globalEvent->destroy();
+                }
                 exit(0);
             }
         }
@@ -1987,7 +2000,7 @@ class Worker
             static::$_outputDecorated =
                 static::$_OS === OS_TYPE_LINUX &&
                 function_exists('posix_isatty') &&
-                @posix_isatty($stream);
+                posix_isatty($stream);
         }
         return static::$_outputStream = $stream;
     }
@@ -2001,7 +2014,7 @@ class Worker
     public function __construct($socket_name = '', $context_option = array())
     {
         // Save all worker instances.
-        $this->workerId                  = spl_object_hash($this);
+        $this->workerId                    = spl_object_hash($this);
         static::$_workers[$this->workerId] = $this;
         static::$_pidMap[$this->workerId]  = array();
 
@@ -2086,9 +2099,11 @@ class Worker
 
             // Try to open keepalive for tcp and disable Nagle algorithm.
             if (function_exists('socket_import_stream') && static::$_builtinTransports[$this->transport] === 'tcp') {
+                set_error_handler(function(){});
                 $socket = socket_import_stream($this->_mainSocket);
-                @socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
-                @socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
+                socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
+                socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
+                restore_error_handler();
             }
 
             // Non blocking.
@@ -2106,7 +2121,9 @@ class Worker
     public function unlisten() {
         $this->pauseAccept();
         if ($this->_mainSocket) {
-            @fclose($this->_mainSocket);
+            set_error_handler(function(){});
+            fclose($this->_mainSocket);
+            restore_error_handler();
             $this->_mainSocket = null;
         }
     }
@@ -2204,6 +2221,7 @@ class Worker
             }
         }
 
+        restore_error_handler();
         // Main loop.
         static::$globalEvent->loop();
     }
@@ -2248,7 +2266,10 @@ class Worker
     public function acceptConnection($socket)
     {
         // Accept a connection on server socket.
-        $new_socket = @stream_socket_accept($socket, 0, $remote_address);
+        set_error_handler(function(){});
+        $new_socket = stream_socket_accept($socket, 0, $remote_address);
+        restore_error_handler();
+
         // Thundering herd.
         if (!$new_socket) {
             return;
@@ -2288,7 +2309,9 @@ class Worker
      */
     public function acceptUdpConnection($socket)
     {
+        set_error_handler(function(){});
         $recv_buffer = stream_socket_recvfrom($socket, static::MAX_UDP_PACKAGE_SIZE, 0, $remote_address);
+        restore_error_handler();
         if (false === $recv_buffer || empty($remote_address)) {
             return false;
         }
@@ -2296,16 +2319,16 @@ class Worker
         $connection           = new UdpConnection($socket, $remote_address);
         $connection->protocol = $this->protocol;
         if ($this->onMessage) {
-            if ($this->protocol !== null) {
-                /** @var \Workerman\Protocols\ProtocolInterface $parser */
-                $parser      = $this->protocol;
-                $recv_buffer = $parser::decode($recv_buffer, $connection);
-                // Discard bad packets.
-                if ($recv_buffer === false)
-                    return true;
-            }
-            ConnectionInterface::$statistics['total_request']++;
             try {
+                if ($this->protocol !== null) {
+                    /** @var \Workerman\Protocols\ProtocolInterface $parser */
+                    $parser      = $this->protocol;
+                    $recv_buffer = $parser::decode($recv_buffer, $connection);
+                    // Discard bad packets.
+                    if ($recv_buffer === false)
+                        return true;
+                }
+                ConnectionInterface::$statistics['total_request']++;
                 call_user_func($this->onMessage, $connection, $recv_buffer);
             } catch (\Exception $e) {
                 static::log($e);
