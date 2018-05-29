@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.8';
+    const VERSION = '3.5.9';
 
     /**
      * Status starting.
@@ -1195,7 +1195,7 @@ class Worker
     {
         $files = static::getStartFilesForWindows();
         global $argv;
-        if(isset($argv[1]) && $argv[1] === '-q')
+        if(in_array('-q', $argv) || count($files) === 1)
         {
             if(count(static::$_workers) > 1)
             {
