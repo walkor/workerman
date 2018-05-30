@@ -72,7 +72,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $masked       = $secondbyte >> 7;
 
             if (!$masked) {
-                echo "frame not masked\n";
+                Worker::safeEcho("frame not masked so close the connection\n");
                 $connection->close();
                 return 0;
             }
@@ -159,7 +159,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     break;
                 // Wrong opcode. 
                 default :
-                    echo "error opcode $opcode and close websocket connection. Buffer:" . bin2hex($buffer) . "\n";
+                    Worker::safeEcho("error opcode $opcode and close websocket connection. Buffer:" . bin2hex($buffer) . "\n");
                     $connection->close();
                     return 0;
             }
@@ -187,7 +187,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
 
             $total_package_size = strlen($connection->websocketDataBuffer) + $current_frame_length;
             if ($total_package_size > TcpConnection::$maxPackageSize) {
-                echo "error package. package_length=$total_package_size\n";
+                Worker::safeEcho("error package. package_length=$total_package_size\n");
                 $connection->close();
                 return 0;
             }
