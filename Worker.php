@@ -504,7 +504,7 @@ class Worker
     protected static function init()
     {
         set_error_handler(function($code, $msg, $file, $line){
-            echo "$msg in file $file on line $line\n";
+			static::safeEcho("$msg in file $file on line $line\n");
         });
 
         // Start file.
@@ -749,8 +749,6 @@ class Worker
             case 'status':
                 while (1) {
                     $status = static::getServerStatusByPid($master_pid);
-                    // Sleep 1 second.
-                    sleep(1);
                     // Clear terminal.
                     if ($command2 === '-d') {
                         static::safeEcho("\33[H\33[2J\33(B\33[m", true);
@@ -761,6 +759,8 @@ class Worker
                         exit(0);
                     }
                     static::safeEcho("\nPress Ctrl+C to quit.\n\n");
+                    // Sleep 1 second.
+                    sleep(1);
                 }
                 exit(0);
             case 'connections':
@@ -832,7 +832,6 @@ class Worker
         }
     }
 
-
     /**
      * get current server status, return false if not running
      * @return array|bool
@@ -866,8 +865,8 @@ class Worker
         $wait = 0;
         $json = null;
         while (true) {
-            // max wait time: 1 second
-            if ($wait > 100) {
+            // max wait time: 0.5 second
+            if ($wait > 50) {
                 break;
             }
             $json = file_get_contents(static::$_statisticsFile);
@@ -892,6 +891,11 @@ class Worker
             if (isset($worker_pids[$pid])) {
                 continue;
             }
+            // current progress working on this exactly
+            if (posix_getpid() === $pid) {
+                $worker_pids[$pid] = static::makeCurrentWorkerStatus();
+                continue;
+            }
             $worker_pids[$pid] = array(
                 'id' => $worker['id'],
                 'pid' => $pid,
@@ -908,7 +912,7 @@ class Worker
         unset($status['worker_lists']);
         return $status;
     }
-
+    
     /**
      * Format status data.
      * @param $status
@@ -1003,6 +1007,28 @@ class Worker
             '[Summary]'
         );
         return $status_str;
+    }
+
+    /**
+     * @param $bytes
+     * @return string
+     */
+    protected static function formatMemory($bytes)
+    {
+        $bytes = intval($bytes);
+        if($bytes > 1024*1024*1024*1024) {
+            return round($bytes/(1024*1024*1024*1024), 1).'T';
+        }
+        if($bytes > 1024*1024*1024) {
+            return round($bytes/(1024*1024*1024), 1).'G';
+        }
+        if($bytes > 1024*1024) {
+            return round($bytes/(1024*1024), 1).'M';
+        }
+        if($bytes > 1024) {
+            return round($bytes/(1024), 1).'K';
+        }
+        return $bytes.'B';
     }
 
     /**
@@ -1797,7 +1823,6 @@ class Worker
         return static::$_gracefulStop;
     }
 
-
     /**
      * Write statistics data to disk.
      *
@@ -1857,10 +1882,18 @@ class Worker
             return;
         }
         // For child processes.
+        file_put_contents(static::$_statisticsFile, json_encode(static::makeCurrentWorkerStatus())."\n",FILE_APPEND);
+    }
+
+    /**
+     * @return array
+     */
+    private static function makeCurrentWorkerStatus()
+    {
         reset(static::$_workers);
         /** @var \Workerman\Worker $worker */
         $worker = current(static::$_workers);
-        $info = array(
+        return array(
             'id' => $worker->id,
             'pid' => posix_getpid(),
             'memory' => memory_get_usage(true),
@@ -1871,7 +1904,6 @@ class Worker
             'failed' => ConnectionInterface::$statistics['send_fail'],
             'request' => ConnectionInterface::$statistics['total_request']
         );
-        file_put_contents(static::$_statisticsFile, json_encode($info)."\n",FILE_APPEND);
     }
 
     /**
