@@ -115,7 +115,7 @@ class AsyncTcpConnection extends TcpConnection
         if (!$address_info) {
             list($scheme, $this->_remoteAddress) = explode(':', $remote_address, 2);
             if (!$this->_remoteAddress) {
-                echo new \Exception('bad remote_address');
+                Worker::safeEcho(new \Exception('bad remote_address'));
             }
         } else {
             if (!isset($address_info['port'])) {
