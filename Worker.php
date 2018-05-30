@@ -504,7 +504,7 @@ class Worker
     protected static function init()
     {
         set_error_handler(function($code, $msg, $file, $line){
-            echo "$msg in file $file on line $line\n";
+			static::safeEcho("$msg in file $file on line $line\n");
         });
 
         // Start file.
@@ -748,23 +748,19 @@ class Worker
                 break;
             case 'status':
                 while (1) {
-                    if (is_file(static::$_statisticsFile)) {
-                        @unlink(static::$_statisticsFile);
-                    }
-                    // Master process will send SIGUSR2 signal to all child processes.
-                    posix_kill($master_pid, SIGUSR2);
-                    // Sleep 1 second.
-                    sleep(1);
+                    $status = static::getServerStatusByPid($master_pid);
                     // Clear terminal.
                     if ($command2 === '-d') {
                         static::safeEcho("\33[H\33[2J\33(B\33[m", true);
                     }
                     // Echo status data.
-                    static::safeEcho(static::formatStatusData());
+                    static::safeEcho(static::formatStatusData($status));
                     if ($command2 !== '-d') {
                         exit(0);
                     }
                     static::safeEcho("\nPress Ctrl+C to quit.\n\n");
+                    // Sleep 1 second.
+                    sleep(1);
                 }
                 exit(0);
             case 'connections':
@@ -837,67 +833,146 @@ class Worker
     }
 
     /**
+     * get current server status, return false if not running
+     * @return array|bool
+     */
+    public static function getServerStatus()
+    {
+        $master_pid = is_file(static::$pidFile) ? file_get_contents(static::$pidFile) : 0;
+        if ($master_pid && posix_kill($master_pid, 0) && posix_getpid() != $master_pid) {
+            return static::getServerStatusByPid($master_pid);
+        }
+        return false;
+    }
+
+    /**
+     * get server status by master pid
+     * @param $master_pid
+     * @return array|bool
+     */
+    protected static function getServerStatusByPid($master_pid)
+    {
+        $worker = current(static::$_workers);
+        if (!$worker) {
+            return false;
+        }
+        $count = $worker->count;
+        if (is_file(static::$_statisticsFile)) {
+            @unlink(static::$_statisticsFile);
+        }
+        touch(static::$_statisticsFile);
+        posix_kill($master_pid, SIGUSR2);
+        $wait = 0;
+        $json = null;
+        while (true) {
+            // max wait time: 0.5 second
+            if ($wait > 50) {
+                break;
+            }
+            $json = file_get_contents(static::$_statisticsFile);
+            if (substr_count($json, "\n") > $count) {
+                break;
+            }
+            usleep(10000);
+            $wait++;
+        }
+        if (!$json) {
+            return false;
+        }
+        $json = explode("\n", trim($json));
+        $status = json_decode(array_shift($json), true);
+        $worker_pids = array();
+        foreach ($json as $item) {
+            $item = json_decode($item, true);
+            $worker_pids[$item['pid']] = $item;
+        }
+        $worker_lists = $status['worker_lists'];
+        foreach ($worker_lists as $pid => $worker) {
+            if (isset($worker_pids[$pid])) {
+                continue;
+            }
+            // current progress working on this exactly
+            if (posix_getpid() === $pid) {
+                $worker_pids[$pid] = static::makeCurrentWorkerStatus();
+                continue;
+            }
+            $worker_pids[$pid] = array(
+                'id' => $worker['id'],
+                'pid' => $pid,
+                'name' => $worker['name'],
+                'listen' => $worker['listen'],
+                'memory' => null,
+                'timers' => null,
+                'connections' => null,
+                'failed' => null,
+                'request' => null,
+            );
+        }
+        $status['worker_pids'] = $worker_pids;
+        unset($status['worker_lists']);
+        return $status;
+    }
+    
+    /**
      * Format status data.
-     *
+     * @param $status
      * @return string
      */
-    protected static function formatStatusData()
+    protected static function formatStatusData($status)
     {
-        static $total_request_cache = array();
-        if (!is_readable(static::$_statisticsFile)) {
+        if (!$status) {
             return '';
         }
-        $info = file(static::$_statisticsFile, FILE_IGNORE_NEW_LINES);
-        if (!$info) {
-            return '';
+        // basic
+        $status_str = "----------------------------------------------GLOBAL STATUS----------------------------------------------------\n";
+        $status_str .= sprintf(
+            'Workerman version:%s          PHP version:%s' . "\n".
+            'start time:%s   run %d days %d hours   '. "\n" .
+            'load average: %-18s event-loop:%s' . "\n" .
+            '%d workers       %d processes' . "\n",
+            $status['version'],
+            $status['php'],
+            date('Y-m-d H:i:s', $status['start']),
+            floor((time() - $status['start']) / (24 * 60 * 60)),
+            floor(((time() - $status['start']) % (24 * 60 * 60)) / (60 * 60)),
+            implode(", ", $status['avg']),
+            $status['event'],
+            $status['workers'],
+            $status['process']
+        );
+
+        // worker exit
+        $maxLen = max(array_map('strlen', array_column($status['worker_exits'], 'name')));
+        $status_str .= str_pad('worker_name', $maxLen) . " exit_status      exit_count\n";
+        foreach ($status['worker_exits'] as $worker) {
+            $status_str .= str_pad($worker['name'], $maxLen) . ' ' . str_pad($worker['status'], 16). ' '. $worker['count'] . "\n";
         }
-        $status_str = '';
+
+        // worker list
+        $status_str .= "----------------------------------------------PROCESS STATUS---------------------------------------------------\n";
         $current_total_request = array();
-        $worker_info = json_decode($info[0], true);
-        ksort($worker_info, SORT_NUMERIC);
-        unset($info[0]);
-        $data_waiting_sort = array();
-        $read_process_status = false;
-        $total_requests = 0;
-        $total_qps = 0;
-        $total_connections = 0;
-        $total_fails = 0;
-        $total_memory = 0;
-        $total_timers = 0;
         $maxLen1 = static::$_maxSocketNameLength;
         $maxLen2 = static::$_maxWorkerNameLength;
-        foreach($info as $key => $value) {
-            if (!$read_process_status) {
-                $status_str .= $value . "\n";
-                if (preg_match('/^pid.*?memory.*?listening/', $value)) {
-                    $read_process_status = true;
-                }
+        $total_memory = $total_connections = $total_fails = $total_timers = $total_requests = $total_qps = 0;
+        ksort($status['worker_pids'], SORT_NUMERIC);
+        foreach ($status['worker_pids'] as $pid => $worker) {
+            $maxLen1 = max($maxLen1, strlen($worker['listen']));
+            $maxLen2 = max($maxLen2, strlen($worker['name']));
+            if ($worker['connections'] === null) {
                 continue;
             }
-            if(preg_match('/^[0-9]+/', $value, $pid_math)) {
-                $pid = $pid_math[0];
-                $data_waiting_sort[$pid] = $value;
-                if(preg_match('/^\S+?\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?/', $value, $match)) {
-                    $total_memory += intval(str_ireplace('M','',$match[1]));
-                    $maxLen1 = max($maxLen1,strlen($match[2]));
-                    $maxLen2 = max($maxLen2,strlen($match[3]));
-                    $total_connections += intval($match[4]);
-                    $total_fails += intval($match[5]);
-                    $total_timers += intval($match[6]);
-                    $current_total_request[$pid] = $match[7];
-                    $total_requests += intval($match[7]);
-                }
-            }
+            $total_memory += $worker['memory'];
+            $total_connections += $worker['connections'];
+            $total_fails += $worker['failed'];
+            $total_timers += $worker['timers'];
+            $total_requests += $worker['request'];
+            $current_total_request[$pid] = $worker['request'];
         }
-        foreach($worker_info as $pid => $info) {
-            if (!isset($data_waiting_sort[$pid])) {
-                $status_str .= "$pid\t" . str_pad('N/A', 7) . " "
-                    . str_pad($info['listen'], static::$_maxSocketNameLength) . " "
-                    . str_pad($info['name'], static::$_maxWorkerNameLength) . " "
-                    . str_pad('N/A', 11) . " " . str_pad('N/A', 9) . " "
-                    . str_pad('N/A', 7) . " " . str_pad('N/A', 13) . " N/A    [busy] \n";
-                continue;
-            }
+        $format = "%s\t%-7s %-{$maxLen1}s %-{$maxLen2}s %-11s %-9s %-7s %-13s %-6s %s \n";
+        $status_str .= sprintf($format, 'pid', 'memory', 'listening', 'worker_name', 'connections', 'send_fail', 'timers', 'total_request', 'qps', 'status');
+        static $total_request_cache = array();
+        foreach ($status['worker_pids'] as $pid => $worker) {
+            $nul = $worker['connections'] === null;
             //$qps = isset($total_request_cache[$pid]) ? $current_total_request[$pid]
             if (!isset($total_request_cache[$pid]) || !isset($current_total_request[$pid])) {
                 $qps = 0;
@@ -905,19 +980,56 @@ class Worker
                 $qps = $current_total_request[$pid] - $total_request_cache[$pid];
                 $total_qps += $qps;
             }
-            $status_str .= $data_waiting_sort[$pid]. " " . str_pad($qps, 6) ." [idle]\n";
+            $status_str .=  sprintf(
+                $format,
+                $pid,
+                ($nul ? 'N/A' : static::formatMemory($worker['memory'])),
+                $worker['listen'],
+                $worker['name'],
+                ($nul ? 'N/A' : $worker['connections']),
+                ($nul ? 'N/A' : $worker['failed']),
+                ($nul ? 'N/A' : $worker['timers']),
+                ($nul ? 'N/A' : $worker['request']),
+                ($nul ? 'N/A' : $qps),
+                ($nul ? '[busy]' : '[idle]')
+            );
         }
-        $total_request_cache = $current_total_request;
         $status_str .= "----------------------------------------------PROCESS STATUS---------------------------------------------------\n";
-        $status_str .= "Summary\t" . str_pad($total_memory.'M', 7) . " "
-            . str_pad('-', $maxLen1) . " "
-            . str_pad('-', $maxLen2) . " "
-            . str_pad($total_connections, 11) . " " . str_pad($total_fails, 9) . " "
-            . str_pad($total_timers, 7) . " " . str_pad($total_requests, 13) . " "
-            . str_pad($total_qps,6)." [Summary] \n";
+        $status_str .= sprintf(
+            $format, 'Summary',
+            static::formatMemory($total_memory),
+            '-', '-',
+            $total_connections,
+            $total_fails,
+            $total_timers,
+            $total_requests,
+            $total_qps,
+            '[Summary]'
+        );
         return $status_str;
     }
 
+    /**
+     * @param $bytes
+     * @return string
+     */
+    protected static function formatMemory($bytes)
+    {
+        $bytes = intval($bytes);
+        if($bytes > 1024*1024*1024*1024) {
+            return round($bytes/(1024*1024*1024*1024), 1).'T';
+        }
+        if($bytes > 1024*1024*1024) {
+            return round($bytes/(1024*1024*1024), 1).'G';
+        }
+        if($bytes > 1024*1024) {
+            return round($bytes/(1024*1024), 1).'M';
+        }
+        if($bytes > 1024) {
+            return round($bytes/(1024), 1).'K';
+        }
+        return $bytes.'B';
+    }
 
     /**
      * Install signal handler.
@@ -1720,75 +1832,78 @@ class Worker
     {
         // For master process.
         if (static::$_masterPid === posix_getpid()) {
+            $info = array(
+                'php' => PHP_VERSION,
+                'version' => static::VERSION,
+                'start' => static::$_globalStatistics['start_timestamp'],
+                'event' => static::getEventLoopName(),
+                'workers' => count(static::$_pidMap),
+                'process' => count(static::getAllWorkerPids()),
+                'avg' => function_exists('sys_getloadavg') ? array_map('round', sys_getloadavg(), array(2)) : array('-', '-', '-'),
+            );
             $all_worker_info = array();
-            foreach(static::$_pidMap as $worker_id => $pid_array) {
+            foreach(static::$_idMap as $worker_id => $pid_array) {
                 /** @var /Workerman/Worker $worker */
                 $worker = static::$_workers[$worker_id];
-                foreach($pid_array as $pid) {
-                    $all_worker_info[$pid] = array('name' => $worker->name, 'listen' => $worker->getSocketName());
+                foreach($pid_array as $id => $pid) {
+                    $all_worker_info[$pid] = array(
+                        'id' => $id,
+                        'name' => $worker->name,
+                        'listen' => $worker->getSocketName()
+                    );
                 }
             }
-
-            file_put_contents(static::$_statisticsFile, json_encode($all_worker_info)."\n", FILE_APPEND);
-            $loadavg = function_exists('sys_getloadavg') ? array_map('round', sys_getloadavg(), array(2)) : array('-', '-', '-');
-            file_put_contents(static::$_statisticsFile,
-                "----------------------------------------------GLOBAL STATUS----------------------------------------------------\n", FILE_APPEND);
-            file_put_contents(static::$_statisticsFile,
-                'Workerman version:' . static::VERSION . "          PHP version:" . PHP_VERSION . "\n", FILE_APPEND);
-            file_put_contents(static::$_statisticsFile, 'start time:' . date('Y-m-d H:i:s',
-                    static::$_globalStatistics['start_timestamp']) . '   run ' . floor((time() - static::$_globalStatistics['start_timestamp']) / (24 * 60 * 60)) . ' days ' . floor(((time() - static::$_globalStatistics['start_timestamp']) % (24 * 60 * 60)) / (60 * 60)) . " hours   \n",
-                FILE_APPEND);
-            $load_str = 'load average: ' . implode(", ", $loadavg);
-            file_put_contents(static::$_statisticsFile,
-                str_pad($load_str, 33) . 'event-loop:' . static::getEventLoopName() . "\n", FILE_APPEND);
-            file_put_contents(static::$_statisticsFile,
-                count(static::$_pidMap) . ' workers       ' . count(static::getAllWorkerPids()) . " processes\n",
-                FILE_APPEND);
-            file_put_contents(static::$_statisticsFile,
-                str_pad('worker_name', static::$_maxWorkerNameLength) . " exit_status      exit_count\n", FILE_APPEND);
+            $info['worker_lists'] = $all_worker_info;
+            $exits = array();
             foreach (static::$_pidMap as $worker_id => $worker_pid_array) {
                 $worker = static::$_workers[$worker_id];
-                if (isset(static::$_globalStatistics['worker_exit_info'][$worker_id])) {
-                    foreach (static::$_globalStatistics['worker_exit_info'][$worker_id] as $worker_exit_status => $worker_exit_count) {
-                        file_put_contents(static::$_statisticsFile,
-                            str_pad($worker->name, static::$_maxWorkerNameLength) . " " . str_pad($worker_exit_status,
-                                16) . " $worker_exit_count\n", FILE_APPEND);
-                    }
-                } else {
-                    file_put_contents(static::$_statisticsFile,
-                        str_pad($worker->name, static::$_maxWorkerNameLength) . " " . str_pad(0, 16) . " 0\n",
-                        FILE_APPEND);
+                if (!isset(static::$_globalStatistics['worker_exit_info'][$worker_id])) {
+                    $exits[] = array(
+                        'name' => $worker->name,
+                        'status' =>  0,
+                        'count' => 0
+                    );
+                    continue;
+                }
+                foreach (static::$_globalStatistics['worker_exit_info'][$worker_id] as $worker_exit_status => $worker_exit_count) {
+                    $exits[] = array(
+                        'name' => $worker->name,
+                        'status' =>  $worker_exit_status,
+                        'count' => $worker_exit_count
+                    );
                 }
             }
-            file_put_contents(static::$_statisticsFile,
-                "----------------------------------------------PROCESS STATUS---------------------------------------------------\n",
-                FILE_APPEND);
-            file_put_contents(static::$_statisticsFile,
-                "pid\tmemory  " . str_pad('listening', static::$_maxSocketNameLength) . " " . str_pad('worker_name',
-                    static::$_maxWorkerNameLength) . " connections " . str_pad('send_fail', 9) . " "
-                . str_pad('timers', 8) . str_pad('total_request', 13) ." qps    status\n", FILE_APPEND);
-
+            $info['worker_exits'] = $exits;
+            file_put_contents(static::$_statisticsFile, json_encode($info)."\n", FILE_APPEND);
             chmod(static::$_statisticsFile, 0722);
-
             foreach (static::getAllWorkerPids() as $worker_pid) {
                 posix_kill($worker_pid, SIGUSR2);
             }
             return;
         }
-
         // For child processes.
+        file_put_contents(static::$_statisticsFile, json_encode(static::makeCurrentWorkerStatus())."\n",FILE_APPEND);
+    }
+
+    /**
+     * @return array
+     */
+    private static function makeCurrentWorkerStatus()
+    {
         reset(static::$_workers);
         /** @var \Workerman\Worker $worker */
-        $worker            = current(static::$_workers);
-        $worker_status_str = posix_getpid() . "\t" . str_pad(round(memory_get_usage(true) / (1024 * 1024), 2) . "M", 7)
-            . " " . str_pad($worker->getSocketName(), static::$_maxSocketNameLength) . " "
-            . str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name), static::$_maxWorkerNameLength)
-            . " ";
-        $worker_status_str .= str_pad(ConnectionInterface::$statistics['connection_count'], 11)
-            . " " .  str_pad(ConnectionInterface::$statistics['send_fail'], 9)
-            . " " . str_pad(static::$globalEvent->getTimerCount(), 7)
-            . " " . str_pad(ConnectionInterface::$statistics['total_request'], 13) . "\n";
-        file_put_contents(static::$_statisticsFile, $worker_status_str, FILE_APPEND);
+        $worker = current(static::$_workers);
+        return array(
+            'id' => $worker->id,
+            'pid' => posix_getpid(),
+            'memory' => memory_get_usage(true),
+            'listen' => $worker->getSocketName(),
+            'name' => ($worker->name === $worker->getSocketName() ? 'none' : $worker->name),
+            'connections' => ConnectionInterface::$statistics['connection_count'],
+            'timers' => static::$globalEvent->getTimerCount(),
+            'failed' => ConnectionInterface::$statistics['send_fail'],
+            'request' => ConnectionInterface::$statistics['total_request']
+        );
     }
 
     /**
