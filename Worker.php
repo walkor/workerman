@@ -504,7 +504,7 @@ class Worker
     protected static function init()
     {
         set_error_handler(function($code, $msg, $file, $line){
-            echo "$msg in file $file on line $line\n";
+            Worker::safeEcho("$msg in file $file on line $line\n");
         });
 
         // Start file.
