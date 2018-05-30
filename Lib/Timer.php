@@ -85,7 +85,7 @@ class Timer
     public static function add($time_interval, $func, $args = array(), $persistent = true)
     {
         if ($time_interval <= 0) {
-            echo new Exception("bad time_interval");
+            Worker::safeEcho(new Exception("bad time_interval"));
             return false;
         }
 
@@ -95,7 +95,7 @@ class Timer
         }
 
         if (!is_callable($func)) {
-            echo new Exception("not callable");
+            Worker::safeEcho(new Exception("not callable"));
             return false;
         }
 
@@ -136,7 +136,7 @@ class Timer
                     try {
                         call_user_func_array($task_func, $task_args);
                     } catch (\Exception $e) {
-                        echo $e;
+                        Worker::safeEcho($e);
                     }
                     if ($persistent) {
                         self::add($time_interval, $task_func, $task_args);
