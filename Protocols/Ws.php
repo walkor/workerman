@@ -46,7 +46,7 @@ class Ws
     public static function input($buffer, $connection)
     {
         if (empty($connection->handshakeStep)) {
-            echo "recv data before handshake. Buffer:" . bin2hex($buffer) . "\n";
+            Worker::safeEcho("recv data before handshake. Buffer:" . bin2hex($buffer) . "\n");
             return false;
         }
         // Recv handshake response
@@ -73,7 +73,7 @@ class Ws
             $masked       = $secondbyte >> 7;
 
             if ($masked) {
-                echo "frame masked\n";
+                Worker::safeEcho("frame masked so close the connection\n");
                 $connection->close();
                 return 0;
             }
@@ -160,7 +160,7 @@ class Ws
                     break;
                 // Wrong opcode.
                 default :
-                    echo "error opcode $opcode and close websocket connection. Buffer:" . $buffer . "\n";
+                    Worker::safeEcho("error opcode $opcode and close websocket connection. Buffer:" . $buffer . "\n");
                     $connection->close();
                     return 0;
             }
@@ -183,7 +183,7 @@ class Ws
 
             $total_package_size = strlen($connection->websocketDataBuffer) + $current_frame_length;
             if ($total_package_size > TcpConnection::$maxPackageSize) {
-                echo "error package. package_length=$total_package_size\n";
+                Worker::safeEcho("error package. package_length=$total_package_size\n");
                 $connection->close();
                 return 0;
             }
@@ -400,12 +400,12 @@ class Ws
             //checking Sec-WebSocket-Accept
             if (preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $buffer, $match)) {
                 if ($match[1] !== base64_encode(sha1($connection->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
-                    echo "Sec-WebSocket-Accept not match. Header:\n" . substr($buffer, 0, $pos) . "\n";
+                    Worker::safeEcho("Sec-WebSocket-Accept not match. Header:\n" . substr($buffer, 0, $pos) . "\n");
                     $connection->close();
                     return 0;
                 }
             } else {
-                echo "Sec-WebSocket-Accept not found. Header:\n" . substr($buffer, 0, $pos) . "\n";
+                Worker::safeEcho("Sec-WebSocket-Accept not found. Header:\n" . substr($buffer, 0, $pos) . "\n");
                 $connection->close();
                 return 0;
             }
