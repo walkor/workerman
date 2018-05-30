@@ -603,7 +603,7 @@ class TcpConnection extends ConnectionInterface
                 } else {
                     // Get current package length.
                     set_error_handler(function($code, $msg, $file, $line){
-                        echo "$msg in file $file on line $line\n";
+                        Worker::safeEcho("$msg in file $file on line $line\n");
                     });
                     $this->_currentPackageLength = $parser::input($this->_recvBuffer, $this);
                     restore_error_handler();
@@ -617,7 +617,7 @@ class TcpConnection extends ConnectionInterface
                         }
                     } // Wrong package.
                     else {
-                        echo 'error package. package_length=' . var_export($this->_currentPackageLength, true);
+                        Worker::safeEcho('error package. package_length=' . var_export($this->_currentPackageLength, true));
                         $this->destroy();
                         return;
                     }
@@ -738,7 +738,7 @@ class TcpConnection extends ConnectionInterface
         // Hidden error.
         set_error_handler(function($errno, $errstr, $file){
             if (!Worker::$daemonize) {
-                echo 'SSL handshake error: ',$errstr, "\n";
+                Worker::safeEcho("SSL handshake error: $errstr \n");
             }
         });
         $ret     = stream_socket_enable_crypto($socket, true, $type);
