@@ -167,7 +167,7 @@ class AsyncUdpConnection extends UdpConnection
         }
         $this->_socket = stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg);
         if (!$this->_socket) {
-            echo new \Exception($errmsg);
+            Worker::safeEcho(new \Exception($errmsg));
             return;
         }
         if ($this->onMessage) {
