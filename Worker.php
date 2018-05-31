@@ -324,7 +324,7 @@ class Worker
     /**
      * All worker instances.
      *
-     * @var array
+     * @var Worker[]
      */
     protected static $_workers = array();
 
