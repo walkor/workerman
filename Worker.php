@@ -1062,6 +1062,9 @@ class Worker
         $handle = fopen(static::$stdoutFile, "a");
         if ($handle) {
             unset($handle);
+            set_error_handler(function(){});
+            fclose($STDOUT);
+            fclose($STDERR);
             fclose(STDOUT);
             fclose(STDERR);
             $STDOUT = fopen(static::$stdoutFile, "a");
@@ -1069,6 +1072,7 @@ class Worker
             // change output stream
             static::$_outputStream = null;
             static::outputStream($STDOUT);
+            restore_error_handler();
         } else {
             throw new Exception('can not open stdoutFile ' . static::$stdoutFile);
         }
