@@ -503,7 +503,7 @@ class Http
             exit($msg);
         }
         if ($msg) {
-            Worker::safeEcho($msg);
+            echo $msg;
         }
         throw new \Exception('jump_exit');
     }
