@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.10';
+    const VERSION = '3.5.11';
 
     /**
      * Status starting.
@@ -2208,6 +2208,8 @@ class Worker
             $this->onMessage = function () {};
         }
 
+        restore_error_handler();
+        
         // Try to emit onWorkerStart callback.
         if ($this->onWorkerStart) {
             try {
@@ -2225,7 +2227,6 @@ class Worker
             }
         }
 
-        restore_error_handler();
         // Main loop.
         static::$globalEvent->loop();
     }
