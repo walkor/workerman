@@ -75,7 +75,7 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Context option.
      *
-     * @var resource
+     * @var array
      */
     protected $_contextOption = null;
 
@@ -213,7 +213,8 @@ class AsyncTcpConnection extends TcpConnection
      * @param int $after
      * @return void
      */
-    public function reConnect($after = 0) {
+    public function reconnect($after = 0)
+    {
         $this->_status                   = self::STATUS_INITIAL;
         static::$connections[$this->_id] = $this;
         if ($this->_reconnectTimer) {
@@ -224,6 +225,16 @@ class AsyncTcpConnection extends TcpConnection
             return;
         }
         $this->connect();
+    }
+
+    /**
+     * CancelReconnect.
+     */
+    public function cancelReconnect()
+    {
+        if ($this->_reconnectTimer) {
+            Timer::del($this->_reconnectTimer);
+        }
     }
 
     /**
