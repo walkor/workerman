@@ -44,12 +44,19 @@ class AsyncUdpConnection extends UdpConnection
     protected $connected = false;
 
     /**
+     * Context option.
+     *
+     * @var array
+     */
+    protected $_contextOption = null;
+
+    /**
      * Construct.
      *
      * @param string $remote_address
      * @throws Exception
      */
-    public function __construct($remote_address)
+    public function __construct($remote_address, $context_option = null)
     {
         // Get the application layer communication protocol and listening address.
         list($scheme, $address) = explode(':', $remote_address, 2);
@@ -66,6 +73,7 @@ class AsyncUdpConnection extends UdpConnection
         }
         
         $this->_remoteAddress = substr($address, 2);
+        $this->_contextOption = $context_option;
     }
     
     /**
@@ -165,7 +173,14 @@ class AsyncUdpConnection extends UdpConnection
         if ($this->connected === true) {
             return;
         }
-        $this->_socket = stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg);
+        if ($this->_contextOption) {
+            $context = stream_context_create($this->_contextOption);
+            $this->_socket = stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg,
+                30, STREAM_CLIENT_CONNECT, $context);
+        } else {
+            $this->_socket = stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg);
+        }
+
         if (!$this->_socket) {
             Worker::safeEcho(new \Exception($errmsg));
             return;
