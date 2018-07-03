@@ -102,7 +102,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         }
                     } // Close connection.
                     else {
-                        $connection->close();
+                        $connection->close("\x88\x02\x27\x10", true);
                     }
                     return 0;
                 // Ping package.
@@ -120,7 +120,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         }
                     } // Send pong package to client.
                     else {
-                        $connection->send(pack('H*', '8a00'), true);
+                        $connection->send("\x8a\x00", true);
                     }
 
                     // Consume data from receive buffer.
