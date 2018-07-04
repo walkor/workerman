@@ -107,55 +107,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     return 0;
                 // Ping package.
                 case 0x9:
-                    // Try to emit onWebSocketPing callback.
-                    if (isset($connection->onWebSocketPing) || isset($connection->worker->onWebSocketPing)) {
-                        try {
-                            call_user_func(isset($connection->onWebSocketPing)?$connection->onWebSocketPing:$connection->worker->onWebSocketPing, $connection);
-                        } catch (\Exception $e) {
-                            Worker::log($e);
-                            exit(250);
-                        } catch (\Error $e) {
-                            Worker::log($e);
-                            exit(250);
-                        }
-                    } // Send pong package to client.
-                    else {
-                        $connection->send("\x8a\x00", true);
-                    }
-
-                    // Consume data from receive buffer.
-                    if (!$data_len) {
-                        $head_len = 6;
-                        $connection->consumeRecvBuffer($head_len);
-                        if ($recv_len > $head_len) {
-                            return static::input(substr($buffer, $head_len), $connection);
-                        }
-                        return 0;
-                    }
                     break;
                 // Pong package.
                 case 0xa:
-                    // Try to emit onWebSocketPong callback.
-                    if (isset($connection->onWebSocketPong) || isset($connection->worker->onWebSocketPong)) {
-                        try {
-                            call_user_func(isset($connection->onWebSocketPong)?$connection->onWebSocketPong:$connection->worker->onWebSocketPong, $connection);
-                        } catch (\Exception $e) {
-                            Worker::log($e);
-                            exit(250);
-                        } catch (\Error $e) {
-                            Worker::log($e);
-                            exit(250);
-                        }
-                    }
-                    //  Consume data from receive buffer.
-                    if (!$data_len) {
-                        $head_len = 6;
-                        $connection->consumeRecvBuffer($head_len);
-                        if ($recv_len > $head_len) {
-                            return static::input(substr($buffer, $head_len), $connection);
-                        }
-                        return 0;
-                    }
                     break;
                 // Wrong opcode. 
                 default :
@@ -193,6 +147,56 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             }
 
             if ($is_fin_frame) {
+                if ($opcode === 0x9) {
+                    if ($recv_len >= $current_frame_length) {
+                        $ping_data = static::decode(substr($buffer, 0, $current_frame_length), $connection);
+                        $connection->consumeRecvBuffer($current_frame_length);
+                        $tmp_connection_type = isset($connection->websocketType) ? $connection->websocketType : static::BINARY_TYPE_BLOB;
+                        $connection->websocketType = "\x8a";
+                        if (isset($connection->onWebSocketPing) || isset($connection->worker->onWebSocketPing)) {
+                            try {
+                                call_user_func(isset($connection->onWebSocketPing)?$connection->onWebSocketPing:$connection->worker->onWebSocketPing, $connection, $ping_data);
+                            } catch (\Exception $e) {
+                                Worker::log($e);
+                                exit(250);
+                            } catch (\Error $e) {
+                                Worker::log($e);
+                                exit(250);
+                            }
+                        } else {
+                            $connection->send($ping_data);
+                        }
+                        $connection->websocketType = $tmp_connection_type;
+                        if ($recv_len > $current_frame_length) {
+                            return static::input(substr($buffer, $current_frame_length), $connection);
+                        }
+                    }
+                    return 0;
+                } else if ($opcode === 0xa) {
+                    if ($recv_len >= $current_frame_length) {
+                        $pong_data = static::decode(substr($buffer, 0, $current_frame_length), $connection);
+                        $connection->consumeRecvBuffer($current_frame_length);
+                        $tmp_connection_type = isset($connection->websocketType) ? $connection->websocketType : static::BINARY_TYPE_BLOB;
+                        $connection->websocketType = "\x8a";
+                        // Try to emit onWebSocketPong callback.
+                        if (isset($connection->onWebSocketPong) || isset($connection->worker->onWebSocketPong)) {
+                            try {
+                                call_user_func(isset($connection->onWebSocketPong)?$connection->onWebSocketPong:$connection->worker->onWebSocketPong, $connection, $pong_data);
+                            } catch (\Exception $e) {
+                                Worker::log($e);
+                                exit(250);
+                            } catch (\Error $e) {
+                                Worker::log($e);
+                                exit(250);
+                            }
+                        }
+                        $connection->websocketType = $tmp_connection_type;
+                        if ($recv_len > $current_frame_length) {
+                            return static::input(substr($buffer, $current_frame_length), $connection);
+                        }
+                    }
+                    return 0;
+                }
                 return $current_frame_length;
             } else {
                 $connection->websocketCurrentFrameLength = $current_frame_length;
