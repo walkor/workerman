@@ -1276,7 +1276,7 @@ class Worker
             static::$globalEvent = new Select();
             Timer::init(static::$globalEvent);
         }
-        $timer_id = Timer::add(1, function()use($std_handler)
+        $timer_id = Timer::add(0.1, function()use($std_handler)
         {
             Worker::safeEcho(fread($std_handler, 65535));
         });
@@ -1515,7 +1515,7 @@ class Worker
      */
     protected static function monitorWorkersForWindows()
     {
-        Timer::add(0.5, "\\Workerman\\Worker::checkWorkerStatusForWindows");
+        Timer::add(1, "\\Workerman\\Worker::checkWorkerStatusForWindows");
 
         static::$globalEvent->loop();
     }
