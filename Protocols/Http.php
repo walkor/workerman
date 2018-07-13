@@ -175,9 +175,6 @@ class Http
                     case 'application/x-www-form-urlencoded':
                         parse_str($http_body, $_POST);
                         break;
-                    case 'application/json':
-                        $_POST = json_decode($http_body, true);
-                        break;
                 }
             }
         }
@@ -205,8 +202,13 @@ class Http
             $_SERVER['QUERY_STRING'] = '';
         }
 
-        // REQUEST
-        $_REQUEST = array_merge($_GET, $_POST, $_REQUEST);
+        if (is_array($_POST)) {
+            // REQUEST
+            $_REQUEST = array_merge($_GET, $_POST, $_REQUEST);
+        } else {
+            // REQUEST
+            $_REQUEST = array_merge($_GET, $_REQUEST);
+        }
 
         // REMOTE_ADDR REMOTE_PORT
         $_SERVER['REMOTE_ADDR'] = $connection->getRemoteIp();
