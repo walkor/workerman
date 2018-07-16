@@ -304,7 +304,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      */
     public static function decode($buffer, ConnectionInterface $connection)
     {
-        $masks = $data = $decoded = null;
+        $masks = $data = $decoded = '';
         $len = ord($buffer[1]) & 127;
         if ($len === 126) {
             $masks = substr($buffer, 4, 4);
