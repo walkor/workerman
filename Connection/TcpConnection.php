@@ -610,7 +610,7 @@ class TcpConnection extends ConnectionInterface
                     // The packet length is unknown.
                     if ($this->_currentPackageLength === 0) {
                         break;
-                    } elseif ($this->_currentPackageLength > 0 && $this->_currentPackageLength <= self::$maxPackageSize) {
+                    } elseif ($this->_currentPackageLength > 0 && $this->_currentPackageLength <= static::$maxPackageSize) {
                         // Data is not enough for a package.
                         if ($this->_currentPackageLength > strlen($this->_recvBuffer)) {
                             break;
