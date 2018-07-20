@@ -38,7 +38,7 @@ class Http
     {
         if (!strpos($recv_buffer, "\r\n\r\n")) {
             // Judge whether the package length exceeds the limit.
-            if (strlen($recv_buffer) >= TcpConnection::$maxPackageSize) {
+            if (strlen($recv_buffer) >= $connection::$maxPackageSize) {
                 $connection->close();
                 return 0;
             }
