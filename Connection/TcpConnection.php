@@ -322,7 +322,7 @@ class TcpConnection extends ConnectionInterface
      *
      * @param string $send_buffer
      * @param bool  $raw
-     * @return void|bool|null
+     * @return bool|null
      */
     public function send($send_buffer, $raw = false)
     {
@@ -353,11 +353,16 @@ class TcpConnection extends ConnectionInterface
             return null;
         }
 
-
         // Attempt to send data directly.
         if ($this->_sendBuffer === '') {
+            if ($this->transport === 'ssl') {
+                Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+                $this->_sendBuffer = $send_buffer;
+                $this->checkBufferWillFull();
+                return null;
+            }
             set_error_handler(function(){});
-            $len = fwrite($this->_socket, $send_buffer, 8192);
+            $len = fwrite($this->_socket, $send_buffer);
             restore_error_handler();
             // send successful.
             if ($len === strlen($send_buffer)) {
@@ -685,7 +690,11 @@ class TcpConnection extends ConnectionInterface
     public function baseWrite()
     {
         set_error_handler(function(){});
-        $len = fwrite($this->_socket, $this->_sendBuffer, 8192);
+        if ($this->transport === 'ssl') {
+            $len = fwrite($this->_socket, $this->_sendBuffer, 8192);
+        } else {
+            $len = fwrite($this->_socket, $this->_sendBuffer);
+        }
         restore_error_handler();
         if ($len === strlen($this->_sendBuffer)) {
             $this->bytesWritten += $len;
