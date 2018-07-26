@@ -44,6 +44,12 @@ class WebServer extends Worker
     protected $_onWorkerStart = null;
 
     /**
+     * Used to display a custom php script if no files were found using the webserver.
+     *
+     * @var callback
+     */
+    public $onNotFound = null;
+    /**
      * Add virtual host.
      *
      * @param string $domain
@@ -59,16 +65,17 @@ class WebServer extends Worker
     }
 
     /**
-     * Construct.
-     *
+     * WebServer constructor.
      * @param string $socket_name
-     * @param array  $context_option
+     * @param array $context_option
+     * @param null $onNotFound
      */
-    public function __construct($socket_name, $context_option = array())
+    public function __construct($socket_name, $context_option = array(), $onNotFound = null)
     {
         list(, $address) = explode(':', $socket_name, 2);
         parent::__construct('http:' . $address, $context_option);
         $this->name = 'WebServer';
+        $this->onNotFound = $onNotFound;
     }
 
     /**
@@ -226,15 +233,24 @@ class WebServer extends Worker
             // Send file to client.
             return self::sendFile($connection, $workerman_file);
         } else {
-            // 404
-            Http::header("HTTP/1.1 404 Not Found");
-			if(isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
-				$html404 = file_get_contents($workerman_siteConfig['custom404']);
-			}else{
-				$html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
-			}
-            $connection->close($html404);
-            return;
+		    // if WebServer::onNotFound callback was given
+		    if  ($this->onNotFound !== null) {
+		        // because we can not call directly a member variable as a function (at least under PHP 7.2)
+		        $notFoundFunction = $this->onNotFound;
+		        $notFoundFunction($connection);
+		        return;
+            }
+            // else we use normal webserver 404
+            else {
+                Http::header("HTTP/1.1 404 Not Found");
+                if(isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
+                    $html404 = file_get_contents($workerman_siteConfig['custom404']);
+                }else{
+                    $html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
+                }
+                $connection->close($html404);
+                return;
+            }
         }
     }
 
