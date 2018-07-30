@@ -237,7 +237,7 @@ class WebServer extends Worker
 		    if  ($this->onNotFound !== null) {
 		        // because we can not call directly a member variable as a function (at least under PHP 7.2)
 		        $notFoundFunction = $this->onNotFound;
-		        $notFoundFunction($connection);
+                call_user_func_array($notFoundFunction, array(&$connection));
 		        return;
             }
             // else we use normal webserver 404
@@ -276,8 +276,9 @@ class WebServer extends Worker
         }
         $file_size = filesize($file_path);
         $file_info = pathinfo($file_path);
-        $extension = isset($file_info['extension']) ? $file_info['extension'] : '';
-        $file_name = isset($file_info['filename']) ? $file_info['filename'] : '';
+        $ext = explode(".", $file_path); $ext = $ext[count($ext) - 1];
+        $extension = isset($file_info['extension']) ? $file_info['extension'] : $ext;
+        $file_name = (isset($file_info['filename']) ? $file_info['filename'] : '') . "." . $extension;
         $header = "HTTP/1.1 200 OK\r\n";
         if (isset(self::$mimeTypeMap[$extension])) {
             $header .= "Content-Type: " . self::$mimeTypeMap[$extension] . "\r\n";
