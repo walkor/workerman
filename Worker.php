@@ -1105,6 +1105,10 @@ class Worker
             return static::$eventLoopClass;
         }
 
+        if (!class_exists('\Swoole\Event')) {
+            unset(static::$_availableEventLoops['swoole']);
+        }
+        
         $loop_name = '';
         foreach (static::$_availableEventLoops as $name=>$class) {
             if (extension_loaded($name)) {
