@@ -73,7 +73,7 @@ class Http
             $content_length = isset($match[1]) ? $match[1] : 0;
             return $content_length + strlen($header) + 4;
         }
-        return 0;
+        return $method === 'DELETE' ? strlen($header) + 4 : 0;
     }
 
     /**
