@@ -57,7 +57,7 @@ class Event implements EventInterface
      */
     public function __construct()
     {
-        if (class_exists('\\\\EventBase')) {
+        if (class_exists('\\\\EventBase', false)) {
             $class_name = '\\\\EventBase';
         } else {
             $class_name = '\EventBase';
@@ -70,7 +70,7 @@ class Event implements EventInterface
      */
     public function add($fd, $flag, $func, $args=array())
     {
-        if (class_exists('\\\\Event')) {
+        if (class_exists('\\\\Event', false)) {
             $class_name = '\\\\Event';
         } else {
             $class_name = '\Event';
