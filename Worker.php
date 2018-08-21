@@ -664,12 +664,12 @@ class Worker
         static::safeEcho("<n>-----------------------<w> WORKERMAN </w>-----------------------------</n>\r\n");
         static::safeEcho('Workerman version:'. static::VERSION. "          PHP version:". PHP_VERSION. "\r\n");
         static::safeEcho("------------------------<w> WORKERS </w>-------------------------------\r\n");
-        static::safeEcho("<w>user</w>". str_pad('',
+        static::safeEcho("<w>proto</w>    <w>user</w>". str_pad('',
                 static::$_maxUserNameLength + 2 - strlen('user')). "<w>worker</w>". str_pad('',
                 static::$_maxWorkerNameLength + 2 - strlen('worker')). "<w>listen</w>". str_pad('',
                 static::$_maxSocketNameLength + 2 - strlen('listen')). "<w>processes</w> <w>status</w>\n");
         foreach (static::$_workers as $worker) {
-            static::safeEcho(str_pad($worker->user, static::$_maxUserNameLength + 2). str_pad($worker->name,
+            static::safeEcho(str_pad($worker->transport,9). str_pad($worker->user, static::$_maxUserNameLength + 2). str_pad($worker->name,
                     static::$_maxWorkerNameLength + 2). str_pad($worker->getSocketName(),
                     static::$_maxSocketNameLength + 2). str_pad(' ' . $worker->count, 9). " <g> [OK] </g>\n");
         }
