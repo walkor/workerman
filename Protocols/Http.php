@@ -159,6 +159,12 @@ class Http
                 case 'CONTENT_LENGTH':
                     $_SERVER['CONTENT_LENGTH'] = $value;
                     break;
+                case 'UPGRADE':
+					if($value=='websocket'){
+						$connection->protocol = "\\Workerman\\Protocols\\Websocket";
+						return \Workerman\Protocols\Websocket::input($recv_buffer,$connection);
+					}
+                    break;
             }
         }
 		if(isset($_SERVER['HTTP_ACCEPT_ENCODING']) && strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== FALSE){
