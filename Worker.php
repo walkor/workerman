@@ -1339,6 +1339,8 @@ class Worker
             static::$_idMap[$worker->workerId][$id]   = $pid;
         } // For child processes.
         elseif (0 === $pid) {
+            srand();
+            mt_srand();
             if ($worker->reusePort) {
                 $worker->listen();
             }
