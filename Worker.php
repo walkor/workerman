@@ -686,38 +686,38 @@ class Worker
             return;
         }
 
-		//show version
-		$line_version = 'Workerman version:' . static::VERSION . str_pad('PHP version:', 22, ' ', STR_PAD_LEFT) . PHP_VERSION . PHP_EOL;
-		!defined('LINE_VERSIOIN_LENGTH') && define('LINE_VERSIOIN_LENGTH', strlen($line_version));
-		$total_length = static::getSingleLineTotalLength();
-		$line_one = '<n>' . str_pad('<w> WORKERMAN </w>', $total_length + strlen('<w></w>'), '-', STR_PAD_BOTH) . '</n>'. PHP_EOL;
-		$line_two = str_pad('<w> WORKERS </w>' , $total_length  + strlen('<w></w>'), '-', STR_PAD_BOTH) . PHP_EOL;
-		static::safeEcho($line_one . $line_version . $line_two);
+	//show version
+	$line_version = 'Workerman version:' . static::VERSION . str_pad('PHP version:', 22, ' ', STR_PAD_LEFT) . PHP_VERSION . PHP_EOL;
+	!defined('LINE_VERSIOIN_LENGTH') && define('LINE_VERSIOIN_LENGTH', strlen($line_version));
+	$total_length = static::getSingleLineTotalLength();
+	$line_one = '<n>' . str_pad('<w> WORKERMAN </w>', $total_length + strlen('<w></w>'), '-', STR_PAD_BOTH) . '</n>'. PHP_EOL;
+	$line_two = str_pad('<w> WORKERS </w>' , $total_length  + strlen('<w></w>'), '-', STR_PAD_BOTH) . PHP_EOL;
+	static::safeEcho($line_one . $line_version . $line_two);
 
-		//Show title
-		$title = '';
+	//Show title
+	$title = '';
+	foreach(static::getUiColumns() as $column_name => $prop){
+		$key = '_max' . ucfirst(strtolower($column_name)) . 'NameLength';
+		//just keep compatible with listen name 
+		$column_name == 'socket' && $column_name = 'listen';
+		$title.= "<w>{$column_name}</w>"  .  str_pad('', static::$$key + static::UI_SAFE_LENGTH - strlen($column_name));
+	}
+	$title && static::safeEcho($title . PHP_EOL);
+
+	//Show content
+        foreach (static::$_workers as $worker) {
+		$content = '';
 		foreach(static::getUiColumns() as $column_name => $prop){
 			$key = '_max' . ucfirst(strtolower($column_name)) . 'NameLength';
-			//just keep compatible with listen name 
-			$column_name == 'socket' && $column_name = 'listen';
-			$title.= "<w>{$column_name}</w>"  .  str_pad('', static::$$key + static::UI_SAFE_LENGTH - strlen($column_name));
+			preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", $worker->{$prop}, $matches);
+			$place_holder_length = !empty($matches) ? strlen(implode('', $matches[0])) : 0;
+			$content .= str_pad($worker->{$prop}, static::$$key + static::UI_SAFE_LENGTH + $place_holder_length);
 		}
-		$title && static::safeEcho($title . PHP_EOL);
-
-		//Show content
-        foreach (static::$_workers as $worker) {
-			$content = '';
-			foreach(static::getUiColumns() as $column_name => $prop){
-				$key = '_max' . ucfirst(strtolower($column_name)) . 'NameLength';
-				preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", $worker->{$prop}, $matches);
-				$place_holder_length = !empty($matches) ? strlen(implode('', $matches[0])) : 0;
-				$content .= str_pad($worker->{$prop}, static::$$key + static::UI_SAFE_LENGTH + $place_holder_length);
-			}
-			$content && static::safeEcho($content . PHP_EOL);
+		$content && static::safeEcho($content . PHP_EOL);
         }
 
-		//Show last line
-		$line_last = str_pad('', static::getSingleLineTotalLength(), '-') . PHP_EOL;
+	//Show last line
+	$line_last = str_pad('', static::getSingleLineTotalLength(), '-') . PHP_EOL;
         $content && static::safeEcho($line_last);
 
         if (static::$daemonize) {
@@ -729,46 +729,46 @@ class Worker
 
     /**
      * Get UI columns to be shown in terminal
-	 *
-	 * 1. $column_map: array('ui_column_name' => 'clas_property_name')
-	 * 2. Consider move into configuration in future
+     *
+     * 1. $column_map: array('ui_column_name' => 'clas_property_name')
+     * 2. Consider move into configuration in future
      *
      * @return array
      */
     public static function getUiColumns()
-	{
-		$column_map = array(
-			'proto'		=>	'transport', 
-			'user'		=>	'user', 
-			'worker'	=>	'name', 
-			'socket'	=>	'socket',
-			'processes' =>	'count',
-			'status'	=>	'status',
-		);
+    {
+	$column_map = array(
+		'proto'		=>	'transport', 
+		'user'		=>	'user', 
+		'worker'	=>	'name', 
+		'socket'	=>	'socket',
+		'processes' 	=>	'count',
+		'status'	=>	'status',
+	);
 
-		return $column_map;
-	}
+	return $column_map;
+    }
 
     /**
      * Get single line total length for ui
-	 *
+     *
      * @return int
      */
-	public static function getSingleLineTotalLength()
-	{
-		$total_length = 0;
+    public static function getSingleLineTotalLength()
+    {
+	$total_length = 0;
 
-		foreach(static::getUiColumns() as $column_name => $prop){
-			$key = '_max' . ucfirst(strtolower($column_name)) . 'NameLength';
-			$total_length += static::$$key + static::UI_SAFE_LENGTH;
-		}
-
-		//keep beauty when show less colums
-		!defined('LINE_VERSIOIN_LENGTH') && define('LINE_VERSIOIN_LENGTH', 0);
-		$total_length <= LINE_VERSIOIN_LENGTH && $total_length = LINE_VERSIOIN_LENGTH;
-		
-		return $total_length;
+	foreach(static::getUiColumns() as $column_name => $prop){
+		$key = '_max' . ucfirst(strtolower($column_name)) . 'NameLength';
+		$total_length += static::$$key + static::UI_SAFE_LENGTH;
 	}
+
+	//keep beauty when show less colums
+	!defined('LINE_VERSIOIN_LENGTH') && define('LINE_VERSIOIN_LENGTH', 0);
+	$total_length <= LINE_VERSIOIN_LENGTH && $total_length = LINE_VERSIOIN_LENGTH;
+		
+	return $total_length;
+    }
 
     /**
      * Parse command.
