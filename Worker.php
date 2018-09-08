@@ -85,6 +85,13 @@ class Worker
     const MAX_UDP_PACKAGE_SIZE = 65535;
 
     /**
+     * The safe distance for columns adjacent
+     *
+     * @var int
+     */
+    const UI_SAFE_LENGTH = 4;
+
+    /**
      * Worker id.
      *
      * @var int
@@ -381,6 +388,27 @@ class Worker
     protected static $_maxUserNameLength = 12;
 
     /**
+     * Maximum length of the Proto names.
+     *
+     * @var int
+     */
+    protected static $_maxProtoNameLength = 4;
+
+    /**
+     * Maximum length of the Processes names.
+     *
+     * @var int
+     */
+    protected static $_maxProcessesNameLength = 9;
+
+    /**
+     * Maximum length of the Status names.
+     *
+     * @var int
+     */
+    protected static $_maxStatusNameLength = 1;
+
+    /**
      * The file to store status info of current worker process.
      *
      * @var string
@@ -562,18 +590,6 @@ class Worker
                 $worker->name = 'none';
             }
 
-            // Get maximum length of worker name.
-            $worker_name_length = strlen($worker->name);
-            if (static::$_maxWorkerNameLength < $worker_name_length) {
-                static::$_maxWorkerNameLength = $worker_name_length;
-            }
-
-            // Get maximum length of socket name.
-            $socket_name_length = strlen($worker->getSocketName());
-            if (static::$_maxSocketNameLength < $socket_name_length) {
-                static::$_maxSocketNameLength = $socket_name_length;
-            }
-
             // Get unix user of the worker process.
             if (empty($worker->user)) {
                 $worker->user = static::getCurrentUser();
@@ -583,11 +599,19 @@ class Worker
                 }
             }
 
-            // Get maximum length of unix user name.
-            $user_name_length = strlen($worker->user);
-            if (static::$_maxUserNameLength < $user_name_length) {
-                static::$_maxUserNameLength = $user_name_length;
-            }
+            // Socket name.
+			$worker->socket = $worker->getSocketName();
+
+            // Status name.
+			$worker->status = '<g> [OK] </g>';
+
+			// Get clolumn mapping for UI
+			foreach(static::getUiColumns() as $column_name => $prop){
+				!isset($worker->{$prop}) && $worker->{$prop}= 'NNNN';
+				$prop_length = strlen($worker->{$prop});
+				$key = '_max' . ucfirst(strtolower($column_name)) . 'NameLength';
+				static::$$key = max(static::$$key, $prop_length);
+			}
 
             // Listen.
             if (!$worker->reusePort) {
@@ -661,24 +685,89 @@ class Worker
             static::safeEcho("worker               listen                              processes status\r\n");
             return;
         }
-        static::safeEcho("<n>-----------------------<w> WORKERMAN </w>-----------------------------</n>\r\n");
-        static::safeEcho('Workerman version:'. static::VERSION. "          PHP version:". PHP_VERSION. "\r\n");
-        static::safeEcho("------------------------<w> WORKERS </w>-------------------------------\r\n");
-        static::safeEcho("<w>proto</w>    <w>user</w>". str_pad('',
-                static::$_maxUserNameLength + 2 - strlen('user')). "<w>worker</w>". str_pad('',
-                static::$_maxWorkerNameLength + 2 - strlen('worker')). "<w>listen</w>". str_pad('',
-                static::$_maxSocketNameLength + 2 - strlen('listen')). "<w>processes</w> <w>status</w>\n");
-        foreach (static::$_workers as $worker) {
-            static::safeEcho(str_pad($worker->transport,9). str_pad($worker->user, static::$_maxUserNameLength + 2). str_pad($worker->name,
-                    static::$_maxWorkerNameLength + 2). str_pad($worker->getSocketName(),
-                    static::$_maxSocketNameLength + 2). str_pad(' ' . $worker->count, 9). " <g> [OK] </g>\n");
-        }
-        static::safeEcho("----------------------------------------------------------------\n");
-        if (static::$daemonize) {
-            static::safeEcho("Input \"php $argv[0] stop\" to stop. Start success.\n\n");
-        } else {
-            static::safeEcho("Press Ctrl+C to stop. Start success.\n");
-        }
+
+		//show version
+		$line_version = 'Workerman version:' . static::VERSION . str_pad('PHP version:', 22, ' ', STR_PAD_LEFT) . PHP_VERSION . PHP_EOL;
+		!defined('LINE_VERSIOIN_LENGTH') && define('LINE_VERSIOIN_LENGTH', strlen($line_version));
+		$total_length = static::getSingleLineTotalLength();
+		$line_one = '<n>' . str_pad('<w> WORKERMAN </w>', $total_length + strlen('<w></w>'), '-', STR_PAD_BOTH) . '</n>'. PHP_EOL;
+		$line_two = str_pad('<w> WORKERS </w>' , $total_length  + strlen('<w></w>'), '-', STR_PAD_BOTH) . PHP_EOL;
+		static::safeEcho($line_one . $line_version . $line_two);
+
+		//Show title
+		$title = '';
+		foreach(static::getUiColumns() as $column_name => $prop){
+			$key = '_max' . ucfirst(strtolower($column_name)) . 'NameLength';
+			//just keep compatible with listen name 
+			$column_name == 'socket' && $column_name = 'listen';
+			$title.= "<w>{$column_name}</w>"  .  str_pad('', static::$$key + static::UI_SAFE_LENGTH - strlen($column_name));
+		}
+		$title && static::safeEcho($title . PHP_EOL);
+
+		//Show content
+		foreach (static::$_workers as $worker) {
+			$content = '';
+			foreach(static::getUiColumns() as $column_name => $prop){
+				$key = '_max' . ucfirst(strtolower($column_name)) . 'NameLength';
+				preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", $worker->{$prop}, $matches);
+				$place_holder_length = !empty($matches) ? strlen(implode('', $matches[0])) : 0;
+				$content .= str_pad($worker->{$prop}, static::$$key + static::UI_SAFE_LENGTH + $place_holder_length);
+			}
+			$content && static::safeEcho($content . PHP_EOL);
+		}
+
+		//Show last line
+		$line_last = str_pad('', static::getSingleLineTotalLength(), '-') . PHP_EOL;
+		$content && static::safeEcho($line_last);
+
+		if (static::$daemonize) {
+			static::safeEcho("Input \"php $argv[0] stop\" to stop. Start success.\n\n");
+		} else {
+			static::safeEcho("Press Ctrl+C to stop. Start success.\n");
+		}
+	}
+
+	/**
+	 * Get UI columns to be shown in terminal
+	 *
+	 * 1. $column_map: array('ui_column_name' => 'clas_property_name')
+	 * 2. Consider move into configuration in future
+	 *
+	 * @return array
+	 */
+	public static function getUiColumns()
+	{
+		$column_map = array(
+			'proto'		=>	'transport', 
+			'user'		=>	'user', 
+			'worker'	=>	'name', 
+			'socket'	=>	'socket',
+			'processes' 	=>	'count',
+			'status'	=>	'status',
+		);
+
+		return $column_map;
+	}
+
+	/**
+	 * Get single line total length for ui
+	 *
+	 * @return int
+	 */
+	public static function getSingleLineTotalLength()
+	{
+		$total_length = 0;
+
+		foreach(static::getUiColumns() as $column_name => $prop){
+			$key = '_max' . ucfirst(strtolower($column_name)) . 'NameLength';
+			$total_length += static::$$key + static::UI_SAFE_LENGTH;
+		}
+
+		//keep beauty when show less colums
+		!defined('LINE_VERSIOIN_LENGTH') && define('LINE_VERSIOIN_LENGTH', 0);
+		$total_length <= LINE_VERSIOIN_LENGTH && $total_length = LINE_VERSIOIN_LENGTH;
+		
+		return $total_length;
     }
 
     /**
