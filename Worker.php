@@ -1588,18 +1588,13 @@ class Worker
                         unset(static::$_pidsToRestart[$pid]);
                         static::reload();
                     }
-                } else {
-                    // If shutdown state and all child processes exited then master process exit.
-                    if (!static::getAllWorkerPids()) {
-                        static::exitAndClearAll();
-                    }
-                }
-            } else {
-                // If shutdown state and all child processes exited then master process exit.
-                if (static::$_status === static::STATUS_SHUTDOWN && !static::getAllWorkerPids()) {
-                    static::exitAndClearAll();
-                }
-            }
+				} 
+			} 
+
+			// If shutdown state and all child processes exited then master process exit.
+			if (static::$_status === static::STATUS_SHUTDOWN && !static::getAllWorkerPids()) {
+				static::exitAndClearAll();
+			}
         }
     }
 
