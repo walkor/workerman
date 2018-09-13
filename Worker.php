@@ -1190,42 +1190,41 @@ class Worker
      */
     protected static function getEventLoopName()
     {
+        // setting default loop name to ReactPHP when possible,  else to Select.
+        $eventLoop = interface_exists('\React\EventLoop\LoopInterface') ?
+            '\Workerman\Events\React\StreamSelectLoop' : '\Workerman\Events\Select';
+        // if self::$eventLoopClass was set
         if (static::$eventLoopClass) {
-            return static::$eventLoopClass;
-        }
-
-        if (!class_exists('\Swoole\Event')) {
-            unset(static::$_availableEventLoops['swoole']);
-        }
-        
-        $loop_name = '';
-        foreach (static::$_availableEventLoops as $name=>$class) {
-            if (extension_loaded($name)) {
-                $loop_name = $name;
-                break;
+            if (!class_exists('\Swoole\Event')) {
+                unset(static::$_availableEventLoops['swoole']);
             }
-        }
-
-        if ($loop_name) {
-            if (interface_exists('\React\EventLoop\LoopInterface')) {
-                switch ($loop_name) {
-                    case 'libevent':
-                        static::$eventLoopClass = '\Workerman\Events\React\ExtLibEventLoop';
-                        break;
-                    case 'event':
-                        static::$eventLoopClass = '\Workerman\Events\React\ExtEventLoop';
-                        break;
-                    default :
-                        static::$eventLoopClass = '\Workerman\Events\React\StreamSelectLoop';
-                        break;
+            $flippedLoop = array_flip(static::$_availableEventLoops);
+            // if the loop is avaiable as a workerman loop
+            if (isset($flippedLoop[static::$eventLoopClass]) ) {
+                $extensionName = $flippedLoop[static::$eventLoopClass];
+                // if the extension was loaded
+                if (extension_loaded($extensionName)) {
+                    // we use this associated class
+                    $eventLoop = (array(
+                        "libevent" => "\Workerman\Events\React\ExtLibEventLoop",
+                        "event" => "\Workerman\Events\React\ExtEventLoop"
+                    ))[$extensionName];
                 }
             } else {
-                static::$eventLoopClass = static::$_availableEventLoops[$loop_name];
+                $explodedClass = explode("\\", static::$eventLoopClass);
+                $explodedClass = array(strtolower($explodedClass[0]),strtolower($explodedClass[1]));
+                // if the loop is a callable class not comming from workerman package
+                // (else it should be defnined in self::$_availableEventLoops)
+                if (
+                    class_exists(static::$eventLoopClass) &&
+                    !in_array("workerman", $explodedClass)
+                ) {
+                    // we use this class
+                    $eventLoop = static::$eventLoopClass;
+                }
             }
-        } else {
-            static::$eventLoopClass = interface_exists('\React\EventLoop\LoopInterface')? '\Workerman\Events\React\StreamSelectLoop':'\Workerman\Events\Select';
         }
-        return static::$eventLoopClass;
+        return static::$eventLoopClass = $eventLoop;
     }
 
     /**

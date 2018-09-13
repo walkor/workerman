@@ -59,10 +59,9 @@ class WebServer extends Worker
     }
 
     /**
-     * Construct.
-     *
+     * WebServer constructor.
      * @param string $socket_name
-     * @param array  $context_option
+     * @param array $context_option
      */
     public function __construct($socket_name, $context_option = array())
     {
@@ -228,13 +227,14 @@ class WebServer extends Worker
         } else {
             // 404
             Http::header("HTTP/1.1 404 Not Found");
-			if(isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
-				$html404 = file_get_contents($workerman_siteConfig['custom404']);
-			}else{
-				$html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
-			}
+            if(isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
+                $html404 = file_get_contents($workerman_siteConfig['custom404']);
+            }else{
+                $html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
+            }
             $connection->close($html404);
             return;
+
         }
     }
 
@@ -260,8 +260,9 @@ class WebServer extends Worker
         }
         $file_size = filesize($file_path);
         $file_info = pathinfo($file_path);
-        $extension = isset($file_info['extension']) ? $file_info['extension'] : '';
-        $file_name = isset($file_info['filename']) ? $file_info['filename'] : '';
+        $ext = explode(".", $file_path); $ext = $ext[count($ext) - 1];
+        $extension = isset($file_info['extension']) ? $file_info['extension'] : $ext;
+        $file_name = (isset($file_info['filename']) ? $file_info['filename'] : '') . "." . $extension;
         $header = "HTTP/1.1 200 OK\r\n";
         if (isset(self::$mimeTypeMap[$extension])) {
             $header .= "Content-Type: " . self::$mimeTypeMap[$extension] . "\r\n";
