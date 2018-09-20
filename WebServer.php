@@ -47,12 +47,15 @@ class WebServer extends Worker
      * Add virtual host.
      *
      * @param string $domain
-     * @param string $root_path
+     * @param string $config
      * @return void
      */
-    public function addRoot($domain, $root_path)
+    public function addRoot($domain, $config)
     {
-        $this->serverRoot[$domain] = $root_path;
+	if (is_string($config)) {
+            $config = array('root' => $config);
+	}
+        $this->serverRoot[$domain] = $config;
     }
 
     /**
@@ -89,7 +92,7 @@ class WebServer extends Worker
     public function onWorkerStart()
     {
         if (empty($this->serverRoot)) {
-            echo new \Exception('server root not set, please use WebServer::addRoot($domain, $root_path) to set server root path');
+            Worker::safeEcho(new \Exception('server root not set, please use WebServer::addRoot($domain, $root_path) to set server root path'));
             exit(250);
         }
 
@@ -148,7 +151,7 @@ class WebServer extends Worker
     public function onMessage($connection)
     {
         // REQUEST_URI.
-        $workerman_url_info = parse_url($_SERVER['REQUEST_URI']);
+        $workerman_url_info = parse_url('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
         if (!$workerman_url_info) {
             Http::header('HTTP/1.1 400 Bad Request');
             $connection->close('<h1>400 Bad Request</h1>');
@@ -164,10 +167,12 @@ class WebServer extends Worker
             $workerman_file_extension = 'php';
         }
 
-        $workerman_root_dir = isset($this->serverRoot[$_SERVER['SERVER_NAME']]) ? $this->serverRoot[$_SERVER['SERVER_NAME']] : current($this->serverRoot);
-
+        $workerman_siteConfig = isset($this->serverRoot[$_SERVER['SERVER_NAME']]) ? $this->serverRoot[$_SERVER['SERVER_NAME']] : current($this->serverRoot);
+		$workerman_root_dir = $workerman_siteConfig['root'];
         $workerman_file = "$workerman_root_dir/$workerman_path";
-
+		if(isset($workerman_siteConfig['additionHeader'])){
+			Http::header($workerman_siteConfig['additionHeader']);
+		}
         if ($workerman_file_extension === 'php' && !is_file($workerman_file)) {
             $workerman_file = "$workerman_root_dir/index.php";
             if (!is_file($workerman_file)) {
@@ -204,7 +209,7 @@ class WebServer extends Worker
                 } catch (\Exception $e) {
                     // Jump_exit?
                     if ($e->getMessage() != 'jump_exit') {
-                        echo $e;
+                        Worker::safeEcho($e);
                     }
                 }
                 $content = ob_get_clean();
@@ -223,7 +228,12 @@ class WebServer extends Worker
         } else {
             // 404
             Http::header("HTTP/1.1 404 Not Found");
-            $connection->close('<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>');
+			if(isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
+				$html404 = file_get_contents($workerman_siteConfig['custom404']);
+			}else{
+				$html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
+			}
+            $connection->close($html404);
             return;
         }
     }

@@ -30,7 +30,7 @@ class Text
     public static function input($buffer, TcpConnection $connection)
     {
         // Judge whether the package length exceeds the limit.
-        if (strlen($buffer) >= TcpConnection::$maxPackageSize) {
+        if (strlen($buffer) >= $connection::$maxPackageSize) {
             $connection->close();
             return 0;
         }

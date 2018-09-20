@@ -12,16 +12,16 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 namespace Workerman\Events\React;
+use Workerman\Events\EventInterface;
 
 /**
- * Class ExtEventLoop
+ * Class ExtLibEventLoop
  * @package Workerman\Events\React
  */
-class ExtEventLoop extends Base
+class ExtLibEventLoop extends Base
 {
-
     public function __construct()
     {
-        $this->_eventLoop = new \React\EventLoop\ExtEventLoop();
+        $this->_eventLoop = new \React\EventLoop\ExtLibeventLoop();
     }
 }
