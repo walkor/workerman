@@ -38,7 +38,7 @@ class Http
     {
         if (!strpos($recv_buffer, "\r\n\r\n")) {
             // Judge whether the package length exceeds the limit.
-            if (strlen($recv_buffer) >= TcpConnection::$maxPackageSize) {
+            if (strlen($recv_buffer) >= $connection::$maxPackageSize) {
                 $connection->close();
                 return 0;
             }
@@ -73,7 +73,7 @@ class Http
             $content_length = isset($match[1]) ? $match[1] : 0;
             return $content_length + strlen($header) + 4;
         }
-        return 0;
+        return $method === 'DELETE' ? strlen($header) + 4 : 0;
     }
 
     /**
@@ -106,6 +106,7 @@ class Http
             'HTTP_ACCEPT_ENCODING' => '',
             'HTTP_COOKIE'          => '',
             'HTTP_CONNECTION'      => '',
+            'CONTENT_TYPE'         => '',
             'REMOTE_ADDR'          => '',
             'REMOTE_PORT'          => '0',
             'REQUEST_TIME'         => time()
@@ -158,9 +159,17 @@ class Http
                 case 'CONTENT_LENGTH':
                     $_SERVER['CONTENT_LENGTH'] = $value;
                     break;
+                case 'UPGRADE':
+					if($value=='websocket'){
+						$connection->protocol = "\\Workerman\\Protocols\\Websocket";
+						return \Workerman\Protocols\Websocket::input($recv_buffer,$connection);
+					}
+                    break;
             }
         }
-
+		if(isset($_SERVER['HTTP_ACCEPT_ENCODING']) && strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== FALSE){
+			HttpCache::$gzip = true;
+		}
         // Parse $_POST.
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($_SERVER['CONTENT_TYPE'])) {
@@ -178,6 +187,17 @@ class Http
             }
         }
 
+        // Parse other HTTP action parameters
+        if ($_SERVER['REQUEST_METHOD'] != 'GET' && $_SERVER['REQUEST_METHOD'] != "POST") {
+            $data = array();
+            if ($_SERVER['CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
+                parse_str($http_body, $data);
+            } elseif ($_SERVER['CONTENT_TYPE'] === "application/json") {
+                $data = json_decode($http_body, true);
+            }
+            $_REQUEST = array_merge($_REQUEST, $data);
+        }
+
         // HTTP_RAW_REQUEST_DATA HTTP_RAW_POST_DATA
         $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
 
@@ -190,8 +210,13 @@ class Http
             $_SERVER['QUERY_STRING'] = '';
         }
 
-        // REQUEST
-        $_REQUEST = array_merge($_GET, $_POST);
+        if (is_array($_POST)) {
+            // REQUEST
+            $_REQUEST = array_merge($_GET, $_POST, $_REQUEST);
+        } else {
+            // REQUEST
+            $_REQUEST = array_merge($_GET, $_REQUEST);
+        }
 
         // REMOTE_ADDR REMOTE_PORT
         $_SERVER['REMOTE_ADDR'] = $connection->getRemoteIp();
@@ -232,7 +257,10 @@ class Http
                 $header .= $item . "\r\n";
             }
         }
-
+		if(HttpCache::$gzip && isset($connection->gzip) && $connection->gzip){
+			$header .= "Content-Encoding: gzip\r\n";
+			$content = gzencode($content,$connection->gzip);
+		}
         // header
         $header .= "Server: workerman/" . Worker::VERSION . "\r\nContent-Length: " . strlen($content) . "\r\n\r\n";
 
@@ -331,6 +359,84 @@ class Http
     }
 
     /**
+     * sessionCreateId
+     *
+     * @return string
+     */
+    public static function sessionCreateId()
+    {
+        mt_srand();
+        return bin2hex(pack('d', microtime(true)) . pack('N',mt_rand(0, 2147483647)));
+    }
+
+    /**
+     * sessionId
+     *
+     * @param string  $id
+     *
+     * @return string|null
+     */
+    public static function sessionId($id = null)
+    {
+        if (PHP_SAPI != 'cli') {
+            return $id ? session_id($id) : session_id();
+        }
+        if (static::sessionStarted() && HttpCache::$instance->sessionFile) {
+            return str_replace('sess_', '', basename(HttpCache::$instance->sessionFile));
+        }
+        return '';
+    }
+
+    /**
+     * sessionName
+     *
+     * @param string  $name
+     *
+     * @return string
+     */
+    public static function sessionName($name = null)
+    {
+        if (PHP_SAPI != 'cli') {
+            return $name ? session_name($name) : session_name();
+        }
+        $session_name = HttpCache::$sessionName;
+        if ($name && ! static::sessionStarted()) {
+            HttpCache::$sessionName = $name;
+        }
+        return $session_name;
+    }
+
+    /**
+     * sessionSavePath
+     *
+     * @param string  $path
+     *
+     * @return void
+     */
+    public static function sessionSavePath($path = null)
+    {
+        if (PHP_SAPI != 'cli') {
+            return $path ? session_save_path($path) : session_save_path();
+        }
+        if ($path && is_dir($path) && is_writable($path) && !static::sessionStarted()) {
+            HttpCache::$sessionPath = $path;
+        }
+        return HttpCache::$sessionPath;
+    }
+
+    /**
+     * sessionStarted
+     *
+     * @return bool
+     */
+    public static function sessionStarted()
+    {
+        if (!HttpCache::$instance) return false;
+
+        return HttpCache::$instance->sessionStarted;
+    }
+
+    /**
      * sessionStart
      *
      * @return bool
@@ -344,18 +450,18 @@ class Http
         self::tryGcSessions();
 
         if (HttpCache::$instance->sessionStarted) {
-            echo "already sessionStarted\n";
+            Worker::safeEcho("already sessionStarted\n");
             return true;
         }
         HttpCache::$instance->sessionStarted = true;
         // Generate a SID.
-        if (!isset($_COOKIE[HttpCache::$sessionName]) || !is_file(HttpCache::$sessionPath . '/ses' . $_COOKIE[HttpCache::$sessionName])) {
-            $file_name = tempnam(HttpCache::$sessionPath, 'ses');
-            if (!$file_name) {
-                return false;
+        if (!isset($_COOKIE[HttpCache::$sessionName]) || !is_file(HttpCache::$sessionPath . '/sess_' . $_COOKIE[HttpCache::$sessionName])) {
+            // Create a unique session_id and the associated file name.
+            while (true) {
+                $session_id = static::sessionCreateId();
+                if (!is_file($file_name = HttpCache::$sessionPath . '/sess_' . $session_id)) break;
             }
             HttpCache::$instance->sessionFile = $file_name;
-            $session_id                       = substr(basename($file_name), strlen('ses'));
             return self::setcookie(
                 HttpCache::$sessionName
                 , $session_id
@@ -367,7 +473,7 @@ class Http
             );
         }
         if (!HttpCache::$instance->sessionFile) {
-            HttpCache::$instance->sessionFile = HttpCache::$sessionPath . '/ses' . $_COOKIE[HttpCache::$sessionName];
+            HttpCache::$instance->sessionFile = HttpCache::$sessionPath . '/sess_' . $_COOKIE[HttpCache::$sessionName];
         }
         // Read session from session file.
         if (HttpCache::$instance->sessionFile) {
@@ -555,6 +661,7 @@ class HttpCache
      */
     public static $instance             = null;
     public static $header               = array();
+    public static $gzip                 = false;
     public static $sessionPath          = '';
     public static $sessionName          = '';
     public static $sessionGcProbability = 1;
@@ -565,8 +672,14 @@ class HttpCache
 
     public static function init()
     {
-        self::$sessionName = ini_get('session.name');
-        self::$sessionPath = @session_save_path();
+        if (!self::$sessionName) {
+            self::$sessionName = ini_get('session.name');
+        }
+
+        if (!self::$sessionPath) {
+            self::$sessionPath = @session_save_path();
+        }
+
         if (!self::$sessionPath || strpos(self::$sessionPath, 'tcp://') === 0) {
             self::$sessionPath = sys_get_temp_dir();
         }
