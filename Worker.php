@@ -2434,6 +2434,8 @@ class Worker
                             return true;
                         call_user_func($this->onMessage, $connection, $data);
                     }
+                }else{
+                    call_user_func($this->onMessage, $connection, $recv_buffer);
                 }
                 ConnectionInterface::$statistics['total_request']++;
             } catch (\Exception $e) {
