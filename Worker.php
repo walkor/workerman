@@ -2247,8 +2247,7 @@ class Worker
             if ($this->transport !== 'udp') {
                 static::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ, array($this, 'acceptConnection'));
             } else {
-                static::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ,
-                    array($this, 'acceptUdpConnection'));
+                static::$globalEvent->add($this->_mainSocket, EventInterface::EV_READ, array($this, 'acceptUdpConnection'));
             }
             $this->_pauseAccept = false;
         }
@@ -2418,13 +2417,25 @@ class Worker
                 if ($this->protocol !== null) {
                     /** @var \Workerman\Protocols\ProtocolInterface $parser */
                     $parser      = $this->protocol;
-                    $recv_buffer = $parser::decode($recv_buffer, $connection);
-                    // Discard bad packets.
-                    if ($recv_buffer === false)
-                        return true;
+                    if(method_exists($parser,'input')){
+                        while($recv_buffer !== ''){
+                            $len = $parser::input($recv_buffer, $connection);
+                            $package = substr($recv_buffer,0,$len);
+                            $recv_buffer = substr($recv_buffer,$len);
+                            $data = $parser::decode($package,$connection);
+                            if ($data === false)
+                                continue;
+                            call_user_func($this->onMessage, $connection, $data);
+                        }
+                    }else{
+                        $data = $parser::decode($recv_buffer, $connection);
+                        // Discard bad packets.
+                        if ($data === false)
+                            return true;
+                        call_user_func($this->onMessage, $connection, $data);
+                    }
                 }
                 ConnectionInterface::$statistics['total_request']++;
-                call_user_func($this->onMessage, $connection, $recv_buffer);
             } catch (\Exception $e) {
                 static::log($e);
                 exit(250);
