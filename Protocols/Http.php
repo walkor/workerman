@@ -565,7 +565,7 @@ class Http
                                 'file_data' => $boundary_value,
                                 'file_size' => strlen($boundary_value),
                             );
-                            continue;
+                            continue 2;
                         } // Is post field.
                         else {
                             // Parse $_POST.
