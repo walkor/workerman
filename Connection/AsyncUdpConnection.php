@@ -185,6 +185,9 @@ class AsyncUdpConnection extends UdpConnection
             Worker::safeEcho(new \Exception($errmsg));
             return;
         }
+        
+        stream_set_blocking($this->_socket, false);
+        
         if ($this->onMessage) {
             Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
         }
