@@ -38,6 +38,13 @@ class AsyncTcpConnection extends TcpConnection
     public $transport = 'tcp';
 
     /**
+     * Support for custom hostname.
+     *
+     * @var string
+     */
+    public $remoteHost = null;
+
+    /**
      * Status.
      *
      * @var int
@@ -244,7 +251,7 @@ class AsyncTcpConnection extends TcpConnection
      */
     public function getRemoteHost()
     {
-        return $this->_remoteHost;
+        return empty($this->remoteHost) ? $this->_remoteHost : $this->remoteHost;
     }
 
     /**
