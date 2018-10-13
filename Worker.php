@@ -2148,11 +2148,18 @@ class Worker
             // Check application layer protocol class.
             if (!isset(static::$_builtinTransports[$scheme])) {
                 $scheme         = ucfirst($scheme);
-                $this->protocol = substr($scheme,0,1)==='\\' ? $scheme : '\\Protocols\\' . $scheme;
-                if (!class_exists($this->protocol)) {
-                    $this->protocol = "\\Workerman\\Protocols\\$scheme";
+                if (is_null($this->protocol)) {
+                    $this->protocol = substr($scheme,0,1)==='\\' ? $scheme : '\\Protocols\\' . $scheme;
                     if (!class_exists($this->protocol)) {
-                        throw new Exception("class \\Protocols\\$scheme not exist");
+                        $this->protocol = "\\Workerman\\Protocols\\$scheme";
+                        if (!class_exists($this->protocol)) {
+                            throw new Exception("class \\Protocols\\$scheme not exist");
+                        }
+                    }
+                // Check custom protocol class.
+                } else {
+                    if (!class_exists($this->protocol)) {
+                        throw new Exception("class {$this->protocol} not exist");
                     }
                 }
 
