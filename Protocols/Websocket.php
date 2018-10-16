@@ -140,7 +140,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $current_frame_length = $head_len + $data_len;
 
             $total_package_size = strlen($connection->websocketDataBuffer) + $current_frame_length;
-            if ($total_package_size > $connection::$maxPackageSize) {
+            if ($total_package_size > $connection->maxPackageSize) {
                 Worker::safeEcho("error package. package_length=$total_package_size\n");
                 $connection->close();
                 return 0;
