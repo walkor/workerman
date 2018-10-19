@@ -1650,10 +1650,10 @@ class Worker
                 if (static::$onMasterReload) {
                     try {
                         call_user_func(static::$onMasterReload);
-                    } catch (\Exception $e) {
+                    } catch (\Error $e) {
                         static::log($e);
                         exit(250);
-                    } catch (\Error $e) {
+                    } catch (\Exception $e) {
                         static::log($e);
                         exit(250);
                     }
@@ -1709,10 +1709,10 @@ class Worker
             if ($worker->onWorkerReload) {
                 try {
                     call_user_func($worker->onWorkerReload, $worker);
-                } catch (\Exception $e) {
+                } catch (\Error $e) {
                     static::log($e);
                     exit(250);
-                } catch (\Error $e) {
+                } catch (\Exception $e) {
                     static::log($e);
                     exit(250);
                 }
@@ -2304,12 +2304,12 @@ class Worker
         if ($this->onWorkerStart) {
             try {
                 call_user_func($this->onWorkerStart, $this);
-            } catch (\Exception $e) {
+            } catch (\Error $e) {
                 static::log($e);
                 // Avoid rapid infinite loop exit.
                 sleep(1);
                 exit(250);
-            } catch (\Error $e) {
+            } catch (\Exception $e) {
                 static::log($e);
                 // Avoid rapid infinite loop exit.
                 sleep(1);
@@ -2332,10 +2332,10 @@ class Worker
         if ($this->onWorkerStop) {
             try {
                 call_user_func($this->onWorkerStop, $this);
-            } catch (\Exception $e) {
+            } catch (\Error $e) {
                 static::log($e);
                 exit(250);
-            } catch (\Error $e) {
+            } catch (\Exception $e) {
                 static::log($e);
                 exit(250);
             }
@@ -2386,10 +2386,10 @@ class Worker
         if ($this->onConnect) {
             try {
                 call_user_func($this->onConnect, $connection);
-            } catch (\Exception $e) {
+            } catch (\Error $e) {
                 static::log($e);
                 exit(250);
-            } catch (\Error $e) {
+            } catch (\Exception $e) {
                 static::log($e);
                 exit(250);
             }
@@ -2441,10 +2441,10 @@ class Worker
                     call_user_func($this->onMessage, $connection, $recv_buffer);
                 }
                 ConnectionInterface::$statistics['total_request']++;
-            } catch (\Exception $e) {
+            } catch (\Error $e) {
                 static::log($e);
                 exit(250);
-            } catch (\Error $e) {
+            } catch (\Exception $e) {
                 static::log($e);
                 exit(250);
             }
