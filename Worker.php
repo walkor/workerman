@@ -336,7 +336,7 @@ class Worker
     protected static $_workers = array();
 
     /**
-     * All worker porcesses pid.
+     * All worker processes pid.
      * The format is like this [worker_id=>[pid=>pid, pid=>pid, ..], ..]
      *
      * @var array
@@ -490,9 +490,28 @@ class Worker
     protected static $_outputDecorated = null;
 
     /**
+     * socket net
+     * @var string
+     */
+    private $socket;
+
+    /**
+     * worker status
+     * @var string
+     */
+    private $status;
+
+    /**
+     * worker id
+     * @var string
+     */
+    private $workerId;
+
+    /**
      * Run all worker instances.
      *
      * @return void
+     * @throws Exception
      */
     public static function runAll()
     {
@@ -532,7 +551,8 @@ class Worker
      */
     protected static function init()
     {
-        set_error_handler(function($code, $msg, $file, $line){
+        set_error_handler(function(/** @noinspection PhpUnusedParameterInspection */
+            $code, $msg, $file, $line){
             Worker::safeEcho("$msg in file $file on line $line\n");
         });
 
@@ -579,6 +599,7 @@ class Worker
      * Init All worker instances.
      *
      * @return void
+     * @throws Exception
      */
     protected static function initWorkers()
     {
@@ -606,7 +627,7 @@ class Worker
             // Status name.
             $worker->status = '<g> [OK] </g>';
 
-            // Get clolumn mapping for UI
+            // Get column mapping for UI
             foreach(static::getUiColumns() as $column_name => $prop){
                 !isset($worker->{$prop}) && $worker->{$prop}= 'NNNN';
                 $prop_length = strlen($worker->{$prop});
@@ -706,6 +727,7 @@ class Worker
         $title && static::safeEcho($title . PHP_EOL);
 
         //Show content
+        $content = null;
         foreach (static::$_workers as $worker) {
             $content = '';
             foreach(static::getUiColumns() as $column_name => $prop){
@@ -1249,6 +1271,7 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
+     * @throws Exception
      */
     protected static function forkWorkers()
     {
@@ -1263,6 +1286,7 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
+     * @throws Exception
      */
     protected static function forkWorkersForLinux()
     {
@@ -1288,6 +1312,7 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
+     * @throws Exception
      */
     protected static function forkWorkersForWindows()
     {
@@ -1317,7 +1342,7 @@ class Worker
         }
         else
         {
-            static::$globalEvent = new \Workerman\Events\Select();
+            static::$globalEvent = new Select();
             Timer::init(static::$globalEvent);
             foreach($files as $start_file)
             {
@@ -1528,6 +1553,7 @@ class Worker
      * Monitor all child processes.
      *
      * @return void
+     * @throws Exception
      */
     protected static function monitorWorkers()
     {
@@ -1542,6 +1568,7 @@ class Worker
      * Monitor all child processes.
      *
      * @return void
+     * @throws Exception
      */
     protected static function monitorWorkersForLinux()
     {
