@@ -162,6 +162,13 @@ class Worker
     public $onMessage = null;
 
     /**
+     * Emitted when looping.
+     *
+     * @var callback
+     */
+    public $onLoop = null;
+
+    /**
      * Emitted when the other end of the socket sends a FIN packet.
      *
      * @var callback
@@ -2318,7 +2325,7 @@ class Worker
         }
 
         // Main loop.
-        static::$globalEvent->loop();
+        static::$globalEvent->loop(self::$onLoop);
     }
 
     /**

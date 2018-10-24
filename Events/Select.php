@@ -260,7 +260,7 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function loop()
+    public function loop($onLoop=null)
     {
         $e = null;
         while (1) {
@@ -268,6 +268,7 @@ class Select implements EventInterface
                 // Calls signal handlers for pending signals
                 pcntl_signal_dispatch();
             }
+            if($onLoop) call_user_func($onLoop);
 
             $read  = $this->_readFds;
             $write = $this->_writeFds;
