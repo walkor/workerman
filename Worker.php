@@ -336,7 +336,7 @@ class Worker
     protected static $_workers = array();
 
     /**
-     * All worker porcesses pid.
+     * All worker processes pid.
      * The format is like this [worker_id=>[pid=>pid, pid=>pid, ..], ..]
      *
      * @var array
@@ -606,7 +606,7 @@ class Worker
             // Status name.
             $worker->status = '<g> [OK] </g>';
 
-            // Get clolumn mapping for UI
+            // Get column mapping for UI
             foreach(static::getUiColumns() as $column_name => $prop){
                 !isset($worker->{$prop}) && $worker->{$prop}= 'NNNN';
                 $prop_length = strlen($worker->{$prop});
