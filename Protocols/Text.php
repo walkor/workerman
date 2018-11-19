@@ -65,6 +65,6 @@ class Text
     public static function decode($buffer)
     {
         // Remove "\n"
-        return trim($buffer);
+        return rtrim($buffer, "\r\n");
     }
 }
