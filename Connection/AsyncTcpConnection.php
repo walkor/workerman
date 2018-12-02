@@ -288,13 +288,16 @@ class AsyncTcpConnection extends TcpConnection
      */
     public function checkConnection()
     {
-        if ($this->_status != self::STATUS_CONNECTING) {
-            return;
-        }
-
         // Remove EV_EXPECT for windows.
         if(DIRECTORY_SEPARATOR === '\\') {
             Worker::$globalEvent->del($this->_socket, EventInterface::EV_EXCEPT);
+        }
+
+        // Remove write listener.
+        Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
+
+        if ($this->_status != self::STATUS_CONNECTING) {
+            return;
         }
 
         // Check socket state.
@@ -311,9 +314,6 @@ class AsyncTcpConnection extends TcpConnection
                 socket_set_option($raw_socket, SOL_SOCKET, SO_KEEPALIVE, 1);
                 socket_set_option($raw_socket, SOL_TCP, TCP_NODELAY, 1);
             }
-
-            // Remove write listener.
-            Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
 
             // SSL handshake.
             if ($this->transport === 'ssl') {

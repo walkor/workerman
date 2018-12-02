@@ -30,7 +30,7 @@ class Text
     public static function input($buffer, TcpConnection $connection)
     {
         // Judge whether the package length exceeds the limit.
-        if (strlen($buffer) >= $connection::$maxPackageSize) {
+        if (strlen($buffer) >= $connection->maxPackageSize) {
             $connection->close();
             return 0;
         }
@@ -65,6 +65,6 @@ class Text
     public static function decode($buffer)
     {
         // Remove "\n"
-        return trim($buffer);
+        return rtrim($buffer, "\r\n");
     }
 }

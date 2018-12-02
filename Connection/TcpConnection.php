@@ -165,11 +165,18 @@ class TcpConnection extends ConnectionInterface
     public static $defaultMaxSendBufferSize = 1048576;
 
     /**
-     * Maximum acceptable packet size.
+     * Sets the maximum acceptable packet size for the current connection.
      *
      * @var int
      */
-    public static $maxPackageSize = 10485760;
+    public $maxPackageSize = 1048576;
+    
+    /**
+     * Default maximum acceptable packet size.
+     *
+     * @var int
+     */
+    public static $defaultMaxPackageSize = 10485760;
 
     /**
      * Id recorder.
@@ -298,6 +305,7 @@ class TcpConnection extends ConnectionInterface
         }
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
         $this->maxSendBufferSize        = self::$defaultMaxSendBufferSize;
+        $this->maxPackageSize           = self::$defaultMaxPackageSize;
         $this->_remoteAddress           = $remote_address;
         static::$connections[$this->id] = $this;
     }
@@ -615,7 +623,7 @@ class TcpConnection extends ConnectionInterface
                     // The packet length is unknown.
                     if ($this->_currentPackageLength === 0) {
                         break;
-                    } elseif ($this->_currentPackageLength > 0 && $this->_currentPackageLength <= static::$maxPackageSize) {
+                    } elseif ($this->_currentPackageLength > 0 && $this->_currentPackageLength <= $this->maxPackageSize) {
                         // Data is not enough for a package.
                         if ($this->_currentPackageLength > strlen($this->_recvBuffer)) {
                             break;
@@ -827,6 +835,8 @@ class TcpConnection extends ConnectionInterface
         }
         if ($this->_sendBuffer === '') {
             $this->destroy();
+        } else {
+            $this->pauseRecv();
         }
     }
 

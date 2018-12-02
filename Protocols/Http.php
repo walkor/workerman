@@ -38,7 +38,7 @@ class Http
     {
         if (!strpos($recv_buffer, "\r\n\r\n")) {
             // Judge whether the package length exceeds the limit.
-            if (strlen($recv_buffer) >= $connection::$maxPackageSize) {
+            if (strlen($recv_buffer) >= $connection->maxPackageSize) {
                 $connection->close();
                 return 0;
             }
@@ -565,7 +565,7 @@ class Http
                                 'file_data' => $boundary_value,
                                 'file_size' => strlen($boundary_value),
                             );
-                            continue;
+                            continue 2;
                         } // Is post field.
                         else {
                             // Parse $_POST.

@@ -262,7 +262,6 @@ class Select implements EventInterface
      */
     public function loop()
     {
-        $e = null;
         while (1) {
             if(DIRECTORY_SEPARATOR === '/') {
                 // Calls signal handlers for pending signals

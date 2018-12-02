@@ -137,7 +137,7 @@ class Ws
             }
 
             $total_package_size = strlen($connection->websocketDataBuffer) + $current_frame_length;
-            if ($total_package_size > $connection::$maxPackageSize) {
+            if ($total_package_size > $connection->maxPackageSize) {
                 Worker::safeEcho("error package. package_length=$total_package_size\n");
                 $connection->close();
                 return 0;
@@ -366,25 +366,27 @@ class Ws
         $host = $port === 80 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
         // Handshake header.
         $connection->websocketSecKey = base64_encode(md5(mt_rand(), true));
-        $userHeader = '';
-        if (!empty($connection->wsHttpHeader)) {
-            if (is_array($connection->wsHttpHeader)){
-                foreach($connection->wsHttpHeader as $k=>$v){
-                    $userHeader .= "$k: $v\r\n";
+        $user_header = isset($connection->headers) ? $connection->headers :
+            (isset($connection->wsHttpHeader) ? $connection->wsHttpHeader : null);
+        $user_header_str = '';
+        if (!empty($user_header)) {
+            if (is_array($user_header)){
+                foreach($user_header as $k=>$v){
+                    $user_header_str .= "$k: $v\r\n";
                 }
-            }else{
-                $userHeader .= $connection->wsHttpHeader;
+            } else {
+                $user_header_str .= $user_header;
             }
-            $userHeader = "\r\n".trim($userHeader);
+            $user_header_str = "\r\n".trim($user_header_str);
         }
         $header = 'GET ' . $connection->getRemoteURI() . " HTTP/1.1\r\n".
-        "Host: $host\r\n".
+        (!preg_match("/\nHost:/i", $user_header_str) ? "Host: $host\r\n" : '').
         "Connection: Upgrade\r\n".
         "Upgrade: websocket\r\n".
         "Origin: ". (isset($connection->websocketOrigin) ? $connection->websocketOrigin : '*') ."\r\n".
         (isset($connection->WSClientProtocol)?"Sec-WebSocket-Protocol: ".$connection->WSClientProtocol."\r\n":'').
         "Sec-WebSocket-Version: 13\r\n".
-        "Sec-WebSocket-Key: " . $connection->websocketSecKey . $userHeader . "\r\n\r\n";
+        "Sec-WebSocket-Key: " . $connection->websocketSecKey . $user_header_str . "\r\n\r\n";
         $connection->send($header, true);
         $connection->handshakeStep               = 1;
         $connection->websocketCurrentFrameLength = 0;
