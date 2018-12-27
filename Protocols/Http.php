@@ -382,7 +382,7 @@ class Http
             return $id ? session_id($id) : session_id();
         }
         if (static::sessionStarted() && HttpCache::$instance->sessionFile) {
-            return str_replace('sess_', '', basename(HttpCache::$instance->sessionFile));
+            return str_replace('ses_', '', basename(HttpCache::$instance->sessionFile));
         }
         return '';
     }
@@ -455,11 +455,11 @@ class Http
         }
         HttpCache::$instance->sessionStarted = true;
         // Generate a SID.
-        if (!isset($_COOKIE[HttpCache::$sessionName]) || !is_file(HttpCache::$sessionPath . '/sess_' . $_COOKIE[HttpCache::$sessionName])) {
+        if (!isset($_COOKIE[HttpCache::$sessionName]) || !is_file(HttpCache::$sessionPath . '/ses_' . $_COOKIE[HttpCache::$sessionName])) {
             // Create a unique session_id and the associated file name.
             while (true) {
                 $session_id = static::sessionCreateId();
-                if (!is_file($file_name = HttpCache::$sessionPath . '/sess_' . $session_id)) break;
+                if (!is_file($file_name = HttpCache::$sessionPath . '/ses_' . $session_id)) break;
             }
             HttpCache::$instance->sessionFile = $file_name;
             return self::setcookie(
@@ -473,7 +473,7 @@ class Http
             );
         }
         if (!HttpCache::$instance->sessionFile) {
-            HttpCache::$instance->sessionFile = HttpCache::$sessionPath . '/sess_' . $_COOKIE[HttpCache::$sessionName];
+            HttpCache::$instance->sessionFile = HttpCache::$sessionPath . '/ses_' . $_COOKIE[HttpCache::$sessionName];
         }
         // Read session from session file.
         if (HttpCache::$instance->sessionFile) {
