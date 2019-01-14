@@ -545,38 +545,51 @@ class Http
         if ($boundary_data_array[0] === '') {
             unset($boundary_data_array[0]);
         }
-        $key = -1;
+        
+        $is_form_files = false;
         foreach ($boundary_data_array as $boundary_data_buffer) {
             list($boundary_header_buffer, $boundary_value) = explode("\r\n\r\n", $boundary_data_buffer, 2);
             // Remove \r\n from the end of buffer.
             $boundary_value = substr($boundary_value, 0, -2);
-            $key ++;
             foreach (explode("\r\n", $boundary_header_buffer) as $item) {
                 list($header_key, $header_value) = explode(": ", $item);
                 $header_key = strtolower($header_key);
+                if(preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)){
+                    if (strpos($match[1],'[]')) {
+                        $is_form_files = true;    
+                    }else{
+                        $is_form_files = false;    
+                    }
+                    $file_form_name = str_replace('[]','',$match[1]);
+                }
+
                 switch ($header_key) {
                     case "content-disposition":
-                        // Is file data.
-                        if (preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)) {
-                            // Parse $_FILES.
-                            $_FILES[$key] = array(
-                                'name' => $match[1],
-                                'file_name' => $match[2],
-                                'file_data' => $boundary_value,
-                                'file_size' => strlen($boundary_value),
-                            );
-                            continue 2;
-                        } // Is post field.
-                        else {
-                            // Parse $_POST.
-                            if (preg_match('/name="(.*?)"$/', $header_value, $match)) {
-                                $_POST[$match[1]] = $boundary_value;
+                        if(preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)){
+                            if($is_form_files,'[]') !== false){
+                                $file_temp_path = sys_get_temp_dir().'/php'.uniqid();
+                                $_FILES[$file_form_name]['name'][] = $match[2];
+                                $_FILES[$file_form_name]['size'][] = strlen($boundary_value);
+                                $_FILES[$file_form_name]['error'][] = UPLOAD_ERR_OK;
+                                $_FILES[$file_form_name]['tmp_name'][] = $file_temp_path;
+                                file_put_contents($file_temp_path,$boundary_value);
+                            }else{
+                                $file_temp_path = sys_get_temp_dir().'/php'.uniqid();
+                                $_FILES[$file_form_name]['name'] = $match[2];
+                                $_FILES[$file_form_name]['size'] = strlen($boundary_value);
+                                $_FILES[$file_form_name]['error'] = UPLOAD_ERR_OK;
+                                $_FILES[$file_form_name]['tmp_name'] = $file_temp_path;
+                                file_put_contents($file_temp_path,$boundary_value);
                             }
+                            continue 2;
                         }
                         break;
                     case "content-type":
-                        // add file_type
-                        $_FILES[$key]['file_type'] = trim($header_value);
+                        if($is_form_files){
+                            $_FILES[$file_form_name]['type'][] = trim($header_value);
+                        }else{
+                            $_FILES[$file_form_name]['type'] = trim($header_value);
+                        }
                         break;
                 }
             }
