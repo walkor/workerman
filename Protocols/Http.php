@@ -566,7 +566,7 @@ class Http
                 switch ($header_key) {
                     case "content-disposition":
                         if(preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)){
-                            if($is_form_files,'[]') !== false){
+                            if($is_form_files !== false){
                                 $file_temp_path = sys_get_temp_dir().'/php'.uniqid();
                                 $_FILES[$file_form_name]['name'][] = $match[2];
                                 $_FILES[$file_form_name]['size'][] = strlen($boundary_value);
