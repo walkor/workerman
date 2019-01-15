@@ -21,6 +21,9 @@ use Workerman\Worker;
  */
 class Http
 {
+
+    public static $isHttpFullFunction = false;
+
     /**
       * The supported HTTP methods
       * @var array
@@ -538,7 +541,7 @@ class Http
      * @param string $http_post_boundary
      * @return void
      */
-    protected static function parseUploadFiles($http_body, $http_post_boundary)
+    protected static function parseUploadFilesFullFunction($http_body, $http_post_boundary)
     {
         $http_body           = substr($http_body, 0, strlen($http_body) - (strlen($http_post_boundary) + 4));
         $boundary_data_array = explode($http_post_boundary . "\r\n", $http_body);
@@ -566,22 +569,26 @@ class Http
                 switch ($header_key) {
                     case "content-disposition":
                         if(preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)){
+                            
+                            $file_temp_path = tempnam(sys_get_temp_dir(), 'php');
                             if($is_form_files !== false){
-                                $file_temp_path = sys_get_temp_dir().'/php'.uniqid();
                                 $_FILES[$file_form_name]['name'][] = $match[2];
                                 $_FILES[$file_form_name]['size'][] = strlen($boundary_value);
                                 $_FILES[$file_form_name]['error'][] = UPLOAD_ERR_OK;
                                 $_FILES[$file_form_name]['tmp_name'][] = $file_temp_path;
-                                file_put_contents($file_temp_path,$boundary_value);
                             }else{
-                                $file_temp_path = sys_get_temp_dir().'/php'.uniqid();
                                 $_FILES[$file_form_name]['name'] = $match[2];
                                 $_FILES[$file_form_name]['size'] = strlen($boundary_value);
                                 $_FILES[$file_form_name]['error'] = UPLOAD_ERR_OK;
                                 $_FILES[$file_form_name]['tmp_name'] = $file_temp_path;
-                                file_put_contents($file_temp_path,$boundary_value);
                             }
+                            file_put_contents($file_temp_path,$boundary_value);
                             continue 2;
+                        }else {
+                            // Parse $_POST.
+                            if (preg_match('/name="(.*?)"$/', $header_value, $match)) {
+                                $_POST[$match[1]] = $boundary_value;
+                            }
                         }
                         break;
                     case "content-type":
@@ -595,6 +602,64 @@ class Http
             }
         }
     }
+
+        /**
+     * Parse $_FILES.
+     *
+     * @param string $http_body
+     * @param string $http_post_boundary
+     * @return void
+     */
+    protected static function parseUploadFiles($http_body, $http_post_boundary)
+    {
+
+        if(self::$isHttpFullFunction){
+            return self::parseUploadFilesFullFunction($http_body,$http_post_boundary);
+        }
+
+        $http_body           = substr($http_body, 0, strlen($http_body) - (strlen($http_post_boundary) + 4));
+        $boundary_data_array = explode($http_post_boundary . "\r\n", $http_body);
+        if ($boundary_data_array[0] === '') {
+            unset($boundary_data_array[0]);
+        }
+        $key = -1;
+        foreach ($boundary_data_array as $boundary_data_buffer) {
+            list($boundary_header_buffer, $boundary_value) = explode("\r\n\r\n", $boundary_data_buffer, 2);
+            // Remove \r\n from the end of buffer.
+            $boundary_value = substr($boundary_value, 0, -2);
+            $key ++;
+            foreach (explode("\r\n", $boundary_header_buffer) as $item) {
+                list($header_key, $header_value) = explode(": ", $item);
+                $header_key = strtolower($header_key);
+                switch ($header_key) {
+                    case "content-disposition":
+                        // Is file data.
+                        if (preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)) {
+                            // Parse $_FILES.
+                            $_FILES[$key] = array(
+                                'name' => $match[1],
+                                'file_name' => $match[2],
+                                'file_data' => $boundary_value,
+                                'file_size' => strlen($boundary_value),
+                            );
+                            continue 2;
+                        } // Is post field.
+                        else {
+                            // Parse $_POST.
+                            if (preg_match('/name="(.*?)"$/', $header_value, $match)) {
+                                $_POST[$match[1]] = $boundary_value;
+                            }
+                        }
+                        break;
+                    case "content-type":
+                        // add file_type
+                        $_FILES[$key]['file_type'] = trim($header_value);
+                        break;
+                }
+            }
+        }
+    }
+
 
     /**
      * Try GC sessions.

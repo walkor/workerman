@@ -225,6 +225,13 @@ class Worker
     public $protocol = null;
 
     /**
+     * Is upload File format as web server's.
+     *
+     * @var string
+     */
+    public $isHttpFullFunction = false;
+
+    /**
      * Root path for autoload.
      *
      * @var string
@@ -2158,6 +2165,10 @@ class Worker
 
                 if (!isset(static::$_builtinTransports[$this->transport])) {
                     throw new \Exception('Bad worker->transport ' . var_export($this->transport, true));
+                }
+
+                if(\strtolower($scheme) === 'http'){
+                    $this->protocol::$isHttpFullFunction = $this->isHttpFullFunction;
                 }
             } else {
                 $this->transport = $scheme;
