@@ -952,6 +952,7 @@ class TcpConnection extends ConnectionInterface
                 exit(250);
             }
         }
+        $this->_sendBuffer = $this->_recvBuffer = '';
         if ($this->_status === self::STATUS_CLOSED) {
             // Cleaning up the callback to avoid memory leaks.
             $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = null;
