@@ -1178,6 +1178,14 @@ class Worker
         if (static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
+
+        clearstatcache();
+        $master_pid      = is_file(static::$pidFile) ? file_get_contents(static::$pidFile) : 0;
+        $master_is_alive = $master_pid && posix_kill($master_pid, 0) && posix_getpid() != $master_pid;
+        if ($master_is_alive) {
+            static::log("Workerman already running");
+            exit;
+        }
         static::$_masterPid = posix_getpid();
         if (false === file_put_contents(static::$pidFile, static::$_masterPid)) {
             throw new Exception('can not save pid to ' . static::$pidFile);
