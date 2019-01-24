@@ -454,7 +454,7 @@ class Worker
     protected static $_availableEventLoops = array(
         'libevent' => '\Workerman\Events\Libevent',
         'event'    => '\Workerman\Events\Event'
-        // Temporarily removed swoole because it is not stable enough  
+        // Temporarily removed swoole because it is not stable enough
         //'swoole'   => '\Workerman\Events\Swoole'
     );
 
@@ -699,7 +699,7 @@ class Worker
         $title = '';
         foreach(static::getUiColumns() as $column_name => $prop){
             $key = '_max' . ucfirst(strtolower($column_name)) . 'NameLength';
-            //just keep compatible with listen name 
+            //just keep compatible with listen name
             $column_name == 'socket' && $column_name = 'listen';
             $title.= "<w>{$column_name}</w>"  .  str_pad('', static::$$key + static::UI_SAFE_LENGTH - strlen($column_name));
         }
@@ -1179,17 +1179,25 @@ class Worker
             return;
         }
 
-        clearstatcache();
-        $master_pid      = is_file(static::$pidFile) ? file_get_contents(static::$pidFile) : 0;
-        $master_is_alive = $master_pid && posix_kill($master_pid, 0) && posix_getpid() != $master_pid;
-        if ($master_is_alive) {
-            static::log("Workerman already running");
+        $fp = fopen(static::$pidFile . ".lock", "w");
+        if (flock($fp, LOCK_EX)) {
+            clearstatcache();
+            $master_pid      = is_file(static::$pidFile) ? file_get_contents(static::$pidFile) : 0;
+            $master_is_alive = $master_pid && posix_kill($master_pid, 0) && posix_getpid() != $master_pid;
+            if ($master_is_alive) {
+                static::log("Workerman already running");
+                exit;
+            }
+            static::$_masterPid = posix_getpid();
+            if (false === file_put_contents(static::$pidFile, static::$_masterPid)) {
+                throw new Exception('can not save pid to ' . static::$pidFile);
+            }
+            flock($fp, LOCK_UN);
+        }else {
+            static::log("can not get the lock for pid file!");
             exit;
         }
-        static::$_masterPid = posix_getpid();
-        if (false === file_put_contents(static::$pidFile, static::$_masterPid)) {
-            throw new Exception('can not save pid to ' . static::$pidFile);
-        }
+        fclose($fp);
     }
 
     /**
@@ -1206,7 +1214,7 @@ class Worker
         if (!class_exists('\Swoole\Event', false)) {
             unset(static::$_availableEventLoops['swoole']);
         }
-        
+
         $loop_name = '';
         foreach (static::$_availableEventLoops as $name=>$class) {
             if (extension_loaded($name)) {
@@ -2307,7 +2315,7 @@ class Worker
         }
 
         restore_error_handler();
-        
+
         // Try to emit onWorkerStart callback.
         if ($this->onWorkerStart) {
             try {
