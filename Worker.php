@@ -498,11 +498,13 @@ class Worker
     {
         static::checkSapiEnv();
         static::init();
+        static::lock();
         static::parseCommand();
         static::daemonize();
         static::initWorkers();
         static::installSignal();
         static::saveMasterPid();
+        static::unlock();
         static::displayUI();
         static::forkWorkers();
         static::resetStd();
@@ -573,6 +575,31 @@ class Worker
 
         // Timer init.
         Timer::init();
+    }
+
+    /**
+     * Lock.
+     *
+     * @return void
+     */
+    protected static function lock()
+    {
+        $fd = fopen(static::$_startFile, 'r');
+        if (!$fd || !flock($fd, LOCK_EX)) {
+            static::log("Workerman[".static::$_startFile."] already running");
+            exit;
+        }
+    }
+
+    /**
+     * Unlock.
+     *
+     * @return void
+     */
+    protected static function unlock()
+    {
+        $fd = fopen(static::$_startFile, 'r');
+        $fd && flock($fd, LOCK_UN);
     }
 
     /**
@@ -1179,13 +1206,6 @@ class Worker
             return;
         }
 
-        clearstatcache();
-        $master_pid      = is_file(static::$pidFile) ? file_get_contents(static::$pidFile) : 0;
-        $master_is_alive = $master_pid && posix_kill($master_pid, 0) && posix_getpid() != $master_pid;
-        if ($master_is_alive) {
-            static::log("Workerman already running");
-            exit;
-        }
         static::$_masterPid = posix_getpid();
         if (false === file_put_contents(static::$pidFile, static::$_masterPid)) {
             throw new Exception('can not save pid to ' . static::$pidFile);
