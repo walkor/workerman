@@ -746,12 +746,23 @@ class TcpConnection extends ConnectionInterface
             return false;
         }
         $async = $this instanceof AsyncTcpConnection;
+        
+        /**
+          *  We disabled ssl3 because https://blog.qualys.com/ssllabs/2014/10/15/ssl-3-is-dead-killed-by-the-poodle-attack.
+          *  You can enable ssl3 by the codes below.
+          */
+        /*if($async){
+            $type = STREAM_CRYPTO_METHOD_SSLv2_CLIENT | STREAM_CRYPTO_METHOD_SSLv23_CLIENT | STREAM_CRYPTO_METHOD_SSLv3_CLIENT;
+        }else{
+            $type = STREAM_CRYPTO_METHOD_SSLv2_SERVER | STREAM_CRYPTO_METHOD_SSLv23_SERVER | STREAM_CRYPTO_METHOD_SSLv3_SERVER;
+        }*/
+        
         if($async){
             $type = STREAM_CRYPTO_METHOD_SSLv2_CLIENT | STREAM_CRYPTO_METHOD_SSLv23_CLIENT;
         }else{
             $type = STREAM_CRYPTO_METHOD_SSLv2_SERVER | STREAM_CRYPTO_METHOD_SSLv23_SERVER;
         }
-
+        
         // Hidden error.
         set_error_handler(function($errno, $errstr, $file){
             if (!Worker::$daemonize) {
