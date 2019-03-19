@@ -1156,6 +1156,7 @@ class Worker
         if (-1 === posix_setsid()) {
             throw new Exception("setsid fail");
         }
+
         // Fork again avoid SVR4 system regain the control of terminal.
         $pid = pcntl_fork();
         if (-1 === $pid) {
@@ -1591,6 +1592,7 @@ class Worker
                         // Exit status.
                         if ($status !== 0) {
                             static::log("worker[" . $worker->name . ":$pid] exit with status $status");
+                            break;
                         }
 
                         // For Statistics.
@@ -2070,7 +2072,7 @@ class Worker
             static::safeEcho($msg);
         }
         file_put_contents((string)static::$logFile, date('Y-m-d H:i:s') . ' ' . 'pid:'
-            . (static::$_OS === OS_TYPE_LINUX ? posix_getpid() : 1) . ' ' . $msg, FILE_APPEND | LOCK_EX);
+            . (static::$_OS === OS_TYPE_LINUX ? \getmypid () : 1) . ' ' . $msg, FILE_APPEND | LOCK_EX);
     }
 
     /**
