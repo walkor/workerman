@@ -188,7 +188,6 @@ class WebServer extends Worker
             $swooleResponse->header($key, join(",", $header));
         }
         $swooleResponse->end($psrResponse->getBody()->getContents());
-        var_dump($psrResponse->getBody()->getContents());
     }
 
     /**
