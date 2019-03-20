@@ -28,12 +28,19 @@ use Exception;
  */
 class Worker
 {
+    public const TURN_MULTITHREADING_OFF    = false; // disable pthreads ?
+    public const TURN_SWOOLE_OFF            = false; // disable swoole ?
+    public static $useSwoole = false;
+    public static $usePthreads = false;
+    public $contextOptions = [];
+    public $callback = null;
+
     /**
      * Version.
      *
      * @var string
      */
-    const VERSION = '3.5.19';
+    const VERSION = '4.0.0';
 
     /**
      * Status starting.
@@ -326,7 +333,7 @@ class Worker
      *
      * @var resource
      */
-    protected $_context = null;
+    public $_context = null;
 
     /**
      * All worker instances.
@@ -1202,14 +1209,16 @@ class Worker
      */
     protected static function saveMasterPid()
     {
+
         if (static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
 
-        static::$_masterPid = posix_getpid();
+        static::$_masterPid = getmypid();
         if (false === file_put_contents(static::$pidFile, static::$_masterPid)) {
             throw new Exception('can not save pid to ' . static::$pidFile);
         }
+
     }
 
     /**
@@ -1223,7 +1232,7 @@ class Worker
             return static::$eventLoopClass;
         }
 
-        if (!class_exists('\Swoole\Event', false)) {
+        if (!class_exists('\Swoole\Event', false) || self::TURN_SWOOLE_OFF) {
             unset(static::$_availableEventLoops['swoole']);
         }
         
@@ -1285,6 +1294,125 @@ class Worker
         } else {
             static::forkWorkersForWindows();
         }
+      /*  if (self::$usePthreads) {
+            echo "Start forking workers in multithreading mode ... " . PHP_EOL;
+            $threadPool = [];
+            foreach (static::$_workers as $worker) {
+                if (empty($worker->name)) {
+                    $worker->name = $worker->getSocketName();
+                }
+                $worker_name_length = strlen($worker->name);
+                if (static::$_maxWorkerNameLength < $worker_name_length) {
+                    static::$_maxWorkerNameLength = $worker_name_length;
+                }
+                echo "Starting worker => " . $worker->name . PHP_EOL;
+                // save all worker closures
+                $psrWebCallback = (!is_object($worker->callback) || !($worker->callback instanceof Closure)) ? function() {} : $worker->callback;
+                $onWorkerStart = (!is_object($worker->onWorkerStart) || !($worker->onWorkerStart instanceof Closure)) ? function() {} : $worker->onWorkerStart;
+                $onConnect = (!is_object($worker->onConnect) || !($worker->onConnect instanceof Closure)) ? function() {} : $worker->onConnect;
+                $onMessage = (!is_object($worker->onMessage) || !($worker->onMessage instanceof Closure))? function() {} : $worker->onMessage;
+                $onClose = (!is_object($worker->onClose) || !($worker->onClose instanceof Closure)) ? function() {} : $worker->onClose;
+                $onError = (!is_object($worker->onError) || !($worker->onError instanceof Closure)) ? function() {} : $worker->onError;
+                $onBufferFull = (!is_object($worker->onBufferFull) || !($worker->onBufferFull instanceof Closure)) ? function() {} : $worker->onBufferFull;
+                $onBufferDrain = (!is_object($worker->onBufferDrain) || !($worker->onBufferDrain instanceof Closure)) ? function() {} : $worker->onBufferDrain;
+                $onWorkerStop =(!is_object($worker->onWorkerStop) || !($worker->onWorkerStop instanceof Closure)) ? function() {} : $worker->onWorkerStop;
+                $onWorkerReloaded = (!is_object($worker->onWorkerReload) || !($worker->onWorkerReload instanceof Closure)) ? function() {} : $worker->onWorkerReload;
+                // remove all worker closures
+                $worker->callback = null;
+                $worker->onWorkerStart = null;
+                $worker->onConnect = null;
+                $worker->onMessage = null;
+                $worker->onClose = null;
+                $worker->onError = null;
+                $worker->onBufferFull = null;
+                $worker->onBufferDrain = null;
+                $worker->onWorkerStop = null;
+                $worker->onWorkerReload = null;
+                // create a new thread, and pass closures using threaded class
+                $threaded = new class
+                (   $worker,
+                    $psrWebCallback,
+                    $onWorkerStart,
+                    $onConnect,
+                    $onMessage,
+                    $onClose,
+                    $onError,
+                    $onBufferFull,
+                    $onBufferDrain,
+                    $onWorkerStop,
+                    $onWorkerReloaded
+                )
+                    extends \Threaded {
+                    public $psrWebCallback;
+                    public $onWorkerStart;
+                    public $onConnect;
+                    public $onMessage;
+                    public $onClose;
+                    public $onError;
+                    public $onBufferFull;
+                    public $onBufferDrain;
+                    public $onWorkerStop;
+                    public $onWorkerReloaded;
+                    public $worker;
+                    public function __construct
+                    (
+                        Worker $worker,
+                        \Closure $psrWebCallback,
+                        \Closure $onWorkerStart,
+                        \Closure $onConnect,
+                        \Closure $onMessage,
+                        \Closure $onClose,
+                        \Closure $onError,
+                        \Closure $onBufferFull,
+                        \Closure $onBufferDrain,
+                        \Closure $onWorkerStop,
+                        \Closure $onWorkerReload
+                    )
+                    {
+                        $this->worker = $worker;
+                        $this->psrWebCallback = $psrWebCallback;
+                        $this->onWorkerStart = $onWorkerStart;
+                        $this->onConnect = $onConnect;
+                        $this->onMessage= $onMessage;
+                        $this->onClose = $onClose;
+                        $this->onError = $onError;
+                        $this->onBufferFull = $onBufferFull;
+                        $this->onBufferDrain = $onBufferDrain;
+                        $this->onWorkerStop = $onWorkerStop;
+                        $this->onWorkerReloaded = $onWorkerReload;
+                    }
+                };
+                $key = count($threadPool) - 1;
+                $threadPool[$key] = new class($threaded) extends \Thread {
+                    public $threadable;
+                    public function __construct(\Threaded $threaded)
+                    {
+                        $this->threadable = $threaded;
+                    }
+
+                    public function run()
+                    {
+                        // reassign closures
+                        $this->threadable->worker->psrWebCallback = $this->threadable->wpsrWebCallback;
+                        $this->threadable->worker->onWorkerStart = $this->threadable->wonWorkerStart;
+                        $this->threadable->worker->onConnect = $this->threadable->wonConnect;
+                        $this->threadable->worker->onMessage= $this->threadable->wonMessage;
+                        $this->threadable->worker->onClose = $this->threadable->wonClose;
+                        $this->threadable->worker->onError = $this->threadable->wonError;
+                        $this->threadable->worker->onBufferFull = $this->threadable->wonBufferFull;
+                        $this->threadable->worker->onBufferDrain = $this->threadable->wonBufferDrain;
+                        $this->threadable->worker->onWorkerStop = $this->threadable->wonWorkerStop;
+                        $this->threadable->worker->onWorkerReloaded = $this->threadable->wonWorkerReload;
+                        echo "Worker " . $this->threadable->worker->name . " started " . PHP_EOL;
+                        // go listening
+                        $this->threadable->worker->listen();
+                    }
+                };
+                $threadPool[$key]->start();
+/*
+                while (count(static::$_pidMap[$worker->workerId]) < $worker->count) {
+                    static::forkOneWorkerForLinux($worker);
+                }*/
     }
 
     /**
@@ -2135,24 +2263,29 @@ class Worker
      * @param string $socket_name
      * @param array  $context_option
      */
-    public function __construct($socket_name = '', $context_option = array())
+    public function __construct($socket_name = '', $context_option = array(), bool $normalConstruct = true)
     {
-        // Save all worker instances.
-        $this->workerId                    = spl_object_hash($this);
-        static::$_workers[$this->workerId] = $this;
-        static::$_pidMap[$this->workerId]  = array();
+        if (extension_loaded("swoole") && !self::TURN_SWOOLE_OFF) {
+            self::$useSwoole = true;
+        }
 
-        // Get autoload root path.
-        $backtrace                = debug_backtrace();
-        $this->_autoloadRootPath = dirname($backtrace[0]['file']);
+        if ($normalConstruct) {
+            // Save all worker instances.
+            $this->workerId                    = spl_object_hash($this);
+            static::$_workers[$this->workerId] = $this;
+            static::$_pidMap[$this->workerId]  = array();
 
-        // Context for socket.
-        if ($socket_name) {
+            // Get autoload root path.
+            $backtrace                = debug_backtrace();
+            $this->_autoloadRootPath = dirname($backtrace[0]['file']);
             $this->_socketName = $socket_name;
-            if (!isset($context_option['socket']['backlog'])) {
-                $context_option['socket']['backlog'] = static::DEFAULT_BACKLOG;
+            // Context for socket.
+            if ($socket_name) {
+                if (!isset($context_option['socket']['backlog'])) {
+                    $context_option['socket']['backlog'] = static::DEFAULT_BACKLOG;
+                }
+                $this->_context = stream_context_create($context_option);
             }
-            $this->_context = stream_context_create($context_option);
         }
     }
 
@@ -2165,6 +2298,7 @@ class Worker
     public function listen()
     {
         if (!$this->_socketName) {
+            var_dump("N0 socket name");
             return;
         }
 
@@ -2180,7 +2314,10 @@ class Worker
                 $this->protocol = substr($scheme,0,1)==='\\' ? $scheme : '\\Protocols\\' . $scheme;
                 if (!class_exists($this->protocol)) {
                     $this->protocol = "\\Workerman\\Protocols\\$scheme";
-                    if (!class_exists($this->protocol)) {
+                    $poossibleClass = "PHPSocketIO\Engine\Protocols\\$scheme";
+                    if (class_exists($poossibleClass)) {
+                        $this->protocol = $poossibleClass;
+                    } else if (!class_exists($this->protocol)) {
                         throw new Exception("class \\Protocols\\$scheme not exist");
                     }
                 }
@@ -2200,38 +2337,39 @@ class Worker
             $errmsg = '';
             // SO_REUSEPORT.
             if ($this->reusePort) {
-                stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
+                $this->_context = stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
             }
 
             // Create an Internet or Unix domain server socket.
             $this->_mainSocket = stream_socket_server($local_socket, $errno, $errmsg, $flags, $this->_context);
-            if (!$this->_mainSocket) {
-                throw new Exception($errmsg);
-            }
 
-            if ($this->transport === 'ssl') {
-                stream_socket_enable_crypto($this->_mainSocket, false);
-            } elseif ($this->transport === 'unix') {
-                $socketFile = substr($address, 2);
-                if ($this->user) {
-                    chown($socketFile, $this->user);
-                }
-                if ($this->group) {
-                    chgrp($socketFile, $this->group);
-                }
-            }
+             if (!is_resource($this->_mainSocket)) {
+                 throw new Exception($errmsg);
+            } else {
+                 if ($this->transport === 'ssl') {
+                     stream_socket_enable_crypto($this->_mainSocket, false);
+                 } elseif ($this->transport === 'unix') {
+                     $socketFile = substr($address, 2);
+                     if ($this->user) {
+                         chown($socketFile, $this->user);
+                     }
+                     if ($this->group) {
+                         chgrp($socketFile, $this->group);
+                     }
+                 }
 
-            // Try to open keepalive for tcp and disable Nagle algorithm.
-            if (function_exists('socket_import_stream') && static::$_builtinTransports[$this->transport] === 'tcp') {
-                set_error_handler(function(){});
-                $socket = socket_import_stream($this->_mainSocket);
-                socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
-                socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
-                restore_error_handler();
-            }
+                 // Try to open keepalive for tcp and disable Nagle algorithm.
+                 if (function_exists('socket_import_stream') && static::$_builtinTransports[$this->transport] === 'tcp') {
+                     set_error_handler(function(){});
+                     $socket = socket_import_stream($this->_mainSocket);
+                     socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
+                     socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
+                     restore_error_handler();
+                 }
 
-            // Non blocking.
-            stream_set_blocking($this->_mainSocket, 0);
+                 // Non blocking.
+                 stream_set_blocking($this->_mainSocket, 0);
+             }
         }
 
         $this->resumeAccept();
