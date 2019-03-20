@@ -25,19 +25,19 @@
     },
     "require": {
         "swoft/swoole-ide-helper": "dev-master",
-        "php": ">=7.2.3",
+        "php": ">=5.3",
         "psr/http-server-handler": "^1.0@dev",
         "jasny/http-message": "dev-master",
         "psr/http-message": "^1.0@dev",
         "guzzlehttp/guzzle": "^6.3@dev"
     },
     "suggest": {
-        "ext-event": "For better performance. "
+        "ext-event": "For better performance. ",
+        "ext-swoole": "For better http server performances. "
     },
     "autoload": {
         "psr-4": {
             "Workerman\\": "./"
         }
-    },
-    "minimum-stability": "dev"
+    }
 }

@@ -16,6 +16,7 @@ namespace Workerman;
 use Jasny\HttpMessage\ServerRequest;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Swoole\Server;
 use Workerman\Protocols\Http;
 use Workerman\Protocols\HttpCache;
 
@@ -24,6 +25,12 @@ use Workerman\Protocols\HttpCache;
  */
 class WebServer extends Worker
 {
+    /**
+     * Null when workerman use its built in web server, else it will contains a swoole server instance
+     *
+     * @var \Swoole\Server
+     */
+    public $service = null;
     /**
      * Virtual host to path mapping.
      *
@@ -67,10 +74,11 @@ class WebServer extends Worker
      * @param string $socket_name
      * @param array  $context_option
      */
-    public function __construct($socket_name, $context_option = array(), callable $callback = null)
+    public function __construct($socket_name, $context_option = array(), $callback = null, $useSwoole = null)
     {
-        $this->callback = $callback;
-        if (extension_loaded("swoole") && !self::TURN_SWOOLE_OFF) {
+        $this->externalCallback = $callback;
+        $useSwoole = $useSwoole === null ? (extension_loaded("swoole")) : $useSwoole;
+        if (extension_loaded("swoole") && $useSwoole) {
             $this->workerId                    = spl_object_hash($this);
             static::$_workers[$this->workerId] = $this;
             static::$_pidMap[$this->workerId]  = array();
@@ -110,6 +118,7 @@ class WebServer extends Worker
     }
 
     public function initSwoole() : void {
+
         $this->initMimeTypeMap();
         $swooleClass = \Swoole\Http\Server::class;
         $ip = explode(":", $this->_socketName);
@@ -124,13 +133,13 @@ class WebServer extends Worker
                 return;
             }
             $response->status(404);
-            if ($this->callback !== null) {
+            if (!is_null($this->externalCallback)) {
                 $request = $this->convertSwooleToPsrRequest($request);
-                $func = $this->callback;
-                $newResponse = $func($request);
+                $func = $this->externalCallback;
+                $newResponse = call_user_func($func, [$request]);
                 $this->replyUsingSwooleResponse($response, $newResponse);
             } else {
-                if(isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
+                if(isset($this->workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
                     $html404 = file_get_contents($workerman_siteConfig['custom404']);
                 }else{
                     $html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
@@ -160,7 +169,7 @@ class WebServer extends Worker
      * @param \Swoole\Http\Request $request
      * @return RequestInterface
      */
-    public function convertSwooleToPsrRequest($request): ServerRequestInterface {
+    public function convertSwooleToPsrRequest($request) {
         //  return new R
         $_SERVER = $GLOBALS["_SERVER"] = is_null($request->server) ? [] : $request->server;
         $_REQUEST = $GLOBALS["_REQUEST"] = is_null($request->request) ? [] : $request->request;
@@ -175,7 +184,7 @@ class WebServer extends Worker
     /**
      * @return RequestInterface
      */
-    public function convertWorkermanToPsrRequest(): ServerRequestInterface {
+    public function convertWorkermanToPsrRequest() {
         $request = (new ServerRequest())->withGlobalEnvironment(true);
         return $request;
     }
@@ -185,7 +194,7 @@ class WebServer extends Worker
      * @param ResponseInterface $psrResponse
      * @return void
      */
-    public function replyUsingSwooleResponse(&$swooleResponse, ResponseInterface $psrResponse) : void {
+    public function replyUsingSwooleResponse(&$swooleResponse, $psrResponse) {
         foreach ($psrResponse->getHeaders() as $key => $header) {
             $swooleResponse->header($key, join(",", $header));
         }
@@ -197,7 +206,7 @@ class WebServer extends Worker
      * @param ResponseInterface $psrResponse
      * @return void
      */
-    public function replyUsingWorkermanResponse(ResponseInterface $psrResponse) : string {
+    public function replyUsingWorkermanResponse($psrResponse) {
         foreach ($psrResponse->getHeaders() as $key => $header) {
             Http::header($key . ": " . join(",", $header));
         }
@@ -211,11 +220,7 @@ class WebServer extends Worker
      * @param array $static
      * @return bool
      */
-    public function getStaticFile(
-        \Swoole\Http\Request $request,
-        \Swoole\Http\Response &$response,
-        array $static
-    ) : bool {
+    public function getStaticFile( $request,  &$response, $static){
         foreach ($this->serverRoot as $domain => $path) {
             $path = $path["root"];
             if ($domain !== $request->server['remote_addr']) {

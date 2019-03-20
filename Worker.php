@@ -28,137 +28,196 @@ use Exception;
  */
 class Worker
 {
-    const VERSION = '4.0.0';
+    /**
+     * Version.
+     *
+     * @var string
+     */
+    const VERSION = '3.5.19';
+    /**
+     * Status starting.
+     *
+     * @var int
+     */
     const STATUS_STARTING = 1;
+    /**
+     * Status running.
+     *
+     * @var int
+     */
     const STATUS_RUNNING = 2;
+    /**
+     * Status shutdown.
+     *
+     * @var int
+     */
     const STATUS_SHUTDOWN = 4;
+    /**
+     * Status reloading.
+     *
+     * @var int
+     */
     const STATUS_RELOADING = 8;
-    // After sending the restart command to the child process KILL_WORKER_TIMER_TIME seconds,
-    // if the process is still living then forced to kill.
+    /**
+     * After sending the restart command to the child process KILL_WORKER_TIMER_TIME seconds,
+     * if the process is still living then forced to kill.
+     *
+     * @var int
+     */
     const KILL_WORKER_TIMER_TIME = 2;
-    // Default backlog. Backlog is the maximum length of the queue of pending connections.
+    /**
+     * Default backlog. Backlog is the maximum length of the queue of pending connections.
+     *
+     * @var int
+     */
     const DEFAULT_BACKLOG = 102400;
-    //Max udp package size.
+    /**
+     * Max udp package size.
+     *
+     * @var int
+     */
     const MAX_UDP_PACKAGE_SIZE = 65535;
-    //The safe distance for columns adjacent
+    /**
+     * The safe distance for columns adjacent
+     *
+     * @var int
+     */
     const UI_SAFE_LENGTH = 4;
-    const TURN_MULTITHREADING_OFF    = false; // disable pthreads ?
-    const TURN_SWOOLE_OFF            = false; // disable swoole ?
-    static $useSwoole = false;
-    static $usePthreads = false;
     /**
-     * @var array
-     */
-    public $contextOptions = [];
-    /**
-     * @var \Closure
-     */
-    public $callback = null;
-    /**
-     * @var \Thread[]
-     */
-    public $threadPool = [];
-    /**
+     * Worker id.
+     *
      * @var int
      */
     public $id = 0;
     /**
      * Name of the worker processes.
+     *
      * @var string
      */
     public $name = 'none';
     /**
      * Number of worker processes.
+     *
      * @var int
      */
     public $count = 1;
     /**
      * Unix user of processes, needs appropriate privileges (usually root).
+     *
      * @var string
      */
     public $user = '';
     /**
      * Unix group of processes, needs appropriate privileges (usually root).
+     *
      * @var string
      */
     public $group = '';
     /**
      * reloadable.
+     *
      * @var bool
      */
     public $reloadable = true;
     /**
      * reuse port.
+     *
      * @var bool
      */
     public $reusePort = false;
     /**
      * Emitted when worker processes start.
+     *
      * @var callback
      */
     public $onWorkerStart = null;
     /**
      * Emitted when a socket connection is successfully established.
+     *
      * @var callback
      */
     public $onConnect = null;
     /**
      * Emitted when data is received.
+     *
      * @var callback
      */
     public $onMessage = null;
     /**
      * Emitted when the other end of the socket sends a FIN packet.
+     *
      * @var callback
      */
     public $onClose = null;
     /**
      * Emitted when an error occurs with connection.
+     *
      * @var callback
      */
     public $onError = null;
     /**
      * Emitted when the send buffer becomes full.
+     *
      * @var callback
      */
     public $onBufferFull = null;
     /**
      * Emitted when the send buffer becomes empty.
+     *
      * @var callback
      */
     public $onBufferDrain = null;
     /**
      * Emitted when worker processes stoped.
+     *
      * @var callback
      */
     public $onWorkerStop = null;
     /**
      * Emitted when worker processes get reload signal.
+     *
      * @var callback
      */
     public $onWorkerReload = null;
     /**
      * Transport layer protocol.
+     *
      * @var string
      */
     public $transport = 'tcp';
     /**
      * Store all connections of clients.
+     *
      * @var array
      */
     public $connections = array();
     /**
      * Application layer protocol.
+     *
      * @var string
      */
     public $protocol = null;
     /**
+     * Won't run default Worker class features
+     *
+     * @var bool
+     */
+    public $useExternalService = false;
+    /**
+     * Callback to run instead workerman listen(), if $useExternalService set to true
+     *
+     * @var callable
+     */
+    public $externalCallback = null;
+    /**
      * Root path for autoload.
+     *
      * @var string
      */
     protected $_autoloadRootPath = '';
     /**
      * Pause accept new connections or not.
+     *
      * @var bool
      */
     protected $_pauseAccept = true;
@@ -169,143 +228,172 @@ class Worker
     public $stopping = false;
     /**
      * Daemonize.
+     *
      * @var bool
      */
     public static $daemonize = false;
     /**
      * Stdout file.
+     *
      * @var string
      */
     public static $stdoutFile = '/dev/null';
     /**
      * The file to store master process PID.
+     *
      * @var string
      */
     public static $pidFile = '';
     /**
      * Log file.
+     *
      * @var mixed
      */
     public static $logFile = '';
     /**
      * Global event loop.
+     *
      * @var Events\EventInterface
      */
     public static $globalEvent = null;
     /**
      * Emitted when the master process get reload signal.
+     *
      * @var callback
      */
     public static $onMasterReload = null;
     /**
      * Emitted when the master process terminated.
+     *
      * @var callback
      */
     public static $onMasterStop = null;
     /**
      * EventLoopClass
+     *
      * @var string
      */
     public static $eventLoopClass = '';
     /**
      * The PID of master process.
+     *
      * @var int
      */
     protected static $_masterPid = 0;
     /**
      * Listening socket.
+     *
      * @var resource
      */
     protected $_mainSocket = null;
     /**
      * Socket name. The format is like this http://0.0.0.0:80 .
+     *
      * @var string
      */
     protected $_socketName = '';
     /**
      * Context of socket.
+     *
      * @var resource
      */
-    public $_context = null;
+    protected $_context = null;
     /**
      * All worker instances.
+     *
      * @var Worker[]
      */
     protected static $_workers = array();
     /**
      * All worker processes pid.
      * The format is like this [worker_id=>[pid=>pid, pid=>pid, ..], ..]
+     *
      * @var array
      */
     protected static $_pidMap = array();
     /**
      * All worker processes waiting for restart.
      * The format is like this [pid=>pid, pid=>pid].
+     *
      * @var array
      */
     protected static $_pidsToRestart = array();
     /**
      * Mapping from PID to worker process ID.
      * The format is like this [worker_id=>[0=>$pid, 1=>$pid, ..], ..].
+     *
      * @var array
      */
     protected static $_idMap = array();
     /**
      * Current status.
+     *
      * @var int
      */
     protected static $_status = self::STATUS_STARTING;
     /**
      * Maximum length of the worker names.
+     *
      * @var int
      */
     protected static $_maxWorkerNameLength = 12;
     /**
      * Maximum length of the socket names.
+     *
      * @var int
      */
     protected static $_maxSocketNameLength = 12;
     /**
      * Maximum length of the process user names.
+     *
      * @var int
      */
     protected static $_maxUserNameLength = 12;
     /**
      * Maximum length of the Proto names.
+     *
      * @var int
      */
     protected static $_maxProtoNameLength = 4;
     /**
      * Maximum length of the Processes names.
+     *
      * @var int
      */
     protected static $_maxProcessesNameLength = 9;
     /**
      * Maximum length of the Status names.
+     *
      * @var int
      */
     protected static $_maxStatusNameLength = 1;
     /**
      * The file to store status info of current worker process.
+     *
      * @var string
      */
     protected static $_statisticsFile = '';
     /**
      * Start file.
+     *
      * @var string
      */
     protected static $_startFile = '';
     /**
+     * OS.
+     *
      * @var string
      */
     protected static $_OS = OS_TYPE_LINUX;
     /**
      * Processes for windows.
+     *
      * @var array
      */
     protected static $_processForWindows = array();
     /**
      * Status info of current worker process.
+     *
      * @var array
      */
     protected static $_globalStatistics = array(
@@ -313,6 +401,8 @@ class Worker
         'worker_exit_info' => array()
     );
     /**
+     * Available event loops.
+     *
      * @var array
      */
     protected static $_availableEventLoops = array(
@@ -322,6 +412,7 @@ class Worker
     );
     /**
      * PHP built-in protocols.
+     *
      * @var array
      */
     protected static $_builtinTransports = array(
@@ -332,6 +423,7 @@ class Worker
     );
     /**
      * Graceful stop or not.
+     *
      * @var string
      */
     protected static $_gracefulStop = false;
@@ -345,9 +437,9 @@ class Worker
      * @var bool
      */
     protected static $_outputDecorated = null;
+
     /**
      * Run all worker instances.
-     *
      * @return void
      */
     public static function runAll()
@@ -1144,125 +1236,6 @@ class Worker
         } else {
             static::forkWorkersForWindows();
         }
-      /*  if (self::$usePthreads) {
-            echo "Start forking workers in multithreading mode ... " . PHP_EOL;
-            $threadPool = [];
-            foreach (static::$_workers as $worker) {
-                if (empty($worker->name)) {
-                    $worker->name = $worker->getSocketName();
-                }
-                $worker_name_length = strlen($worker->name);
-                if (static::$_maxWorkerNameLength < $worker_name_length) {
-                    static::$_maxWorkerNameLength = $worker_name_length;
-                }
-                echo "Starting worker => " . $worker->name . PHP_EOL;
-                // save all worker closures
-                $psrWebCallback = (!is_object($worker->callback) || !($worker->callback instanceof Closure)) ? function() {} : $worker->callback;
-                $onWorkerStart = (!is_object($worker->onWorkerStart) || !($worker->onWorkerStart instanceof Closure)) ? function() {} : $worker->onWorkerStart;
-                $onConnect = (!is_object($worker->onConnect) || !($worker->onConnect instanceof Closure)) ? function() {} : $worker->onConnect;
-                $onMessage = (!is_object($worker->onMessage) || !($worker->onMessage instanceof Closure))? function() {} : $worker->onMessage;
-                $onClose = (!is_object($worker->onClose) || !($worker->onClose instanceof Closure)) ? function() {} : $worker->onClose;
-                $onError = (!is_object($worker->onError) || !($worker->onError instanceof Closure)) ? function() {} : $worker->onError;
-                $onBufferFull = (!is_object($worker->onBufferFull) || !($worker->onBufferFull instanceof Closure)) ? function() {} : $worker->onBufferFull;
-                $onBufferDrain = (!is_object($worker->onBufferDrain) || !($worker->onBufferDrain instanceof Closure)) ? function() {} : $worker->onBufferDrain;
-                $onWorkerStop =(!is_object($worker->onWorkerStop) || !($worker->onWorkerStop instanceof Closure)) ? function() {} : $worker->onWorkerStop;
-                $onWorkerReloaded = (!is_object($worker->onWorkerReload) || !($worker->onWorkerReload instanceof Closure)) ? function() {} : $worker->onWorkerReload;
-                // remove all worker closures
-                $worker->callback = null;
-                $worker->onWorkerStart = null;
-                $worker->onConnect = null;
-                $worker->onMessage = null;
-                $worker->onClose = null;
-                $worker->onError = null;
-                $worker->onBufferFull = null;
-                $worker->onBufferDrain = null;
-                $worker->onWorkerStop = null;
-                $worker->onWorkerReload = null;
-                // create a new thread, and pass closures using threaded class
-                $threaded = new class
-                (   $worker,
-                    $psrWebCallback,
-                    $onWorkerStart,
-                    $onConnect,
-                    $onMessage,
-                    $onClose,
-                    $onError,
-                    $onBufferFull,
-                    $onBufferDrain,
-                    $onWorkerStop,
-                    $onWorkerReloaded
-                )
-                    extends \Threaded {
-                    public $psrWebCallback;
-                    public $onWorkerStart;
-                    public $onConnect;
-                    public $onMessage;
-                    public $onClose;
-                    public $onError;
-                    public $onBufferFull;
-                    public $onBufferDrain;
-                    public $onWorkerStop;
-                    public $onWorkerReloaded;
-                    public $worker;
-                    public function __construct
-                    (
-                        Worker $worker,
-                        \Closure $psrWebCallback,
-                        \Closure $onWorkerStart,
-                        \Closure $onConnect,
-                        \Closure $onMessage,
-                        \Closure $onClose,
-                        \Closure $onError,
-                        \Closure $onBufferFull,
-                        \Closure $onBufferDrain,
-                        \Closure $onWorkerStop,
-                        \Closure $onWorkerReload
-                    )
-                    {
-                        $this->worker = $worker;
-                        $this->psrWebCallback = $psrWebCallback;
-                        $this->onWorkerStart = $onWorkerStart;
-                        $this->onConnect = $onConnect;
-                        $this->onMessage= $onMessage;
-                        $this->onClose = $onClose;
-                        $this->onError = $onError;
-                        $this->onBufferFull = $onBufferFull;
-                        $this->onBufferDrain = $onBufferDrain;
-                        $this->onWorkerStop = $onWorkerStop;
-                        $this->onWorkerReloaded = $onWorkerReload;
-                    }
-                };
-                $key = count($threadPool) - 1;
-                $threadPool[$key] = new class($threaded) extends \Thread {
-                    public $threadable;
-                    public function __construct(\Threaded $threaded)
-                    {
-                        $this->threadable = $threaded;
-                    }
-
-                    public function run()
-                    {
-                        // reassign closures
-                        $this->threadable->worker->psrWebCallback = $this->threadable->wpsrWebCallback;
-                        $this->threadable->worker->onWorkerStart = $this->threadable->wonWorkerStart;
-                        $this->threadable->worker->onConnect = $this->threadable->wonConnect;
-                        $this->threadable->worker->onMessage= $this->threadable->wonMessage;
-                        $this->threadable->worker->onClose = $this->threadable->wonClose;
-                        $this->threadable->worker->onError = $this->threadable->wonError;
-                        $this->threadable->worker->onBufferFull = $this->threadable->wonBufferFull;
-                        $this->threadable->worker->onBufferDrain = $this->threadable->wonBufferDrain;
-                        $this->threadable->worker->onWorkerStop = $this->threadable->wonWorkerStop;
-                        $this->threadable->worker->onWorkerReloaded = $this->threadable->wonWorkerReload;
-                        echo "Worker " . $this->threadable->worker->name . " started " . PHP_EOL;
-                        // go listening
-                        $this->threadable->worker->listen();
-                    }
-                };
-                $threadPool[$key]->start();
-/*
-                while (count(static::$_pidMap[$worker->workerId]) < $worker->count) {
-                    static::forkOneWorkerForLinux($worker);
-                }*/
     }
 
     /**
@@ -1569,7 +1542,10 @@ class Worker
                         // Exit status.
                         if ($status !== 0) {
                             static::log("worker[" . $worker->name . ":$pid] exit with status $status");
-                            break;
+                            // avid error/restart infinite loop in swoole web server
+                            if ($worker->useSwooleWebServer) {
+                                break;
+                            }
                         }
 
                         // For Statistics.
@@ -2113,13 +2089,9 @@ class Worker
      * @param string $socket_name
      * @param array  $context_option
      */
-    public function __construct($socket_name = '', $context_option = array(), bool $normalConstruct = true)
+    public function __construct($socket_name = '', $context_option = array(), $useExternalService = false)
     {
-        if (extension_loaded("swoole") && !self::TURN_SWOOLE_OFF) {
-            self::$useSwoole = true;
-        }
-
-        if ($normalConstruct) {
+        if (!$useExternalService) {
             // Save all worker instances.
             $this->workerId                    = spl_object_hash($this);
             static::$_workers[$this->workerId] = $this;
@@ -2136,6 +2108,8 @@ class Worker
                 }
                 $this->_context = stream_context_create($context_option);
             }
+        } else {
+            $this->useExternalService = true;
         }
     }
 
