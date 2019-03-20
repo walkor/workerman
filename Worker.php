@@ -28,434 +28,291 @@ use Exception;
  */
 class Worker
 {
-    public const TURN_MULTITHREADING_OFF    = false; // disable pthreads ?
-    public const TURN_SWOOLE_OFF            = false; // disable swoole ?
-    public static $useSwoole = false;
-    public static $usePthreads = false;
-    public $contextOptions = [];
-    public $callback = null;
-
-    /**
-     * Version.
-     *
-     * @var string
-     */
     const VERSION = '4.0.0';
-
-    /**
-     * Status starting.
-     *
-     * @var int
-     */
     const STATUS_STARTING = 1;
-
-    /**
-     * Status running.
-     *
-     * @var int
-     */
     const STATUS_RUNNING = 2;
-
-    /**
-     * Status shutdown.
-     *
-     * @var int
-     */
     const STATUS_SHUTDOWN = 4;
-
-    /**
-     * Status reloading.
-     *
-     * @var int
-     */
     const STATUS_RELOADING = 8;
-
-    /**
-     * After sending the restart command to the child process KILL_WORKER_TIMER_TIME seconds,
-     * if the process is still living then forced to kill.
-     *
-     * @var int
-     */
+    // After sending the restart command to the child process KILL_WORKER_TIMER_TIME seconds,
+    // if the process is still living then forced to kill.
     const KILL_WORKER_TIMER_TIME = 2;
-
-    /**
-     * Default backlog. Backlog is the maximum length of the queue of pending connections.
-     *
-     * @var int
-     */
+    // Default backlog. Backlog is the maximum length of the queue of pending connections.
     const DEFAULT_BACKLOG = 102400;
-    /**
-     * Max udp package size.
-     *
-     * @var int
-     */
+    //Max udp package size.
     const MAX_UDP_PACKAGE_SIZE = 65535;
-
-    /**
-     * The safe distance for columns adjacent
-     *
-     * @var int
-     */
+    //The safe distance for columns adjacent
     const UI_SAFE_LENGTH = 4;
-
+    const TURN_MULTITHREADING_OFF    = false; // disable pthreads ?
+    const TURN_SWOOLE_OFF            = false; // disable swoole ?
+    static $useSwoole = false;
+    static $usePthreads = false;
     /**
-     * Worker id.
-     *
+     * @var array
+     */
+    public $contextOptions = [];
+    /**
+     * @var \Closure
+     */
+    public $callback = null;
+    /**
+     * @var \Thread[]
+     */
+    public $threadPool = [];
+    /**
      * @var int
      */
     public $id = 0;
-
     /**
      * Name of the worker processes.
-     *
      * @var string
      */
     public $name = 'none';
-
     /**
      * Number of worker processes.
-     *
      * @var int
      */
     public $count = 1;
-
     /**
      * Unix user of processes, needs appropriate privileges (usually root).
-     *
      * @var string
      */
     public $user = '';
-
     /**
      * Unix group of processes, needs appropriate privileges (usually root).
-     *
      * @var string
      */
     public $group = '';
-
     /**
      * reloadable.
-     *
      * @var bool
      */
     public $reloadable = true;
-
     /**
      * reuse port.
-     *
      * @var bool
      */
     public $reusePort = false;
-
     /**
      * Emitted when worker processes start.
-     *
      * @var callback
      */
     public $onWorkerStart = null;
-
     /**
      * Emitted when a socket connection is successfully established.
-     *
      * @var callback
      */
     public $onConnect = null;
-
     /**
      * Emitted when data is received.
-     *
      * @var callback
      */
     public $onMessage = null;
-
     /**
      * Emitted when the other end of the socket sends a FIN packet.
-     *
      * @var callback
      */
     public $onClose = null;
-
     /**
      * Emitted when an error occurs with connection.
-     *
      * @var callback
      */
     public $onError = null;
-
     /**
      * Emitted when the send buffer becomes full.
-     *
      * @var callback
      */
     public $onBufferFull = null;
-
     /**
      * Emitted when the send buffer becomes empty.
-     *
      * @var callback
      */
     public $onBufferDrain = null;
-
     /**
      * Emitted when worker processes stoped.
-     *
      * @var callback
      */
     public $onWorkerStop = null;
-
     /**
      * Emitted when worker processes get reload signal.
-     *
      * @var callback
      */
     public $onWorkerReload = null;
-
     /**
      * Transport layer protocol.
-     *
      * @var string
      */
     public $transport = 'tcp';
-
     /**
      * Store all connections of clients.
-     *
      * @var array
      */
     public $connections = array();
-
     /**
      * Application layer protocol.
-     *
      * @var string
      */
     public $protocol = null;
-
     /**
      * Root path for autoload.
-     *
      * @var string
      */
     protected $_autoloadRootPath = '';
-
     /**
      * Pause accept new connections or not.
-     *
      * @var bool
      */
     protected $_pauseAccept = true;
-
     /**
      * Is worker stopping ?
      * @var bool
      */
     public $stopping = false;
-
     /**
      * Daemonize.
-     *
      * @var bool
      */
     public static $daemonize = false;
-
     /**
      * Stdout file.
-     *
      * @var string
      */
     public static $stdoutFile = '/dev/null';
-
     /**
      * The file to store master process PID.
-     *
      * @var string
      */
     public static $pidFile = '';
-
     /**
      * Log file.
-     *
      * @var mixed
      */
     public static $logFile = '';
-
     /**
      * Global event loop.
-     *
      * @var Events\EventInterface
      */
     public static $globalEvent = null;
-
     /**
      * Emitted when the master process get reload signal.
-     *
      * @var callback
      */
     public static $onMasterReload = null;
-
     /**
      * Emitted when the master process terminated.
-     *
      * @var callback
      */
     public static $onMasterStop = null;
-
     /**
      * EventLoopClass
-     *
      * @var string
      */
     public static $eventLoopClass = '';
-
     /**
      * The PID of master process.
-     *
      * @var int
      */
     protected static $_masterPid = 0;
-
     /**
      * Listening socket.
-     *
      * @var resource
      */
     protected $_mainSocket = null;
-
     /**
      * Socket name. The format is like this http://0.0.0.0:80 .
-     *
      * @var string
      */
     protected $_socketName = '';
-
     /**
      * Context of socket.
-     *
      * @var resource
      */
     public $_context = null;
-
     /**
      * All worker instances.
-     *
      * @var Worker[]
      */
     protected static $_workers = array();
-
     /**
      * All worker processes pid.
      * The format is like this [worker_id=>[pid=>pid, pid=>pid, ..], ..]
-     *
      * @var array
      */
     protected static $_pidMap = array();
-
     /**
      * All worker processes waiting for restart.
      * The format is like this [pid=>pid, pid=>pid].
-     *
      * @var array
      */
     protected static $_pidsToRestart = array();
-
     /**
      * Mapping from PID to worker process ID.
      * The format is like this [worker_id=>[0=>$pid, 1=>$pid, ..], ..].
-     *
      * @var array
      */
     protected static $_idMap = array();
-
     /**
      * Current status.
-     *
      * @var int
      */
     protected static $_status = self::STATUS_STARTING;
-
     /**
      * Maximum length of the worker names.
-     *
      * @var int
      */
     protected static $_maxWorkerNameLength = 12;
-
     /**
      * Maximum length of the socket names.
-     *
      * @var int
      */
     protected static $_maxSocketNameLength = 12;
-
     /**
      * Maximum length of the process user names.
-     *
      * @var int
      */
     protected static $_maxUserNameLength = 12;
-
     /**
      * Maximum length of the Proto names.
-     *
      * @var int
      */
     protected static $_maxProtoNameLength = 4;
-
     /**
      * Maximum length of the Processes names.
-     *
      * @var int
      */
     protected static $_maxProcessesNameLength = 9;
-
     /**
      * Maximum length of the Status names.
-     *
      * @var int
      */
     protected static $_maxStatusNameLength = 1;
-
     /**
      * The file to store status info of current worker process.
-     *
      * @var string
      */
     protected static $_statisticsFile = '';
-
     /**
      * Start file.
-     *
      * @var string
      */
     protected static $_startFile = '';
-
     /**
-     * OS.
-     *
      * @var string
      */
     protected static $_OS = OS_TYPE_LINUX;
-
     /**
      * Processes for windows.
-     *
      * @var array
      */
     protected static $_processForWindows = array();
-
     /**
      * Status info of current worker process.
-     *
      * @var array
      */
     protected static $_globalStatistics = array(
         'start_timestamp'  => 0,
         'worker_exit_info' => array()
     );
-
     /**
-     * Available event loops.
-     *
      * @var array
      */
     protected static $_availableEventLoops = array(
@@ -463,10 +320,8 @@ class Worker
         'event'    => '\Workerman\Events\Event',
         'swoole'   => '\Workerman\Events\Swoole'
     );
-
     /**
      * PHP built-in protocols.
-     *
      * @var array
      */
     protected static $_builtinTransports = array(
@@ -475,26 +330,21 @@ class Worker
         'unix'  => 'unix',
         'ssl'   => 'tcp'
     );
-
     /**
      * Graceful stop or not.
-     *
      * @var string
      */
     protected static $_gracefulStop = false;
-
     /**
      * Standard output stream
      * @var resource
      */
     protected static $_outputStream = null;
-
     /**
      * If $outputStream support decorated
      * @var bool
      */
     protected static $_outputDecorated = null;
-
     /**
      * Run all worker instances.
      *
