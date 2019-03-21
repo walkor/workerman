@@ -2158,41 +2158,37 @@ class Worker
             $flags = $this->transport === 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
             $errno = 0;
             $errmsg = '';
-            // SO_REUSEPORT.
+           
+           // SO_REUSEPORT.
             if ($this->reusePort) {
-                $this->_context = stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
+                stream_context_set_option($this->_context, 'socket', 'so_reuseport', 1);
             }
-
             // Create an Internet or Unix domain server socket.
             $this->_mainSocket = stream_socket_server($local_socket, $errno, $errmsg, $flags, $this->_context);
-
-             if (!is_resource($this->_mainSocket)) {
-                 throw new Exception($errmsg);
-            } else {
-                 if ($this->transport === 'ssl') {
-                     stream_socket_enable_crypto($this->_mainSocket, false);
-                 } elseif ($this->transport === 'unix') {
-                     $socketFile = substr($address, 2);
-                     if ($this->user) {
-                         chown($socketFile, $this->user);
-                     }
-                     if ($this->group) {
-                         chgrp($socketFile, $this->group);
-                     }
-                 }
-
-                 // Try to open keepalive for tcp and disable Nagle algorithm.
-                 if (function_exists('socket_import_stream') && static::$_builtinTransports[$this->transport] === 'tcp') {
-                     set_error_handler(function(){});
-                     $socket = socket_import_stream($this->_mainSocket);
-                     socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
-                     socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
-                     restore_error_handler();
-                 }
-
-                 // Non blocking.
-                 stream_set_blocking($this->_mainSocket, 0);
-             }
+            if (!$this->_mainSocket) {
+                throw new Exception($errmsg);
+            }
+            if ($this->transport === 'ssl') {
+                stream_socket_enable_crypto($this->_mainSocket, false);
+            } elseif ($this->transport === 'unix') {
+                $socketFile = substr($address, 2);
+                if ($this->user) {
+                    chown($socketFile, $this->user);
+                }
+                if ($this->group) {
+                    chgrp($socketFile, $this->group);
+                }
+            }
+            // Try to open keepalive for tcp and disable Nagle algorithm.
+            if (function_exists('socket_import_stream') && static::$_builtinTransports[$this->transport] === 'tcp') {
+                set_error_handler(function(){});
+                $socket = socket_import_stream($this->_mainSocket);
+                socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
+                socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
+                restore_error_handler();
+            }
+            // Non blocking.
+            stream_set_blocking($this->_mainSocket, 0);
         }
 
         $this->resumeAccept();
