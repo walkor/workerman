@@ -2138,7 +2138,7 @@ class Worker
                 $this->protocol = substr($scheme,0,1)==='\\' ? $scheme : '\\Protocols\\' . $scheme;
                 if (!class_exists($this->protocol)) {
                     $this->protocol = "\\Workerman\\Protocols\\$scheme";
-                    $poossibleClass = "PHPSocketIO\Engine\Protocols\\$scheme";
+                    $poossibleClass = "\\PHPSocketIO\\Engine\\Protocols\\$scheme";
                     if (class_exists($poossibleClass)) {
                         $this->protocol = $poossibleClass;
                     } else if (!class_exists($this->protocol)) {
