@@ -32,6 +32,12 @@ class WebServer extends Worker
      */
     public $service = null;
     /**
+     * When set true, workerman will use swoole built-in web server
+     *
+     * @var null
+     */
+    public $useSwooleWebServer = false;
+    /**
      * Virtual host to path mapping.
      *
      * @var array ['workerman.net'=>'/home', 'www.workerman.net'=>'home/www']
@@ -77,20 +83,19 @@ class WebServer extends Worker
     public function __construct($socket_name, $context_option = array(), $callback = null, $useSwoole = null)
     {
         $this->externalCallback = $callback;
-        $useSwoole = $useSwoole === null ? (extension_loaded("swoole")) : $useSwoole;
-        if (extension_loaded("swoole") && $useSwoole) {
+        $this->useSwooleWebServer = $useSwoole === null ? (extension_loaded("swoole")) : $useSwoole;
+        if (extension_loaded("swoole") && $this->useSwooleWebServer) {
             $this->workerId                    = spl_object_hash($this);
             static::$_workers[$this->workerId] = $this;
             static::$_pidMap[$this->workerId]  = array();
             $this->status = '<g> [OK] </g>';
             $this->user = get_current_user();
-            $this->transport = "http";
             $this->_socketName = $socket_name;
             $this->name  = "SwooleWeb";
             $this->socket = $socket_name;
             $this->count = 4;
             $this->contextOptions = $context_option;
-            parent::__construct($socket_name, [],false);
+            parent::__construct($socket_name, array(),$this->useSwooleWebServer);
         } else {
             list(, $address) = explode(':', $socket_name, 2);
             parent::__construct('http:' . $address, $context_option);
@@ -102,7 +107,7 @@ class WebServer extends Worker
      */
     public function listen()
     {
-        if(!self::$useSwoole) {
+        if(!$this->useSwooleWebServer) {
             $this->name = "WorkermanWeb";
             return parent::listen();
         } else {
@@ -117,42 +122,39 @@ class WebServer extends Worker
         }
     }
 
-    public function initSwoole() : void {
+    public function initSwoole()  {
 
         $this->initMimeTypeMap();
-        $swooleClass = \Swoole\Http\Server::class;
         $ip = explode(":", $this->_socketName);
         $port = $ip[2];
         $ip = $ip[count($ip) - 2];
-        $ip = explode("//", $ip)[1];
+        $ip = explode("//", $ip);
+        $ip = $ip[1];
         $this->service = new \Swoole\Http\Server($ip, intval($port));
-        $this->service->on('request', function (\Swoole\Http\Request $request, \Swoole\Http\Response &$response) {
+        $self = $this;
+        $this->service->on('request', function (\Swoole\Http\Request $request, \Swoole\Http\Response &$response) use ($self) {
             $extension = explode(".", $request->server["request_uri"]);
             $extension = $extension[count($extension) - 1];
-            if ($this->getStaticFile($request, $response, self::$mimeTypeMap)) {
+            if ($self->getStaticFile($request, $response, WebServer::$mimeTypeMap)) {
                 return;
             }
             $response->status(404);
-            if (!is_null($this->externalCallback)) {
-                $request = $this->convertSwooleToPsrRequest($request);
-                $func = $this->externalCallback;
-                $newResponse = call_user_func($func, [$request]);
-                $this->replyUsingSwooleResponse($response, $newResponse);
+            if (!is_null($self->externalCallback)) {
+                $request = $self->convertSwooleToPsrRequest($request);
+                $func = $self->externalCallback;
+                $newResponse = call_user_func($func, $request);
+                $self->replyUsingSwooleResponse($response, $newResponse);
             } else {
-                if(isset($this->workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
-                    $html404 = file_get_contents($workerman_siteConfig['custom404']);
-                }else{
-                    $html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
-                }
+                $html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
                 $response->end($html404);
                 return;
             }
         });
-        $otpions = [];
-        $swooleOptionsToWorkerman = [
+        $options = array();
+        $swooleOptionsToWorkerman = array(
             'ssl_cert_file' => 'local_cert',
             'ssl_key_file' => 'local_pk',
-        ];
+        );
         foreach ($swooleOptionsToWorkerman as $k => $v) {
             if (isset($this->contextOptions[$v])) {
                 $options[$k] = $this->contextOptions[$v];
@@ -171,13 +173,14 @@ class WebServer extends Worker
      */
     public function convertSwooleToPsrRequest($request) {
         //  return new R
-        $_SERVER = $GLOBALS["_SERVER"] = is_null($request->server) ? [] : $request->server;
-        $_REQUEST = $GLOBALS["_REQUEST"] = is_null($request->request) ? [] : $request->request;
-        $_COOKIE = $GLOBALS["_COOKIE"] = is_null($request->cookie) ? [] : $request->cookie;
-        $_GET = $GLOBALS["_GET"] = is_null($request->get) ? [] : $request->get;
-        $_FILES = $GLOBALS["_FILES"] = is_null($request->files) ? [] : $request->files;
-        $_POST = $GLOBALS["_POST"] = is_null($request->post) ? [] : $request->post;
-        $request = (new ServerRequest())->withGlobalEnvironment(true);
+        $_SERVER = $GLOBALS["_SERVER"] = is_null($request->server) ? array() : $request->server;
+        $_REQUEST = $GLOBALS["_REQUEST"] = is_null($request->request) ?  array() : $request->request;
+        $_COOKIE = $GLOBALS["_COOKIE"] = is_null($request->cookie) ?  array() : $request->cookie;
+        $_GET = $GLOBALS["_GET"] = is_null($request->get) ? array() : $request->get;
+        $_FILES = $GLOBALS["_FILES"] = is_null($request->files) ?  array() : $request->files;
+        $_POST = $GLOBALS["_POST"] = is_null($request->post) ?  array() : $request->post;
+        $serverRequest = (new ServerRequest());
+        $request = $serverRequest->withGlobalEnvironment(true);
         return $request;
     }
 
@@ -185,7 +188,8 @@ class WebServer extends Worker
      * @return RequestInterface
      */
     public function convertWorkermanToPsrRequest() {
-        $request = (new ServerRequest())->withGlobalEnvironment(true);
+        $serverRequest = (new ServerRequest());
+        $request = $serverRequest->withGlobalEnvironment(true);
         return $request;
     }
 
@@ -405,11 +409,7 @@ class WebServer extends Worker
                 return;
             } else {
                 Http::header("HTTP/1.1 404 Not Found");
-                if(isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
-                    $html404 = file_get_contents($workerman_siteConfig['custom404']);
-                }else{
-                    $html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
-                }
+                $html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
                 $connection->close($html404);
                 return;
             }

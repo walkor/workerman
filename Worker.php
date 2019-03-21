@@ -1174,7 +1174,7 @@ class Worker
             return static::$eventLoopClass;
         }
 
-        if (!class_exists('\Swoole\Event', false) || self::TURN_SWOOLE_OFF) {
+        if (!class_exists('\Swoole\Event', false)) {
             unset(static::$_availableEventLoops['swoole']);
         }
         
@@ -1543,7 +1543,7 @@ class Worker
                         if ($status !== 0) {
                             static::log("worker[" . $worker->name . ":$pid] exit with status $status");
                             // avid error/restart infinite loop in swoole web server
-                            if ($worker->useSwooleWebServer) {
+                            if ($worker->useExternalService) {
                                 break;
                             }
                         }
@@ -2145,7 +2145,6 @@ class Worker
                         throw new Exception("class \\Protocols\\$scheme not exist");
                     }
                 }
-
                 if (!isset(static::$_builtinTransports[$this->transport])) {
                     throw new \Exception('Bad worker->transport ' . var_export($this->transport, true));
                 }
