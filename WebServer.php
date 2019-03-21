@@ -225,24 +225,24 @@ class WebServer extends Worker
      * @return bool
      */
     public function getStaticFile( $request,  &$response, $static){
+        $success = false;
         foreach ($this->serverRoot as $domain => $path) {
             $path = $path["root"];
             if ($domain !== $request->server['remote_addr']) {
-                break;
+                continue;
             }
             $staticFile = $path . ($request->server['request_uri'] === "/" ? "/index.html" : $request->server['request_uri']) ;
-            if (! file_exists($staticFile)) {
-                return false;
+            if (file_exists($staticFile)) {
+                $type = pathinfo($staticFile, PATHINFO_EXTENSION);
+                if (isset($static[$type])) {
+                    $response->header('Content-Type', $static[$type]);
+                    $response->sendfile($staticFile);
+                    $success = true;
+                    break;
+                }
             }
-            $type = pathinfo($staticFile, PATHINFO_EXTENSION);
-            if (! isset($static[$type])) {
-                return false;
-            }
-            $response->header('Content-Type', $static[$type]);
-            $response->sendfile($staticFile);
-            return true;
         }
-        return false;
+        return $success;
     }
 
     /**
