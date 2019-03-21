@@ -401,9 +401,12 @@ class WebServer extends Worker
             return self::sendFile($connection, $workerman_file);
         } else {
             // 404
-            if ($this->callback !== null) {
+            if (($this->externalCallback !== null) && is_callable($this->externalCallback)) {
                 $request = $this->convertWorkermanToPsrRequest();
-                $func = $this->callback;
+                /**
+                 * @var callable $func
+                 */
+                $func = $this->externalCallback;
                 $response = $func($request);
                 $connection->close($this->replyUsingWorkermanResponse($response));
                 return;
