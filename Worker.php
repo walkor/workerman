@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.16';
+    const VERSION = '3.5.19';
 
     /**
      * Status starting.
@@ -498,11 +498,13 @@ class Worker
     {
         static::checkSapiEnv();
         static::init();
+        static::lock();
         static::parseCommand();
         static::daemonize();
         static::initWorkers();
         static::installSignal();
         static::saveMasterPid();
+        static::unlock();
         static::displayUI();
         static::forkWorkers();
         static::resetStd();
@@ -573,6 +575,31 @@ class Worker
 
         // Timer init.
         Timer::init();
+    }
+
+    /**
+     * Lock.
+     *
+     * @return void
+     */
+    protected static function lock()
+    {
+        $fd = fopen(static::$_startFile, 'r');
+        if (!$fd || !flock($fd, LOCK_EX)) {
+            static::log("Workerman[".static::$_startFile."] already running");
+            exit;
+        }
+    }
+
+    /**
+     * Unlock.
+     *
+     * @return void
+     */
+    protected static function unlock()
+    {
+        $fd = fopen(static::$_startFile, 'r');
+        $fd && flock($fd, LOCK_UN);
     }
 
     /**
@@ -719,7 +746,7 @@ class Worker
 
         //Show last line
         $line_last = str_pad('', static::getSingleLineTotalLength(), '-') . PHP_EOL;
-        $content && static::safeEcho($line_last);
+        !empty($content) && static::safeEcho($line_last);
 
         if (static::$daemonize) {
             static::safeEcho("Input \"php $argv[0] stop\" to stop. Start success.\n\n");
@@ -1178,6 +1205,7 @@ class Worker
         if (static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
+
         static::$_masterPid = posix_getpid();
         if (false === file_put_contents(static::$pidFile, static::$_masterPid)) {
             throw new Exception('can not save pid to ' . static::$pidFile);
