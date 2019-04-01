@@ -667,6 +667,14 @@ class Worker
     {
         return static::$globalEvent;
     }
+    
+    /**
+     * Get main socket resource
+     * @return resource
+     */
+    public function getMainSocket(){
+        return $this->_mainSocket;
+    }
 
     /**
      * Init idMap.
