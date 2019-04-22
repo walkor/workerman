@@ -75,7 +75,7 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Context option.
      *
-     * @var resource
+     * @var array
      */
     protected $_contextOption = null;
 
@@ -189,7 +189,7 @@ class AsyncTcpConnection extends TcpConnection
                 STREAM_CLIENT_ASYNC_CONNECT);
         }
         // If failed attempt to emit onError callback.
-        if (!$this->_socket) {
+        if (!$this->_socket || !is_resource($this->_socket)) {
             $this->emitError(WORKERMAN_CONNECT_FAIL, $errstr);
             if ($this->_status === self::STATUS_CLOSING) {
                 $this->destroy();
@@ -213,7 +213,8 @@ class AsyncTcpConnection extends TcpConnection
      * @param int $after
      * @return void
      */
-    public function reConnect($after = 0) {
+    public function reconnect($after = 0)
+    {
         $this->_status                   = self::STATUS_INITIAL;
         static::$connections[$this->_id] = $this;
         if ($this->_reconnectTimer) {
@@ -224,6 +225,16 @@ class AsyncTcpConnection extends TcpConnection
             return;
         }
         $this->connect();
+    }
+
+    /**
+     * CancelReconnect.
+     */
+    public function cancelReconnect()
+    {
+        if ($this->_reconnectTimer) {
+            Timer::del($this->_reconnectTimer);
+        }
     }
 
     /**
@@ -275,43 +286,47 @@ class AsyncTcpConnection extends TcpConnection
      * @param resource $socket
      * @return void
      */
-    public function checkConnection($socket)
+    public function checkConnection()
     {
         // Remove EV_EXPECT for windows.
         if(DIRECTORY_SEPARATOR === '\\') {
-            Worker::$globalEvent->del($socket, EventInterface::EV_EXCEPT);
+            Worker::$globalEvent->del($this->_socket, EventInterface::EV_EXCEPT);
+        }
+
+        // Remove write listener.
+        Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
+
+        if ($this->_status != self::STATUS_CONNECTING) {
+            return;
         }
 
         // Check socket state.
-        if ($address = stream_socket_get_name($socket, true)) {
+        if ($address = stream_socket_get_name($this->_socket, true)) {
             // Nonblocking.
-            stream_set_blocking($socket, 0);
+            stream_set_blocking($this->_socket, 0);
             // Compatible with hhvm
             if (function_exists('stream_set_read_buffer')) {
-                stream_set_read_buffer($socket, 0);
+                stream_set_read_buffer($this->_socket, 0);
             }
             // Try to open keepalive for tcp and disable Nagle algorithm.
             if (function_exists('socket_import_stream') && $this->transport === 'tcp') {
-                $raw_socket = socket_import_stream($socket);
+                $raw_socket = socket_import_stream($this->_socket);
                 socket_set_option($raw_socket, SOL_SOCKET, SO_KEEPALIVE, 1);
                 socket_set_option($raw_socket, SOL_TCP, TCP_NODELAY, 1);
             }
 
-            // Remove write listener.
-            Worker::$globalEvent->del($socket, EventInterface::EV_WRITE);
-
             // SSL handshake.
             if ($this->transport === 'ssl') {
-                $this->_sslHandshakeCompleted = $this->doSslHandshake($socket);
+                $this->_sslHandshakeCompleted = $this->doSslHandshake($this->_socket);
             } else {
                 // There are some data waiting to send.
                 if ($this->_sendBuffer) {
-                    Worker::$globalEvent->add($socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
+                    Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
                 }
             }
 
             // Register a listener waiting read event.
-            Worker::$globalEvent->add($socket, EventInterface::EV_READ, array($this, 'baseRead'));
+            Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
 
             $this->_status                = self::STATUS_ESTABLISHED;
             $this->_remoteAddress         = $address;

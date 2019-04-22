@@ -151,7 +151,7 @@ class WebServer extends Worker
     public function onMessage($connection)
     {
         // REQUEST_URI.
-        $workerman_url_info = parse_url($_SERVER['REQUEST_URI']);
+        $workerman_url_info = parse_url('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
         if (!$workerman_url_info) {
             Http::header('HTTP/1.1 400 Bad Request');
             $connection->close('<h1>400 Bad Request</h1>');

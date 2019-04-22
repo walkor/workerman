@@ -114,14 +114,20 @@ class Select implements EventInterface
     {
         switch ($flag) {
             case self::EV_READ:
-                $fd_key                           = (int)$fd;
-                $this->_allEvents[$fd_key][$flag] = array($func, $fd);
-                $this->_readFds[$fd_key]          = $fd;
-                break;
             case self::EV_WRITE:
+                $count = $flag === self::EV_READ ? count($this->_readFds) : count($this->_writeFds);
+                if ($count >= 1024) {
+                    echo "Warning: system call select exceeded the maximum number of connections 1024, please install event/libevent extension for more connections.\n";
+                } else if (DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
+                    echo "Warning: system call select exceeded the maximum number of connections 256.\n";
+                }
                 $fd_key                           = (int)$fd;
                 $this->_allEvents[$fd_key][$flag] = array($func, $fd);
-                $this->_writeFds[$fd_key]         = $fd;
+                if ($flag === self::EV_READ) {
+                    $this->_readFds[$fd_key] = $fd;
+                } else {
+                    $this->_writeFds[$fd_key] = $fd;
+                }
                 break;
             case self::EV_EXCEPT:
                 $fd_key = (int)$fd;
@@ -256,7 +262,6 @@ class Select implements EventInterface
      */
     public function loop()
     {
-        $e = null;
         while (1) {
             if(DIRECTORY_SEPARATOR === '/') {
                 // Calls signal handlers for pending signals
