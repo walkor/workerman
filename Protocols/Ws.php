@@ -234,7 +234,7 @@ class Ws
         }
         $payload = (string)$payload;
         if (empty($connection->handshakeStep)) {
-            self::sendHandshake($connection);
+            static::sendHandshake($connection);
         }
         $mask = 1;
         $mask_key = "\x00\x00\x00\x00";
@@ -330,7 +330,7 @@ class Ws
      */
     public static function onConnect($connection)
     {
-        self::sendHandshake($connection);
+        static::sendHandshake($connection);
     }
 
     /**
