@@ -383,7 +383,7 @@ class Ws
         (!preg_match("/\nHost:/i", $user_header_str) ? "Host: $host\r\n" : '').
         "Connection: Upgrade\r\n".
         "Upgrade: websocket\r\n".
-        "Origin: ". (isset($connection->websocketOrigin) ? $connection->websocketOrigin : '*') ."\r\n".
+        (isset($connection->websocketOrigin) ? "Origin: ".$connection->websocketOrigin."\r\n":'').
         (isset($connection->WSClientProtocol)?"Sec-WebSocket-Protocol: ".$connection->WSClientProtocol."\r\n":'').
         "Sec-WebSocket-Version: 13\r\n".
         "Sec-WebSocket-Key: " . $connection->websocketSecKey . $user_header_str . "\r\n\r\n";
