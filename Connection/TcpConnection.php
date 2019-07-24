@@ -836,6 +836,10 @@ class TcpConnection extends ConnectionInterface
      */
     public function close($data = null, $raw = false)
     {
+        if($this->_status === self::STATUS_CONNECTING){
+            $this->destroy();
+            return;
+        }
         if ($this->_status === self::STATUS_CLOSING || $this->_status === self::STATUS_CLOSED) {
             return;
         } else {
