@@ -304,7 +304,6 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      */
     public static function decode($buffer, ConnectionInterface $connection)
     {
-        $masks = $data = $decoded = '';
         $len = ord($buffer[1]) & 127;
         if ($len === 126) {
             $masks = substr($buffer, 4, 4);
@@ -318,9 +317,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 $data  = substr($buffer, 6);
             }
         }
-        for ($index = 0; $index < strlen($data); $index++) {
-            $decoded .= $data[$index] ^ $masks[$index % 4];
-        }
+        $dataLength = strlen($data);
+        $masks = str_repeat($masks, floor($dataLength / 4)) . substr($masks, 0, $dataLength % 4);
+        $decoded = $data ^ $masks;
         if ($connection->websocketCurrentFrameLength) {
             $connection->websocketDataBuffer .= $decoded;
             return $connection->websocketDataBuffer;
