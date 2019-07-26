@@ -254,9 +254,8 @@ class Ws
 
         $frame = $head . $mask_key;
         // append payload to frame:
-        for ($i = 0; $i < $length; $i++) {
-            $frame .= $payload[$i] ^ $mask_key[$i % 4];
-        }
+        $mask_key = str_repeat($mask_key, floor($length / 4)) . substr($mask_key, 0, $length % 4);
+        $frame .= $payload ^ $mask_key;
         if ($connection->handshakeStep === 1) {
             // If buffer has already full then discard the current package.
             if (strlen($connection->tmpWebsocketData) > $connection->maxSendBufferSize) {
