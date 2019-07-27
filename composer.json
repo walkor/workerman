@@ -20,7 +20,7 @@
         "email": "walkor@workerman.net",
         "issues": "https://github.com/walkor/workerman/issues",
         "forum": "http://wenda.workerman.net/",
-        "wiki": "http://doc3.workerman.net/index.html",
+        "wiki": "http://doc.workerman.net/",
         "source": "https://github.com/walkor/workerman"
     },
     "require": {

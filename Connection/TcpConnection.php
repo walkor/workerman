@@ -777,7 +777,7 @@ class TcpConnection extends ConnectionInterface
             return false;
         } elseif (0 === $ret) {
             // There isn't enough data and should try again.
-            return false;
+            return 0;
         }
         if (isset($this->onSslHandshake)) {
             try {
@@ -836,6 +836,10 @@ class TcpConnection extends ConnectionInterface
      */
     public function close($data = null, $raw = false)
     {
+        if($this->_status === self::STATUS_CONNECTING){
+            $this->destroy();
+            return;
+        }
         if ($this->_status === self::STATUS_CLOSING || $this->_status === self::STATUS_CLOSED) {
             return;
         } else {

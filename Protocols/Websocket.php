@@ -304,7 +304,6 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      */
     public static function decode($buffer, ConnectionInterface $connection)
     {
-        $masks = $data = $decoded = '';
         $len = ord($buffer[1]) & 127;
         if ($len === 126) {
             $masks = substr($buffer, 4, 4);
@@ -318,9 +317,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 $data  = substr($buffer, 6);
             }
         }
-        for ($index = 0; $index < strlen($data); $index++) {
-            $decoded .= $data[$index] ^ $masks[$index % 4];
-        }
+        $dataLength = strlen($data);
+        $masks = str_repeat($masks, floor($dataLength / 4)) . substr($masks, 0, $dataLength % 4);
+        $decoded = $data ^ $masks;
         if ($connection->websocketCurrentFrameLength) {
             $connection->websocketDataBuffer .= $decoded;
             return $connection->websocketDataBuffer;
@@ -356,7 +355,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             if (preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
                 $Sec_WebSocket_Key = $match[1];
             } else {
-                $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Sec-WebSocket-Key not found.<br>This is a WebSocket service and can not be accessed via HTTP.<br>See <a href=\"http://wiki.workerman.net/Error1\">http://wiki.workerman.net/Error1</a> for detail.",
+                $connection->send("HTTP/1.1 200 Websocket\r\nServer: workerman/".Worker::VERSION."\r\n\r\n<div style=\"text-align:center\"><h1>Websocket</h1><hr>powerd by <a href=\"https://www.workerman.net\">workerman ".Worker::VERSION."</a></div>",
                     true);
                 $connection->close();
                 return 0;
@@ -441,7 +440,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             return 0;
         }
         // Bad websocket handshake request.
-        $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n<b>400 Bad Request</b><br>Invalid handshake data for websocket. <br> See <a href=\"http://wiki.workerman.net/Error1\">http://wiki.workerman.net/Error1</a> for detail.",
+        $connection->send("HTTP/1.1 200 Websocket\r\nServer: workerman/".Worker::VERSION."\r\n\r\n<div style=\"text-align:center\"><h1>Websocket</h1><hr>powerd by <a href=\"https://www.workerman.net\">workerman ".Worker::VERSION."</a></div>",
             true);
         $connection->close();
         return 0;

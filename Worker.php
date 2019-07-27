@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.19';
+    const VERSION = '3.5.20';
 
     /**
      * Status starting.
@@ -666,6 +666,14 @@ class Worker
     public static function getEventLoop()
     {
         return static::$globalEvent;
+    }
+    
+    /**
+     * Get main socket resource
+     * @return resource
+     */
+    public function getMainSocket(){
+        return $this->_mainSocket;
     }
 
     /**
@@ -1326,7 +1334,7 @@ class Worker
             if(count(static::$_workers) > 1)
             {
                 static::safeEcho("@@@ Error: multi workers init in one php file are not support @@@\r\n");
-                static::safeEcho("@@@ Please visit http://wiki.workerman.net/Multi_woker_for_win @@@\r\n");
+                static::safeEcho("@@@ See http://doc.workerman.net/faq/multi-woker-for-windows.html @@@\r\n");
             }
             elseif(count(static::$_workers) <= 0)
             {
