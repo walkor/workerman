@@ -154,7 +154,11 @@ class WebServer extends Worker
         $workerman_url_info = parse_url('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
         if (!$workerman_url_info) {
             Http::header('HTTP/1.1 400 Bad Request');
-            $connection->close('<h1>400 Bad Request</h1>');
+            if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+                $connection->send('<h1>400 Bad Request</h1>');
+            } else {
+                $connection->close('<h1>400 Bad Request</h1>');
+            }
             return;
         }
 
@@ -188,7 +192,11 @@ class WebServer extends Worker
                     $workerman_root_dir_realpath)
             ) {
                 Http::header('HTTP/1.1 400 Bad Request');
-                $connection->close('<h1>400 Bad Request</h1>');
+                if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+                    $connection->send('<h1>400 Bad Request</h1>');
+                } else {
+                    $connection->close('<h1>400 Bad Request</h1>');
+                }
                 return;
             }
 
@@ -233,7 +241,11 @@ class WebServer extends Worker
 			}else{
 				$html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
 			}
-            $connection->close($html404);
+            if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+                $connection->send($html404);
+            } else {
+                $connection->close($html404);
+            }
             return;
         }
     }
@@ -249,7 +261,11 @@ class WebServer extends Worker
                 // 304
                 Http::header('HTTP/1.1 304 Not Modified');
                 // Send nothing but http headers..
-                $connection->close('');
+                if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+                    $connection->send('');
+                } else {
+                    $connection->close('');
+                }
                 return;
             }
         }
