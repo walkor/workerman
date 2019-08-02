@@ -328,7 +328,7 @@ class TcpConnection extends ConnectionInterface
     /**
      * Sends data on the connection.
      *
-     * @param string $send_buffer
+     * @param mixed $send_buffer
      * @param bool  $raw
      * @return bool|null
      */

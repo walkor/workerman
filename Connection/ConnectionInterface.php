@@ -54,7 +54,7 @@ abstract class  ConnectionInterface
     /**
      * Sends data on the connection.
      *
-     * @param string $send_buffer
+     * @param mixed $send_buffer
      * @return void|boolean
      */
     abstract public function send($send_buffer);
