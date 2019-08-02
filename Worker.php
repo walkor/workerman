@@ -1090,6 +1090,8 @@ class Worker
         pcntl_signal(SIGQUIT, SIG_IGN, false);
         // uninstall status signal handler
         pcntl_signal(SIGUSR2, SIG_IGN, false);
+        // uninstall connections status signal handler
+        pcntl_signal(SIGIO, SIG_IGN, false);
         // reinstall stop signal handler
         static::$globalEvent->add(SIGINT, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
         // reinstall graceful stop signal handler
