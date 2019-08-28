@@ -2155,6 +2155,14 @@ class Worker
         $backtrace                = \debug_backtrace();
         $this->_autoloadRootPath = \dirname($backtrace[0]['file']);
 
+        if (static::$_OS === OS_TYPE_LINUX && version_compare(PHP_VERSION,'7.0.0', 'ge')) {
+            $php_uname = strtolower(php_uname('s'));
+            // If not Mac OS then turn reusePort on.
+            if ($php_uname !== 'darwin') {
+                $this->reusePort = true;
+            }
+        }
+
         // Context for socket.
         if ($socket_name) {
             $this->_socketName = $socket_name;
