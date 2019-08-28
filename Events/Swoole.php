@@ -45,11 +45,11 @@ class Swoole implements EventInterface
         }
         switch ($flag) {
             case self::EV_SIGNAL:
-                $res = pcntl_signal($fd, $func, false);
+                $res = \pcntl_signal($fd, $func, false);
                 if (! $this->_hasSignal && $res) {
                     Timer::tick(static::$signalDispatchInterval,
                         function () {
-                            pcntl_signal_dispatch();
+                            \pcntl_signal_dispatch();
                         });
                     $this->_hasSignal = true;
                 }
@@ -63,7 +63,7 @@ class Swoole implements EventInterface
                 $mapId = $this->mapId++;
                 $timer_id = Timer::$method($fd * 1000,
                     function ($timer_id = null) use ($func, $args, $mapId) {
-                        call_user_func_array($func, $args);
+                        \call_user_func_array($func, $args);
                         // EV_TIMER_ONCE
                         if (! isset($timer_id)) {
                             // may be deleted in $func
@@ -126,11 +126,11 @@ class Swoole implements EventInterface
     {
         switch ($flag) {
             case self::EV_SIGNAL:
-                return pcntl_signal($fd, SIG_IGN, false);
+                return \pcntl_signal($fd, SIG_IGN, false);
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
                 // already remove in EV_TIMER_ONCE callback.
-                if (! array_key_exists($fd, $this->_timer)) {
+                if (! \array_key_exists($fd, $this->_timer)) {
                     return true;
                 }
                 $res = Timer::clear($fd);
@@ -216,6 +216,6 @@ class Swoole implements EventInterface
      */
     public function getTimerCount()
     {
-        return count($this->_timer);
+        return \count($this->_timer);
     }
 }

@@ -52,9 +52,9 @@ class WebServer extends Worker
      */
     public function addRoot($domain, $config)
     {
-	if (is_string($config)) {
+        if (is_string($config)) {
             $config = array('root' => $config);
-	}
+        }
         $this->serverRoot[$domain] = $config;
     }
 
@@ -66,7 +66,7 @@ class WebServer extends Worker
      */
     public function __construct($socket_name, $context_option = array())
     {
-        list(, $address) = explode(':', $socket_name, 2);
+        list(, $address) = \explode(':', $socket_name, 2);
         parent::__construct('http:' . $address, $context_option);
         $this->name = 'WebServer';
     }
@@ -102,7 +102,7 @@ class WebServer extends Worker
         // Try to emit onWorkerStart callback.
         if ($this->_onWorkerStart) {
             try {
-                call_user_func($this->_onWorkerStart, $this);
+                \call_user_func($this->_onWorkerStart, $this);
             } catch (\Exception $e) {
                 self::log($e);
                 exit(250);
@@ -121,20 +121,20 @@ class WebServer extends Worker
     public function initMimeTypeMap()
     {
         $mime_file = Http::getMimeTypesFile();
-        if (!is_file($mime_file)) {
+        if (!\is_file($mime_file)) {
             $this->log("$mime_file mime.type file not fond");
             return;
         }
-        $items = file($mime_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        if (!is_array($items)) {
+        $items = \file($mime_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (!\is_array($items)) {
             $this->log("get $mime_file mime.type content fail");
             return;
         }
         foreach ($items as $content) {
-            if (preg_match("/\s*(\S+)\s+(\S.+)/", $content, $match)) {
+            if (\preg_match("/\s*(\S+)\s+(\S.+)/", $content, $match)) {
                 $mime_type                      = $match[1];
                 $workerman_file_extension_var   = $match[2];
-                $workerman_file_extension_array = explode(' ', substr($workerman_file_extension_var, 0, -1));
+                $workerman_file_extension_array = \explode(' ', \substr($workerman_file_extension_var, 0, -1));
                 foreach ($workerman_file_extension_array as $workerman_file_extension) {
                     self::$mimeTypeMap[$workerman_file_extension] = $mime_type;
                 }
@@ -151,10 +151,10 @@ class WebServer extends Worker
     public function onMessage($connection)
     {
         // REQUEST_URI.
-        $workerman_url_info = parse_url('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
+        $workerman_url_info = \parse_url('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
         if (!$workerman_url_info) {
             Http::header('HTTP/1.1 400 Bad Request');
-            if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+            if (\strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
                 $connection->send('<h1>400 Bad Request</h1>');
             } else {
                 $connection->close('<h1>400 Bad Request</h1>');
@@ -164,10 +164,10 @@ class WebServer extends Worker
 
         $workerman_path = isset($workerman_url_info['path']) ? $workerman_url_info['path'] : '/';
 
-        $workerman_path_info      = pathinfo($workerman_path);
+        $workerman_path_info      = \pathinfo($workerman_path);
         $workerman_file_extension = isset($workerman_path_info['extension']) ? $workerman_path_info['extension'] : '';
         if ($workerman_file_extension === '') {
-            $workerman_path           = ($len = strlen($workerman_path)) && $workerman_path[$len - 1] === '/' ? $workerman_path . 'index.php' : $workerman_path . '/index.php';
+            $workerman_path           = ($len = \strlen($workerman_path)) && $workerman_path[$len - 1] === '/' ? $workerman_path . 'index.php' : $workerman_path . '/index.php';
             $workerman_file_extension = 'php';
         }
 
@@ -177,22 +177,22 @@ class WebServer extends Worker
 		if(isset($workerman_siteConfig['additionHeader'])){
 			Http::header($workerman_siteConfig['additionHeader']);
 		}
-        if ($workerman_file_extension === 'php' && !is_file($workerman_file)) {
+        if ($workerman_file_extension === 'php' && !\is_file($workerman_file)) {
             $workerman_file = "$workerman_root_dir/index.php";
-            if (!is_file($workerman_file)) {
+            if (!\is_file($workerman_file)) {
                 $workerman_file           = "$workerman_root_dir/index.html";
                 $workerman_file_extension = 'html';
             }
         }
 
         // File exsits.
-        if (is_file($workerman_file)) {
+        if (\is_file($workerman_file)) {
             // Security check.
-            if ((!($workerman_request_realpath = realpath($workerman_file)) || !($workerman_root_dir_realpath = realpath($workerman_root_dir))) || 0 !== strpos($workerman_request_realpath,
+            if ((!($workerman_request_realpath = \realpath($workerman_file)) || !($workerman_root_dir_realpath = \realpath($workerman_root_dir))) || 0 !== \strpos($workerman_request_realpath,
                     $workerman_root_dir_realpath)
             ) {
                 Http::header('HTTP/1.1 400 Bad Request');
-                if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+                if (\strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
                     $connection->send('<h1>400 Bad Request</h1>');
                 } else {
                     $connection->close('<h1>400 Bad Request</h1>');
@@ -200,14 +200,14 @@ class WebServer extends Worker
                 return;
             }
 
-            $workerman_file = realpath($workerman_file);
+            $workerman_file = \realpath($workerman_file);
 
             // Request php file.
             if ($workerman_file_extension === 'php') {
                 $workerman_cwd = getcwd();
-                chdir($workerman_root_dir);
-                ini_set('display_errors', 'off');
-                ob_start();
+                \chdir($workerman_root_dir);
+                \ini_set('display_errors', 'off');
+                \ob_start();
                 // Try to include php file.
                 try {
                     // $_SERVER.
@@ -220,14 +220,14 @@ class WebServer extends Worker
                         Worker::safeEcho($e);
                     }
                 }
-                $content = ob_get_clean();
-                ini_set('display_errors', 'on');
-                if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+                $content = \ob_get_clean();
+                \ini_set('display_errors', 'on');
+                if (\strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
                     $connection->send($content);
                 } else {
                     $connection->close($content);
                 }
-                chdir($workerman_cwd);
+                \chdir($workerman_cwd);
                 return;
             }
 
@@ -237,11 +237,11 @@ class WebServer extends Worker
             // 404
             Http::header("HTTP/1.1 404 Not Found");
 			if(isset($workerman_siteConfig['custom404']) && file_exists($workerman_siteConfig['custom404'])){
-				$html404 = file_get_contents($workerman_siteConfig['custom404']);
+				$html404 = \file_get_contents($workerman_siteConfig['custom404']);
 			}else{
 				$html404 = '<html><head><title>404 File not found</title></head><body><center><h3>404 Not Found</h3></center></body></html>';
 			}
-            if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+            if (\strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
                 $connection->send($html404);
             } else {
                 $connection->close($html404);
@@ -254,14 +254,14 @@ class WebServer extends Worker
     {
         // Check 304.
         $info = stat($file_path);
-        $modified_time = $info ? date('D, d M Y H:i:s', $info['mtime']) . ' ' . date_default_timezone_get() : '';
+        $modified_time = $info ? \date('D, d M Y H:i:s', $info['mtime']) . ' ' . \date_default_timezone_get() : '';
         if (!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $info) {
             // Http 304.
             if ($modified_time === $_SERVER['HTTP_IF_MODIFIED_SINCE']) {
                 // 304
                 Http::header('HTTP/1.1 304 Not Modified');
                 // Send nothing but http headers..
-                if (strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
+                if (\strtolower($_SERVER['HTTP_CONNECTION']) === "keep-alive") {
                     $connection->send('');
                 } else {
                     $connection->close('');
@@ -274,8 +274,8 @@ class WebServer extends Worker
         if ($modified_time) {
             $modified_time = "Last-Modified: $modified_time\r\n";
         }
-        $file_size = filesize($file_path);
-        $file_info = pathinfo($file_path);
+        $file_size = \filesize($file_path);
+        $file_info = \pathinfo($file_path);
         $extension = isset($file_info['extension']) ? $file_info['extension'] : '';
         $file_name = isset($file_info['filename']) ? $file_info['filename'] : '';
         $header = "HTTP/1.1 200 OK\r\n";
@@ -290,19 +290,19 @@ class WebServer extends Worker
         $header .= "Content-Length: $file_size\r\n\r\n";
         $trunk_limit_size = 1024*1024;
         if ($file_size < $trunk_limit_size) {
-            return $connection->send($header.file_get_contents($file_path), true);
+            return $connection->send($header.\file_get_contents($file_path), true);
         }
         $connection->send($header, true);
 
         // Read file content from disk piece by piece and send to client.
-        $connection->fileHandler = fopen($file_path, 'r');
+        $connection->fileHandler = \fopen($file_path, 'r');
         $do_write = function()use($connection)
         {
             // Send buffer not full.
             while(empty($connection->bufferFull))
             {
                 // Read from disk.
-                $buffer = fread($connection->fileHandler, 8192);
+                $buffer = \fread($connection->fileHandler, 8192);
                 // Read eof.
                 if($buffer === '' || $buffer === false)
                 {

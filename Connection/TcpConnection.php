@@ -271,9 +271,9 @@ class TcpConnection extends ConnectionInterface
      */
     public function __call($name, $arguments) {
         // Try to emit custom function within protocol
-        if (method_exists($this->protocol, $name)) {
+        if (\method_exists($this->protocol, $name)) {
             try {
-                return call_user_func(array($this->protocol, $name), $this, $arguments);
+                return \call_user_func(array($this->protocol, $name), $this, $arguments);
             } catch (\Exception $e) {
                 Worker::log($e);
                 exit(250);
@@ -298,10 +298,10 @@ class TcpConnection extends ConnectionInterface
             self::$_idRecorder = 0;
         }
         $this->_socket = $socket;
-        stream_set_blocking($this->_socket, 0);
+        \stream_set_blocking($this->_socket, 0);
         // Compatible with hhvm
-        if (function_exists('stream_set_read_buffer')) {
-            stream_set_read_buffer($this->_socket, 0);
+        if (\function_exists('stream_set_read_buffer')) {
+            \stream_set_read_buffer($this->_socket, 0);
         }
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, array($this, 'baseRead'));
         $this->maxSendBufferSize        = self::$defaultMaxSendBufferSize;
@@ -369,25 +369,25 @@ class TcpConnection extends ConnectionInterface
                 $this->checkBufferWillFull();
                 return null;
             }
-            set_error_handler(function(){});
-            $len = fwrite($this->_socket, $send_buffer);
-            restore_error_handler();
+            \set_error_handler(function(){});
+            $len = \fwrite($this->_socket, $send_buffer);
+            \restore_error_handler();
             // send successful.
-            if ($len === strlen($send_buffer)) {
+            if ($len === \strlen($send_buffer)) {
                 $this->bytesWritten += $len;
                 return true;
             }
             // Send only part of the data.
             if ($len > 0) {
-                $this->_sendBuffer = substr($send_buffer, $len);
+                $this->_sendBuffer = \substr($send_buffer, $len);
                 $this->bytesWritten += $len;
             } else {
                 // Connection closed?
-                if (!is_resource($this->_socket) || feof($this->_socket)) {
+                if (!\is_resource($this->_socket) || \feof($this->_socket)) {
                     self::$statistics['send_fail']++;
                     if ($this->onError) {
                         try {
-                            call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'client closed');
+                            \call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'client closed');
                         } catch (\Exception $e) {
                             Worker::log($e);
                             exit(250);
@@ -424,9 +424,9 @@ class TcpConnection extends ConnectionInterface
      */
     public function getRemoteIp()
     {
-        $pos = strrpos($this->_remoteAddress, ':');
+        $pos = \strrpos($this->_remoteAddress, ':');
         if ($pos) {
-            return substr($this->_remoteAddress, 0, $pos);
+            return \substr($this->_remoteAddress, 0, $pos);
         }
         return '';
     }
@@ -439,7 +439,7 @@ class TcpConnection extends ConnectionInterface
     public function getRemotePort()
     {
         if ($this->_remoteAddress) {
-            return (int)substr(strrchr($this->_remoteAddress, ':'), 1);
+            return (int)\substr(\strrchr($this->_remoteAddress, ':'), 1);
         }
         return 0;
     }
@@ -462,11 +462,11 @@ class TcpConnection extends ConnectionInterface
     public function getLocalIp()
     {
         $address = $this->getLocalAddress();
-        $pos = strrpos($address, ':');
+        $pos = \strrpos($address, ':');
         if (!$pos) {
             return '';
         }
-        return substr($address, 0, $pos);
+        return \substr($address, 0, $pos);
     }
 
     /**
@@ -477,11 +477,11 @@ class TcpConnection extends ConnectionInterface
     public function getLocalPort()
     {
         $address = $this->getLocalAddress();
-        $pos = strrpos($address, ':');
+        $pos = \strrpos($address, ':');
         if (!$pos) {
             return 0;
         }
-        return (int)substr(strrchr($address, ':'), 1);
+        return (int)\substr(\strrchr($address, ':'), 1);
     }
 
     /**
@@ -491,7 +491,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function getLocalAddress()
     {
-        return (string)@stream_socket_get_name($this->_socket, false);
+        return (string)@\stream_socket_get_name($this->_socket, false);
     }
 
     /**
@@ -501,7 +501,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function getSendBufferQueueSize()
     {
-        return strlen($this->_sendBuffer);
+        return \strlen($this->_sendBuffer);
     }
 
     /**
@@ -511,7 +511,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function getRecvBufferQueueSize()
     {
-        return strlen($this->_recvBuffer);
+        return \strlen($this->_recvBuffer);
     }
 
     /**
@@ -524,7 +524,7 @@ class TcpConnection extends ConnectionInterface
         if ($this->transport === 'unix') {
             return false;
         }
-        return strpos($this->getRemoteIp(), ':') === false;
+        return \strpos($this->getRemoteIp(), ':') === false;
     }
 
     /**
@@ -537,7 +537,7 @@ class TcpConnection extends ConnectionInterface
         if ($this->transport === 'unix') {
             return false;
         }
-        return strpos($this->getRemoteIp(), ':') !== false;
+        return \strpos($this->getRemoteIp(), ':') !== false;
     }
 
     /**
@@ -588,18 +588,18 @@ class TcpConnection extends ConnectionInterface
             }
         }
 
-        set_error_handler(function(){});
-        $buffer = fread($socket, self::READ_BUFFER_SIZE);
-        restore_error_handler();
+        \set_error_handler(function(){});
+        $buffer = \fread($socket, self::READ_BUFFER_SIZE);
+        \restore_error_handler();
 
         // Check connection closed.
         if ($buffer === '' || $buffer === false) {
-            if ($check_eof && (feof($socket) || !is_resource($socket) || $buffer === false)) {
+            if ($check_eof && (\feof($socket) || !\is_resource($socket) || $buffer === false)) {
                 $this->destroy();
                 return;
             }
         } else {
-            $this->bytesRead += strlen($buffer);
+            $this->bytesRead += \strlen($buffer);
             $this->_recvBuffer .= $buffer;
         }
 
@@ -610,22 +610,22 @@ class TcpConnection extends ConnectionInterface
                 // The current packet length is known.
                 if ($this->_currentPackageLength) {
                     // Data is not enough for a package.
-                    if ($this->_currentPackageLength > strlen($this->_recvBuffer)) {
+                    if ($this->_currentPackageLength > \strlen($this->_recvBuffer)) {
                         break;
                     }
                 } else {
                     // Get current package length.
-                    set_error_handler(function($code, $msg, $file, $line){
+                    \set_error_handler(function($code, $msg, $file, $line){
                         Worker::safeEcho("$msg in file $file on line $line\n");
                     });
                     $this->_currentPackageLength = $parser::input($this->_recvBuffer, $this);
-                    restore_error_handler();
+                    \restore_error_handler();
                     // The packet length is unknown.
                     if ($this->_currentPackageLength === 0) {
                         break;
                     } elseif ($this->_currentPackageLength > 0 && $this->_currentPackageLength <= $this->maxPackageSize) {
                         // Data is not enough for a package.
-                        if ($this->_currentPackageLength > strlen($this->_recvBuffer)) {
+                        if ($this->_currentPackageLength > \strlen($this->_recvBuffer)) {
                             break;
                         }
                     } // Wrong package.
@@ -639,14 +639,14 @@ class TcpConnection extends ConnectionInterface
                 // The data is enough for a packet.
                 self::$statistics['total_request']++;
                 // The current packet length is equal to the length of the buffer.
-                if (strlen($this->_recvBuffer) === $this->_currentPackageLength) {
+                if (\strlen($this->_recvBuffer) === $this->_currentPackageLength) {
                     $one_request_buffer = $this->_recvBuffer;
                     $this->_recvBuffer  = '';
                 } else {
                     // Get a full package from the buffer.
-                    $one_request_buffer = substr($this->_recvBuffer, 0, $this->_currentPackageLength);
+                    $one_request_buffer = \substr($this->_recvBuffer, 0, $this->_currentPackageLength);
                     // Remove the current package from the receive buffer.
-                    $this->_recvBuffer = substr($this->_recvBuffer, $this->_currentPackageLength);
+                    $this->_recvBuffer = \substr($this->_recvBuffer, $this->_currentPackageLength);
                 }
                 // Reset the current packet length to 0.
                 $this->_currentPackageLength = 0;
@@ -655,7 +655,7 @@ class TcpConnection extends ConnectionInterface
                 }
                 try {
                     // Decode request buffer before Emitting onMessage callback.
-                    call_user_func($this->onMessage, $this, $parser::decode($one_request_buffer, $this));
+                    \call_user_func($this->onMessage, $this, $parser::decode($one_request_buffer, $this));
                 } catch (\Exception $e) {
                     Worker::log($e);
                     exit(250);
@@ -678,7 +678,7 @@ class TcpConnection extends ConnectionInterface
             return;
         }
         try {
-            call_user_func($this->onMessage, $this, $this->_recvBuffer);
+            \call_user_func($this->onMessage, $this, $this->_recvBuffer);
         } catch (\Exception $e) {
             Worker::log($e);
             exit(250);
@@ -697,21 +697,21 @@ class TcpConnection extends ConnectionInterface
      */
     public function baseWrite()
     {
-        set_error_handler(function(){});
+        \set_error_handler(function(){});
         if ($this->transport === 'ssl') {
-            $len = fwrite($this->_socket, $this->_sendBuffer, 8192);
+            $len = \fwrite($this->_socket, $this->_sendBuffer, 8192);
         } else {
-            $len = fwrite($this->_socket, $this->_sendBuffer);
+            $len = \fwrite($this->_socket, $this->_sendBuffer);
         }
-        restore_error_handler();
-        if ($len === strlen($this->_sendBuffer)) {
+        \restore_error_handler();
+        if ($len === \strlen($this->_sendBuffer)) {
             $this->bytesWritten += $len;
             Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
             $this->_sendBuffer = '';
             // Try to emit onBufferDrain callback when the send buffer becomes empty.
             if ($this->onBufferDrain) {
                 try {
-                    call_user_func($this->onBufferDrain, $this);
+                    \call_user_func($this->onBufferDrain, $this);
                 } catch (\Exception $e) {
                     Worker::log($e);
                     exit(250);
@@ -727,7 +727,7 @@ class TcpConnection extends ConnectionInterface
         }
         if ($len > 0) {
             $this->bytesWritten += $len;
-            $this->_sendBuffer = substr($this->_sendBuffer, $len);
+            $this->_sendBuffer = \substr($this->_sendBuffer, $len);
         } else {
             self::$statistics['send_fail']++;
             $this->destroy();
@@ -741,7 +741,7 @@ class TcpConnection extends ConnectionInterface
      * @return bool
      */
     public function doSslHandshake($socket){
-        if (feof($socket)) {
+        if (\feof($socket)) {
             $this->destroy();
             return false;
         }
@@ -764,13 +764,13 @@ class TcpConnection extends ConnectionInterface
         }
         
         // Hidden error.
-        set_error_handler(function($errno, $errstr, $file){
+        \set_error_handler(function($errno, $errstr, $file){
             if (!Worker::$daemonize) {
                 Worker::safeEcho("SSL handshake error: $errstr \n");
             }
         });
-        $ret     = stream_socket_enable_crypto($socket, true, $type);
-        restore_error_handler();
+        $ret = \stream_socket_enable_crypto($socket, true, $type);
+        \restore_error_handler();
         // Negotiation has failed.
         if (false === $ret) {
             $this->destroy();
@@ -781,7 +781,7 @@ class TcpConnection extends ConnectionInterface
         }
         if (isset($this->onSslHandshake)) {
             try {
-                call_user_func($this->onSslHandshake, $this);
+                \call_user_func($this->onSslHandshake, $this);
             } catch (\Exception $e) {
                 Worker::log($e);
                 exit(250);
@@ -824,7 +824,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function consumeRecvBuffer($length)
     {
-        $this->_recvBuffer = substr($this->_recvBuffer, $length);
+        $this->_recvBuffer = \substr($this->_recvBuffer, $length);
     }
 
     /**
@@ -872,10 +872,10 @@ class TcpConnection extends ConnectionInterface
      */
     protected function checkBufferWillFull()
     {
-        if ($this->maxSendBufferSize <= strlen($this->_sendBuffer)) {
+        if ($this->maxSendBufferSize <= \strlen($this->_sendBuffer)) {
             if ($this->onBufferFull) {
                 try {
-                    call_user_func($this->onBufferFull, $this);
+                    \call_user_func($this->onBufferFull, $this);
                 } catch (\Exception $e) {
                     Worker::log($e);
                     exit(250);
@@ -895,10 +895,10 @@ class TcpConnection extends ConnectionInterface
     protected function bufferIsFull()
     {
         // Buffer has been marked as full but still has data to send then the packet is discarded.
-        if ($this->maxSendBufferSize <= strlen($this->_sendBuffer)) {
+        if ($this->maxSendBufferSize <= \strlen($this->_sendBuffer)) {
             if ($this->onError) {
                 try {
-                    call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
+                    \call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
                 } catch (\Exception $e) {
                     Worker::log($e);
                     exit(250);
@@ -938,15 +938,15 @@ class TcpConnection extends ConnectionInterface
         Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
 
         // Close socket.
-        set_error_handler(function(){});
-        fclose($this->_socket);
-        restore_error_handler();
+        \set_error_handler(function(){});
+        \fclose($this->_socket);
+        \restore_error_handler();
 
         $this->_status = self::STATUS_CLOSED;
         // Try to emit onClose callback.
         if ($this->onClose) {
             try {
-                call_user_func($this->onClose, $this);
+                \call_user_func($this->onClose, $this);
             } catch (\Exception $e) {
                 Worker::log($e);
                 exit(250);
@@ -956,9 +956,9 @@ class TcpConnection extends ConnectionInterface
             }
         }
         // Try to emit protocol::onClose
-        if ($this->protocol && method_exists($this->protocol, 'onClose')) {
+        if ($this->protocol && \method_exists($this->protocol, 'onClose')) {
             try {
-                call_user_func(array($this->protocol, 'onClose'), $this);
+                \call_user_func(array($this->protocol, 'onClose'), $this);
             } catch (\Exception $e) {
                 Worker::log($e);
                 exit(250);
@@ -994,7 +994,7 @@ class TcpConnection extends ConnectionInterface
             }
 
             if (0 === self::$statistics['connection_count'] % $mod) {
-                Worker::log('worker[' . posix_getpid() . '] remains ' . self::$statistics['connection_count'] . ' connection(s)');
+                Worker::log('worker[' . \posix_getpid() . '] remains ' . self::$statistics['connection_count'] . ' connection(s)');
             }
 
             if(0 === self::$statistics['connection_count']) {

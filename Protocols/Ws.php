@@ -53,7 +53,7 @@ class Ws
         if ($connection->handshakeStep === 1) {
             return self::dealHandshake($buffer, $connection);
         }
-        $recv_len = strlen($buffer);
+        $recv_len = \strlen($buffer);
         if ($recv_len < 2) {
             return 0;
         }
@@ -66,8 +66,8 @@ class Ws
             }
         } else {
 
-            $firstbyte    = ord($buffer[0]);
-            $secondbyte   = ord($buffer[1]);
+            $firstbyte    = \ord($buffer[0]);
+            $secondbyte   = \ord($buffer[1]);
             $data_len     = $secondbyte & 127;
             $is_fin_frame = $firstbyte >> 7;
             $masked       = $secondbyte >> 7;
@@ -94,7 +94,7 @@ class Ws
                     // Try to emit onWebSocketClose callback.
                     if (isset($connection->onWebSocketClose)) {
                         try {
-                            call_user_func($connection->onWebSocketClose, $connection);
+                            \call_user_func($connection->onWebSocketClose, $connection);
                         } catch (\Exception $e) {
                             Worker::log($e);
                             exit(250);
@@ -121,22 +121,22 @@ class Ws
             }
             // Calculate packet length.
             if ($data_len === 126) {
-                if (strlen($buffer) < 4) {
+                if (\strlen($buffer) < 4) {
                     return 0;
                 }
-                $pack = unpack('nn/ntotal_len', $buffer);
+                $pack = \unpack('nn/ntotal_len', $buffer);
                 $current_frame_length = $pack['total_len'] + 4;
             } else if ($data_len === 127) {
-                if (strlen($buffer) < 10) {
+                if (\strlen($buffer) < 10) {
                     return 0;
                 }
-                $arr = unpack('n/N2c', $buffer);
+                $arr = \unpack('n/N2c', $buffer);
                 $current_frame_length = $arr['c1']*4294967296 + $arr['c2'] + 10;
             } else {
                 $current_frame_length = $data_len + 2;
             }
 
-            $total_package_size = strlen($connection->websocketDataBuffer) + $current_frame_length;
+            $total_package_size = \strlen($connection->websocketDataBuffer) + $current_frame_length;
             if ($total_package_size > $connection->maxPackageSize) {
                 Worker::safeEcho("error package. package_length=$total_package_size\n");
                 $connection->close();
@@ -146,13 +146,13 @@ class Ws
             if ($is_fin_frame) {
                 if ($opcode === 0x9) {
                     if ($recv_len >= $current_frame_length) {
-                        $ping_data = static::decode(substr($buffer, 0, $current_frame_length), $connection);
+                        $ping_data = static::decode(\substr($buffer, 0, $current_frame_length), $connection);
                         $connection->consumeRecvBuffer($current_frame_length);
                         $tmp_connection_type = isset($connection->websocketType) ? $connection->websocketType : static::BINARY_TYPE_BLOB;
                         $connection->websocketType = "\x8a";
                         if (isset($connection->onWebSocketPing)) {
                             try {
-                                call_user_func($connection->onWebSocketPing, $connection, $ping_data);
+                                \call_user_func($connection->onWebSocketPing, $connection, $ping_data);
                             } catch (\Exception $e) {
                                 Worker::log($e);
                                 exit(250);
@@ -165,21 +165,21 @@ class Ws
                         }
                         $connection->websocketType = $tmp_connection_type;
                         if ($recv_len > $current_frame_length) {
-                            return static::input(substr($buffer, $current_frame_length), $connection);
+                            return static::input(\substr($buffer, $current_frame_length), $connection);
                         }
                     }
                     return 0;
 
                 } else if ($opcode === 0xa) {
                     if ($recv_len >= $current_frame_length) {
-                        $pong_data = static::decode(substr($buffer, 0, $current_frame_length), $connection);
+                        $pong_data = static::decode(\substr($buffer, 0, $current_frame_length), $connection);
                         $connection->consumeRecvBuffer($current_frame_length);
                         $tmp_connection_type = isset($connection->websocketType) ? $connection->websocketType : static::BINARY_TYPE_BLOB;
                         $connection->websocketType = "\x8a";
                         // Try to emit onWebSocketPong callback.
                         if (isset($connection->onWebSocketPong)) {
                             try {
-                                call_user_func($connection->onWebSocketPong, $connection, $pong_data);
+                                \call_user_func($connection->onWebSocketPong, $connection, $pong_data);
                             } catch (\Exception $e) {
                                 Worker::log($e);
                                 exit(250);
@@ -190,7 +190,7 @@ class Ws
                         }
                         $connection->websocketType = $tmp_connection_type;
                         if ($recv_len > $current_frame_length) {
-                            return static::input(substr($buffer, $current_frame_length), $connection);
+                            return static::input(\substr($buffer, $current_frame_length), $connection);
                         }
                     }
                     return 0;
@@ -208,12 +208,12 @@ class Ws
             return 0;
         } // The length of the received data is greater than the length of a frame.
         elseif ($connection->websocketCurrentFrameLength < $recv_len) {
-            self::decode(substr($buffer, 0, $connection->websocketCurrentFrameLength), $connection);
+            self::decode(\substr($buffer, 0, $connection->websocketCurrentFrameLength), $connection);
             $connection->consumeRecvBuffer($connection->websocketCurrentFrameLength);
             $current_frame_length                    = $connection->websocketCurrentFrameLength;
             $connection->websocketCurrentFrameLength = 0;
             // Continue to read next frame.
-            return self::input(substr($buffer, $current_frame_length), $connection);
+            return self::input(\substr($buffer, $current_frame_length), $connection);
         } // The length of the received data is less than the length of a frame.
         else {
             return 0;
@@ -240,28 +240,28 @@ class Ws
         $mask_key = "\x00\x00\x00\x00";
 
         $pack = '';
-        $length = $length_flag = strlen($payload);
+        $length = $length_flag = \strlen($payload);
         if (65535 < $length) {
-            $pack   = pack('NN', ($length & 0xFFFFFFFF00000000) >> 32, $length & 0x00000000FFFFFFFF);
+            $pack   = \pack('NN', ($length & 0xFFFFFFFF00000000) >> 32, $length & 0x00000000FFFFFFFF);
             $length_flag = 127;
         } else if (125 < $length) {
-            $pack   = pack('n*', $length);
+            $pack   = \pack('n*', $length);
             $length_flag = 126;
         }
 
         $head = ($mask << 7) | $length_flag;
-        $head = $connection->websocketType . chr($head) . $pack;
+        $head = $connection->websocketType . \chr($head) . $pack;
 
         $frame = $head . $mask_key;
         // append payload to frame:
-        $mask_key = str_repeat($mask_key, floor($length / 4)) . substr($mask_key, 0, $length % 4);
+        $mask_key = \str_repeat($mask_key, \floor($length / 4)) . \substr($mask_key, 0, $length % 4);
         $frame .= $payload ^ $mask_key;
         if ($connection->handshakeStep === 1) {
             // If buffer has already full then discard the current package.
-            if (strlen($connection->tmpWebsocketData) > $connection->maxSendBufferSize) {
+            if (\strlen($connection->tmpWebsocketData) > $connection->maxSendBufferSize) {
                 if ($connection->onError) {
                     try {
-                        call_user_func($connection->onError, $connection, WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
+                        \call_user_func($connection->onError, $connection, WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
                     } catch (\Exception $e) {
                         Worker::log($e);
                         exit(250);
@@ -274,10 +274,10 @@ class Ws
             }
             $connection->tmpWebsocketData = $connection->tmpWebsocketData . $frame;
             // Check buffer is full.
-            if ($connection->maxSendBufferSize <= strlen($connection->tmpWebsocketData)) {
+            if ($connection->maxSendBufferSize <= \strlen($connection->tmpWebsocketData)) {
                 if ($connection->onBufferFull) {
                     try {
-                        call_user_func($connection->onBufferFull, $connection);
+                        \call_user_func($connection->onBufferFull, $connection);
                     } catch (\Exception $e) {
                         Worker::log($e);
                         exit(250);
@@ -301,14 +301,14 @@ class Ws
      */
     public static function decode($bytes, $connection)
     {
-        $data_length = ord($bytes[1]);
+        $data_length = \ord($bytes[1]);
 
         if ($data_length === 126) {
-            $decoded_data = substr($bytes, 4);
+            $decoded_data = \substr($bytes, 4);
         } else if ($data_length === 127) {
-            $decoded_data = substr($bytes, 10);
+            $decoded_data = \substr($bytes, 10);
         } else {
-            $decoded_data = substr($bytes, 2);
+            $decoded_data = \substr($bytes, 2);
         }
         if ($connection->websocketCurrentFrameLength) {
             $connection->websocketDataBuffer .= $decoded_data;
@@ -364,22 +364,22 @@ class Ws
         $port = $connection->getRemotePort();
         $host = $port === 80 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
         // Handshake header.
-        $connection->websocketSecKey = base64_encode(md5(mt_rand(), true));
+        $connection->websocketSecKey = \base64_encode(md5(\mt_rand(), true));
         $user_header = isset($connection->headers) ? $connection->headers :
             (isset($connection->wsHttpHeader) ? $connection->wsHttpHeader : null);
         $user_header_str = '';
         if (!empty($user_header)) {
-            if (is_array($user_header)){
+            if (\is_array($user_header)){
                 foreach($user_header as $k=>$v){
                     $user_header_str .= "$k: $v\r\n";
                 }
             } else {
                 $user_header_str .= $user_header;
             }
-            $user_header_str = "\r\n".trim($user_header_str);
+            $user_header_str = "\r\n".\trim($user_header_str);
         }
         $header = 'GET ' . $connection->getRemoteURI() . " HTTP/1.1\r\n".
-        (!preg_match("/\nHost:/i", $user_header_str) ? "Host: $host\r\n" : '').
+        (!\preg_match("/\nHost:/i", $user_header_str) ? "Host: $host\r\n" : '').
         "Connection: Upgrade\r\n".
         "Upgrade: websocket\r\n".
         (isset($connection->websocketOrigin) ? "Origin: ".$connection->websocketOrigin."\r\n":'').
@@ -402,17 +402,17 @@ class Ws
      */
     public static function dealHandshake($buffer, $connection)
     {
-        $pos = strpos($buffer, "\r\n\r\n");
+        $pos = \strpos($buffer, "\r\n\r\n");
         if ($pos) {
             //checking Sec-WebSocket-Accept
-            if (preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $buffer, $match)) {
-                if ($match[1] !== base64_encode(sha1($connection->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
-                    Worker::safeEcho("Sec-WebSocket-Accept not match. Header:\n" . substr($buffer, 0, $pos) . "\n");
+            if (\preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $buffer, $match)) {
+                if ($match[1] !== \base64_encode(sha1($connection->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
+                    Worker::safeEcho("Sec-WebSocket-Accept not match. Header:\n" . \substr($buffer, 0, $pos) . "\n");
                     $connection->close();
                     return 0;
                 }
             } else {
-                Worker::safeEcho("Sec-WebSocket-Accept not found. Header:\n" . substr($buffer, 0, $pos) . "\n");
+                Worker::safeEcho("Sec-WebSocket-Accept not found. Header:\n" . \substr($buffer, 0, $pos) . "\n");
                 $connection->close();
                 return 0;
             }
@@ -420,8 +420,8 @@ class Ws
             // handshake complete
 
             // Get WebSocket subprotocol (if specified by server)
-            if (preg_match("/Sec-WebSocket-Protocol: *(.*?)\r\n/i", $buffer, $match)) {
-                $connection->WSServerProtocol = trim($match[1]);
+            if (\preg_match("/Sec-WebSocket-Protocol: *(.*?)\r\n/i", $buffer, $match)) {
+                $connection->WSServerProtocol = \trim($match[1]);
             }
 
             $connection->handshakeStep = 2;
@@ -429,7 +429,7 @@ class Ws
             // Try to emit onWebSocketConnect callback.
             if (isset($connection->onWebSocketConnect)) {
                 try {
-                    call_user_func($connection->onWebSocketConnect, $connection, substr($buffer, 0, $handshake_response_length));
+                    \call_user_func($connection->onWebSocketConnect, $connection, \substr($buffer, 0, $handshake_response_length));
                 } catch (\Exception $e) {
                     Worker::log($e);
                     exit(250);
@@ -441,7 +441,7 @@ class Ws
             // Headbeat.
             if (!empty($connection->websocketPingInterval)) {
                 $connection->websocketPingTimer = Timer::add($connection->websocketPingInterval, function() use ($connection){
-                    if (false === $connection->send(pack('H*', '898000000000'), true)) {
+                    if (false === $connection->send(\pack('H*', '898000000000'), true)) {
                         Timer::del($connection->websocketPingTimer);
                         $connection->websocketPingTimer = null;
                     }
@@ -453,8 +453,8 @@ class Ws
                 $connection->send($connection->tmpWebsocketData, true);
                 $connection->tmpWebsocketData = '';
             }
-            if (strlen($buffer) > $handshake_response_length) {
-                return self::input(substr($buffer, $handshake_response_length), $connection);
+            if (\strlen($buffer) > $handshake_response_length) {
+                return self::input(\substr($buffer, $handshake_response_length), $connection);
             }
         }
         return 0;
@@ -465,7 +465,7 @@ class Ws
     }
 
     public static function WSGetServerProtocol($connection) {
-	return (property_exists($connection, 'WSServerProtocol')?$connection->WSServerProtocol:null);
+	return (\property_exists($connection, 'WSServerProtocol')?$connection->WSServerProtocol:null);
     }
 
 }

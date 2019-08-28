@@ -56,7 +56,7 @@ class Ev implements EventInterface
     {
         $callback = function ($event, $socket) use ($fd, $func) {
             try {
-                call_user_func($func, $fd);
+                \call_user_func($func, $fd);
             } catch (\Exception $e) {
                 Worker::log($e);
                 exit(250);
@@ -137,7 +137,7 @@ class Ev implements EventInterface
             unset($this->_eventTimer[$timer_id]);
         }
         try {
-            call_user_func_array($param[0], $param[1]);
+            \call_user_func_array($param[0], $param[1]);
         } catch (\Exception $e) {
             Worker::log($e);
             exit(250);
@@ -189,6 +189,6 @@ class Ev implements EventInterface
      */
     public function getTimerCount()
     {
-        return count($this->_eventTimer);
+        return \count($this->_eventTimer);
     }
 }

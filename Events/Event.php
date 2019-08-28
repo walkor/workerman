@@ -57,7 +57,7 @@ class Event implements EventInterface
      */
     public function __construct()
     {
-        if (class_exists('\\\\EventBase', false)) {
+        if (\class_exists('\\\\EventBase', false)) {
             $class_name = '\\\\EventBase';
         } else {
             $class_name = '\EventBase';
@@ -70,7 +70,7 @@ class Event implements EventInterface
      */
     public function add($fd, $flag, $func, $args=array())
     {
-        if (class_exists('\\\\Event', false)) {
+        if (\class_exists('\\\\Event', false)) {
             $class_name = '\\\\Event';
         } else {
             $class_name = '\Event';
@@ -164,7 +164,7 @@ class Event implements EventInterface
         }
 
         try {
-            call_user_func_array($param[0], $param[1]);
+            \call_user_func_array($param[0], $param[1]);
         } catch (\Exception $e) {
             Worker::log($e);
             exit(250);
@@ -214,6 +214,6 @@ class Event implements EventInterface
      */
     public function getTimerCount()
     {
-        return count($this->_eventTimer);
+        return \count($this->_eventTimer);
     }
 }
