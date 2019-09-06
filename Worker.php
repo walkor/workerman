@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.21';
+    const VERSION = '3.5.22';
 
     /**
      * Status starting.
@@ -2166,6 +2166,7 @@ class Worker
         // Context for socket.
         if ($socket_name) {
             $this->_socketName = $socket_name;
+            $this->parseSocketAddress();
             if (!isset($context_option['socket']['backlog'])) {
                 $context_option['socket']['backlog'] = static::DEFAULT_BACKLOG;
             }
@@ -2189,27 +2190,8 @@ class Worker
         Autoloader::setRootPath($this->_autoloadRootPath);
 
         if (!$this->_mainSocket) {
-            // Get the application layer communication protocol and listening address.
-            list($scheme, $address) = \explode(':', $this->_socketName, 2);
-            // Check application layer protocol class.
-            if (!isset(static::$_builtinTransports[$scheme])) {
-                $scheme         = \ucfirst($scheme);
-                $this->protocol = \substr($scheme,0,1)==='\\' ? $scheme : '\\Protocols\\' . $scheme;
-                if (!\class_exists($this->protocol)) {
-                    $this->protocol = "\\Workerman\\Protocols\\$scheme";
-                    if (!\class_exists($this->protocol)) {
-                        throw new Exception("class \\Protocols\\$scheme not exist");
-                    }
-                }
 
-                if (!isset(static::$_builtinTransports[$this->transport])) {
-                    throw new \Exception('Bad worker->transport ' . \var_export($this->transport, true));
-                }
-            } else {
-                $this->transport = $scheme;
-            }
-
-            $local_socket = static::$_builtinTransports[$this->transport] . ":" . $address;
+            $local_socket = $this->parseSocketAddress();
 
             // Flag.
             $flags = $this->transport === 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
@@ -2229,12 +2211,12 @@ class Worker
             if ($this->transport === 'ssl') {
                 \stream_socket_enable_crypto($this->_mainSocket, false);
             } elseif ($this->transport === 'unix') {
-                $socketFile = \substr($address, 2);
+                $socket_file = \substr($local_socket, 7);
                 if ($this->user) {
-                    chown($socketFile, $this->user);
+                    chown($socket_file, $this->user);
                 }
                 if ($this->group) {
-                    chgrp($socketFile, $this->group);
+                    chgrp($socket_file, $this->group);
                 }
             }
 
@@ -2267,6 +2249,39 @@ class Worker
             \restore_error_handler();
             $this->_mainSocket = null;
         }
+    }
+
+    /**
+     * Parse local socket address.
+     *
+     * @throws Exception
+     */
+    protected function parseSocketAddress() {
+        if (!$this->_socketName) {
+            return;
+        }
+        // Get the application layer communication protocol and listening address.
+        list($scheme, $address) = \explode(':', $this->_socketName, 2);
+        // Check application layer protocol class.
+        if (!isset(static::$_builtinTransports[$scheme])) {
+            $scheme         = \ucfirst($scheme);
+            $this->protocol = \substr($scheme,0,1)==='\\' ? $scheme : '\\Protocols\\' . $scheme;
+            if (!\class_exists($this->protocol)) {
+                $this->protocol = "\\Workerman\\Protocols\\$scheme";
+                if (!\class_exists($this->protocol)) {
+                    throw new Exception("class \\Protocols\\$scheme not exist");
+                }
+            }
+
+            if (!isset(static::$_builtinTransports[$this->transport])) {
+                throw new \Exception('Bad worker->transport ' . \var_export($this->transport, true));
+            }
+        } else {
+            $this->transport = $scheme;
+        }
+
+        $local_socket = static::$_builtinTransports[$this->transport] . ":" . $address;
+        return $local_socket;
     }
 
     /**
