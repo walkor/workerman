@@ -25,14 +25,14 @@ class AsyncUdpConnection extends UdpConnection
     /**
      * Emitted when socket connection is successfully established.
      *
-     * @var callback
+     * @var callable
      */
     public $onConnect = null;
 
     /**
      * Emitted when socket connection closed.
      *
-     * @var callback
+     * @var callable
      */
     public $onClose = null;
 

@@ -26,7 +26,7 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Emitted when socket connection is successfully established.
      *
-     * @var callback
+     * @var callable
      */
     public $onConnect = null;
 

@@ -67,35 +67,35 @@ class TcpConnection extends ConnectionInterface
     /**
      * Emitted when data is received.
      *
-     * @var callback
+     * @var callable
      */
     public $onMessage = null;
 
     /**
      * Emitted when the other end of the socket sends a FIN packet.
      *
-     * @var callback
+     * @var callable
      */
     public $onClose = null;
 
     /**
      * Emitted when an error occurs with connection.
      *
-     * @var callback
+     * @var callable
      */
     public $onError = null;
 
     /**
      * Emitted when the send buffer becomes full.
      *
-     * @var callback
+     * @var callable
      */
     public $onBufferFull = null;
 
     /**
      * Emitted when the send buffer becomes empty.
      *
-     * @var callback
+     * @var callable
      */
     public $onBufferDrain = null;
 
