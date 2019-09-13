@@ -519,8 +519,8 @@ class Worker
     protected static function checkSapiEnv()
     {
         // Only for cli.
-        if (\php_sapi_name() != "cli") {
-            exit("only run in command line mode \n");
+        if (\php_sapi_name() !== 'cli') {
+            exit('only run in command line mode \n');
         }
         if (DIRECTORY_SEPARATOR === '\\') {
             self::$_OS = OS_TYPE_WINDOWS;
@@ -586,7 +586,7 @@ class Worker
     {
         $fd = \fopen(static::$_startFile, 'r');
         if (!$fd || !flock($fd, LOCK_EX)) {
-            static::log("Workerman[".static::$_startFile."] already running");
+            static::log("Workerman[".static::$_startFile."] already running.");
             exit;
         }
     }
@@ -622,7 +622,7 @@ class Worker
             if (empty($worker->user)) {
                 $worker->user = static::getCurrentUser();
             } else {
-                if (\posix_getuid() !== 0 && $worker->user != static::getCurrentUser()) {
+                if (\posix_getuid() !== 0 && $worker->user !== static::getCurrentUser()) {
                     static::log('Warning: You must have the root privileges to change uid and gid.');
                 }
             }
@@ -635,7 +635,7 @@ class Worker
 
             // Get column mapping for UI
             foreach(static::getUiColumns() as $column_name => $prop){
-                !isset($worker->{$prop}) && $worker->{$prop}= 'NNNN';
+                !isset($worker->{$prop}) && $worker->{$prop} = 'NNNN';
                 $prop_length = \strlen($worker->{$prop});
                 $key = '_max' . \ucfirst(\strtolower($column_name)) . 'NameLength';
                 static::$$key = \max(static::$$key, $prop_length);
@@ -684,7 +684,7 @@ class Worker
     {
         foreach (static::$_workers as $worker_id => $worker) {
             $new_id_map = array();
-            $worker->count = $worker->count <= 0 ? 1 : $worker->count;
+            $worker->count = $worker->count < 1 ? 1 : $worker->count;
             for($key = 0; $key < $worker->count; $key++) {
                 $new_id_map[$key] = isset(static::$_idMap[$worker_id][$key]) ? static::$_idMap[$worker_id][$key] : 0;
             }
@@ -715,10 +715,10 @@ class Worker
             return;
         }
         if (static::$_OS !== OS_TYPE_LINUX) {
-            static::safeEcho("----------------------- WORKERMAN -----------------------------\r\n");
-            static::safeEcho('Workerman version:'. static::VERSION. "          PHP version:". PHP_VERSION. "\r\n");
-            static::safeEcho("------------------------ WORKERS -------------------------------\r\n");
-            static::safeEcho("worker               listen                              processes status\r\n");
+            static::safeEcho('----------------------- WORKERMAN -----------------------------\r\n');
+            static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. PHP_VERSION. '\r\n');
+            static::safeEcho('------------------------ WORKERS -------------------------------\r\n');
+            static::safeEcho('worker               listen                              processes status\r\n');
             return;
         }
 
@@ -759,7 +759,7 @@ class Worker
         if (static::$daemonize) {
             static::safeEcho("Input \"php $argv[0] stop\" to stop. Start success.\n\n");
         } else {
-            static::safeEcho("Press Ctrl+C to stop. Start success.\n");
+            static::safeEcho('Press Ctrl+C to stop. Start success.\n');
         }
     }
 
@@ -852,7 +852,7 @@ class Worker
 
         // Get master process PID.
         $master_pid      = \is_file(static::$pidFile) ? \file_get_contents(static::$pidFile) : 0;
-        $master_is_alive = $master_pid && \posix_kill($master_pid, 0) && \posix_getpid() != $master_pid;
+        $master_is_alive = $master_pid && \posix_kill($master_pid, 0) && \posix_getpid() !== $master_pid;
         // Master is still alive?
         if ($master_is_alive) {
             if ($command === 'start') {
@@ -1536,7 +1536,7 @@ class Worker
         }
 
         // Set uid and gid.
-        if ($uid != \posix_getuid() || $gid != \posix_getgid()) {
+        if ($uid !== \posix_getuid() || $gid !== \posix_getgid()) {
             if (!\posix_setgid($gid) || !\posix_initgroups($user_info['name'], $gid) || !\posix_setuid($uid)) {
                 static::log("Warning: change gid or uid fail.");
             }
@@ -2009,7 +2009,7 @@ class Worker
      */
     public static function checkErrors()
     {
-        if (static::STATUS_SHUTDOWN != static::$_status) {
+        if (static::STATUS_SHUTDOWN !== static::$_status) {
             $error_msg = static::$_OS === OS_TYPE_LINUX ? 'Worker['. \posix_getpid() .'] process terminated' : 'Worker process terminated';
             $errors    = error_get_last();
             if ($errors && ($errors['type'] === E_ERROR ||

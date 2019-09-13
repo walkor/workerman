@@ -296,7 +296,7 @@ class AsyncTcpConnection extends TcpConnection
         // Remove write listener.
         Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
 
-        if ($this->_status != self::STATUS_CONNECTING) {
+        if ($this->_status !== self::STATUS_CONNECTING) {
             return;
         }
 

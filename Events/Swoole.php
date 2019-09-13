@@ -99,13 +99,13 @@ class Swoole implements EventInterface
                     $fd_val = $this->_fd[$fd_key];
                     $res = true;
                     if ($flag == self::EV_READ) {
-                        if (($fd_val & SWOOLE_EVENT_READ) != SWOOLE_EVENT_READ) {
+                        if (($fd_val & SWOOLE_EVENT_READ) !== SWOOLE_EVENT_READ) {
                             $res = Event::set($fd, $func, null,
                                 SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
                             $this->_fd[$fd_key] |= SWOOLE_EVENT_READ;
                         }
                     } else {
-                        if (($fd_val & SWOOLE_EVENT_WRITE) != SWOOLE_EVENT_WRITE) {
+                        if (($fd_val & SWOOLE_EVENT_WRITE) !== SWOOLE_EVENT_WRITE) {
                             $res = Event::set($fd, null, $func,
                                 SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
                             $this->_fd[$fd_key] |= SWOOLE_EVENT_WRITE;
