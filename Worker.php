@@ -143,63 +143,63 @@ class Worker
     /**
      * Emitted when worker processes start.
      *
-     * @var callback
+     * @var callable
      */
     public $onWorkerStart = null;
 
     /**
      * Emitted when a socket connection is successfully established.
      *
-     * @var callback
+     * @var callable
      */
     public $onConnect = null;
 
     /**
      * Emitted when data is received.
      *
-     * @var callback
+     * @var callable
      */
     public $onMessage = null;
 
     /**
      * Emitted when the other end of the socket sends a FIN packet.
      *
-     * @var callback
+     * @var callable
      */
     public $onClose = null;
 
     /**
      * Emitted when an error occurs with connection.
      *
-     * @var callback
+     * @var callable
      */
     public $onError = null;
 
     /**
      * Emitted when the send buffer becomes full.
      *
-     * @var callback
+     * @var callable
      */
     public $onBufferFull = null;
 
     /**
      * Emitted when the send buffer becomes empty.
      *
-     * @var callback
+     * @var callable
      */
     public $onBufferDrain = null;
 
     /**
      * Emitted when worker processes stoped.
      *
-     * @var callback
+     * @var callable
      */
     public $onWorkerStop = null;
 
     /**
      * Emitted when worker processes get reload signal.
      *
-     * @var callback
+     * @var callable
      */
     public $onWorkerReload = null;
 
@@ -282,14 +282,14 @@ class Worker
     /**
      * Emitted when the master process get reload signal.
      *
-     * @var callback
+     * @var callable
      */
     public static $onMasterReload = null;
 
     /**
      * Emitted when the master process terminated.
      *
-     * @var callback
+     * @var callable
      */
     public static $onMasterStop = null;
 

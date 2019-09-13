@@ -33,21 +33,21 @@ abstract class  ConnectionInterface
     /**
      * Emitted when data is received.
      *
-     * @var callback
+     * @var callable
      */
     public $onMessage = null;
 
     /**
      * Emitted when the other end of the socket sends a FIN packet.
      *
-     * @var callback
+     * @var callable
      */
     public $onClose = null;
 
     /**
      * Emitted when an error occurs with connection.
      *
-     * @var callback
+     * @var callable
      */
     public $onError = null;
 
