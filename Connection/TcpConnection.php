@@ -343,22 +343,20 @@ class TcpConnection extends ConnectionInterface
             $parser      = $this->protocol;
             $send_buffer = $parser::encode($send_buffer, $this);
             if ($send_buffer === '') {
-                return null;
+                return;
             }
         }
 
         if ($this->_status !== self::STATUS_ESTABLISHED ||
             ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true)
         ) {
-            if ($this->_sendBuffer) {
-                if ($this->bufferIsFull()) {
-                    self::$statistics['send_fail']++;
-                    return false;
-                }
+            if ($this->_sendBuffer && $this->bufferIsFull()) {
+                self::$statistics['send_fail']++;
+                return false;
             }
             $this->_sendBuffer .= $send_buffer;
             $this->checkBufferWillFull();
-            return null;
+            return;
         }
 
         // Attempt to send data directly.
@@ -367,7 +365,7 @@ class TcpConnection extends ConnectionInterface
                 Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
                 $this->_sendBuffer = $send_buffer;
                 $this->checkBufferWillFull();
-                return null;
+                return;
             }
             \set_error_handler(function(){});
             $len = \fwrite($this->_socket, $send_buffer);
@@ -404,7 +402,7 @@ class TcpConnection extends ConnectionInterface
             Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'baseWrite'));
             // Check if the send buffer will be full.
             $this->checkBufferWillFull();
-            return null;
+            return;
         } else {
             if ($this->bufferIsFull()) {
                 self::$statistics['send_fail']++;

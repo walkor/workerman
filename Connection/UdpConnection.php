@@ -65,7 +65,7 @@ class UdpConnection extends ConnectionInterface
             $parser      = $this->protocol;
             $send_buffer = $parser::encode($send_buffer, $this);
             if ($send_buffer === '') {
-                return null;
+                return;
             }
         }
         return \strlen($send_buffer) === \stream_socket_sendto($this->_socket, $send_buffer, 0, $this->_remoteAddress);
