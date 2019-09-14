@@ -188,7 +188,7 @@ class Http
         }
 
         // Parse other HTTP action parameters
-        if ($_SERVER['REQUEST_METHOD'] != 'GET' && $_SERVER['REQUEST_METHOD'] != "POST") {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== "POST") {
             $data = array();
             if ($_SERVER['CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
                 \parse_str($http_body, $data);
