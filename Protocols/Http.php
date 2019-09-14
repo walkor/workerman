@@ -160,7 +160,7 @@ class Http
                     $_SERVER['CONTENT_LENGTH'] = $value;
                     break;
                 case 'UPGRADE':
-					if($value=='websocket'){
+					if($value === 'websocket'){
 						$connection->protocol = "\\Workerman\\Protocols\\Websocket";
 						return \Workerman\Protocols\Websocket::input($recv_buffer,$connection);
 					}
