@@ -735,7 +735,7 @@ class Worker
         foreach(static::getUiColumns() as $column_name => $prop){
             $key = '_max' . \ucfirst(\strtolower($column_name)) . 'NameLength';
             //just keep compatible with listen name 
-            $column_name == 'socket' && $column_name = 'listen';
+            $column_name === 'socket' && $column_name = 'listen';
             $title.= "<w>{$column_name}</w>"  .  \str_pad('', static::$$key + static::UI_SAFE_LENGTH - \strlen($column_name));
         }
         $title && static::safeEcho($title . PHP_EOL);
@@ -2482,7 +2482,7 @@ class Worker
                     if(\method_exists($parser,'input')){
                         while($recv_buffer !== ''){
                             $len = $parser::input($recv_buffer, $connection);
-                            if($len == 0)
+                            if($len === 0)
                                 return true;
                             $package = \substr($recv_buffer,0,$len);
                             $recv_buffer = \substr($recv_buffer,$len);
