@@ -2085,8 +2085,8 @@ class Worker
 
     /**
      * Safe Echo.
-     * @param $msg
-     * @param bool $decorated
+     * @param string $msg
+     * @param bool   $decorated
      * @return bool
      */
     public static function safeEcho($msg, $decorated = false)
