@@ -15,6 +15,7 @@ namespace Workerman;
 
 use Workerman\Protocols\Http;
 use Workerman\Protocols\HttpCache;
+use Workerman\Connection\TcpConnection;
 
 /**
  *  WebServer.
@@ -145,10 +146,10 @@ class WebServer extends Worker
     /**
      * Emit when http message coming.
      *
-     * @param Connection\TcpConnection $connection
+     * @param TcpConnection $connection
      * @return void
      */
-    public function onMessage($connection)
+    public function onMessage(TcpConnection $connection)
     {
         // REQUEST_URI.
         $workerman_url_info = \parse_url('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
