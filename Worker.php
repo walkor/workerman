@@ -1402,7 +1402,7 @@ class Worker
         $pipes       = array();
         $process     = \proc_open("php \"$start_file\" -q", $descriptorspec, $pipes);
         $std_handler = \fopen($std_file, 'a+');
-        \stream_set_blocking($std_handler, 0);
+        \stream_set_blocking($std_handler, false);
 
         if (empty(static::$globalEvent)) {
             static::$globalEvent = new Select();
