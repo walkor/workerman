@@ -109,7 +109,8 @@ class Http
             'CONTENT_TYPE'         => '',
             'REMOTE_ADDR'          => '',
             'REMOTE_PORT'          => '0',
-            'REQUEST_TIME'         => \time()
+            'REQUEST_TIME'         => \time(),
+            'REQUEST_TIME_FLOAT'   => \microtime(true) //compatible php5.4
         );
 
         // Parse headers.
