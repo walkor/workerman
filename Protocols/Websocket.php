@@ -336,10 +336,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      * Websocket handshake.
      *
      * @param string                              $buffer
-     * @param \Workerman\Connection\TcpConnection $connection
+     * @param TcpConnection $connection
      * @return int
      */
-    protected static function dealHandshake($buffer, $connection)
+    protected static function dealHandshake($buffer, TcpConnection $connection)
     {
         // HTTP protocol.
         if (0 === \strpos($buffer, 'GET')) {

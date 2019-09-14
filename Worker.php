@@ -1450,10 +1450,10 @@ class Worker
     /**
      * Fork one worker process.
      *
-     * @param \Workerman\Worker $worker
+     * @param self $worker
      * @throws Exception
      */
-    protected static function forkOneWorkerForLinux($worker)
+    protected static function forkOneWorkerForLinux(self $worker)
     {
         // Get available worker id.
         $id = static::getId($worker->workerId, 0);
