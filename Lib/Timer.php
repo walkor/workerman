@@ -81,7 +81,7 @@ class Timer
      * @param callable $func
      * @param mixed    $args
      * @param bool     $persistent
-     * @return int/false
+     * @return int|false
      */
     public static function add($time_interval, $func, $args = array(), $persistent = true)
     {
