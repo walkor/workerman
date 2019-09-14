@@ -40,17 +40,17 @@ class Timer
     /**
      * event
      *
-     * @var \Workerman\Events\EventInterface
+     * @var EventInterface
      */
     protected static $_event = null;
 
     /**
      * Init.
      *
-     * @param \Workerman\Events\EventInterface $event
+     * @param EventInterface $event
      * @return void
      */
-    public static function init($event = null)
+    public static function init(EventInterface $event = null)
     {
         if ($event) {
             self::$_event = $event;
