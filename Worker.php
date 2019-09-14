@@ -2144,7 +2144,7 @@ class Worker
      * @param string $socket_name
      * @param array  $context_option
      */
-    public function __construct($socket_name = '', $context_option = array())
+    public function __construct($socket_name = '', array $context_option = array())
     {
         // Save all worker instances.
         $this->workerId                    = \spl_object_hash($this);

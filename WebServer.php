@@ -65,7 +65,7 @@ class WebServer extends Worker
      * @param string $socket_name
      * @param array  $context_option
      */
-    public function __construct($socket_name, $context_option = array())
+    public function __construct($socket_name, array $context_option = array())
     {
         list(, $address) = \explode(':', $socket_name, 2);
         parent::__construct('http:' . $address, $context_option);

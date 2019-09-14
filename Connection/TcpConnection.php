@@ -269,7 +269,7 @@ class TcpConnection extends ConnectionInterface
      * @param array  $arguments
      * @return void
      */
-    public function __call($name, $arguments) {
+    public function __call($name, array $arguments) {
         // Try to emit custom function within protocol
         if (\method_exists($this->protocol, $name)) {
             try {

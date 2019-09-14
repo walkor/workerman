@@ -109,7 +109,7 @@ class AsyncTcpConnection extends TcpConnection
      * @param array $context_option
      * @throws Exception
      */
-    public function __construct($remote_address, $context_option = null)
+    public function __construct($remote_address, array $context_option = null)
     {
         $address_info = \parse_url($remote_address);
         if (!$address_info) {
