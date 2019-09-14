@@ -39,7 +39,7 @@ class WebServer extends Worker
     /**
      * Used to save user OnWorkerStart callback settings.
      *
-     * @var callback
+     * @var callable
      */
     protected $_onWorkerStart = null;
 
