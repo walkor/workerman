@@ -473,7 +473,7 @@ class Worker
     /**
      * Graceful stop or not.
      *
-     * @var string
+     * @var bool
      */
     protected static $_gracefulStop = false;
 
