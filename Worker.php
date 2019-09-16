@@ -2277,9 +2277,8 @@ class Worker
         } else {
             $this->transport = $scheme;
         }
-
-        $local_socket = static::$_builtinTransports[$this->transport] . ":" . $address;
-        return $local_socket;
+        //local socket
+        return static::$_builtinTransports[$this->transport] . ":" . $address;
     }
 
     /**
