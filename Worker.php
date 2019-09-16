@@ -1260,7 +1260,7 @@ class Worker
                 static::$eventLoopClass = static::$_availableEventLoops[$loop_name];
             }
         } else {
-            static::$eventLoopClass = \interface_exists('\React\EventLoop\LoopInterface')? '\Workerman\Events\React\StreamSelectLoop':'\Workerman\Events\Select';
+            static::$eventLoopClass = \interface_exists('\React\EventLoop\LoopInterface') ? '\Workerman\Events\React\StreamSelectLoop' : '\Workerman\Events\Select';
         }
         return static::$eventLoopClass;
     }
@@ -1835,7 +1835,7 @@ class Worker
     /**
      * If stop gracefully.
      *
-     * @return boolean
+     * @return bool
      */
     public static function getGracefulStop()
     {
