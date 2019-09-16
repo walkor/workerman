@@ -773,7 +773,7 @@ class Worker
      */
     public static function getUiColumns()
     {
-        $column_map = array(
+        return array(
             'proto'     =>  'transport',
             'user'      =>  'user',
             'worker'    =>  'name',
@@ -781,8 +781,6 @@ class Worker
             'processes' =>  'count',
             'status'    =>  'status',
         );
-
-        return $column_map;
     }
 
     /**
