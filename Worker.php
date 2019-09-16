@@ -2230,7 +2230,7 @@ class Worker
             }
 
             // Non blocking.
-            \stream_set_blocking($this->_mainSocket, 0);
+            \stream_set_blocking($this->_mainSocket, false);
         }
 
         $this->resumeAccept();
