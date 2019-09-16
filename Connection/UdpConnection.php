@@ -151,7 +151,7 @@ class UdpConnection extends ConnectionInterface
     /**
      * Is ipv4.
      *
-     * return bool.
+     * @return bool.
      */
     public function isIpV4()
     {
@@ -164,7 +164,7 @@ class UdpConnection extends ConnectionInterface
     /**
      * Is ipv6.
      *
-     * return bool.
+     * @return bool.
      */
     public function isIpV6()
     {
