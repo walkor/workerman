@@ -1666,7 +1666,7 @@ class Worker
         @\unlink(static::$pidFile);
         static::log("Workerman[" . \basename(static::$_startFile) . "] has been stopped");
         if (static::$onMasterStop) {
-            \call_user_func(static::$onMasterStop);
+            static::$onMasterStop();
         }
         exit(0);
     }
@@ -1687,7 +1687,7 @@ class Worker
                 // Try to emit onMasterReload callback.
                 if (static::$onMasterReload) {
                     try {
-                        \call_user_func(static::$onMasterReload);
+                        static::$onMasterReload();
                     } catch (\Exception $e) {
                         static::log($e);
                         exit(250);
@@ -1746,7 +1746,7 @@ class Worker
             // Try to emit onWorkerReload callback.
             if ($worker->onWorkerReload) {
                 try {
-                    \call_user_func($worker->onWorkerReload, $worker);
+                    $worker->onWorkerReload($worker);
                 } catch (\Exception $e) {
                     static::log($e);
                     exit(250);
@@ -2364,7 +2364,7 @@ class Worker
         // Try to emit onWorkerStart callback.
         if ($this->onWorkerStart) {
             try {
-                \call_user_func($this->onWorkerStart, $this);
+                $this->onWorkerStart($this);
             } catch (\Exception $e) {
                 static::log($e);
                 // Avoid rapid infinite loop exit.
@@ -2392,7 +2392,7 @@ class Worker
         // Try to emit onWorkerStop callback.
         if ($this->onWorkerStop) {
             try {
-                \call_user_func($this->onWorkerStop, $this);
+                $this->onWorkerStop($this);
             } catch (\Exception $e) {
                 static::log($e);
                 exit(250);
@@ -2446,7 +2446,7 @@ class Worker
         // Try to emit onConnect callback.
         if ($this->onConnect) {
             try {
-                \call_user_func($this->onConnect, $connection);
+                $this->onConnect($connection);
             } catch (\Exception $e) {
                 static::log($e);
                 exit(250);
@@ -2489,17 +2489,17 @@ class Worker
                             $data = $parser::decode($package,$connection);
                             if ($data === false)
                                 continue;
-                            \call_user_func($this->onMessage, $connection, $data);
+                            $this->onMessage($connection, $data);
                         }
                     }else{
                         $data = $parser::decode($recv_buffer, $connection);
                         // Discard bad packets.
                         if ($data === false)
                             return true;
-                        \call_user_func($this->onMessage, $connection, $data);
+                        $this->onMessage($connection, $data);
                     }
                 }else{
-                    \call_user_func($this->onMessage, $connection, $recv_buffer);
+                    $this->onMessage($connection, $recv_buffer);
                 }
                 ConnectionInterface::$statistics['total_request']++;
             } catch (\Exception $e) {
