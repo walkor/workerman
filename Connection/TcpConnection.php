@@ -777,7 +777,7 @@ class TcpConnection extends ConnectionInterface
             return false;
         } elseif (0 === $ret) {
             // There isn't enough data and should try again.
-            return 0;
+            return false;
         }
         if (isset($this->onSslHandshake)) {
             try {
