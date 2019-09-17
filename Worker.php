@@ -773,7 +773,7 @@ class Worker
      */
     public static function getUiColumns()
     {
-        $column_map = array(
+        return array(
             'proto'     =>  'transport',
             'user'      =>  'user',
             'worker'    =>  'name',
@@ -781,8 +781,6 @@ class Worker
             'processes' =>  'count',
             'status'    =>  'status',
         );
-
-        return $column_map;
     }
 
     /**
@@ -1262,7 +1260,7 @@ class Worker
                 static::$eventLoopClass = static::$_availableEventLoops[$loop_name];
             }
         } else {
-            static::$eventLoopClass = \interface_exists('\React\EventLoop\LoopInterface')? '\Workerman\Events\React\StreamSelectLoop':'\Workerman\Events\Select';
+            static::$eventLoopClass = \interface_exists('\React\EventLoop\LoopInterface') ? '\Workerman\Events\React\StreamSelectLoop' : '\Workerman\Events\Select';
         }
         return static::$eventLoopClass;
     }
@@ -1837,7 +1835,7 @@ class Worker
     /**
      * If stop gracefully.
      *
-     * @return boolean
+     * @return bool
      */
     public static function getGracefulStop()
     {
@@ -2279,9 +2277,8 @@ class Worker
         } else {
             $this->transport = $scheme;
         }
-
-        $local_socket = static::$_builtinTransports[$this->transport] . ":" . $address;
-        return $local_socket;
+        //local socket
+        return static::$_builtinTransports[$this->transport] . ":" . $address;
     }
 
     /**
