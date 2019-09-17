@@ -274,6 +274,9 @@ class Http
 
     /**
      * 设置http头
+     * @param string $content
+     * @param bool   $replace
+     * @param int    $http_response_code
      *
      * @return bool|void
      */
