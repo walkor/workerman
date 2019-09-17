@@ -217,7 +217,7 @@ class WebServer extends Worker
                     include $workerman_file;
                 } catch (\Exception $e) {
                     // Jump_exit?
-                    if ($e->getMessage() != 'jump_exit') {
+                    if ($e->getMessage() !== 'jump_exit') {
                         Worker::safeEcho($e);
                     }
                 }

@@ -56,7 +56,7 @@ class Swoole implements EventInterface
                 return $res;
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
-                $method = self::EV_TIMER == $flag ? 'tick' : 'after';
+                $method = self::EV_TIMER === $flag ? 'tick' : 'after';
                 if ($this->mapId > PHP_INT_MAX) {
                     $this->mapId = 0;
                 }
@@ -74,7 +74,7 @@ class Swoole implements EventInterface
                             }
                         }
                     });
-                if ($flag == self::EV_TIMER_ONCE) {
+                if ($flag === self::EV_TIMER_ONCE) {
                     $this->_timerOnceMap[$mapId] = $timer_id;
                     $this->_timer[$timer_id] = $mapId;
                 } else {
@@ -85,7 +85,7 @@ class Swoole implements EventInterface
             case self::EV_WRITE:
                 $fd_key = (int) $fd;
                 if (! isset($this->_fd[$fd_key])) {
-                    if ($flag == self::EV_READ) {
+                    if ($flag === self::EV_READ) {
                         $res = Event::add($fd, $func, null, SWOOLE_EVENT_READ);
                         $fd_type = SWOOLE_EVENT_READ;
                     } else {
@@ -98,14 +98,14 @@ class Swoole implements EventInterface
                 } else {
                     $fd_val = $this->_fd[$fd_key];
                     $res = true;
-                    if ($flag == self::EV_READ) {
-                        if (($fd_val & SWOOLE_EVENT_READ) != SWOOLE_EVENT_READ) {
+                    if ($flag === self::EV_READ) {
+                        if (($fd_val & SWOOLE_EVENT_READ) !== SWOOLE_EVENT_READ) {
                             $res = Event::set($fd, $func, null,
                                 SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
                             $this->_fd[$fd_key] |= SWOOLE_EVENT_READ;
                         }
                     } else {
-                        if (($fd_val & SWOOLE_EVENT_WRITE) != SWOOLE_EVENT_WRITE) {
+                        if (($fd_val & SWOOLE_EVENT_WRITE) !== SWOOLE_EVENT_WRITE) {
                             $res = Event::set($fd, null, $func,
                                 SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
                             $this->_fd[$fd_key] |= SWOOLE_EVENT_WRITE;
@@ -147,7 +147,7 @@ class Swoole implements EventInterface
                 $fd_key = (int) $fd;
                 if (isset($this->_fd[$fd_key])) {
                     $fd_val = $this->_fd[$fd_key];
-                    if ($flag == self::EV_READ) {
+                    if ($flag === self::EV_READ) {
                         $flag_remove = ~ SWOOLE_EVENT_READ;
                     } else {
                         $flag_remove = ~ SWOOLE_EVENT_WRITE;

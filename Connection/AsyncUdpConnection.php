@@ -121,7 +121,7 @@ class AsyncUdpConnection extends UdpConnection
             $parser      = $this->protocol;
             $send_buffer = $parser::encode($send_buffer, $this);
             if ($send_buffer === '') {
-                return null;
+                return;
             }
         }
         if ($this->connected === false) {

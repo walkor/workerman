@@ -161,7 +161,7 @@ class Http
                     $_SERVER['CONTENT_LENGTH'] = $value;
                     break;
                 case 'UPGRADE':
-					if($value=='websocket'){
+					if($value === 'websocket'){
 						$connection->protocol = "\\Workerman\\Protocols\\Websocket";
 						return \Workerman\Protocols\Websocket::input($recv_buffer,$connection);
 					}
@@ -189,7 +189,7 @@ class Http
         }
 
         // Parse other HTTP action parameters
-        if ($_SERVER['REQUEST_METHOD'] != 'GET' && $_SERVER['REQUEST_METHOD'] != "POST") {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== "POST") {
             $data = array();
             if ($_SERVER['CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
                 \parse_str($http_body, $data);
@@ -279,7 +279,7 @@ class Http
      */
     public static function header($content, $replace = true, $http_response_code = 0)
     {
-        if (PHP_SAPI != 'cli') {
+        if (PHP_SAPI !== 'cli') {
             return $http_response_code ? \header($content, $replace, $http_response_code) : \header($content, $replace);
         }
         if (\strpos($content, 'HTTP') === 0) {
@@ -319,7 +319,7 @@ class Http
      */
     public static function headerRemove($name)
     {
-        if (PHP_SAPI != 'cli') {
+        if (PHP_SAPI !== 'cli') {
             \header_remove($name);
             return;
         }
@@ -347,7 +347,7 @@ class Http
         $secure = false,
         $HTTPOnly = false
     ) {
-        if (PHP_SAPI != 'cli') {
+        if (PHP_SAPI !== 'cli') {
             return \setcookie($name, $value, $maxage, $path, $domain, $secure, $HTTPOnly);
         }
         return self::header(
@@ -379,7 +379,7 @@ class Http
      */
     public static function sessionId($id = null)
     {
-        if (PHP_SAPI != 'cli') {
+        if (PHP_SAPI !== 'cli') {
             return $id ? \session_id($id) : \session_id();
         }
         if (static::sessionStarted() && HttpCache::$instance->sessionFile) {
@@ -397,7 +397,7 @@ class Http
      */
     public static function sessionName($name = null)
     {
-        if (PHP_SAPI != 'cli') {
+        if (PHP_SAPI !== 'cli') {
             return $name ? \session_name($name) : \session_name();
         }
         $session_name = HttpCache::$sessionName;
@@ -416,7 +416,7 @@ class Http
      */
     public static function sessionSavePath($path = null)
     {
-        if (PHP_SAPI != 'cli') {
+        if (PHP_SAPI !== 'cli') {
             return $path ? \session_save_path($path) : \session_save_path();
         }
         if ($path && \is_dir($path) && \is_writable($path) && !static::sessionStarted()) {
@@ -444,7 +444,7 @@ class Http
      */
     public static function sessionStart()
     {
-        if (PHP_SAPI != 'cli') {
+        if (PHP_SAPI !== 'cli') {
             return \session_start();
         }
 
@@ -493,7 +493,7 @@ class Http
      */
     public static function sessionWriteClose()
     {
-        if (PHP_SAPI != 'cli') {
+        if (PHP_SAPI !== 'cli') {
             \session_write_close();
             return true;
         }
@@ -514,7 +514,7 @@ class Http
      */
     public static function end($msg = '')
     {
-        if (PHP_SAPI != 'cli') {
+        if (PHP_SAPI !== 'cli') {
             exit($msg);
         }
         if ($msg) {
