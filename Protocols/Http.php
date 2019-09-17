@@ -14,6 +14,7 @@
 namespace Workerman\Protocols;
 
 use Workerman\Connection\TcpConnection;
+use Workerman\Protocols\Websocket;
 use Workerman\Worker;
 
 /**
@@ -50,10 +51,10 @@ class Http
 
         if(\in_array($method, static::$methods)) {
             return static::getRequestSize($header, $method);
-        }else{
-            $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n", true);
-            return 0;
         }
+
+        $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+        return 0;
     }
 
     /**
@@ -162,13 +163,13 @@ class Http
                     break;
                 case 'UPGRADE':
 					if($value === 'websocket'){
-						$connection->protocol = "\\Workerman\\Protocols\\Websocket";
-						return \Workerman\Protocols\Websocket::input($recv_buffer,$connection);
+						$connection->protocol = '\Workerman\Protocols\Websocket';
+						return Websocket::input($recv_buffer,$connection);
 					}
                     break;
             }
         }
-		if(isset($_SERVER['HTTP_ACCEPT_ENCODING']) && \strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== FALSE){
+		if(isset($_SERVER['HTTP_ACCEPT_ENCODING']) && \strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false){
 			HttpCache::$gzip = true;
 		}
         // Parse $_POST.
@@ -277,7 +278,7 @@ class Http
      * @param string $content
      * @param bool   $replace
      * @param int    $http_response_code
-     *
+     * 
      * @return bool|void
      */
     public static function header($content, $replace = true, $http_response_code = null)
