@@ -269,7 +269,7 @@ class TcpConnection extends ConnectionInterface
      * @param array  $arguments
      * @return void
      */
-    public function __call($name, $arguments) {
+    public function __call($name, array $arguments) {
         // Try to emit custom function within protocol
         if (\method_exists($this->protocol, $name)) {
             try {
@@ -775,7 +775,7 @@ class TcpConnection extends ConnectionInterface
             return false;
         } elseif (0 === $ret) {
             // There isn't enough data and should try again.
-            return 0;
+            return false;
         }
         if (isset($this->onSslHandshake)) {
             try {

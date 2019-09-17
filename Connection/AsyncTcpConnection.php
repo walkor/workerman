@@ -26,7 +26,7 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Emitted when socket connection is successfully established.
      *
-     * @var callable
+     * @var callable|null
      */
     public $onConnect = null;
 
@@ -61,7 +61,7 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Connect start time.
      *
-     * @var string
+     * @var float
      */
     protected $_connectStartTime = 0;
 
@@ -109,7 +109,7 @@ class AsyncTcpConnection extends TcpConnection
      * @param array $context_option
      * @throws Exception
      */
-    public function __construct($remote_address, $context_option = null)
+    public function __construct($remote_address, array $context_option = array())
     {
         $address_info = \parse_url($remote_address);
         if (!$address_info) {
@@ -303,7 +303,7 @@ class AsyncTcpConnection extends TcpConnection
         // Check socket state.
         if ($address = \stream_socket_get_name($this->_socket, true)) {
             // Nonblocking.
-            \stream_set_blocking($this->_socket, 0);
+            \stream_set_blocking($this->_socket, false);
             // Compatible with hhvm
             if (\function_exists('stream_set_read_buffer')) {
                 \stream_set_read_buffer($this->_socket, 0);

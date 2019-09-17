@@ -473,7 +473,7 @@ class Worker
     /**
      * Graceful stop or not.
      *
-     * @var string
+     * @var bool
      */
     protected static $_gracefulStop = false;
 
@@ -1400,7 +1400,7 @@ class Worker
         $pipes       = array();
         $process     = \proc_open("php \"$start_file\" -q", $descriptorspec, $pipes);
         $std_handler = \fopen($std_file, 'a+');
-        \stream_set_blocking($std_handler, 0);
+        \stream_set_blocking($std_handler, false);
 
         if (empty(static::$globalEvent)) {
             static::$globalEvent = new Select();
@@ -2083,8 +2083,8 @@ class Worker
 
     /**
      * Safe Echo.
-     * @param $msg
-     * @param bool $decorated
+     * @param string $msg
+     * @param bool   $decorated
      * @return bool
      */
     public static function safeEcho($msg, $decorated = false)
@@ -2142,7 +2142,7 @@ class Worker
      * @param string $socket_name
      * @param array  $context_option
      */
-    public function __construct($socket_name = '', $context_option = array())
+    public function __construct($socket_name = '', array $context_option = array())
     {
         // Save all worker instances.
         $this->workerId                    = \spl_object_hash($this);
@@ -2228,7 +2228,7 @@ class Worker
             }
 
             // Non blocking.
-            \stream_set_blocking($this->_mainSocket, 0);
+            \stream_set_blocking($this->_mainSocket, false);
         }
 
         $this->resumeAccept();

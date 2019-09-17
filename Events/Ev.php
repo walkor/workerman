@@ -13,6 +13,7 @@
 namespace Workerman\Events;
 
 use Workerman\Worker;
+use EvWatcher;
 
 /**
  * ev eventloop
@@ -126,9 +127,9 @@ class Ev implements EventInterface
     /**
      * Timer callback.
      *
-     * @param \EvWatcher $event
+     * @param EvWatcher $event
      */
-    public function timerCallback($event)
+    public function timerCallback(EvWatcher $event)
     {
         $param    = $event->data;
         $timer_id = $param[4];
