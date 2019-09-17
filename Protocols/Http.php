@@ -296,7 +296,7 @@ class Http
         }
 
         if ('location' === \strtolower($key) && !$http_response_code) {
-            return self::header($content, true, 302);
+            $http_response_code = 302;
         }
 
         if (isset(HttpCache::$codes[$http_response_code])) {
