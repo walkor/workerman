@@ -299,7 +299,7 @@ class Http
             $http_response_code = 302;
         }
 
-        if (isset(HttpCache::$codes[$http_response_code])) {
+        if ($http_response_code && isset(HttpCache::$codes[$http_response_code])) {
             HttpCache::$header['Http-Code'] = "HTTP/1.1 $http_response_code " . HttpCache::$codes[$http_response_code];
             if ($key === 'Http-Code') {
                 return true;
