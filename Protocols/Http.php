@@ -283,7 +283,8 @@ class Http
     public static function header($content, $replace = true, $http_response_code = null)
     {
         if (PHP_SAPI !== 'cli') {
-            return $http_response_code ? \header($content, $replace, $http_response_code) : \header($content, $replace);
+            \header($content, $replace, $http_response_code);
+            return;
         }
         if (\strpos($content, 'HTTP') === 0) {
             $key = 'Http-Code';
