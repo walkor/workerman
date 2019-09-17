@@ -1053,17 +1053,17 @@ class Worker
             return;
         }
         // stop
-        \pcntl_signal(SIGINT, array('\Workerman\Worker', 'signalHandler'), false);
+        \pcntl_signal(SIGINT, 'self::signalHandler', false);
         // graceful stop
-        \pcntl_signal(SIGTERM, array('\Workerman\Worker', 'signalHandler'), false);
+        \pcntl_signal(SIGTERM, 'self::signalHandler', false);
         // reload
-        \pcntl_signal(SIGUSR1, array('\Workerman\Worker', 'signalHandler'), false);
+        \pcntl_signal(SIGUSR1, 'self::signalHandler', false);
         // graceful reload
-        \pcntl_signal(SIGQUIT, array('\Workerman\Worker', 'signalHandler'), false);
+        \pcntl_signal(SIGQUIT, 'self::signalHandler', false);
         // status
-        \pcntl_signal(SIGUSR2, array('\Workerman\Worker', 'signalHandler'), false);
+        \pcntl_signal(SIGUSR2, 'self::signalHandler', false);
         // connection status
-        \pcntl_signal(SIGIO, array('\Workerman\Worker', 'signalHandler'), false);
+        \pcntl_signal(SIGIO, 'self::signalHandler', false);
         // ignore
         \pcntl_signal(SIGPIPE, SIG_IGN, false);
     }
@@ -1091,17 +1091,17 @@ class Worker
         // uninstall connections status signal handler
         \pcntl_signal(SIGIO, SIG_IGN, false);
         // reinstall stop signal handler
-        static::$globalEvent->add(SIGINT, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        static::$globalEvent->add(SIGINT, EventInterface::EV_SIGNAL, 'self::signalHandler');
         // reinstall graceful stop signal handler
-        static::$globalEvent->add(SIGTERM, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        static::$globalEvent->add(SIGTERM, EventInterface::EV_SIGNAL, 'self::signalHandler');
         // reinstall reload signal handler
-        static::$globalEvent->add(SIGUSR1, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        static::$globalEvent->add(SIGUSR1, EventInterface::EV_SIGNAL, 'self::signalHandler');
         // reinstall graceful reload signal handler
-        static::$globalEvent->add(SIGQUIT, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        static::$globalEvent->add(SIGQUIT, EventInterface::EV_SIGNAL, 'self::signalHandler');
         // reinstall status signal handler
-        static::$globalEvent->add(SIGUSR2, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        static::$globalEvent->add(SIGUSR2, EventInterface::EV_SIGNAL, 'self::signalHandler');
         // reinstall connection status signal handler
-        static::$globalEvent->add(SIGIO, EventInterface::EV_SIGNAL, array('\Workerman\Worker', 'signalHandler'));
+        static::$globalEvent->add(SIGIO, EventInterface::EV_SIGNAL, 'self::signalHandler');
     }
 
     /**
@@ -1198,9 +1198,9 @@ class Worker
             static::$_outputStream = null;
             static::outputStream($STDOUT);
             \restore_error_handler();
-        } else {
-            throw new Exception('can not open stdoutFile ' . static::$stdoutFile);
+            return;
         }
+        throw new Exception('Can not open stdoutFile ' . static::$stdoutFile);
     }
 
     /**
@@ -1216,7 +1216,7 @@ class Worker
 
         static::$_masterPid = \posix_getpid();
         if (false === \file_put_contents(static::$pidFile, static::$_masterPid)) {
-            throw new Exception('can not save pid to ' . static::$pidFile);
+            throw new Exception('Can not save pid to ' . static::$pidFile);
         }
     }
 
@@ -1236,7 +1236,7 @@ class Worker
         }
         
         $loop_name = '';
-        foreach (static::$_availableEventLoops as $name=>$class) {
+        foreach (static::$_availableEventLoops as $name => $class) {
             if (\extension_loaded($name)) {
                 $loop_name = $name;
                 break;
