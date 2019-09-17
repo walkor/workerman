@@ -280,7 +280,7 @@ class Http
      *
      * @return bool|void
      */
-    public static function header($content, $replace = true, $http_response_code = 0)
+    public static function header($content, $replace = true, $http_response_code = null)
     {
         if (PHP_SAPI !== 'cli') {
             return $http_response_code ? \header($content, $replace, $http_response_code) : \header($content, $replace);
