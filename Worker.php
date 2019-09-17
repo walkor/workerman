@@ -520,7 +520,7 @@ class Worker
     {
         // Only for cli.
         if (\php_sapi_name() !== 'cli') {
-            exit('only run in command line mode \n');
+            exit("only run in command line mode \n");
         }
         if (DIRECTORY_SEPARATOR === '\\') {
             self::$_OS = OS_TYPE_WINDOWS;
@@ -586,7 +586,7 @@ class Worker
     {
         $fd = \fopen(static::$_startFile, 'r');
         if (!$fd || !flock($fd, LOCK_EX)) {
-            static::log("Workerman[".static::$_startFile."] already running.");
+            static::log('Workerman['.static::$_startFile.'] already running.');
             exit;
         }
     }
@@ -715,10 +715,10 @@ class Worker
             return;
         }
         if (static::$_OS !== OS_TYPE_LINUX) {
-            static::safeEcho('----------------------- WORKERMAN -----------------------------\r\n');
-            static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. PHP_VERSION. '\r\n');
-            static::safeEcho('------------------------ WORKERS -------------------------------\r\n');
-            static::safeEcho('worker               listen                              processes status\r\n');
+            static::safeEcho("----------------------- WORKERMAN -----------------------------\r\n");
+            static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. PHP_VERSION. "\r\n");
+            static::safeEcho("------------------------ WORKERS -------------------------------\r\n");
+            static::safeEcho("worker               listen                              processes status\r\n");
             return;
         }
 
@@ -759,7 +759,7 @@ class Worker
         if (static::$daemonize) {
             static::safeEcho("Input \"php $argv[0] stop\" to stop. Start success.\n\n");
         } else {
-            static::safeEcho('Press Ctrl+C to stop. Start success.\n');
+            static::safeEcho("Press Ctrl+C to stop. Start success.\n");
         }
     }
 
