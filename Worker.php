@@ -471,6 +471,29 @@ class Worker
     );
 
     /**
+     * PHP built-in error types.
+     *
+     * @var array
+     */
+    protected static $_errorType = array(
+        E_ERROR             => 'E_ERROR',             // 1
+        E_WARNING           => 'E_WARNING',           // 2
+        E_PARSE             => 'E_PARSE',             // 4
+        E_NOTICE            => 'E_NOTICE',            // 8
+        E_CORE_ERROR        => 'E_CORE_ERROR',        // 16
+        E_CORE_WARNING      => 'E_CORE_WARNING',      // 32
+        E_COMPILE_ERROR     => 'E_COMPILE_ERROR',     // 64
+        E_COMPILE_WARNING   => 'E_COMPILE_WARNING',   // 128
+        E_USER_ERROR        => 'E_USER_ERROR',        // 256
+        E_USER_WARNING      => 'E_USER_WARNING',      // 512
+        E_USER_NOTICE       => 'E_USER_NOTICE',       // 1024
+        E_STRICT            => 'E_STRICT',            // 2048
+        E_RECOVERABLE_ERROR => 'E_RECOVERABLE_ERROR', // 4096
+        E_DEPRECATED        => 'E_DEPRECATED',        // 8192
+        E_USER_DEPRECATED   => 'E_USER_DEPRECATED'   // 16384
+    );
+
+    /**
      * Graceful stop or not.
      *
      * @var bool
@@ -2030,39 +2053,11 @@ class Worker
      */
     protected static function getErrorType($type)
     {
-        switch ($type) {
-            case E_ERROR: // 1 //
-                return 'E_ERROR';
-            case E_WARNING: // 2 //
-                return 'E_WARNING';
-            case E_PARSE: // 4 //
-                return 'E_PARSE';
-            case E_NOTICE: // 8 //
-                return 'E_NOTICE';
-            case E_CORE_ERROR: // 16 //
-                return 'E_CORE_ERROR';
-            case E_CORE_WARNING: // 32 //
-                return 'E_CORE_WARNING';
-            case E_COMPILE_ERROR: // 64 //
-                return 'E_COMPILE_ERROR';
-            case E_COMPILE_WARNING: // 128 //
-                return 'E_COMPILE_WARNING';
-            case E_USER_ERROR: // 256 //
-                return 'E_USER_ERROR';
-            case E_USER_WARNING: // 512 //
-                return 'E_USER_WARNING';
-            case E_USER_NOTICE: // 1024 //
-                return 'E_USER_NOTICE';
-            case E_STRICT: // 2048 //
-                return 'E_STRICT';
-            case E_RECOVERABLE_ERROR: // 4096 //
-                return 'E_RECOVERABLE_ERROR';
-            case E_DEPRECATED: // 8192 //
-                return 'E_DEPRECATED';
-            case E_USER_DEPRECATED: // 16384 //
-                return 'E_USER_DEPRECATED';
+        if(isset(self::$_errorType[$type])) {
+            return self::$_errorType[$type];
         }
-        return "";
+
+        return '';
     }
 
     /**
