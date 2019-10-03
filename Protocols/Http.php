@@ -236,18 +236,8 @@ class Http
      */
     public static function encode($content, TcpConnection $connection)
     {
-        // Default http-code.
-        if (!isset(HttpCache::$header['Http-Code'])) {
-            $header = "HTTP/1.1 200 OK\r\n";
-        } else {
-            $header = HttpCache::$header['Http-Code'] . "\r\n";
-            unset(HttpCache::$header['Http-Code']);
-        }
-
-        // Content-Type
-        if (!isset(HttpCache::$header['Content-Type'])) {
-            $header .= "Content-Type: text/html;charset=utf-8\r\n";
-        }
+        // http-code status line.
+        $header = HttpCache::$status . "\r\n";
 
         // other headers
         foreach (HttpCache::$header as $key => $item) {
@@ -287,20 +277,21 @@ class Http
             \header($content, $replace, $http_response_code);
             return;
         }
+
         if (\strpos($content, 'HTTP') === 0) {
             HttpCache::$status = $content;
             return true;
         }
 
-            $key = \strstr($content, ":", true);
+        $key = \strstr($content, ":", true);
             if (empty($key)) {
                 return false;
-            }
+        }
 
         if ('location' === \strtolower($key)) {
             if (!$http_response_code) {
             $http_response_code = 302;
-        }
+            }
             self::responseCode($http_response_code);
         }
 
@@ -676,7 +667,10 @@ class HttpCache
      * @var HttpCache
      */
     public static $instance             = null;
-    public static $header               = array();
+    public static $status               = 'HTTP/1.1 200 OK'; // default status code
+    public static $header               = array(
+                                            'Content-Type' => 'text/html;charset=utf-8' // default Content-Type
+                                            );
     public static $gzip                 = false;
     public static $sessionPath          = '';
     public static $sessionName          = '';
