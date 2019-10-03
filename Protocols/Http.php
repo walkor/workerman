@@ -288,23 +288,20 @@ class Http
             return;
         }
         if (\strpos($content, 'HTTP') === 0) {
-            $key = 'Http-Code';
-        } else {
+            HttpCache::$status = $content;
+            return true;
+        }
+
             $key = \strstr($content, ":", true);
             if (empty($key)) {
                 return false;
             }
-        }
 
-        if ('location' === \strtolower($key) && !$http_response_code) {
+        if ('location' === \strtolower($key)) {
+            if (!$http_response_code) {
             $http_response_code = 302;
         }
-
-        if ($http_response_code && isset(HttpCache::$codes[$http_response_code])) {
-            HttpCache::$header['Http-Code'] = "HTTP/1.1 $http_response_code " . HttpCache::$codes[$http_response_code];
-            if ($key === 'Http-Code') {
-                return true;
-            }
+            self::responseCode($http_response_code);
         }
 
         if ($key === 'Set-Cookie') {
@@ -329,6 +326,18 @@ class Http
             return;
         }
         unset(HttpCache::$header[$name]);
+    }
+
+    /**
+     * Add response header (http_response_code).
+     *
+     * @param int $code
+     * @return void
+     */
+    public static function responseCode($code) {
+        if (isset(HttpCache::$codes[$code])) {
+            HttpCache::$status = "HTTP/1.1 $code " . HttpCache::$codes[$code];
+        }
     }
 
     /**
