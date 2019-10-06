@@ -320,15 +320,18 @@ class Http
     }
 
     /**
-     * Add response header (http_response_code).
+     * Sets the HTTP response status code.
      *
-     * @param int $code
-     * @return void
+     * @param int $code The response code
+     * @return mixed The valid status code or FALSE if code is not provided and it is not invoked in a web server environment
      */
-    public static function responseCode($code) {
+    public static function responseCode($code) 
+    {
         if (isset(HttpCache::$codes[$code])) {
             HttpCache::$status = "HTTP/1.1 $code " . HttpCache::$codes[$code];
+            return $code;
         }
+        return false;
     }
 
     /**
