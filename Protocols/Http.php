@@ -323,7 +323,7 @@ class Http
      * Sets the HTTP response status code.
      *
      * @param int $code The response code
-     * @return mixed The valid status code or FALSE if code is not provided and it is not invoked in a web server environment
+     * @return boolean|int The valid status code or FALSE if code is not provided and it is not invoked in a web server environment
      */
     public static function responseCode($code) 
     {
