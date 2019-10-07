@@ -672,7 +672,7 @@ class HttpCache
     public static $instance             = null;
     public static $status               = 'HTTP/1.1 200 OK'; // default status code
     public static $header               = array(
-                                            'Content-Type' => 'text/html;charset=utf-8' // default Content-Type
+                                            'Content-Type' => 'Content-Type: text/html;charset=utf-8' // default Content-Type
                                             );
     public static $gzip                 = false;
     public static $sessionPath          = '';
