@@ -41,7 +41,6 @@ class Http
             // Judge whether the package length exceeds the limit.
             if (\strlen($recv_buffer) >= $connection->maxPackageSize) {
                 $connection->close();
-                return 0;
             }
             return 0;
         }
@@ -90,7 +89,7 @@ class Http
         $_POST                         = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = array();
         $GLOBALS['HTTP_RAW_POST_DATA'] = '';
         // Clear cache.
-        HttpCache::$header   = array('Connection' => 'Connection: keep-alive');
+        HttpCache::$header   = HttpCache::$default;
         HttpCache::$instance = new HttpCache();
         // $_SERVER
         $_SERVER = array(
@@ -237,7 +236,8 @@ class Http
     public static function encode($content, TcpConnection $connection)
     {
         // http-code status line.
-        $header = HttpCache::$status . "\r\n";
+        $header = (HttpCache::$status ?: 'HTTP/1.1 200 OK') . "\r\n";
+        HttpCache::$status = '';
 
         // other headers
         foreach (HttpCache::$header as $key => $item) {
@@ -254,7 +254,7 @@ class Http
 			$content = \gzencode($content,$connection->gzip);
 		}
         // header
-        $header .= "Server: workerman/" . Worker::VERSION . "\r\nContent-Length: " . \strlen($content) . "\r\n\r\n";
+        $header .= 'Content-Length: ' . \strlen($content) . "\r\n\r\n";
 
         // save session
         self::sessionWriteClose();
@@ -284,8 +284,8 @@ class Http
         }
 
         $key = \strstr($content, ":", true);
-            if (empty($key)) {
-                return false;
+        if (empty($key)) {
+            return false;
         }
 
         if ('location' === \strtolower($key)) {
@@ -666,14 +666,18 @@ class HttpCache
         505 => 'HTTP Version Not Supported',
     );
 
+    public static $default = array(
+        'Content-Type' => 'Content-Type: text/html;charset=utf-8',
+        'Connection'   => 'Connection: keep-alive',
+        'Server'       => 'Server: workerman/' . Worker::VERSION
+    );
+
     /**
      * @var HttpCache
      */
     public static $instance             = null;
-    public static $status               = 'HTTP/1.1 200 OK'; // default status code
-    public static $header               = array(
-                                            'Content-Type' => 'text/html;charset=utf-8' // default Content-Type
-                                            );
+    public static $status               = '';
+    public static $header               = array();
     public static $gzip                 = false;
     public static $sessionPath          = '';
     public static $sessionName          = '';
