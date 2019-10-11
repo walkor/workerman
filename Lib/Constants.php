@@ -13,12 +13,12 @@
  */
 
  // Init php
- if (file_exists('.user.ini')) {
-    $ini = parse_ini_file('.user.ini');
+ if (file_exists($file = pathinfo($_SERVER['PHP_SELF'], PATHINFO_FILENAME).'.user.ini')) {
+    $ini = parse_ini_file($file);
     foreach ($ini as $var => $value) {
         ini_set($var, $value);
     }
-    unset($ini);
+    unset($ini, $file);
 }
 
 /////// Hardcoded defaults
