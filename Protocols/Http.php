@@ -242,9 +242,7 @@ class Http
         // other headers
         foreach (HttpCache::$header as $key => $item) {
             if ('Set-Cookie' === $key && \is_array($item)) {
-                foreach ($item as $it) {
-                    $header .= $it . "\r\n";
-                }
+                $header .= \implode("\r\n", $item) . "\r\n";
             } else {
                 $header .= $item . "\r\n";
             }
