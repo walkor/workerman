@@ -18,6 +18,7 @@
     foreach ($ini as $var => $value) {
         ini_set($var, $value);
     }
+    unset($ini);
 }
 
 /////// Hardcoded defaults
