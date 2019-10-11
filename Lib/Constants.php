@@ -12,6 +12,16 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
+ // Init php
+ if (file_exists('.user.ini')) {
+    $ini = parse_ini_file('.user.ini');
+    foreach ($ini as $var => $value) {
+        ini_set($var, $value);
+    }
+}
+
+/////// Hardcoded defaults
+
 // Display errors.
 ini_set('display_errors', 'on');
 // Reporting all.
