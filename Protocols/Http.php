@@ -90,6 +90,7 @@ class Http
         $GLOBALS['HTTP_RAW_POST_DATA'] = '';
         // Clear cache.
         HttpCache::$header   = HttpCache::$default;
+        HttpCache::$cookie   = array();
         HttpCache::$instance = new HttpCache();
         // $_SERVER
         $_SERVER = array(
@@ -239,16 +240,14 @@ class Http
         $header = (HttpCache::$status ?: 'HTTP/1.1 200 OK') . "\r\n";
         HttpCache::$status = '';
 
-        // other headers
-        foreach (HttpCache::$header as $key => $item) {
-            if ('Set-Cookie' === $key && \is_array($item)) {
-                foreach ($item as $it) {
-                    $header .= $it . "\r\n";
-                }
-            } else {
-                $header .= $item . "\r\n";
-            }
+        // Cookie headers
+        if(HttpCache::$cookie) {
+            $header .= \implode("\r\n", HttpCache::$cookie) . "\r\n";
         }
+        
+        // other headers
+        $header .= \implode("\r\n", HttpCache::$header) . "\r\n";
+
 		if(HttpCache::$gzip && isset($connection->gzip) && $connection->gzip){
 			$header .= "Content-Encoding: gzip\r\n";
 			$content = \gzencode($content,$connection->gzip);
@@ -264,7 +263,8 @@ class Http
     }
 
     /**
-     * 设置http头
+     * Send a raw HTTP header
+     * 
      * @param string $content
      * @param bool   $replace
      * @param int    $http_response_code
@@ -296,7 +296,7 @@ class Http
         }
 
         if ($key === 'Set-Cookie') {
-            HttpCache::$header[$key][] = $content;
+            HttpCache::$cookie[] = $content;
         } else {
             HttpCache::$header[$key] = $content;
         }
@@ -305,7 +305,7 @@ class Http
     }
 
     /**
-     * Remove header.
+     * Remove previously set headers
      *
      * @param string $name
      * @return void
@@ -358,13 +358,15 @@ class Http
         if (PHP_SAPI !== 'cli') {
             return \setcookie($name, $value, $maxage, $path, $domain, $secure, $HTTPOnly);
         }
-        return self::header(
-            'Set-Cookie: ' . $name . '=' . rawurlencode($value)
-            . (empty($domain) ? '' : '; Domain=' . $domain)
-            . (empty($maxage) ? '' : '; Max-Age=' . $maxage)
-            . (empty($path) ? '' : '; Path=' . $path)
-            . (!$secure ? '' : '; Secure')
-            . (!$HTTPOnly ? '' : '; HttpOnly'), false);
+
+        HttpCache::$cookie[] = 'Set-Cookie: ' . $name . '=' . rawurlencode($value)
+                                . (empty($domain) ? '' : '; Domain=' . $domain)
+                                . (empty($maxage) ? '' : '; Max-Age=' . $maxage)
+                                . (empty($path) ? '' : '; Path=' . $path)
+                                . (!$secure ? '' : '; Secure')
+                                . (!$HTTPOnly ? '' : '; HttpOnly');
+        
+        return true;
     }
 
     /**
@@ -379,7 +381,7 @@ class Http
     }
 
     /**
-     * sessionId
+     * Get and/or set the current session id
      *
      * @param string  $id
      *
@@ -397,7 +399,7 @@ class Http
     }
 
     /**
-     * sessionName
+     * Get and/or set the current session name
      *
      * @param string  $name
      *
@@ -416,7 +418,7 @@ class Http
     }
 
     /**
-     * sessionSavePath
+     * Get and/or set the current session save path
      *
      * @param string  $path
      *
@@ -508,7 +510,7 @@ class Http
         if (!empty(HttpCache::$instance->sessionStarted) && !empty($_SESSION)) {
             $session_str = \serialize($_SESSION);
             if ($session_str && HttpCache::$instance->sessionFile) {
-                return \file_put_contents(HttpCache::$instance->sessionFile, $session_str);
+                return (bool) \file_put_contents(HttpCache::$instance->sessionFile, $session_str);
             }
         }
         return empty($_SESSION);
@@ -606,9 +608,8 @@ class Http
             return;
         }
 
-        $time_now = \time();
         foreach(glob(HttpCache::$sessionPath.'/ses*') as $file) {
-            if(\is_file($file) && $time_now - \filemtime($file) > HttpCache::$sessionGcMaxLifeTime) {
+            if(\is_file($file) && \time() - \filemtime($file) > HttpCache::$sessionGcMaxLifeTime) {
                 \unlink($file);
             }
         }
@@ -678,6 +679,7 @@ class HttpCache
     public static $instance             = null;
     public static $status               = '';
     public static $header               = array();
+    public static $cookie               = array();
     public static $gzip                 = false;
     public static $sessionPath          = '';
     public static $sessionName          = '';
