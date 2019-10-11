@@ -248,10 +248,10 @@ class Http
         // other headers
         $header .= \implode("\r\n", HttpCache::$header) . "\r\n";
 
-		if(HttpCache::$gzip && isset($connection->gzip) && $connection->gzip){
-			$header .= "Content-Encoding: gzip\r\n";
-			$content = \gzencode($content,$connection->gzip);
-		}
+		    if(HttpCache::$gzip && isset($connection->gzip) && $connection->gzip){
+			      $header .= "Content-Encoding: gzip\r\n";
+			      $content = \gzencode($content,$connection->gzip);
+		    }
         // header
         $header .= 'Content-Length: ' . \strlen($content) . "\r\n\r\n";
 
