@@ -18,8 +18,9 @@
     foreach ($ini as $var => $value) {
         ini_set($var, $value);
     }
-    unset($ini, $file);
+    unset($ini);
 }
+unset ($file);
 
 /////// Hardcoded defaults
 
