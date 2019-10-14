@@ -89,9 +89,7 @@ class Http
         $_POST                         = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = array();
         $GLOBALS['HTTP_RAW_POST_DATA'] = '';
         // Clear cache.
-        HttpCache::$header   = HttpCache::$default;
-        HttpCache::$cookie   = array();
-        HttpCache::$instance = new HttpCache();
+        HttpCache::reset();
         // $_SERVER
         $_SERVER = array(
             'QUERY_STRING'         => '',
@@ -237,8 +235,7 @@ class Http
     public static function encode($content, TcpConnection $connection)
     {
         // http-code status line.
-        $header = (HttpCache::$status ?: 'HTTP/1.1 200 OK') . "\r\n";
-        HttpCache::$status = '';
+        $header = HttpCache::$status . "\r\n";
 
         // Cookie headers
         if(HttpCache::$cookie) {
@@ -689,6 +686,14 @@ class HttpCache
     public static $sessionGcMaxLifeTime = 1440;
     public $sessionStarted = false;
     public $sessionFile = '';
+
+    public static function reset()
+    {
+        self::$status = 'HTTP/1.1 200 OK';
+        self::$header = self::$default;
+        self::$cookie   = array();
+        self::$instance = new HttpCache();
+    }
 
     public static function init()
     {
