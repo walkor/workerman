@@ -31,6 +31,8 @@ define('WORKERMAN_SEND_FAIL', 2);
 define('OS_TYPE_LINUX', 'linux');
 define('OS_TYPE_WINDOWS', 'windows');
 
+define('NO_CLI', PHP_SAPI !== 'cli'); 
+
 // Compatible with php7
 if(!class_exists('Error'))
 {
