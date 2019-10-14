@@ -667,7 +667,7 @@ class HttpCache
     public static $default = array(
         'Content-Type' => 'Content-Type: text/html;charset=utf-8',
         'Connection'   => 'Connection: keep-alive',
-        'Server'       => 'Server: workerman/' . Worker::VERSION
+        'Server'       => 'Server: workerman'
     );
 
     /**
