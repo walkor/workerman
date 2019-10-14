@@ -722,3 +722,5 @@ class HttpCache
 }
 
 HttpCache::init();
+
+define('NO_CLI', PHP_SAPI !== 'cli');

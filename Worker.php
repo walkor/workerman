@@ -542,7 +542,7 @@ class Worker
     protected static function checkSapiEnv()
     {
         // Only for cli.
-        if (NO_CLI) {
+        if (PHP_SAPI !== 'cli') {
             exit("Only run in command line mode \n");
         }
         if (DIRECTORY_SEPARATOR === '\\') {
