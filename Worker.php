@@ -2148,10 +2148,10 @@ class Worker
         $backtrace                = \debug_backtrace();
         $this->_autoloadRootPath = \dirname($backtrace[0]['file']);
 
-        // If not Mac OS then turn reusePort on.
-        if (static::$_OS === OS_TYPE_LINUX 
-                            && version_compare(PHP_VERSION,'7.0.0', 'ge')
-                            && strtolower(php_uname('s')) !== 'darwin') {
+        // Turn reusePort on.
+        if (static::$_OS === OS_TYPE_LINUX  // if linux
+                            && version_compare(PHP_VERSION,'7.0.0', 'ge') // if php >= 7.0.0
+                            && strtolower(php_uname('s')) !== 'darwin') { // if not Mac OS
 
             $this->reusePort = true;
         }
