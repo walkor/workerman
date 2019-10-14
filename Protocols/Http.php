@@ -689,8 +689,8 @@ class HttpCache
 
     public static function reset()
     {
-        self::$status = 'HTTP/1.1 200 OK';
-        self::$header = self::$default;
+        self::$status   = 'HTTP/1.1 200 OK';
+        self::$header   = self::$default;
         self::$cookie   = array();
         self::$instance = new HttpCache();
     }
