@@ -327,6 +327,9 @@ class Http
      */
     public static function responseCode($code) 
     {
+        if (NO_CLI) {
+            return \http_response_code($code);
+        }
         if (isset(HttpCache::$codes[$code])) {
             HttpCache::$status = "HTTP/1.1 $code " . HttpCache::$codes[$code];
             return $code;
