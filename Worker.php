@@ -549,8 +549,8 @@ class Worker
     protected static function checkSapiEnv()
     {
         // Only for cli.
-        if (PHP_SAPI !== 'cli') {
-            exit("only run in command line mode \n");
+        if (\PHP_SAPI !== 'cli') {
+            exit("Only run in command line mode \n");
         }
         if (DIRECTORY_SEPARATOR === '\\') {
             self::$_OS = OS_TYPE_WINDOWS;
@@ -2155,12 +2155,12 @@ class Worker
         $backtrace                = \debug_backtrace();
         $this->_autoloadRootPath = \dirname($backtrace[0]['file']);
 
-        if (static::$_OS === OS_TYPE_LINUX && version_compare(PHP_VERSION,'7.0.0', 'ge')) {
-            $php_uname = strtolower(php_uname('s'));
-            // If not Mac OS then turn reusePort on.
-            if ($php_uname !== 'darwin') {
-                $this->reusePort = true;
-            }
+        // Turn reusePort on.
+        if (static::$_OS === OS_TYPE_LINUX  // if linux
+                            && version_compare(PHP_VERSION,'7.0.0', 'ge') // if php >= 7.0.0
+                            && strtolower(php_uname('s')) !== 'darwin') { // if not Mac OS
+
+            $this->reusePort = true;
         }
 
         // Context for socket.
