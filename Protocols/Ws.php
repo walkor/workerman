@@ -47,7 +47,7 @@ class Ws
     public static function input($buffer, ConnectionInterface $connection)
     {
         if (empty($connection->handshakeStep)) {
-            Worker::safeEcho("recv data before handshake. Buffer:" . bin2hex($buffer) . "\n");
+            Worker::safeEcho("recv data before handshake. Buffer:" . \bin2hex($buffer) . "\n");
             return false;
         }
         // Recv handshake response
@@ -365,7 +365,7 @@ class Ws
         $port = $connection->getRemotePort();
         $host = $port === 80 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
         // Handshake header.
-        $connection->websocketSecKey = \base64_encode(md5(\mt_rand(), true));
+        $connection->websocketSecKey = \base64_encode(\md5(\mt_rand(), true));
         $user_header = isset($connection->headers) ? $connection->headers :
             (isset($connection->wsHttpHeader) ? $connection->wsHttpHeader : null);
         $user_header_str = '';
@@ -407,7 +407,7 @@ class Ws
         if ($pos) {
             //checking Sec-WebSocket-Accept
             if (\preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $buffer, $match)) {
-                if ($match[1] !== \base64_encode(sha1($connection->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
+                if ($match[1] !== \base64_encode(\sha1($connection->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
                     Worker::safeEcho("Sec-WebSocket-Accept not match. Header:\n" . \substr($buffer, 0, $pos) . "\n");
                     $connection->close();
                     return 0;
@@ -466,7 +466,7 @@ class Ws
     }
 
     public static function WSGetServerProtocol($connection) {
-	return (\property_exists($connection, 'WSServerProtocol')?$connection->WSServerProtocol:null);
+	return (\property_exists($connection, 'WSServerProtocol') ? $connection->WSServerProtocol : null);
     }
 
 }
