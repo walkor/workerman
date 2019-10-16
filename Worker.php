@@ -2191,7 +2191,7 @@ class Worker
 
         if (!$this->_mainSocket) {
 
-            $local_socket = !empty($this->_localSocket)?$this->_localSocket:$this->parseSocketAddress();
+            $local_socket = !empty($this->_localSocket) ? $this->_localSocket : $this->parseSocketAddress();
 
             // Flag.
             $flags = $this->transport === 'udp' ? STREAM_SERVER_BIND : STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
