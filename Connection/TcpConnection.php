@@ -294,7 +294,7 @@ class TcpConnection extends ConnectionInterface
     {
         self::$statistics['connection_count']++;
         $this->id = $this->_id = self::$_idRecorder++;
-        if(self::$_idRecorder === PHP_INT_MAX){
+        if(self::$_idRecorder === \PHP_INT_MAX){
             self::$_idRecorder = 0;
         }
         $this->_socket = $socket;
@@ -315,7 +315,7 @@ class TcpConnection extends ConnectionInterface
      *
      * @param bool $raw_output
      *
-     * @return int
+     * @return int|string
      */
     public function getStatus($raw_output = true)
     {
@@ -403,16 +403,16 @@ class TcpConnection extends ConnectionInterface
             // Check if the send buffer will be full.
             $this->checkBufferWillFull();
             return;
-        } else {
-            if ($this->bufferIsFull()) {
-                self::$statistics['send_fail']++;
-                return false;
-            }
-
-            $this->_sendBuffer .= $send_buffer;
-            // Check if the send buffer is full.
-            $this->checkBufferWillFull();
         }
+
+        if ($this->bufferIsFull()) {
+            self::$statistics['send_fail']++;
+            return false;
+        }
+
+        $this->_sendBuffer .= $send_buffer;
+        // Check if the send buffer is full.
+        $this->checkBufferWillFull();
     }
 
     /**
@@ -628,7 +628,7 @@ class TcpConnection extends ConnectionInterface
                         }
                     } // Wrong package.
                     else {
-                        Worker::safeEcho('error package. package_length=' . var_export($this->_currentPackageLength, true));
+                        Worker::safeEcho('Error package. package_length=' . \var_export($this->_currentPackageLength, true));
                         $this->destroy();
                         return;
                     }
@@ -756,9 +756,9 @@ class TcpConnection extends ConnectionInterface
         }*/
         
         if($async){
-            $type = STREAM_CRYPTO_METHOD_SSLv2_CLIENT | STREAM_CRYPTO_METHOD_SSLv23_CLIENT;
+            $type = \STREAM_CRYPTO_METHOD_SSLv2_CLIENT | \STREAM_CRYPTO_METHOD_SSLv23_CLIENT;
         }else{
-            $type = STREAM_CRYPTO_METHOD_SSLv2_SERVER | STREAM_CRYPTO_METHOD_SSLv23_SERVER;
+            $type = \STREAM_CRYPTO_METHOD_SSLv2_SERVER | \STREAM_CRYPTO_METHOD_SSLv23_SERVER;
         }
         
         // Hidden error.
@@ -838,14 +838,17 @@ class TcpConnection extends ConnectionInterface
             $this->destroy();
             return;
         }
+
         if ($this->_status === self::STATUS_CLOSING || $this->_status === self::STATUS_CLOSED) {
             return;
-        } else {
-            if ($data !== null) {
-                $this->send($data, $raw);
-            }
-            $this->_status = self::STATUS_CLOSING;
         }
+
+        if ($data !== null) {
+            $this->send($data, $raw);
+        }
+
+        $this->_status = self::STATUS_CLOSING;
+        
         if ($this->_sendBuffer === '') {
             $this->destroy();
         } else {
@@ -988,7 +991,7 @@ class TcpConnection extends ConnectionInterface
         self::$statistics['connection_count']--;
         if (Worker::getGracefulStop()) {
             if (!isset($mod)) {
-                $mod = ceil((self::$statistics['connection_count'] + 1) / 3);
+                $mod = \ceil((self::$statistics['connection_count'] + 1) / 3);
             }
 
             if (0 === self::$statistics['connection_count'] % $mod) {
