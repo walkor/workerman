@@ -233,7 +233,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     public static function encode($buffer, ConnectionInterface $connection)
     {
         if (!is_scalar($buffer)) {
-            throw new \Exception("You can't send(" . gettype($buffer) . ") to client, you need to convert it to a string. ");
+            throw new \Exception("You can't send(" . \gettype($buffer) . ") to client, you need to convert it to a string. ");
         }
         $len = \strlen($buffer);
         if (empty($connection->websocketType)) {
@@ -355,19 +355,19 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             if (\preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
                 $Sec_WebSocket_Key = $match[1];
             } else {
-                $connection->send("HTTP/1.1 200 Websocket\r\nServer: workerman/".Worker::VERSION."\r\n\r\n<div style=\"text-align:center\"><h1>Websocket</h1><hr>powerd by <a href=\"https://www.workerman.net\">workerman ".Worker::VERSION."</a></div>",
+                $connection->send("HTTP/1.1 200 Websocket\r\nServer: workerman/".Worker::VERSION."\r\n\r\n<div style=\"text-align:center\"><h1>Websocket</h1><hr>powered by <a href=\"https://www.workerman.net\">workerman ".Worker::VERSION."</a></div>",
                     true);
                 $connection->close();
                 return 0;
             }
             // Calculation websocket key.
-            $new_key = \base64_encode(sha1($Sec_WebSocket_Key . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true));
+            $new_key = \base64_encode(\sha1($Sec_WebSocket_Key . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true));
             // Handshake response data.
-            $handshake_message = "HTTP/1.1 101 Switching Protocols\r\n";
-            $handshake_message .= "Upgrade: websocket\r\n";
-            $handshake_message .= "Sec-WebSocket-Version: 13\r\n";
-            $handshake_message .= "Connection: Upgrade\r\n";
-            $handshake_message .= "Sec-WebSocket-Accept: " . $new_key . "\r\n";
+            $handshake_message = "HTTP/1.1 101 Switching Protocols\r\n"
+                                ."Upgrade: websocket\r\n"
+                                ."Sec-WebSocket-Version: 13\r\n"
+                                ."Connection: Upgrade\r\n"
+                                ."Sec-WebSocket-Accept: " . $new_key . "\r\n";
 
             // Websocket data buffer.
             $connection->websocketDataBuffer = '';
@@ -440,7 +440,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             return 0;
         }
         // Bad websocket handshake request.
-        $connection->send("HTTP/1.1 200 Websocket\r\nServer: workerman/".Worker::VERSION."\r\n\r\n<div style=\"text-align:center\"><h1>Websocket</h1><hr>powerd by <a href=\"https://www.workerman.net\">workerman ".Worker::VERSION."</a></div>",
+        $connection->send("HTTP/1.1 200 Websocket\r\nServer: workerman/".Worker::VERSION."\r\n\r\n<div style=\"text-align:center\"><h1>Websocket</h1><hr>powered by <a href=\"https://www.workerman.net\">workerman ".Worker::VERSION."</a></div>",
             true);
         $connection->close();
         return 0;
@@ -472,7 +472,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 continue;
             }
             list($key, $value)       = \explode(':', $content, 2);
-            $key                     = \str_replace('-', '_', strtoupper($key));
+            $key                     = \str_replace('-', '_', \strtoupper($key));
             $value                   = \trim($value);
             $_SERVER['HTTP_' . $key] = $value;
             switch ($key) {
@@ -492,7 +492,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         }
 
         // QUERY_STRING
-        $_SERVER['QUERY_STRING'] = \parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+        $_SERVER['QUERY_STRING'] = \parse_url($_SERVER['REQUEST_URI'], \PHP_URL_QUERY);
         if ($_SERVER['QUERY_STRING']) {
             // $GET
             \parse_str($_SERVER['QUERY_STRING'], $_GET);
