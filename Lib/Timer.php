@@ -91,7 +91,7 @@ class Timer
         }
 
         if ($args === null) {
-            $args = [];
+            $args = array();
         }
 
         if (self::$_event) {
