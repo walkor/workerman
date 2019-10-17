@@ -102,7 +102,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         }
                     } // Close connection.
                     else {
-                        $connection->close("\x88\x02\x27\x10", true);
+                        $connection->close("\x88\x02\x03\xe8", true);
                     }
                     return 0;
                 // Ping package.
