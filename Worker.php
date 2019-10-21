@@ -2154,6 +2154,7 @@ class Worker
         // Get autoload root path.
         $backtrace                = \debug_backtrace();
         $this->_autoloadRootPath = \dirname($backtrace[0]['file']);
+        Autoloader::setRootPath($this->_autoloadRootPath);
 
         // Turn reusePort on.
         if (static::$_OS === OS_TYPE_LINUX  // if linux
