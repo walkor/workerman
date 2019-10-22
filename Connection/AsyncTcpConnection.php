@@ -16,7 +16,7 @@ namespace Workerman\Connection;
 use Workerman\Events\EventInterface;
 use Workerman\Lib\Timer;
 use Workerman\Worker;
-use Exception;
+use \Exception;
 
 /**
  * AsyncTcpConnection.

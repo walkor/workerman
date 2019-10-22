@@ -20,7 +20,7 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
 use Workerman\Lib\Timer;
 use Workerman\Events\Select;
-use Exception;
+use \Exception;
 
 /**
  * Worker class
@@ -2153,7 +2153,7 @@ class Worker
         static::$_pidMap[$this->workerId]  = array();
 
         // Get autoload root path.
-        $backtrace                = \debug_backtrace();
+        $backtrace               = \debug_backtrace();
         $this->_autoloadRootPath = \dirname($backtrace[0]['file']);
 
         // Turn reusePort on.
@@ -2275,7 +2275,7 @@ class Worker
             }
 
             if (!isset(static::$_builtinTransports[$this->transport])) {
-                throw new \Exception('Bad worker->transport ' . \var_export($this->transport, true));
+                throw new Exception('Bad worker->transport ' . \var_export($this->transport, true));
             }
         } else {
             $this->transport = $scheme;
