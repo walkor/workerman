@@ -54,7 +54,7 @@ class Libevent implements EventInterface
      */
     public function __construct()
     {
-        $this->_eventBase = event_base_new();
+        $this->_eventBase = \event_base_new();
     }
 
     /**
@@ -65,8 +65,8 @@ class Libevent implements EventInterface
         switch ($flag) {
             case self::EV_SIGNAL:
                 $fd_key                      = (int)$fd;
-                $real_flag                   = EV_SIGNAL | EV_PERSIST;
-                $this->_eventSignal[$fd_key] = event_new();
+                $real_flag                   = \EV_SIGNAL | \EV_PERSIST;
+                $this->_eventSignal[$fd_key] = \event_new();
                 if (!\event_set($this->_eventSignal[$fd_key], $fd, $real_flag, $func, null)) {
                     return false;
                 }
@@ -81,7 +81,7 @@ class Libevent implements EventInterface
             case self::EV_TIMER_ONCE:
                 $event    = \event_new();
                 $timer_id = (int)$event;
-                if (!\event_set($event, 0, EV_TIMEOUT, array($this, 'timerCallback'), $timer_id)) {
+                if (!\event_set($event, 0, \EV_TIMEOUT, array($this, 'timerCallback'), $timer_id)) {
                     return false;
                 }
 
@@ -98,7 +98,7 @@ class Libevent implements EventInterface
 
             default :
                 $fd_key    = (int)$fd;
-                $real_flag = $flag === self::EV_READ ? EV_READ | EV_PERSIST : EV_WRITE | EV_PERSIST;
+                $real_flag = $flag === self::EV_READ ? \EV_READ | \EV_PERSIST : \EV_WRITE | \EV_PERSIST;
 
                 $event = \event_new();
 

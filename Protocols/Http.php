@@ -86,7 +86,7 @@ class Http
     public static function decode($recv_buffer, TcpConnection $connection)
     {
         // Init.
-        $_POST                         = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = array();
+        $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = array();
         $GLOBALS['HTTP_RAW_POST_DATA'] = '';
         // Clear cache.
         HttpCache::reset();
@@ -202,7 +202,7 @@ class Http
         $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
 
         // QUERY_STRING
-        $_SERVER['QUERY_STRING'] = \parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+        $_SERVER['QUERY_STRING'] = \parse_url($_SERVER['REQUEST_URI'], \PHP_URL_QUERY);
         if ($_SERVER['QUERY_STRING']) {
             // $GET
             \parse_str($_SERVER['QUERY_STRING'], $_GET);

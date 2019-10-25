@@ -15,7 +15,7 @@ namespace Workerman\Lib;
 
 use Workerman\Events\EventInterface;
 use Workerman\Worker;
-use Exception;
+use \Exception;
 
 /**
  * Timer.
@@ -50,14 +50,14 @@ class Timer
      * @param EventInterface $event
      * @return void
      */
-    public static function init($event = null)
+    public static function init(EventInterface $event = null)
     {
         if ($event) {
             self::$_event = $event;
-        } else {
-            if (\function_exists('pcntl_signal')) {
-                \pcntl_signal(SIGALRM, array('\Workerman\Lib\Timer', 'signalHandle'), false);
-            }
+            return;
+        }
+        if (\function_exists('pcntl_signal')) {
+            \pcntl_signal(\SIGALRM, array('\Workerman\Lib\Timer', 'signalHandle'), false);
         }
     }
 
@@ -108,8 +108,7 @@ class Timer
             \pcntl_alarm(1);
         }
 
-        $time_now = \time();
-        $run_time = $time_now + $time_interval;
+        $run_time = \time() + $time_interval;
         if (!isset(self::$_tasks[$run_time])) {
             self::$_tasks[$run_time] = array();
         }

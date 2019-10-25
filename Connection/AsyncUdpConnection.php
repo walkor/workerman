@@ -15,7 +15,7 @@ namespace Workerman\Connection;
 
 use Workerman\Events\EventInterface;
 use Workerman\Worker;
-use Exception;
+use \Exception;
 
 /**
  * AsyncTcpConnection.
@@ -176,7 +176,7 @@ class AsyncUdpConnection extends UdpConnection
         if ($this->_contextOption) {
             $context = \stream_context_create($this->_contextOption);
             $this->_socket = \stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg,
-                30, STREAM_CLIENT_CONNECT, $context);
+                30, \STREAM_CLIENT_CONNECT, $context);
         } else {
             $this->_socket = \stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg);
         }
