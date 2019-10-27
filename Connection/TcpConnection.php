@@ -385,7 +385,7 @@ class TcpConnection extends ConnectionInterface
                     self::$statistics['send_fail']++;
                     if ($this->onError) {
                         try {
-                            \call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'client closed');
+                            \call_user_func($this->onError, $this, \WORKERMAN_SEND_FAIL, 'client closed');
                         } catch (\Exception $e) {
                             Worker::log($e);
                             exit(250);
@@ -899,7 +899,7 @@ class TcpConnection extends ConnectionInterface
         if ($this->maxSendBufferSize <= \strlen($this->_sendBuffer)) {
             if ($this->onError) {
                 try {
-                    \call_user_func($this->onError, $this, WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
+                    \call_user_func($this->onError, $this, \WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
                 } catch (\Exception $e) {
                     Worker::log($e);
                     exit(250);
