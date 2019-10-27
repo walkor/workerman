@@ -1082,18 +1082,19 @@ class Worker
         if (static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
+        $signalHandler = '\Workerman\Worker::signalHandler';
         // stop
-        \pcntl_signal(\SIGINT, '\Workerman\Worker::signalHandler', false);
+        \pcntl_signal(\SIGINT, $signalHandler, false);
         // graceful stop
-        \pcntl_signal(\SIGTERM, '\Workerman\Worker::signalHandler', false);
+        \pcntl_signal(\SIGTERM, $signalHandler, false);
         // reload
-        \pcntl_signal(\SIGUSR1, '\Workerman\Worker::signalHandler', false);
+        \pcntl_signal(\SIGUSR1, $signalHandler, false);
         // graceful reload
-        \pcntl_signal(\SIGQUIT, '\Workerman\Worker::signalHandler', false);
+        \pcntl_signal(\SIGQUIT, $signalHandler, false);
         // status
-        \pcntl_signal(\SIGUSR2, '\Workerman\Worker::signalHandler', false);
+        \pcntl_signal(\SIGUSR2, $signalHandler, false);
         // connection status
-        \pcntl_signal(\SIGIO, '\Workerman\Worker::signalHandler', false);
+        \pcntl_signal(\SIGIO, $signalHandler, false);
         // ignore
         \pcntl_signal(\SIGPIPE, \SIG_IGN, false);
     }
@@ -1108,6 +1109,7 @@ class Worker
         if (static::$_OS !== OS_TYPE_LINUX) {
             return;
         }
+        $signalHandler = '\Workerman\Worker::signalHandler';
         // uninstall stop signal handler
         \pcntl_signal(\SIGINT, \SIG_IGN, false);
         // uninstall graceful stop signal handler
@@ -1121,17 +1123,17 @@ class Worker
         // uninstall connections status signal handler
         \pcntl_signal(\SIGIO, \SIG_IGN, false);
         // reinstall stop signal handler
-        static::$globalEvent->add(\SIGINT, EventInterface::EV_SIGNAL, '\Workerman\Worker::signalHandler');
+        static::$globalEvent->add(\SIGINT, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall graceful stop signal handler
-        static::$globalEvent->add(\SIGTERM, EventInterface::EV_SIGNAL, '\Workerman\Worker::signalHandler');
+        static::$globalEvent->add(\SIGTERM, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall reload signal handler
-        static::$globalEvent->add(\SIGUSR1, EventInterface::EV_SIGNAL, '\Workerman\Worker::signalHandler');
+        static::$globalEvent->add(\SIGUSR1, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall graceful reload signal handler
-        static::$globalEvent->add(\SIGQUIT, EventInterface::EV_SIGNAL, '\Workerman\Worker::signalHandler');
+        static::$globalEvent->add(\SIGQUIT, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall status signal handler
-        static::$globalEvent->add(\SIGUSR2, EventInterface::EV_SIGNAL, '\Workerman\Worker::signalHandler');
+        static::$globalEvent->add(\SIGUSR2, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall connection status signal handler
-        static::$globalEvent->add(\SIGIO, EventInterface::EV_SIGNAL, '\Workerman\Worker::signalHandler');
+        static::$globalEvent->add(\SIGIO, EventInterface::EV_SIGNAL, $signalHandler);
     }
 
     /**
