@@ -262,7 +262,7 @@ class Ws
             if (\strlen($connection->tmpWebsocketData) > $connection->maxSendBufferSize) {
                 if ($connection->onError) {
                     try {
-                        \call_user_func($connection->onError, $connection, WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
+                        \call_user_func($connection->onError, $connection, \WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
                     } catch (\Exception $e) {
                         Worker::log($e);
                         exit(250);
