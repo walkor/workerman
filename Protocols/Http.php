@@ -167,23 +167,21 @@ class Http
                     break;
             }
         }
-		if(isset($_SERVER['HTTP_ACCEPT_ENCODING']) && \strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false){
+		if($_SERVER['HTTP_ACCEPT_ENCODING'] && \strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false){
 			HttpCache::$gzip = true;
 		}
         // Parse $_POST.
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (isset($_SERVER['CONTENT_TYPE'])) {
-                switch ($_SERVER['CONTENT_TYPE']) {
-                    case 'multipart/form-data':
-                        self::parseUploadFiles($http_body, $http_post_boundary);
-                        break;
-                    case 'application/json':
-                        $_POST = \json_decode($http_body, true);
-                        break;
-                    case 'application/x-www-form-urlencoded':
-                        \parse_str($http_body, $_POST);
-                        break;
-                }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['CONTENT_TYPE']) {
+            switch ($_SERVER['CONTENT_TYPE']) {
+                case 'multipart/form-data':
+                    self::parseUploadFiles($http_body, $http_post_boundary);
+                    break;
+                case 'application/json':
+                    $_POST = \json_decode($http_body, true);
+                    break;
+                case 'application/x-www-form-urlencoded':
+                    \parse_str($http_body, $_POST);
+                    break;
             }
         }
 
@@ -245,7 +243,7 @@ class Http
         // other headers
         $header .= \implode("\r\n", HttpCache::$header) . "\r\n";
 
-        if(HttpCache::$gzip && isset($connection->gzip) && $connection->gzip){
+        if(HttpCache::$gzip && isset($connection->gzip)) {
                 $header .= "Content-Encoding: gzip\r\n";
                 $content = \gzencode($content,$connection->gzip);
         }
