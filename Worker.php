@@ -2159,14 +2159,6 @@ class Worker
         $this->_autoloadRootPath = \dirname($backtrace[0]['file']);
         Autoloader::setRootPath($this->_autoloadRootPath);
 
-        // Turn reusePort on.
-        if (static::$_OS === \OS_TYPE_LINUX  // if linux
-                            && \version_compare(\PHP_VERSION,'7.0.0', 'ge') // if php >= 7.0.0
-                            && \strtolower(\php_uname('s')) !== 'darwin') { // if not Mac OS
-
-            $this->reusePort = true;
-        }
-
         // Context for socket.
         if ($socket_name) {
             $this->_socketName = $socket_name;
@@ -2175,6 +2167,15 @@ class Worker
                 $context_option['socket']['backlog'] = static::DEFAULT_BACKLOG;
             }
             $this->_context = \stream_context_create($context_option);
+        }
+        
+        // Turn reusePort on.
+        if (static::$_OS === \OS_TYPE_LINUX  // if linux
+            && \version_compare(\PHP_VERSION,'7.0.0', 'ge') // if php >= 7.0.0
+            && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
+            && $this->transport != 'unix') { // if not unix socket
+
+            $this->reusePort = true;
         }
     }
 
