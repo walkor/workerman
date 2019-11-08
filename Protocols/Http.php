@@ -14,6 +14,7 @@
 namespace Workerman\Protocols;
 
 use Workerman\Connection\TcpConnection;
+use Workerman\Protocols\Websocket;
 use Workerman\Worker;
 
 /**
@@ -36,24 +37,23 @@ class Http
      */
     public static function input($recv_buffer, TcpConnection $connection)
     {
-        if (!strpos($recv_buffer, "\r\n\r\n")) {
+        if (!\strpos($recv_buffer, "\r\n\r\n")) {
             // Judge whether the package length exceeds the limit.
-            if (strlen($recv_buffer) >= $connection::$maxPackageSize) {
+            if (\strlen($recv_buffer) >= $connection->maxPackageSize) {
                 $connection->close();
-                return 0;
             }
             return 0;
         }
 
-        list($header,) = explode("\r\n\r\n", $recv_buffer, 2);
-        $method = substr($header, 0, strpos($header, ' '));
+        list($header,) = \explode("\r\n\r\n", $recv_buffer, 2);
+        $method = \substr($header, 0, \strpos($header, ' '));
 
-        if(in_array($method, static::$methods)) {
+        if(\in_array($method, static::$methods)) {
             return static::getRequestSize($header, $method);
-        }else{
-            $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n", true);
-            return 0;
         }
+
+        $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+        return 0;
     }
 
     /**
@@ -66,14 +66,14 @@ class Http
     protected static function getRequestSize($header, $method)
     {
         if($method === 'GET' || $method === 'OPTIONS' || $method === 'HEAD') {
-            return strlen($header) + 4;
+            return \strlen($header) + 4;
         }
         $match = array();
-        if (preg_match("/\r\nContent-Length: ?(\d+)/i", $header, $match)) {
+        if (\preg_match("/\r\nContent-Length: ?(\d+)/i", $header, $match)) {
             $content_length = isset($match[1]) ? $match[1] : 0;
-            return $content_length + strlen($header) + 4;
+            return $content_length + \strlen($header) + 4;
         }
-        return $method === 'DELETE' ? strlen($header) + 4 : 0;
+        return $method === 'DELETE' ? \strlen($header) + 4 : 0;
     }
 
     /**
@@ -86,11 +86,10 @@ class Http
     public static function decode($recv_buffer, TcpConnection $connection)
     {
         // Init.
-        $_POST                         = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = array();
+        $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = array();
         $GLOBALS['HTTP_RAW_POST_DATA'] = '';
         // Clear cache.
-        HttpCache::$header   = array('Connection' => 'Connection: keep-alive');
-        HttpCache::$instance = new HttpCache();
+        HttpCache::reset();
         // $_SERVER
         $_SERVER = array(
             'QUERY_STRING'         => '',
@@ -109,14 +108,15 @@ class Http
             'CONTENT_TYPE'         => '',
             'REMOTE_ADDR'          => '',
             'REMOTE_PORT'          => '0',
-            'REQUEST_TIME'         => time()
+            'REQUEST_TIME'         => \time(),
+            'REQUEST_TIME_FLOAT'   => \microtime(true) //compatible php5.4
         );
 
         // Parse headers.
-        list($http_header, $http_body) = explode("\r\n\r\n", $recv_buffer, 2);
-        $header_data = explode("\r\n", $http_header);
+        list($http_header, $http_body) = \explode("\r\n\r\n", $recv_buffer, 2);
+        $header_data = \explode("\r\n", $http_header);
 
-        list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = explode(' ',
+        list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = \explode(' ',
             $header_data[0]);
 
         $http_post_boundary = '';
@@ -126,14 +126,14 @@ class Http
             if (empty($content)) {
                 continue;
             }
-            list($key, $value)       = explode(':', $content, 2);
-            $key                     = str_replace('-', '_', strtoupper($key));
-            $value                   = trim($value);
+            list($key, $value)       = \explode(':', $content, 2);
+            $key                     = \str_replace('-', '_', strtoupper($key));
+            $value                   = \trim($value);
             $_SERVER['HTTP_' . $key] = $value;
             switch ($key) {
                 // HTTP_HOST
                 case 'HOST':
-                    $tmp                    = explode(':', $value);
+                    $tmp                    = \explode(':', $value);
                     $_SERVER['SERVER_NAME'] = $tmp[0];
                     if (isset($tmp[1])) {
                         $_SERVER['SERVER_PORT'] = $tmp[1];
@@ -141,13 +141,13 @@ class Http
                     break;
                 // cookie
                 case 'COOKIE':
-                    parse_str(str_replace('; ', '&', $_SERVER['HTTP_COOKIE']), $_COOKIE);
+                    \parse_str(\str_replace('; ', '&', $_SERVER['HTTP_COOKIE']), $_COOKIE);
                     break;
                 // content-type
                 case 'CONTENT_TYPE':
-                    if (!preg_match('/boundary="?(\S+)"?/', $value, $match)) {
-                        if ($pos = strpos($value, ';')) {
-                            $_SERVER['CONTENT_TYPE'] = substr($value, 0, $pos);
+                    if (!\preg_match('/boundary="?(\S+)"?/', $value, $match)) {
+                        if ($pos = \strpos($value, ';')) {
+                            $_SERVER['CONTENT_TYPE'] = \substr($value, 0, $pos);
                         } else {
                             $_SERVER['CONTENT_TYPE'] = $value;
                         }
@@ -159,55 +159,61 @@ class Http
                 case 'CONTENT_LENGTH':
                     $_SERVER['CONTENT_LENGTH'] = $value;
                     break;
+                case 'UPGRADE':
+					if($value === 'websocket'){
+						$connection->protocol = '\Workerman\Protocols\Websocket';
+						return Websocket::input($recv_buffer,$connection);
+					}
+                    break;
             }
         }
-
+		if($_SERVER['HTTP_ACCEPT_ENCODING'] && \strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false){
+			HttpCache::$gzip = true;
+		}
         // Parse $_POST.
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (isset($_SERVER['CONTENT_TYPE'])) {
-                switch ($_SERVER['CONTENT_TYPE']) {
-                    case 'multipart/form-data':
-                        self::parseUploadFiles($http_body, $http_post_boundary);
-                        break;
-                    case 'application/json':
-                        $_POST = json_decode($http_body, true);
-                        break;
-                    case 'application/x-www-form-urlencoded':
-                        parse_str($http_body, $_POST);
-                        break;
-                }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['CONTENT_TYPE']) {
+            switch ($_SERVER['CONTENT_TYPE']) {
+                case 'multipart/form-data':
+                    self::parseUploadFiles($http_body, $http_post_boundary);
+                    break;
+                case 'application/json':
+                    $_POST = \json_decode($http_body, true);
+                    break;
+                case 'application/x-www-form-urlencoded':
+                    \parse_str($http_body, $_POST);
+                    break;
             }
         }
 
         // Parse other HTTP action parameters
-        if ($_SERVER['REQUEST_METHOD'] != 'GET' && $_SERVER['REQUEST_METHOD'] != "POST") {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== "POST") {
             $data = array();
             if ($_SERVER['CONTENT_TYPE'] === "application/x-www-form-urlencoded") {
-                parse_str($http_body, $data);
+                \parse_str($http_body, $data);
             } elseif ($_SERVER['CONTENT_TYPE'] === "application/json") {
-                $data = json_decode($http_body, true);
+                $data = \json_decode($http_body, true);
             }
-            $_REQUEST = array_merge($_REQUEST, $data);
+            $_REQUEST = \array_merge($_REQUEST, $data);
         }
 
         // HTTP_RAW_REQUEST_DATA HTTP_RAW_POST_DATA
         $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
 
         // QUERY_STRING
-        $_SERVER['QUERY_STRING'] = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+        $_SERVER['QUERY_STRING'] = \parse_url($_SERVER['REQUEST_URI'], \PHP_URL_QUERY);
         if ($_SERVER['QUERY_STRING']) {
             // $GET
-            parse_str($_SERVER['QUERY_STRING'], $_GET);
+            \parse_str($_SERVER['QUERY_STRING'], $_GET);
         } else {
             $_SERVER['QUERY_STRING'] = '';
         }
 
-        if (is_array($_POST)) {
+        if (\is_array($_POST)) {
             // REQUEST
-            $_REQUEST = array_merge($_GET, $_POST, $_REQUEST);
+            $_REQUEST = \array_merge($_GET, $_POST, $_REQUEST);
         } else {
             // REQUEST
-            $_REQUEST = array_merge($_GET, $_REQUEST);
+            $_REQUEST = \array_merge($_GET, $_REQUEST);
         }
 
         // REMOTE_ADDR REMOTE_PORT
@@ -226,32 +232,23 @@ class Http
      */
     public static function encode($content, TcpConnection $connection)
     {
-        // Default http-code.
-        if (!isset(HttpCache::$header['Http-Code'])) {
-            $header = "HTTP/1.1 200 OK\r\n";
-        } else {
-            $header = HttpCache::$header['Http-Code'] . "\r\n";
-            unset(HttpCache::$header['Http-Code']);
-        }
+        // http-code status line.
+        $header = HttpCache::$status . "\r\n";
 
-        // Content-Type
-        if (!isset(HttpCache::$header['Content-Type'])) {
-            $header .= "Content-Type: text/html;charset=utf-8\r\n";
+        // Cookie headers
+        if(HttpCache::$cookie) {
+            $header .= \implode("\r\n", HttpCache::$cookie) . "\r\n";
         }
-
+        
         // other headers
-        foreach (HttpCache::$header as $key => $item) {
-            if ('Set-Cookie' === $key && is_array($item)) {
-                foreach ($item as $it) {
-                    $header .= $it . "\r\n";
-                }
-            } else {
-                $header .= $item . "\r\n";
-            }
-        }
+        $header .= \implode("\r\n", HttpCache::$header) . "\r\n";
 
+        if(HttpCache::$gzip && isset($connection->gzip)) {
+                $header .= "Content-Encoding: gzip\r\n";
+                $content = \gzencode($content,$connection->gzip);
+        }
         // header
-        $header .= "Server: workerman/" . Worker::VERSION . "\r\nContent-Length: " . strlen($content) . "\r\n\r\n";
+        $header .= 'Content-Length: ' . \strlen($content) . "\r\n\r\n";
 
         // save session
         self::sessionWriteClose();
@@ -261,37 +258,40 @@ class Http
     }
 
     /**
-     * 设置http头
-     *
+     * Send a raw HTTP header
+     * 
+     * @param string $content
+     * @param bool   $replace
+     * @param int    $http_response_code
+     * 
      * @return bool|void
      */
-    public static function header($content, $replace = true, $http_response_code = 0)
+    public static function header($content, $replace = true, $http_response_code = null)
     {
-        if (PHP_SAPI != 'cli') {
-            return $http_response_code ? header($content, $replace, $http_response_code) : header($content, $replace);
-        }
-        if (strpos($content, 'HTTP') === 0) {
-            $key = 'Http-Code';
-        } else {
-            $key = strstr($content, ":", true);
-            if (empty($key)) {
-                return false;
-            }
+        if (NO_CLI) {
+            \header($content, $replace, $http_response_code);
+            return;
         }
 
-        if ('location' === strtolower($key) && !$http_response_code) {
-            return self::header($content, true, 302);
+        if (\strpos($content, 'HTTP') === 0) {
+            HttpCache::$status = $content;
+            return true;
         }
 
-        if (isset(HttpCache::$codes[$http_response_code])) {
-            HttpCache::$header['Http-Code'] = "HTTP/1.1 $http_response_code " . HttpCache::$codes[$http_response_code];
-            if ($key === 'Http-Code') {
-                return true;
+        $key = \strstr($content, ":", true);
+        if (empty($key)) {
+            return false;
+        }
+
+        if ('location' === \strtolower($key)) {
+            if (!$http_response_code) {
+            $http_response_code = 302;
             }
+            self::responseCode($http_response_code);
         }
 
         if ($key === 'Set-Cookie') {
-            HttpCache::$header[$key][] = $content;
+            HttpCache::$cookie[] = $content;
         } else {
             HttpCache::$header[$key] = $content;
         }
@@ -300,18 +300,36 @@ class Http
     }
 
     /**
-     * Remove header.
+     * Remove previously set headers
      *
      * @param string $name
      * @return void
      */
     public static function headerRemove($name)
     {
-        if (PHP_SAPI != 'cli') {
-            header_remove($name);
+        if (NO_CLI) {
+            \header_remove($name);
             return;
         }
         unset(HttpCache::$header[$name]);
+    }
+
+    /**
+     * Sets the HTTP response status code.
+     *
+     * @param int $code The response code
+     * @return boolean|int The valid status code or FALSE if code is not provided and it is not invoked in a web server environment
+     */
+    public static function responseCode($code) 
+    {
+        if (NO_CLI) {
+            return \http_response_code($code);
+        }
+        if (isset(HttpCache::$codes[$code])) {
+            HttpCache::$status = "HTTP/1.1 $code " . HttpCache::$codes[$code];
+            return $code;
+        }
+        return false;
     }
 
     /**
@@ -335,16 +353,18 @@ class Http
         $secure = false,
         $HTTPOnly = false
     ) {
-        if (PHP_SAPI != 'cli') {
-            return setcookie($name, $value, $maxage, $path, $domain, $secure, $HTTPOnly);
+        if (NO_CLI) {
+            return \setcookie($name, $value, $maxage, $path, $domain, $secure, $HTTPOnly);
         }
-        return self::header(
-            'Set-Cookie: ' . $name . '=' . rawurlencode($value)
-            . (empty($domain) ? '' : '; Domain=' . $domain)
-            . (empty($maxage) ? '' : '; Max-Age=' . $maxage)
-            . (empty($path) ? '' : '; Path=' . $path)
-            . (!$secure ? '' : '; Secure')
-            . (!$HTTPOnly ? '' : '; HttpOnly'), false);
+
+        HttpCache::$cookie[] = 'Set-Cookie: ' . $name . '=' . rawurlencode($value)
+                                . (empty($domain) ? '' : '; Domain=' . $domain)
+                                . (empty($maxage) ? '' : '; Max-Age=' . $maxage)
+                                . (empty($path) ? '' : '; Path=' . $path)
+                                . (!$secure ? '' : '; Secure')
+                                . (!$HTTPOnly ? '' : '; HttpOnly');
+        
+        return true;
     }
 
     /**
@@ -354,12 +374,12 @@ class Http
      */
     public static function sessionCreateId()
     {
-        mt_srand();
-        return bin2hex(pack('d', microtime(true)) . pack('N',mt_rand(0, 2147483647)));
+        \mt_srand();
+        return bin2hex(\pack('d', \microtime(true)) . \pack('N',\mt_rand(0, 2147483647)));
     }
 
     /**
-     * sessionId
+     * Get and/or set the current session id
      *
      * @param string  $id
      *
@@ -367,17 +387,17 @@ class Http
      */
     public static function sessionId($id = null)
     {
-        if (PHP_SAPI != 'cli') {
-            return $id ? session_id($id) : session_id();
+        if (NO_CLI) {
+            return $id ? \session_id($id) : \session_id();
         }
         if (static::sessionStarted() && HttpCache::$instance->sessionFile) {
-            return str_replace('sess_', '', basename(HttpCache::$instance->sessionFile));
+            return \str_replace('ses_', '', \basename(HttpCache::$instance->sessionFile));
         }
         return '';
     }
 
     /**
-     * sessionName
+     * Get and/or set the current session name
      *
      * @param string  $name
      *
@@ -385,8 +405,8 @@ class Http
      */
     public static function sessionName($name = null)
     {
-        if (PHP_SAPI != 'cli') {
-            return $name ? session_name($name) : session_name();
+        if (NO_CLI) {
+            return $name ? \session_name($name) : \session_name();
         }
         $session_name = HttpCache::$sessionName;
         if ($name && ! static::sessionStarted()) {
@@ -396,7 +416,7 @@ class Http
     }
 
     /**
-     * sessionSavePath
+     * Get and/or set the current session save path
      *
      * @param string  $path
      *
@@ -404,10 +424,10 @@ class Http
      */
     public static function sessionSavePath($path = null)
     {
-        if (PHP_SAPI != 'cli') {
-            return $path ? session_save_path($path) : session_save_path();
+        if (NO_CLI) {
+            return $path ? \session_save_path($path) : \session_save_path();
         }
-        if ($path && is_dir($path) && is_writable($path) && !static::sessionStarted()) {
+        if ($path && \is_dir($path) && \is_writable($path) && !static::sessionStarted()) {
             HttpCache::$sessionPath = $path;
         }
         return HttpCache::$sessionPath;
@@ -432,8 +452,8 @@ class Http
      */
     public static function sessionStart()
     {
-        if (PHP_SAPI != 'cli') {
-            return session_start();
+        if (NO_CLI) {
+            return \session_start();
         }
 
         self::tryGcSessions();
@@ -444,31 +464,31 @@ class Http
         }
         HttpCache::$instance->sessionStarted = true;
         // Generate a SID.
-        if (!isset($_COOKIE[HttpCache::$sessionName]) || !is_file(HttpCache::$sessionPath . '/sess_' . $_COOKIE[HttpCache::$sessionName])) {
+        if (!isset($_COOKIE[HttpCache::$sessionName]) || !\is_file(HttpCache::$sessionPath . '/ses_' . $_COOKIE[HttpCache::$sessionName])) {
             // Create a unique session_id and the associated file name.
             while (true) {
                 $session_id = static::sessionCreateId();
-                if (!is_file($file_name = HttpCache::$sessionPath . '/sess_' . $session_id)) break;
+                if (!\is_file($file_name = HttpCache::$sessionPath . '/ses_' . $session_id)) break;
             }
             HttpCache::$instance->sessionFile = $file_name;
             return self::setcookie(
                 HttpCache::$sessionName
                 , $session_id
-                , ini_get('session.cookie_lifetime')
-                , ini_get('session.cookie_path')
-                , ini_get('session.cookie_domain')
-                , ini_get('session.cookie_secure')
-                , ini_get('session.cookie_httponly')
+                , \ini_get('session.cookie_lifetime')
+                , \ini_get('session.cookie_path')
+                , \ini_get('session.cookie_domain')
+                , \ini_get('session.cookie_secure')
+                , \ini_get('session.cookie_httponly')
             );
         }
         if (!HttpCache::$instance->sessionFile) {
-            HttpCache::$instance->sessionFile = HttpCache::$sessionPath . '/sess_' . $_COOKIE[HttpCache::$sessionName];
+            HttpCache::$instance->sessionFile = HttpCache::$sessionPath . '/ses_' . $_COOKIE[HttpCache::$sessionName];
         }
         // Read session from session file.
         if (HttpCache::$instance->sessionFile) {
-            $raw = file_get_contents(HttpCache::$instance->sessionFile);
+            $raw = \file_get_contents(HttpCache::$instance->sessionFile);
             if ($raw) {
-                $_SESSION = unserialize($raw);
+                $_SESSION = \unserialize($raw);
             }
         }
         return true;
@@ -481,13 +501,14 @@ class Http
      */
     public static function sessionWriteClose()
     {
-        if (PHP_SAPI != 'cli') {
-            return session_write_close();
+        if (NO_CLI) {
+            \session_write_close();
+            return true;
         }
         if (!empty(HttpCache::$instance->sessionStarted) && !empty($_SESSION)) {
-            $session_str = serialize($_SESSION);
+            $session_str = \serialize($_SESSION);
             if ($session_str && HttpCache::$instance->sessionFile) {
-                return file_put_contents(HttpCache::$instance->sessionFile, $session_str);
+                return (bool) \file_put_contents(HttpCache::$instance->sessionFile, $session_str);
             }
         }
         return empty($_SESSION);
@@ -501,7 +522,7 @@ class Http
      */
     public static function end($msg = '')
     {
-        if (PHP_SAPI != 'cli') {
+        if (NO_CLI) {
             exit($msg);
         }
         if ($msg) {
@@ -529,43 +550,43 @@ class Http
      */
     protected static function parseUploadFiles($http_body, $http_post_boundary)
     {
-        $http_body           = substr($http_body, 0, strlen($http_body) - (strlen($http_post_boundary) + 4));
-        $boundary_data_array = explode($http_post_boundary . "\r\n", $http_body);
+        $http_body           = \substr($http_body, 0, \strlen($http_body) - (\strlen($http_post_boundary) + 4));
+        $boundary_data_array = \explode($http_post_boundary . "\r\n", $http_body);
         if ($boundary_data_array[0] === '') {
             unset($boundary_data_array[0]);
         }
         $key = -1;
         foreach ($boundary_data_array as $boundary_data_buffer) {
-            list($boundary_header_buffer, $boundary_value) = explode("\r\n\r\n", $boundary_data_buffer, 2);
+            list($boundary_header_buffer, $boundary_value) = \explode("\r\n\r\n", $boundary_data_buffer, 2);
             // Remove \r\n from the end of buffer.
-            $boundary_value = substr($boundary_value, 0, -2);
+            $boundary_value = \substr($boundary_value, 0, -2);
             $key ++;
-            foreach (explode("\r\n", $boundary_header_buffer) as $item) {
-                list($header_key, $header_value) = explode(": ", $item);
-                $header_key = strtolower($header_key);
+            foreach (\explode("\r\n", $boundary_header_buffer) as $item) {
+                list($header_key, $header_value) = \explode(": ", $item);
+                $header_key = \strtolower($header_key);
                 switch ($header_key) {
                     case "content-disposition":
                         // Is file data.
-                        if (preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)) {
+                        if (\preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)) {
                             // Parse $_FILES.
                             $_FILES[$key] = array(
                                 'name' => $match[1],
                                 'file_name' => $match[2],
                                 'file_data' => $boundary_value,
-                                'file_size' => strlen($boundary_value),
+                                'file_size' => \strlen($boundary_value),
                             );
-                            continue;
+                            break;
                         } // Is post field.
                         else {
                             // Parse $_POST.
-                            if (preg_match('/name="(.*?)"$/', $header_value, $match)) {
+                            if (\preg_match('/name="(.*?)"$/', $header_value, $match)) {
                                 $_POST[$match[1]] = $boundary_value;
                             }
                         }
                         break;
                     case "content-type":
                         // add file_type
-                        $_FILES[$key]['file_type'] = trim($header_value);
+                        $_FILES[$key]['file_type'] = \trim($header_value);
                         break;
                 }
             }
@@ -581,14 +602,14 @@ class Http
     {
         if (HttpCache::$sessionGcProbability <= 0 ||
             HttpCache::$sessionGcDivisor     <= 0 ||
-            rand(1, HttpCache::$sessionGcDivisor) > HttpCache::$sessionGcProbability) {
+            \rand(1, HttpCache::$sessionGcDivisor) > HttpCache::$sessionGcProbability) {
             return;
         }
 
-        $time_now = time();
+        $time_now = \time();
         foreach(glob(HttpCache::$sessionPath.'/ses*') as $file) {
-            if(is_file($file) && $time_now - filemtime($file) > HttpCache::$sessionGcMaxLifeTime) {
-                unlink($file);
+            if(\is_file($file) && $time_now - \filemtime($file) > HttpCache::$sessionGcMaxLifeTime) {
+                \unlink($file);
             }
         }
     }
@@ -645,11 +666,20 @@ class HttpCache
         505 => 'HTTP Version Not Supported',
     );
 
+    public static $default = array(
+        'Content-Type' => 'Content-Type: text/html;charset=utf-8',
+        'Connection'   => 'Connection: keep-alive',
+        'Server'       => 'Server: workerman'
+    );
+
     /**
      * @var HttpCache
      */
     public static $instance             = null;
+    public static $status               = '';
     public static $header               = array();
+    public static $cookie               = array();
+    public static $gzip                 = false;
     public static $sessionPath          = '';
     public static $sessionName          = '';
     public static $sessionGcProbability = 1;
@@ -658,32 +688,42 @@ class HttpCache
     public $sessionStarted = false;
     public $sessionFile = '';
 
+    public static function reset()
+    {
+        self::$status   = 'HTTP/1.1 200 OK';
+        self::$header   = self::$default;
+        self::$cookie   = array();
+        self::$instance = new HttpCache();
+    }
+
     public static function init()
     {
         if (!self::$sessionName) {
-            self::$sessionName = ini_get('session.name');
+            self::$sessionName = \ini_get('session.name');
         }
 
         if (!self::$sessionPath) {
-            self::$sessionPath = @session_save_path();
+            self::$sessionPath = @\session_save_path();
         }
 
-        if (!self::$sessionPath || strpos(self::$sessionPath, 'tcp://') === 0) {
-            self::$sessionPath = sys_get_temp_dir();
+        if (!self::$sessionPath || \strpos(self::$sessionPath, 'tcp://') === 0) {
+            self::$sessionPath = \sys_get_temp_dir();
         }
 
-        if ($gc_probability = ini_get('session.gc_probability')) {
+        if ($gc_probability = \ini_get('session.gc_probability')) {
             self::$sessionGcProbability = $gc_probability;
         }
 
-        if ($gc_divisor = ini_get('session.gc_divisor')) {
+        if ($gc_divisor = \ini_get('session.gc_divisor')) {
             self::$sessionGcDivisor = $gc_divisor;
         }
 
-        if ($gc_max_life_time = ini_get('session.gc_maxlifetime')) {
+        if ($gc_max_life_time = \ini_get('session.gc_maxlifetime')) {
             self::$sessionGcMaxLifeTime = $gc_max_life_time;
         }
     }
 }
 
 HttpCache::init();
+
+define('NO_CLI', \PHP_SAPI !== 'cli');

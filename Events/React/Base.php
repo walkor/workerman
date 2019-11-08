@@ -12,14 +12,16 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 namespace Workerman\Events\React;
+
 use Workerman\Events\EventInterface;
 use React\EventLoop\TimerInterface;
+use React\EventLoop\LoopInterface;
 
 /**
  * Class StreamSelectLoop
  * @package Workerman\Events\React
  */
-class Base implements \React\EventLoop\LoopInterface
+class Base implements LoopInterface
 {
     /**
      * @var array
@@ -37,7 +39,7 @@ class Base implements \React\EventLoop\LoopInterface
     protected $_signalHandlerMap = array();
 
     /**
-     * @var \React\EventLoop\LoopInterface
+     * @var LoopInterface
      */
     protected $_eventLoop = null;
 
@@ -58,7 +60,7 @@ class Base implements \React\EventLoop\LoopInterface
      * @param array $args
      * @return bool
      */
-    public function add($fd, $flag, $func, $args = array())
+    public function add($fd, $flag, $func, array $args = array())
     {
         $args = (array)$args;
         switch ($flag) {
@@ -74,7 +76,7 @@ class Base implements \React\EventLoop\LoopInterface
                 return $this->addSignal($fd, $func);
             case EventInterface::EV_TIMER:
                 $timer_obj = $this->addPeriodicTimer($fd, function() use ($func, $args) {
-                    call_user_func_array($func, $args);
+                    \call_user_func_array($func, $args);
                 });
                 $this->_timerIdMap[++$this->_timerIdIndex] = $timer_obj;
                 return $this->_timerIdIndex;
@@ -82,7 +84,7 @@ class Base implements \React\EventLoop\LoopInterface
                 $index = ++$this->_timerIdIndex;
                 $timer_obj = $this->addTimer($fd, function() use ($func, $args, $index) {
                     $this->del($index,EventInterface::EV_TIMER_ONCE);
-                    call_user_func_array($func, $args);
+                    \call_user_func_array($func, $args);
                 });
                 $this->_timerIdMap[$index] = $timer_obj;
                 return $this->_timerIdIndex;
@@ -153,7 +155,7 @@ class Base implements \React\EventLoop\LoopInterface
      */
     public function getTimerCount()
     {
-        return count($this->_timerIdMap);
+        return \count($this->_timerIdMap);
     }
 
     /**

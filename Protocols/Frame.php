@@ -29,10 +29,10 @@ class Frame
      */
     public static function input($buffer, TcpConnection $connection)
     {
-        if (strlen($buffer) < 4) {
+        if (\strlen($buffer) < 4) {
             return 0;
         }
-        $unpack_data = unpack('Ntotal_length', $buffer);
+        $unpack_data = \unpack('Ntotal_length', $buffer);
         return $unpack_data['total_length'];
     }
 
@@ -44,7 +44,7 @@ class Frame
      */
     public static function decode($buffer)
     {
-        return substr($buffer, 4);
+        return \substr($buffer, 4);
     }
 
     /**
@@ -55,7 +55,7 @@ class Frame
      */
     public static function encode($buffer)
     {
-        $total_length = 4 + strlen($buffer);
-        return pack('N', $total_length) . $buffer;
+        $total_length = 4 + \strlen($buffer);
+        return \pack('N', $total_length) . $buffer;
     }
 }

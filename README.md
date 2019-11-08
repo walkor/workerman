@@ -7,12 +7,13 @@
 [![License](https://poser.pugx.org/workerman/workerman/license)](https://packagist.org/packages/workerman/workerman)
 
 ## What is it
-Workerman is an asynchronous event driven PHP framework with high performance for easily building fast, scalable network applications. Supports HTTP, Websocket, SSL and other custom protocols. Supports libevent, [HHVM](https://github.com/facebook/hhvm) , [ReactPHP](https://github.com/reactphp/react).
+Workerman is an asynchronous event driven PHP framework with high performance for easily building fast, scalable network applications. Supports HTTP, Websocket, SSL and other custom protocols. Supports libevent/event extension, [HHVM](https://github.com/facebook/hhvm) , [ReactPHP](https://github.com/reactphp/react).
 
 ## Requires
 PHP 5.3 or Higher  
 A POSIX compatible operating system (Linux, OSX, BSD)  
-POSIX and PCNTL extensions for PHP  
+POSIX and PCNTL extensions required   
+Event extension recommended for better performance  
 
 ## Installation
 

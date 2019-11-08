@@ -14,7 +14,8 @@
 namespace Workerman\Lib;
 
 use Workerman\Events\EventInterface;
-use Exception;
+use Workerman\Worker;
+use \Exception;
 
 /**
  * Timer.
@@ -39,24 +40,24 @@ class Timer
     /**
      * event
      *
-     * @var \Workerman\Events\EventInterface
+     * @var EventInterface
      */
     protected static $_event = null;
 
     /**
      * Init.
      *
-     * @param \Workerman\Events\EventInterface $event
+     * @param EventInterface $event
      * @return void
      */
     public static function init($event = null)
     {
         if ($event) {
             self::$_event = $event;
-        } else {
-            if (function_exists('pcntl_signal')) {
-                pcntl_signal(SIGALRM, array('\Workerman\Lib\Timer', 'signalHandle'), false);
-            }
+            return;
+        }
+        if (\function_exists('pcntl_signal')) {
+            \pcntl_signal(\SIGALRM, array('\Workerman\Lib\Timer', 'signalHandle'), false);
         }
     }
 
@@ -68,7 +69,7 @@ class Timer
     public static function signalHandle()
     {
         if (!self::$_event) {
-            pcntl_alarm(1);
+            \pcntl_alarm(1);
             self::tick();
         }
     }
@@ -80,7 +81,7 @@ class Timer
      * @param callable $func
      * @param mixed    $args
      * @param bool     $persistent
-     * @return int/false
+     * @return int|false
      */
     public static function add($time_interval, $func, $args = array(), $persistent = true)
     {
@@ -89,22 +90,25 @@ class Timer
             return false;
         }
 
+        if ($args === null) {
+            $args = array();
+        }
+
         if (self::$_event) {
             return self::$_event->add($time_interval,
                 $persistent ? EventInterface::EV_TIMER : EventInterface::EV_TIMER_ONCE, $func, $args);
         }
 
-        if (!is_callable($func)) {
+        if (!\is_callable($func)) {
             Worker::safeEcho(new Exception("not callable"));
             return false;
         }
 
         if (empty(self::$_tasks)) {
-            pcntl_alarm(1);
+            \pcntl_alarm(1);
         }
 
-        $time_now = time();
-        $run_time = $time_now + $time_interval;
+        $run_time = \time() + $time_interval;
         if (!isset(self::$_tasks[$run_time])) {
             self::$_tasks[$run_time] = array();
         }
@@ -121,11 +125,11 @@ class Timer
     public static function tick()
     {
         if (empty(self::$_tasks)) {
-            pcntl_alarm(0);
+            \pcntl_alarm(0);
             return;
         }
 
-        $time_now = time();
+        $time_now = \time();
         foreach (self::$_tasks as $run_time => $task_data) {
             if ($time_now >= $run_time) {
                 foreach ($task_data as $index => $one_task) {
@@ -134,7 +138,7 @@ class Timer
                     $persistent    = $one_task[2];
                     $time_interval = $one_task[3];
                     try {
-                        call_user_func_array($task_func, $task_args);
+                        \call_user_func_array($task_func, $task_args);
                     } catch (\Exception $e) {
                         Worker::safeEcho($e);
                     }
@@ -170,7 +174,7 @@ class Timer
     public static function delAll()
     {
         self::$_tasks = array();
-        pcntl_alarm(0);
+        \pcntl_alarm(0);
         if (self::$_event) {
             self::$_event->clearAllTimer();
         }
