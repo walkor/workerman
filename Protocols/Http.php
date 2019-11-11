@@ -278,7 +278,7 @@ class Http
             return true;
         }
 
-        $key = \strstr($content, ":", true);
+        $key = \strstr($content, ':', true);
         if (empty($key)) {
             return false;
         }
@@ -420,7 +420,7 @@ class Http
      *
      * @param string  $path
      *
-     * @return void
+     * @return string
      */
     public static function sessionSavePath($path = null)
     {
