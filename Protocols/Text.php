@@ -13,7 +13,7 @@
  */
 namespace Workerman\Protocols;
 
-use Workerman\Connection\TcpConnection;
+use Workerman\Connection\ConnectionInterface;
 
 /**
  * Text Protocol.
@@ -24,13 +24,13 @@ class Text
      * Check the integrity of the package.
      *
      * @param string        $buffer
-     * @param TcpConnection $connection
+     * @param ConnectionInterface $connection
      * @return int
      */
-    public static function input($buffer, TcpConnection $connection)
+    public static function input($buffer, ConnectionInterface $connection)
     {
         // Judge whether the package length exceeds the limit.
-        if (\strlen($buffer) >= $connection->maxPackageSize) {
+        if (isset($connection->maxPackageSize) && \strlen($buffer) >= $connection->maxPackageSize) {
             $connection->close();
             return 0;
         }
