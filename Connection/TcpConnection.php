@@ -292,7 +292,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function __construct($socket, $remote_address = '')
     {
-        self::$statistics['connection_count']++;
+        ++self::$statistics['connection_count'];
         $this->id = $this->_id = self::$_idRecorder++;
         if(self::$_idRecorder === \PHP_INT_MAX){
             self::$_idRecorder = 0;
@@ -351,7 +351,7 @@ class TcpConnection extends ConnectionInterface
             ($this->transport === 'ssl' && $this->_sslHandshakeCompleted !== true)
         ) {
             if ($this->_sendBuffer && $this->bufferIsFull()) {
-                self::$statistics['send_fail']++;
+                ++self::$statistics['send_fail'];
                 return false;
             }
             $this->_sendBuffer .= $send_buffer;
@@ -382,7 +382,7 @@ class TcpConnection extends ConnectionInterface
             } else {
                 // Connection closed?
                 if (!\is_resource($this->_socket) || \feof($this->_socket)) {
-                    self::$statistics['send_fail']++;
+                    ++self::$statistics['send_fail'];
                     if ($this->onError) {
                         try {
                             \call_user_func($this->onError, $this, \WORKERMAN_SEND_FAIL, 'client closed');
@@ -406,7 +406,7 @@ class TcpConnection extends ConnectionInterface
         }
 
         if ($this->bufferIsFull()) {
-            self::$statistics['send_fail']++;
+            ++self::$statistics['send_fail'];
             return false;
         }
 
@@ -424,7 +424,7 @@ class TcpConnection extends ConnectionInterface
     {
         $pos = \strrpos($this->_remoteAddress, ':');
         if ($pos) {
-            return \substr($this->_remoteAddress, 0, $pos);
+            return (string) \substr($this->_remoteAddress, 0, $pos);
         }
         return '';
     }
@@ -437,7 +437,7 @@ class TcpConnection extends ConnectionInterface
     public function getRemotePort()
     {
         if ($this->_remoteAddress) {
-            return (int)\substr(\strrchr($this->_remoteAddress, ':'), 1);
+            return (int) \substr(\strrchr($this->_remoteAddress, ':'), 1);
         }
         return 0;
     }
@@ -635,7 +635,7 @@ class TcpConnection extends ConnectionInterface
                 }
 
                 // The data is enough for a packet.
-                self::$statistics['total_request']++;
+                ++self::$statistics['total_request'];
                 // The current packet length is equal to the length of the buffer.
                 if (\strlen($this->_recvBuffer) === $this->_currentPackageLength) {
                     $one_request_buffer = $this->_recvBuffer;
@@ -670,7 +670,7 @@ class TcpConnection extends ConnectionInterface
         }
 
         // Applications protocol is not set.
-        self::$statistics['total_request']++;
+        ++self::$statistics['total_request'];
         if (!$this->onMessage) {
             $this->_recvBuffer = '';
             return;
@@ -727,7 +727,7 @@ class TcpConnection extends ConnectionInterface
             $this->bytesWritten += $len;
             $this->_sendBuffer = \substr($this->_sendBuffer, $len);
         } else {
-            self::$statistics['send_fail']++;
+            ++self::$statistics['send_fail'];
             $this->destroy();
         }
     }

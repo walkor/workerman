@@ -94,7 +94,7 @@ class AsyncUdpConnection extends UdpConnection
                 $parser      = $this->protocol;
                 $recv_buffer = $parser::decode($recv_buffer, $this);
             }
-            ConnectionInterface::$statistics['total_request']++;
+            ++ConnectionInterface::$statistics['total_request'];
             try {
                 \call_user_func($this->onMessage, $this, $recv_buffer);
             } catch (\Exception $e) {

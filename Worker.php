@@ -1638,7 +1638,7 @@ class Worker
                         if (!isset(static::$_globalStatistics['worker_exit_info'][$worker_id][$status])) {
                             static::$_globalStatistics['worker_exit_info'][$worker_id][$status] = 0;
                         }
-                        static::$_globalStatistics['worker_exit_info'][$worker_id][$status]++;
+                        ++static::$_globalStatistics['worker_exit_info'][$worker_id][$status];
 
                         // Clear process data.
                         unset(static::$_pidMap[$worker_id][$pid]);
@@ -2505,7 +2505,7 @@ class Worker
                 }else{
                     \call_user_func($this->onMessage, $connection, $recv_buffer);
                 }
-                ConnectionInterface::$statistics['total_request']++;
+                ++ConnectionInterface::$statistics['total_request'];
             } catch (\Exception $e) {
                 static::log($e);
                 exit(250);
