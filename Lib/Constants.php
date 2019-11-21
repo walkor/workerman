@@ -17,6 +17,8 @@
 ini_set('display_errors', 'on');
 // Reporting all.
 error_reporting(E_ALL);
+// JIT is not stable, temporarily disabled.
+ini_set('pcre.jit', 0);
 
 // Reset opcache.
 if (function_exists('opcache_reset')) {
