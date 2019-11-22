@@ -86,7 +86,7 @@ class Http
     public static function decode($recv_buffer, TcpConnection $connection)
     {
         // Init.
-        $_POST                         = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = array();
+        $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = array();
         $GLOBALS['HTTP_RAW_POST_DATA'] = '';
         // Clear cache.
         HttpCache::reset();
@@ -167,23 +167,21 @@ class Http
                     break;
             }
         }
-		if(isset($_SERVER['HTTP_ACCEPT_ENCODING']) && \strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false){
+		if($_SERVER['HTTP_ACCEPT_ENCODING'] && \strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false){
 			HttpCache::$gzip = true;
 		}
         // Parse $_POST.
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (isset($_SERVER['CONTENT_TYPE'])) {
-                switch ($_SERVER['CONTENT_TYPE']) {
-                    case 'multipart/form-data':
-                        self::parseUploadFiles($http_body, $http_post_boundary);
-                        break;
-                    case 'application/json':
-                        $_POST = \json_decode($http_body, true);
-                        break;
-                    case 'application/x-www-form-urlencoded':
-                        \parse_str($http_body, $_POST);
-                        break;
-                }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['CONTENT_TYPE']) {
+            switch ($_SERVER['CONTENT_TYPE']) {
+                case 'multipart/form-data':
+                    self::parseUploadFiles($http_body, $http_post_boundary);
+                    break;
+                case 'application/json':
+                    $_POST = \json_decode($http_body, true);
+                    break;
+                case 'application/x-www-form-urlencoded':
+                    \parse_str($http_body, $_POST);
+                    break;
             }
         }
 
@@ -202,7 +200,7 @@ class Http
         $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $http_body;
 
         // QUERY_STRING
-        $_SERVER['QUERY_STRING'] = \parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+        $_SERVER['QUERY_STRING'] = \parse_url($_SERVER['REQUEST_URI'], \PHP_URL_QUERY);
         if ($_SERVER['QUERY_STRING']) {
             // $GET
             \parse_str($_SERVER['QUERY_STRING'], $_GET);
@@ -245,7 +243,7 @@ class Http
         // other headers
         $header .= \implode("\r\n", HttpCache::$header) . "\r\n";
 
-        if(HttpCache::$gzip && isset($connection->gzip) && $connection->gzip){
+        if(HttpCache::$gzip && isset($connection->gzip)) {
                 $header .= "Content-Encoding: gzip\r\n";
                 $content = \gzencode($content,$connection->gzip);
         }
@@ -280,7 +278,7 @@ class Http
             return true;
         }
 
-        $key = \strstr($content, ":", true);
+        $key = \strstr($content, ':', true);
         if (empty($key)) {
             return false;
         }
@@ -422,7 +420,7 @@ class Http
      *
      * @param string  $path
      *
-     * @return void
+     * @return string
      */
     public static function sessionSavePath($path = null)
     {

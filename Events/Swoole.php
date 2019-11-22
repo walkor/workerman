@@ -57,7 +57,7 @@ class Swoole implements EventInterface
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
                 $method = self::EV_TIMER === $flag ? 'tick' : 'after';
-                if ($this->mapId > PHP_INT_MAX) {
+                if ($this->mapId > \PHP_INT_MAX) {
                     $this->mapId = 0;
                 }
                 $mapId = $this->mapId++;
@@ -67,7 +67,7 @@ class Swoole implements EventInterface
                         // EV_TIMER_ONCE
                         if (! isset($timer_id)) {
                             // may be deleted in $func
-                            if (array_key_exists($mapId, $this->_timerOnceMap)) {
+                            if (\array_key_exists($mapId, $this->_timerOnceMap)) {
                                 $timer_id = $this->_timerOnceMap[$mapId];
                                 unset($this->_timer[$timer_id],
                                     $this->_timerOnceMap[$mapId]);

@@ -16,7 +16,7 @@ namespace Workerman\Connection;
 use Workerman\Events\EventInterface;
 use Workerman\Lib\Timer;
 use Workerman\Worker;
-use Exception;
+use \Exception;
 
 /**
  * AsyncTcpConnection.
@@ -137,7 +137,7 @@ class AsyncTcpConnection extends TcpConnection
         }
 
         $this->id = $this->_id = self::$_idRecorder++;
-        if(PHP_INT_MAX === self::$_idRecorder){
+        if(\PHP_INT_MAX === self::$_idRecorder){
             self::$_idRecorder = 0;
         }
         // Check application layer protocol class.
@@ -155,7 +155,7 @@ class AsyncTcpConnection extends TcpConnection
         }
 
         // For statistics.
-        self::$statistics['connection_count']++;
+        ++self::$statistics['connection_count'];
         $this->maxSendBufferSize         = self::$defaultMaxSendBufferSize;
         $this->_contextOption            = $context_option;
         static::$connections[$this->_id] = $this;
@@ -179,18 +179,18 @@ class AsyncTcpConnection extends TcpConnection
             if ($this->_contextOption) {
                 $context = \stream_context_create($this->_contextOption);
                 $this->_socket = \stream_socket_client("tcp://{$this->_remoteHost}:{$this->_remotePort}",
-                    $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT, $context);
+                    $errno, $errstr, 0, \STREAM_CLIENT_ASYNC_CONNECT, $context);
             } else {
                 $this->_socket = \stream_socket_client("tcp://{$this->_remoteHost}:{$this->_remotePort}",
-                    $errno, $errstr, 0, STREAM_CLIENT_ASYNC_CONNECT);
+                    $errno, $errstr, 0, \STREAM_CLIENT_ASYNC_CONNECT);
             }
         } else {
             $this->_socket = \stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
-                STREAM_CLIENT_ASYNC_CONNECT);
+                \STREAM_CLIENT_ASYNC_CONNECT);
         }
         // If failed attempt to emit onError callback.
         if (!$this->_socket || !\is_resource($this->_socket)) {
-            $this->emitError(WORKERMAN_CONNECT_FAIL, $errstr);
+            $this->emitError(\WORKERMAN_CONNECT_FAIL, $errstr);
             if ($this->_status === self::STATUS_CLOSING) {
                 $this->destroy();
             }
@@ -202,7 +202,7 @@ class AsyncTcpConnection extends TcpConnection
         // Add socket to global event loop waiting connection is successfully established or faild.
         Worker::$globalEvent->add($this->_socket, EventInterface::EV_WRITE, array($this, 'checkConnection'));
         // For windows.
-        if(DIRECTORY_SEPARATOR === '\\') {
+        if(\DIRECTORY_SEPARATOR === '\\') {
             Worker::$globalEvent->add($this->_socket, EventInterface::EV_EXCEPT, array($this, 'checkConnection'));
         }
     }
@@ -289,7 +289,7 @@ class AsyncTcpConnection extends TcpConnection
     public function checkConnection()
     {
         // Remove EV_EXPECT for windows.
-        if(DIRECTORY_SEPARATOR === '\\') {
+        if(\DIRECTORY_SEPARATOR === '\\') {
             Worker::$globalEvent->del($this->_socket, EventInterface::EV_EXCEPT);
         }
 
@@ -311,8 +311,8 @@ class AsyncTcpConnection extends TcpConnection
             // Try to open keepalive for tcp and disable Nagle algorithm.
             if (\function_exists('socket_import_stream') && $this->transport === 'tcp') {
                 $raw_socket = \socket_import_stream($this->_socket);
-                \socket_set_option($raw_socket, SOL_SOCKET, SO_KEEPALIVE, 1);
-                \socket_set_option($raw_socket, SOL_TCP, TCP_NODELAY, 1);
+                \socket_set_option($raw_socket, \SOL_SOCKET, \SO_KEEPALIVE, 1);
+                \socket_set_option($raw_socket, \SOL_TCP, \TCP_NODELAY, 1);
             }
 
             // SSL handshake.
@@ -360,7 +360,7 @@ class AsyncTcpConnection extends TcpConnection
             }
         } else {
             // Connection failed.
-            $this->emitError(WORKERMAN_CONNECT_FAIL, 'connect ' . $this->_remoteAddress . ' fail after ' . round(\microtime(true) - $this->_connectStartTime, 4) . ' seconds');
+            $this->emitError(\WORKERMAN_CONNECT_FAIL, 'connect ' . $this->_remoteAddress . ' fail after ' . round(\microtime(true) - $this->_connectStartTime, 4) . ' seconds');
             if ($this->_status === self::STATUS_CLOSING) {
                 $this->destroy();
             }
