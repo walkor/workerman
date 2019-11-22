@@ -678,6 +678,19 @@ class Worker
         }
     }
 
+    /**  
+     * Reload all worker instances.
+     *
+     * @return void
+     */
+    public static function reloadAllWorkers()
+    {    
+        static::init();
+        static::initWorkers();
+        static::displayUI();
+        static::$_status = static::STATUS_RELOADING;
+    }    
+
     /**
      * Get all worker instances.
      *
@@ -697,7 +710,7 @@ class Worker
     {
         return static::$globalEvent;
     }
-    
+
     /**
      * Get main socket resource
      * @return resource
