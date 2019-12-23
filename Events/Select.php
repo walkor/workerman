@@ -95,13 +95,6 @@ class Select implements EventInterface
      */
     public function __construct()
     {
-        // Create a pipeline and put into the collection of the read to read the descriptor to avoid empty polling.
-        $this->channel = \stream_socket_pair(\DIRECTORY_SEPARATOR === '/' ? \STREAM_PF_UNIX : \STREAM_PF_INET,
-            \STREAM_SOCK_STREAM, \STREAM_IPPROTO_IP);
-        if($this->channel) {
-            \stream_set_blocking($this->channel[0], 0);
-            $this->_readFds[0] = $this->channel[0];
-        }
         // Init SplPriorityQueue.
         $this->_scheduler = new \SplPriorityQueue();
         $this->_scheduler->setExtractFlags(\SplPriorityQueue::EXTR_BOTH);
