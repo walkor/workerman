@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.23';
+    const VERSION = '3.5.25';
 
     /**
      * Status starting.
@@ -615,7 +615,7 @@ class Worker
     protected static function lock()
     {
         $fd = \fopen(static::$_startFile, 'r');
-        if (!$fd || !flock($fd, LOCK_EX)) {
+        if ($fd && !flock($fd, LOCK_EX)) {
             static::log('Workerman['.static::$_startFile.'] already running.');
             exit;
         }
@@ -2142,6 +2142,9 @@ class Worker
             return false;
         }
         $stat = \fstat($stream);
+        if (!$stat) {
+            return false;
+        }
         if (($stat['mode'] & 0170000) === 0100000) {
             // file
             static::$_outputDecorated = false;
