@@ -2178,7 +2178,6 @@ class Worker
         // Context for socket.
         if ($socket_name) {
             $this->_socketName = $socket_name;
-            $this->_localSocket = $this->parseSocketAddress();
             if (!isset($context_option['socket']['backlog'])) {
                 $context_option['socket']['backlog'] = static::DEFAULT_BACKLOG;
             }
@@ -2212,7 +2211,7 @@ class Worker
 
         if (!$this->_mainSocket) {
 
-            $local_socket = !empty($this->_localSocket) ? $this->_localSocket : $this->parseSocketAddress();
+            $local_socket = $this->parseSocketAddress();
 
             // Flag.
             $flags = $this->transport === 'udp' ? \STREAM_SERVER_BIND : \STREAM_SERVER_BIND | \STREAM_SERVER_LISTEN;
