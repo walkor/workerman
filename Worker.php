@@ -213,7 +213,7 @@ class Worker
     /**
      * Store all connections of clients.
      *
-     * @var array
+     * @var TcpConnection[]
      */
     public $connections = array();
 
