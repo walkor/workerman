@@ -29,6 +29,12 @@ class Http
     public static $methods = array('GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS');
 
     /**
+     * Cache.
+     * @var array
+     */
+    protected static $_cache = [];
+
+    /**
      * Check the integrity of the package.
      *
      * @param string        $recv_buffer
@@ -85,11 +91,25 @@ class Http
      */
     public static function decode($recv_buffer, TcpConnection $connection)
     {
+        $md5 = md5($recv_buffer);
+        if (isset(static::$_cache[$md5])) {
+            $cache = static::$_cache[$md5];
+            $cache['server']['REQUEST_TIME_FLOAT'] =  \microtime(true);
+            $cache['server']['REQUEST_TIME'] =  (int)$cache['server']['REQUEST_TIME_FLOAT'];
+            $_SERVER = $cache['server'];
+            $_POST = $cache['post'];
+            $_GET = $cache['get'];
+            $_COOKIE = $cache['cookie'];
+            $_REQUEST = $cache['request'];
+            $GLOBALS['HTTP_RAW_POST_DATA'] = $GLOBALS['HTTP_RAW_REQUEST_DATA'] = '';
+            return static::$_cache[$md5];
+        }
         // Init.
         $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = array();
         $GLOBALS['HTTP_RAW_POST_DATA'] = '';
         // Clear cache.
         HttpCache::reset();
+        $microtime = \microtime(true);
         // $_SERVER
         $_SERVER = array(
             'QUERY_STRING'         => '',
@@ -108,8 +128,8 @@ class Http
             'CONTENT_TYPE'         => '',
             'REMOTE_ADDR'          => '',
             'REMOTE_PORT'          => '0',
-            'REQUEST_TIME'         => \time(),
-            'REQUEST_TIME_FLOAT'   => \microtime(true) //compatible php5.4
+            'REQUEST_TIME'         => (int)$microtime,
+            'REQUEST_TIME_FLOAT'   => $microtime //compatible php5.4
         );
 
         // Parse headers.
@@ -219,8 +239,15 @@ class Http
         // REMOTE_ADDR REMOTE_PORT
         $_SERVER['REMOTE_ADDR'] = $connection->getRemoteIp();
         $_SERVER['REMOTE_PORT'] = $connection->getRemotePort();
+        $ret = array('get' => $_GET, 'post' => $_POST, 'cookie' => $_COOKIE, 'server' => $_SERVER, 'files' => $_FILES, 'request'=>$_REQUEST);
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            static::$_cache[$md5] = $ret;
+            if (\count(static::$_cache) > 256) {
+                \array_shift(static::$_cache);
+            }
+        }
 
-        return array('get' => $_GET, 'post' => $_POST, 'cookie' => $_COOKIE, 'server' => $_SERVER, 'files' => $_FILES);
+        return $ret;
     }
 
     /**
