@@ -243,7 +243,7 @@ class Http
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             static::$_cache[$md5] = $ret;
             if (\count(static::$_cache) > 256) {
-                \array_shift(static::$_cache);
+                unset(static::$_cache[key(static::$_cache)]);
             }
         }
 
