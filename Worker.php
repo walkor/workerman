@@ -1019,7 +1019,7 @@ class Worker
         }
         $status_str = '';
         $current_total_request = array();
-        $worker_info = \json_decode($info[0], true);
+        $worker_info = \unserialize($info[0]);
         \ksort($worker_info, SORT_NUMERIC);
         unset($info[0]);
         $data_waiting_sort = array();
@@ -1906,7 +1906,7 @@ class Worker
                 }
             }
 
-            \file_put_contents(static::$_statisticsFile, \json_encode($all_worker_info)."\n", \FILE_APPEND);
+            \file_put_contents(static::$_statisticsFile, \serialize($all_worker_info)."\n", \FILE_APPEND);
             $loadavg = \function_exists('sys_getloadavg') ? \array_map('round', \sys_getloadavg(), array(2)) : array('-', '-', '-');
             \file_put_contents(static::$_statisticsFile,
                 "----------------------------------------------GLOBAL STATUS----------------------------------------------------\n", \FILE_APPEND);
