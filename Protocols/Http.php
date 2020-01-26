@@ -43,6 +43,9 @@ class Http
      */
     public static function input($recv_buffer, TcpConnection $connection)
     {
+        if (isset(static::$_cache[$recv_buffer]['input'])) {
+            return static::$_cache[$recv_buffer]['input'];
+        }
         $recv_len = \strlen($recv_buffer);
         $crlf_post = \strpos($recv_buffer, "\r\n\r\n");
         if (!$crlf_post) {
@@ -61,13 +64,16 @@ class Http
         }
 
         if ($method === 'GET' || $method === 'OPTIONS' || $method === 'HEAD') {
+            static::$_cache[$recv_buffer]['input'] = $recv_len;
             return $recv_len;
         }
 
         $match = array();
         if (\preg_match("/\r\nContent-Length: ?(\d+)/i", $recv_buffer, $match)) {
             $content_length = isset($match[1]) ? $match[1] : 0;
-            return $content_length + $crlf_post + 4;
+            $total_length = $content_length + $crlf_post + 4;
+            static::$_cache[$recv_buffer]['input'] = $total_length;
+            return $total_length;
         }
 
         return $method === 'DELETE' ? $recv_len : 0;
@@ -82,9 +88,9 @@ class Http
      */
     public static function decode($recv_buffer, TcpConnection $connection)
     {
-        if (isset(static::$_cache[$recv_buffer])) {
+        if (isset(static::$_cache[$recv_buffer]['decode'])) {
             HttpCache::reset();
-            $cache = static::$_cache[$recv_buffer];
+            $cache = static::$_cache[$recv_buffer]['decode'];
             //$cache['server']['REQUEST_TIME_FLOAT'] =  \microtime(true);
             //$cache['server']['REQUEST_TIME'] =  (int)$cache['server']['REQUEST_TIME_FLOAT'];
             $_SERVER = $cache['server'];
@@ -93,7 +99,7 @@ class Http
             $_COOKIE = $cache['cookie'];
             $_REQUEST = $cache['request'];
             $GLOBALS['HTTP_RAW_POST_DATA'] = $GLOBALS['HTTP_RAW_REQUEST_DATA'] = '';
-            return static::$_cache[$recv_buffer];
+            return static::$_cache[$recv_buffer]['decode'];
         }
         // Init.
         $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = array();
@@ -230,7 +236,7 @@ class Http
         $_SERVER['REMOTE_PORT'] = $connection->getRemotePort();
         $ret = array('get' => $_GET, 'post' => $_POST, 'cookie' => $_COOKIE, 'server' => $_SERVER, 'files' => $_FILES, 'request'=>$_REQUEST);
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            static::$_cache[$recv_buffer] = $ret;
+            static::$_cache[$recv_buffer]['decode'] = $ret;
             if (\count(static::$_cache) > 256) {
                 unset(static::$_cache[key(static::$_cache)]);
             }
