@@ -26,7 +26,7 @@ class Http
       * The supported HTTP methods
       * @var array
       */
-    public static $methods = array('GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS');
+    public static $methods = array('GET'=>'GET', 'POST'=>'POST', 'PUT'=>'PUT', 'DELETE'=>'DELETE', 'HEAD'=>'HEAD', 'OPTIONS'=>'OPTIONS');
 
     /**
      * Cache.
@@ -43,43 +43,34 @@ class Http
      */
     public static function input($recv_buffer, TcpConnection $connection)
     {
-        if (!\strpos($recv_buffer, "\r\n\r\n")) {
+        $recv_len = \strlen($recv_buffer);
+        $crlf_post = \strpos($recv_buffer, "\r\n\r\n");
+        if (!$crlf_post) {
             // Judge whether the package length exceeds the limit.
-            if (\strlen($recv_buffer) >= $connection->maxPackageSize) {
+            if ($recv_len >= $connection->maxPackageSize) {
                 $connection->close();
             }
             return 0;
         }
 
-        list($header,) = \explode("\r\n\r\n", $recv_buffer, 2);
-        $method = \substr($header, 0, \strpos($header, ' '));
-
-        if(\in_array($method, static::$methods)) {
-            return static::getRequestSize($header, $method);
+        $method = \substr($recv_buffer, 0, \strpos($recv_buffer, ' '));
+        if (!isset(static::$methods[$method])) {
+            $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+            $connection->consumeRecvBuffer($recv_len);
+            return 0;
         }
 
-        $connection->send("HTTP/1.1 400 Bad Request\r\n\r\n", true);
-        return 0;
-    }
-
-    /**
-      * Get whole size of the request
-      * includes the request headers and request body.
-      * @param string $header The request headers
-      * @param string $method The request method
-      * @return integer
-      */
-    protected static function getRequestSize($header, $method)
-    {
-        if($method === 'GET' || $method === 'OPTIONS' || $method === 'HEAD') {
-            return \strlen($header) + 4;
+        if ($method === 'GET' || $method === 'OPTIONS' || $method === 'HEAD') {
+            return $recv_len;
         }
+
         $match = array();
-        if (\preg_match("/\r\nContent-Length: ?(\d+)/i", $header, $match)) {
+        if (\preg_match("/\r\nContent-Length: ?(\d+)/i", $recv_buffer, $match)) {
             $content_length = isset($match[1]) ? $match[1] : 0;
-            return $content_length + \strlen($header) + 4;
+            return $content_length + $crlf_post + 4;
         }
-        return $method === 'DELETE' ? \strlen($header) + 4 : 0;
+
+        return $method === 'DELETE' ? $recv_len : 0;
     }
 
     /**
@@ -188,9 +179,7 @@ class Http
                     break;
             }
         }
-		if($_SERVER['HTTP_ACCEPT_ENCODING'] && \strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false){
-			HttpCache::$gzip = true;
-		}
+
         // Parse $_POST.
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['CONTENT_TYPE']) {
             switch ($_SERVER['CONTENT_TYPE']) {
@@ -269,11 +258,13 @@ class Http
         }
         
         // other headers
-        $header .= \implode("\r\n", HttpCache::$header) . "\r\n";
+        if (HttpCache::$header) {
+            $header .= \implode("\r\n", HttpCache::$header) . "\r\n";
+        }
 
-        if(HttpCache::$gzip && isset($connection->gzip)) {
-                $header .= "Content-Encoding: gzip\r\n";
-                $content = \gzencode($content,$connection->gzip);
+        if(!empty($connection->gzip)) {
+            $header .= "Content-Encoding: gzip\r\n";
+            $content = \gzencode($content,$connection->gzip);
         }
         // header
         $header .= 'Content-Length: ' . \strlen($content) . "\r\n\r\n";
@@ -707,7 +698,6 @@ class HttpCache
     public static $status               = '';
     public static $header               = array();
     public static $cookie               = array();
-    public static $gzip                 = false;
     public static $sessionPath          = '';
     public static $sessionName          = '';
     public static $sessionGcProbability = 1;
@@ -721,7 +711,8 @@ class HttpCache
         self::$status   = 'HTTP/1.1 200 OK';
         self::$header   = self::$default;
         self::$cookie   = array();
-        self::$instance = new HttpCache();
+        self::$instance->sessionFile = '';
+        self::$instance->sessionStarted = false;
     }
 
     public static function init()
@@ -749,6 +740,8 @@ class HttpCache
         if ($gc_max_life_time = \ini_get('session.gc_maxlifetime')) {
             self::$sessionGcMaxLifeTime = $gc_max_life_time;
         }
+
+        self::$instance = new HttpCache();
     }
 }
 
