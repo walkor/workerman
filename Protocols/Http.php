@@ -93,6 +93,7 @@ class Http
     {
         $md5 = md5($recv_buffer);
         if (isset(static::$_cache[$md5])) {
+            HttpCache::reset();
             $cache = static::$_cache[$md5];
             $cache['server']['REQUEST_TIME_FLOAT'] =  \microtime(true);
             $cache['server']['REQUEST_TIME'] =  (int)$cache['server']['REQUEST_TIME_FLOAT'];
