@@ -119,7 +119,7 @@ class AsyncTcpConnection extends TcpConnection
             }
         } else {
             if (!isset($address_info['port'])) {
-                $address_info['port'] = 80;
+                $address_info['port'] = 0;
             }
             if (!isset($address_info['path'])) {
                 $address_info['path'] = '/';
@@ -175,6 +175,10 @@ class AsyncTcpConnection extends TcpConnection
         $this->_status           = self::STATUS_CONNECTING;
         $this->_connectStartTime = \microtime(true);
         if ($this->transport !== 'unix') {
+            if (!$this->_remotePort) {
+                $this->_remotePort = $this->transport === 'ssl' ? 443 : 80;
+                $this->_remoteAddress = $this->_remoteHost.':'.$this->_remotePort;
+            }
             // Open socket connection asynchronously.
             if ($this->_contextOption) {
                 $context = \stream_context_create($this->_contextOption);
