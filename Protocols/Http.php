@@ -55,6 +55,7 @@ class Http
             }
             return 0;
         }
+        $head_len = $crlf_post + 4;
 
         $method = \substr($recv_buffer, 0, \strpos($recv_buffer, ' '));
         if (!isset(static::$methods[$method])) {
@@ -64,19 +65,19 @@ class Http
         }
 
         if ($method === 'GET' || $method === 'OPTIONS' || $method === 'HEAD') {
-            static::$_cache[$recv_buffer]['input'] = $recv_len;
-            return $recv_len;
+            static::$_cache[$recv_buffer]['input'] = $head_len;
+            return $head_len;
         }
 
         $match = array();
         if (\preg_match("/\r\nContent-Length: ?(\d+)/i", $recv_buffer, $match)) {
             $content_length = isset($match[1]) ? $match[1] : 0;
-            $total_length = $content_length + $crlf_post + 4;
+            $total_length = $content_length + $head_len;
             static::$_cache[$recv_buffer]['input'] = $total_length;
             return $total_length;
         }
 
-        return $method === 'DELETE' ? $recv_len : 0;
+        return $method === 'DELETE' ? $head_len : 0;
     }
 
     /**
