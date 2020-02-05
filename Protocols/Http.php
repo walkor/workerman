@@ -32,7 +32,7 @@ class Http
      * Cache.
      * @var array
      */
-    protected static $_cache = [];
+    protected static $_cache = array();
 
     /**
      * Check the integrity of the package.
