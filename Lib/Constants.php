@@ -20,11 +20,6 @@ error_reporting(E_ALL);
 // JIT is not stable, temporarily disabled.
 ini_set('pcre.jit', 0);
 
-// Reset opcache.
-if (function_exists('opcache_reset')) {
-    opcache_reset();
-}
-
 // For onError callback.
 const WORKERMAN_CONNECT_FAIL = 1;
 // For onError callback.
