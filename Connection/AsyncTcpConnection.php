@@ -157,6 +157,7 @@ class AsyncTcpConnection extends TcpConnection
         // For statistics.
         ++self::$statistics['connection_count'];
         $this->maxSendBufferSize         = self::$defaultMaxSendBufferSize;
+        $this->maxPackageSize            = self::$defaultMaxPackageSize;
         $this->_contextOption            = $context_option;
         static::$connections[$this->_id] = $this;
     }
