@@ -301,6 +301,13 @@ class Worker
     public static $eventLoopClass = '';
 
     /**
+     * Process title
+     *
+     * @var string
+     */
+    public static $processTitle = 'WorkerMan';
+
+    /**
      * The PID of master process.
      *
      * @var int
@@ -461,7 +468,7 @@ class Worker
     protected static $_availableEventLoops = array(
         'libevent' => '\Workerman\Events\Libevent',
         'event'    => '\Workerman\Events\Event'
-        // Temporarily removed swoole because it is not stable enough  
+        // Temporarily removed swoole because it is not stable enough
         //'swoole'   => '\Workerman\Events\Swoole'
     );
 
@@ -598,7 +605,7 @@ class Worker
         static::$_statisticsFile                      = \sys_get_temp_dir() . "/$unique_prefix.status";
 
         // Process title.
-        static::setProcessTitle('WorkerMan: master process  start_file=' . static::$_startFile);
+        static::setProcessTitle(static::$processTitle . ': master process  start_file=' . static::$_startFile);
 
         // Init data for worker id.
         static::initId();
@@ -678,18 +685,18 @@ class Worker
         }
     }
 
-    /**  
+    /**
      * Reload all worker instances.
      *
      * @return void
      */
     public static function reloadAllWorkers()
-    {    
+    {
         static::init();
         static::initWorkers();
         static::displayUI();
         static::$_status = static::STATUS_RELOADING;
-    }    
+    }
 
     /**
      * Get all worker instances.
@@ -777,7 +784,7 @@ class Worker
         $title = '';
         foreach(static::getUiColumns() as $column_name => $prop){
             $key = '_max' . \ucfirst(\strtolower($column_name)) . 'NameLength';
-            //just keep compatible with listen name 
+            //just keep compatible with listen name
             $column_name === 'socket' && $column_name = 'listen';
             $title.= "<w>{$column_name}</w>"  .  \str_pad('', static::$$key + static::UI_SAFE_LENGTH - \strlen($column_name));
         }
@@ -1280,7 +1287,7 @@ class Worker
         if (!\class_exists('\Swoole\Event', false)) {
             unset(static::$_availableEventLoops['swoole']);
         }
-        
+
         $loop_name = '';
         foreach (static::$_availableEventLoops as $name=>$class) {
             if (\extension_loaded($name)) {
@@ -1528,7 +1535,7 @@ class Worker
                 }
             }
             Timer::delAll();
-            static::setProcessTitle('WorkerMan: worker process  ' . $worker->name . ' ' . $worker->getSocketName());
+            static::setProcessTitle(self::$processTitle . ': worker process  ' . $worker->name . ' ' . $worker->getSocketName());
             $worker->setUserAndGroup();
             $worker->id = $id;
             $worker->run();
@@ -2183,7 +2190,7 @@ class Worker
             }
             $this->_context = \stream_context_create($context_option);
         }
-        
+
         // Turn reusePort on.
         if (static::$_OS === \OS_TYPE_LINUX  // if linux
             && \version_compare(\PHP_VERSION,'7.0.0', 'ge') // if php >= 7.0.0
@@ -2379,7 +2386,7 @@ class Worker
         }
 
         \restore_error_handler();
-        
+
         // Try to emit onWorkerStart callback.
         if ($this->onWorkerStart) {
             try {
