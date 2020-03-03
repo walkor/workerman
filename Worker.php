@@ -1645,7 +1645,7 @@ class Worker
             \pcntl_signal_dispatch();
             // If a child has already exited.
             if ($pid > 0) {
-                // Find out witch worker process exited.
+                // Find out which worker process exited.
                 foreach (static::$_pidMap as $worker_id => $worker_pid_array) {
                     if (isset($worker_pid_array[$pid])) {
                         $worker = static::$_workers[$worker_id];
