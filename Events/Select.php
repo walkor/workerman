@@ -95,13 +95,6 @@ class Select implements EventInterface
      */
     public function __construct()
     {
-        // Create a pipeline and put into the collection of the read to read the descriptor to avoid empty polling.
-        $this->channel = \stream_socket_pair(DIRECTORY_SEPARATOR === '/' ? STREAM_PF_UNIX : STREAM_PF_INET,
-            STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
-        if($this->channel) {
-            \stream_set_blocking($this->channel[0], 0);
-            $this->_readFds[0] = $this->channel[0];
-        }
         // Init SplPriorityQueue.
         $this->_scheduler = new \SplPriorityQueue();
         $this->_scheduler->setExtractFlags(\SplPriorityQueue::EXTR_BOTH);
@@ -118,7 +111,7 @@ class Select implements EventInterface
                 $count = $flag === self::EV_READ ? \count($this->_readFds) : \count($this->_writeFds);
                 if ($count >= 1024) {
                     echo "Warning: system call select exceeded the maximum number of connections 1024, please install event/libevent extension for more connections.\n";
-                } else if (DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
+                } else if (\DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
                     echo "Warning: system call select exceeded the maximum number of connections 256.\n";
                 }
                 $fd_key                           = (int)$fd;
@@ -136,7 +129,7 @@ class Select implements EventInterface
                 break;
             case self::EV_SIGNAL:
                 // Windows not support signal.
-                if(DIRECTORY_SEPARATOR !== '/') {
+                if(\DIRECTORY_SEPARATOR !== '/') {
                     return false;
                 }
                 $fd_key                              = (int)$fd;
@@ -196,7 +189,7 @@ class Select implements EventInterface
                 }
                 return true;
             case self::EV_SIGNAL:
-                if(DIRECTORY_SEPARATOR !== '/') {
+                if(\DIRECTORY_SEPARATOR !== '/') {
                     return false;
                 }
                 unset($this->_signalEvents[$fd_key]);
@@ -263,7 +256,7 @@ class Select implements EventInterface
     public function loop()
     {
         while (1) {
-            if(DIRECTORY_SEPARATOR === '/') {
+            if(\DIRECTORY_SEPARATOR === '/') {
                 // Calls signal handlers for pending signals
                 \pcntl_signal_dispatch();
             }
@@ -272,10 +265,15 @@ class Select implements EventInterface
             $write = $this->_writeFds;
             $except = $this->_exceptFds;
 
-            // Waiting read/write/signal/timeout events.
-            \set_error_handler(function(){});
-            $ret = stream_select($read, $write, $except, 0, $this->_selectTimeout);
-            \restore_error_handler();
+            if ($read || $write || $except) {
+                // Waiting read/write/signal/timeout events.
+                set_error_handler(function(){});
+                $ret = stream_select($read, $write, $except, 0, $this->_selectTimeout);
+                restore_error_handler();
+            } else {
+                usleep($this->_selectTimeout);
+                $ret = false;
+            }
 
 
             if (!$this->_scheduler->isEmpty()) {

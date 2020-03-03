@@ -13,7 +13,7 @@
 namespace Workerman\Events;
 
 use Workerman\Worker;
-use EvWatcher;
+use \EvWatcher;
 
 /**
  * ev eventloop
