@@ -646,6 +646,7 @@ class TcpConnection extends ConnectionInterface
                     $one_request_buffer = \substr($this->_recvBuffer, 0, $this->_currentPackageLength);
                     // Remove the current package from the receive buffer.
                     $this->_recvBuffer = \substr($this->_recvBuffer, $this->_currentPackageLength);
+                    $recv_len = \strlen($this->_recvBuffer);
                 }
                 // Reset the current packet length to 0.
                 $this->_currentPackageLength = 0;
