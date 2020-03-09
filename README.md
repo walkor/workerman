@@ -9,7 +9,7 @@
 ## What is it
 Workerman is an asynchronous event-driven PHP framework with high performance to build fast and scalable network applications. 
 Workerman supports HTTP, Websocket, SSL and other custom protocols. 
-Workerman supports libevent/event extension, [HHVM](https://github.com/facebook/hhvm) , [ReactPHP](https://github.com/reactphp/react).
+Workerman supports event extension.
 
 ## Requires
 PHP 5.3 or Higher  
@@ -72,33 +72,20 @@ $http_worker = new Worker("http://0.0.0.0:2345");
 $http_worker->count = 4;
 
 // Emitted when data received
-$http_worker->onMessage = function($connection, $data)
+$http_worker->onMessage = function($connection, $request)
 {
-    // $_GET, $_POST, $_COOKIE, $_SESSION, $_SERVER, $_FILES are available
-    var_dump($_GET, $_POST, $_COOKIE, $_SESSION, $_SERVER, $_FILES);
+    //$request->get();
+    //$request->post();
+    //$request->header();
+    //$request->cookie();
+    //$requset->session();
+    //$request->uri();
+    //$request->path();
+    //$request->method();
     // send data to client
-    $connection->send("hello world \n");
+    $connection->send("hello world");
 };
 
-// run all workers
-Worker::runAll();
-```
-
-### A WebServer
-```php
-require_once __DIR__ . '/vendor/autoload.php';
-use Workerman\WebServer;
-use Workerman\Worker;
-
-// WebServer
-$web = new WebServer("http://0.0.0.0:80");
-
-// 4 processes
-$web->count = 4;
-
-// Set the root of domains
-$web->addRoot('www.your_domain.com', '/your/path/Web');
-$web->addRoot('www.another_domain.com', '/another/path/Web');
 // run all workers
 Worker::runAll();
 ```
@@ -233,7 +220,7 @@ Worker::runAll();
 ```php
 require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
-use Workerman\Lib\Timer;
+use Workerman\Timer;
 
 $task = new Worker();
 $task->onWorkerStart = function($task)
@@ -277,214 +264,6 @@ $worker->onWorkerStart = function()
     };
     $ws_connection->connect();
 };
-Worker::runAll();
-```
-
-### Async Mysql of ReactPHP
-```
-composer require react/mysql
-```
-
-```php
-<?php
-require_once __DIR__ . '/vendor/autoload.php';
-use Workerman\Worker;
-
-$worker = new Worker('tcp://0.0.0.0:6161');
-$worker->onWorkerStart = function() {
-    global $mysql;
-    $loop  = Worker::getEventLoop();
-    $mysql = new React\MySQL\Connection($loop, array(
-        'host'   => '127.0.0.1',
-        'dbname' => 'dbname',
-        'user'   => 'user',
-        'passwd' => 'passwd',
-    ));
-    $mysql->on('error', function($e){
-        echo $e;
-    });
-    $mysql->connect(function ($e) {
-        if($e) {
-            echo $e;
-        } else {
-            echo "connect success\n";
-        }
-    });
-};
-$worker->onMessage = function($connection, $data) {
-    global $mysql;
-    $mysql->query('show databases' /*trim($data)*/, function ($command, $mysql) use ($connection) {
-        if ($command->hasError()) {
-            $error = $command->getError();
-        } else {
-            $results = $command->resultRows;
-            $fields  = $command->resultFields;
-            $connection->send(json_encode($results));
-        }
-    });
-};
-Worker::runAll();
-```
-
-### Async Redis of ReactPHP
-```
-composer require clue/redis-react
-```
-
-```php
-<?php
-require_once __DIR__ . '/vendor/autoload.php';
-use Clue\React\Redis\Factory;
-use Clue\React\Redis\Client;
-use Workerman\Worker;
-
-$worker = new Worker('tcp://0.0.0.0:6161');
-
-$worker->onWorkerStart = function() {
-    global $factory;
-    $loop    = Worker::getEventLoop();
-    $factory = new Factory($loop);
-};
-
-$worker->onMessage = function($connection, $data) {
-    global $factory;
-    $factory->createClient('localhost:6379')->then(function (Client $client) use ($connection) {
-        $client->set('greeting', 'Hello world');
-        $client->append('greeting', '!');
-
-        $client->get('greeting')->then(function ($greeting) use ($connection){
-            // Hello world!
-            echo $greeting . PHP_EOL;
-            $connection->send($greeting);
-        });
-
-        $client->incr('invocation')->then(function ($n) use ($connection){
-            echo 'This is invocation #' . $n . PHP_EOL;
-            $connection->send($n);
-        });
-    });
-};
-
-Worker::runAll();
-```
-
-### Aysnc dns of ReactPHP
-```
-composer require react/dns
-```
-
-```php
-require_once __DIR__ . '/vendor/autoload.php';
-use Workerman\Worker;
-$worker = new Worker('tcp://0.0.0.0:6161');
-$worker->onWorkerStart = function() {
-    global   $dns;
-    // Get event-loop.
-    $loop    = Worker::getEventLoop();
-    $factory = new React\Dns\Resolver\Factory();
-    $dns     = $factory->create('8.8.8.8', $loop);
-};
-$worker->onMessage = function($connection, $host) {
-    global $dns;
-    $host = trim($host);
-    $dns->resolve($host)->then(function($ip) use($host, $connection) {
-        $connection->send("$host: $ip");
-    },function($e) use($host, $connection){
-        $connection->send("$host: {$e->getMessage()}");
-    });
-};
-
-Worker::runAll();
-```
-
-### Http client of ReactPHP
-```
-composer require react/http-client
-```
-
-```php
-<?php
-require_once __DIR__ . '/vendor/autoload.php';
-use Workerman\Worker;
-
-$worker = new Worker('tcp://0.0.0.0:6161');
-
-$worker->onMessage = function($connection, $host) {
-    $loop    = Worker::getEventLoop();
-    $client  = new \React\HttpClient\Client($loop);
-    $request = $client->request('GET', trim($host));
-    $request->on('error', function(Exception $e) use ($connection) {
-        $connection->send($e);
-    });
-    $request->on('response', function ($response) use ($connection) {
-        $response->on('data', function ($data) use ($connection) {
-            $connection->send($data);
-        });
-    });
-    $request->end();
-};
-
-Worker::runAll();
-```
-
-### ZMQ of ReactPHP
-```
-composer require react/zmq
-```
-
-```php
-<?php
-require_once __DIR__ . '/vendor/autoload.php';
-use Workerman\Worker;
-
-$worker = new Worker('text://0.0.0.0:6161');
-
-$worker->onWorkerStart = function() {
-    global   $pull;
-    $loop    = Worker::getEventLoop();
-    $context = new React\ZMQ\Context($loop);
-    $pull    = $context->getSocket(ZMQ::SOCKET_PULL);
-    $pull->bind('tcp://127.0.0.1:5555');
-
-    $pull->on('error', function ($e) {
-        var_dump($e->getMessage());
-    });
-
-    $pull->on('message', function ($msg) {
-        echo "Received: $msg\n";
-    });
-};
-
-Worker::runAll();
-```
-
-### STOMP of ReactPHP
-```
-composer require react/stomp
-```
-
-```php
-<?php
-require_once __DIR__ . '/vendor/autoload.php';
-use Workerman\Worker;
-
-$worker = new Worker('text://0.0.0.0:6161');
-
-$worker->onWorkerStart = function() {
-    global   $client;
-    $loop    = Worker::getEventLoop();
-    $factory = new React\Stomp\Factory($loop);
-    $client  = $factory->createClient(array('vhost' => '/', 'login' => 'guest', 'passcode' => 'guest'));
-
-    $client
-        ->connect()
-        ->then(function ($client) use ($loop) {
-            $client->subscribe('/topic/foo', function ($frame) {
-                echo "Message received: {$frame->body}\n";
-            });
-        });
-};
-
 Worker::runAll();
 ```
 
