@@ -445,7 +445,7 @@ class Request
      *
      * @return void
      */
-    public function parsePost()
+    protected function parsePost()
     {
         $body_buffer = $this->rawBody();
         $this->_data['post'] = $this->_data['files'] = array();

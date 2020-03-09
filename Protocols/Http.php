@@ -210,7 +210,7 @@ class Http
             $body_len = (int)\filesize($file);
             $response->header('Content-Length', $body_len);
             if ($body_len < 1024 * 1024) {
-                $connection->send((string)$response . file_get_contents($file, false, null, -1, $body_len), true);
+                $connection->send((string)$response . file_get_contents($file, false, null, 0, $body_len), true);
                 return '';
             }
             $handler = \fopen($file, 'r');
