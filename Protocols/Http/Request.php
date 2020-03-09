@@ -392,7 +392,7 @@ class Request
         $this->_data['headers'] = array();
         $raw_head = $this->rawHead();
         $head_buffer = \substr($raw_head, \strpos($raw_head, "\r\n") + 2);
-        $cacheable = static::$_enableCache && \strlen($head_buffer) < 2048;
+        $cacheable = static::$_enableCache && !isset($head_buffer[2048]);
         if ($cacheable && isset(static::$_headerCache[$head_buffer])) {
             $this->_data['headers'] = static::$_headerCache[$head_buffer];
             return;
@@ -426,7 +426,7 @@ class Request
         if ($query_string === '') {
             return;
         }
-        $cacheable = static::$_enableCache && \strlen($query_string) < 1024;
+        $cacheable = static::$_enableCache && !isset($query_string[1024]);
         if ($cacheable && isset(static::$_getCache[$query_string])) {
             $this->_data['get'] = static::$_getCache[$query_string];
             return;
@@ -452,7 +452,7 @@ class Request
         if ($body_buffer === '') {
             return;
         }
-        $cacheable = static::$_enableCache && \strlen($body_buffer) < 1024;
+        $cacheable = static::$_enableCache && !isset($body_buffer[1024]);
         if ($cacheable && isset(static::$_postCache[$body_buffer])) {
             $this->_data['post'] = static::$_postCache[$body_buffer];
             return;

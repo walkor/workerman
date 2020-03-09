@@ -148,7 +148,7 @@ class Http
      */
     public static function decode($recv_buffer, TcpConnection $connection)
     {
-        $cacheable = static::$_enableCache && \strlen($recv_buffer) < 512;
+        $cacheable = static::$_enableCache && !isset($recv_buffer[512]);
         if (true === $cacheable && isset(static::$_cache[$recv_buffer])) {
             $request = static::$_cache[$recv_buffer];
             $request->connection = $connection;
