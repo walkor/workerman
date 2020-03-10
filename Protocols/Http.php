@@ -279,6 +279,6 @@ class Http
                 static::$_uploadTmpDir = $upload_tmp_dir;
             }
         }
-        static::$_uploadTmpDir;
+        return static::$_uploadTmpDir;
     }
 }
