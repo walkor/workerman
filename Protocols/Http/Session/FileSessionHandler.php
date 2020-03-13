@@ -55,11 +55,7 @@ class FileSessionHandler implements \SessionHandlerInterface
     }
 
     /**
-     * Nothing.
-     *
-     * @param string $save_path
-     * @param string $name
-     * @return bool
+     * {@inheritdoc}
      */
     public function open($save_path, $name)
     {
@@ -67,10 +63,7 @@ class FileSessionHandler implements \SessionHandlerInterface
     }
 
     /**
-     * Reads the session data from the session storage.
-     *
-     * @param string $session_id
-     * @return string
+     * {@inheritdoc}
      */
     public function read($session_id)
     {
@@ -84,11 +77,7 @@ class FileSessionHandler implements \SessionHandlerInterface
     }
 
     /**
-     * Writes the session data to the session storage.
-     *
-     * @param string $session_id
-     * @param string $session_data
-     * @return bool
+     * {@inheritdoc}
      */
     public function write($session_id, $session_data)
     {
@@ -100,9 +89,7 @@ class FileSessionHandler implements \SessionHandlerInterface
     }
 
     /**
-     * Nothing.
-     *
-     * @return bool
+     * {@inheritdoc}
      */
     public function close()
     {
@@ -110,10 +97,7 @@ class FileSessionHandler implements \SessionHandlerInterface
     }
 
     /**
-     * Destroys a session.
-     *
-     * @param string $session_id
-     * @return bool
+     * {@inheritdoc}
      */
     public function destroy($session_id)
     {
@@ -125,10 +109,7 @@ class FileSessionHandler implements \SessionHandlerInterface
     }
 
     /**
-     * Cleanup old sessions.
-     *
-     * @param int $maxlifetime
-     * @return void
+     * {@inheritdoc}
      */
     public function gc($maxlifetime) {
         $time_now = \time();
