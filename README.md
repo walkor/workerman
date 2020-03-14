@@ -28,31 +28,30 @@ composer require workerman/workerman
 ### A websocket server 
 ```php
 <?php
-require_once __DIR__ . '/vendor/autoload.php';
+
 use Workerman\Worker;
 
+require_once __DIR__ . '/vendor/autoload.php';
+
 // Create a Websocket server
-$ws_worker = new Worker("websocket://0.0.0.0:2346");
+$ws_worker = new Worker('websocket://0.0.0.0:2346');
 
 // 4 processes
 $ws_worker->count = 4;
 
 // Emitted when new connection come
-$ws_worker->onConnect = function($connection)
-{
+$ws_worker->onConnect = function ($connection) {
     echo "New connection\n";
- };
+};
 
 // Emitted when data received
-$ws_worker->onMessage = function($connection, $data)
-{
+$ws_worker->onMessage = function ($connection, $data) {
     // Send hello $data
-    $connection->send('hello ' . $data);
+    $connection->send('Hello ' . $data);
 };
 
 // Emitted when connection closed
-$ws_worker->onClose = function($connection)
-{
+$ws_worker->onClose = function ($connection) {
     echo "Connection closed\n";
 };
 
@@ -62,18 +61,18 @@ Worker::runAll();
 
 ### An http server
 ```php
-require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
 
+require_once __DIR__ . '/vendor/autoload.php';
+
 // #### http worker ####
-$http_worker = new Worker("http://0.0.0.0:2345");
+$http_worker = new Worker('http://0.0.0.0:2345');
 
 // 4 processes
 $http_worker->count = 4;
 
 // Emitted when data received
-$http_worker->onMessage = function($connection, $request)
-{
+$http_worker->onMessage = function ($connection, $request) {
     //$request->get();
     //$request->post();
     //$request->header();
@@ -82,41 +81,40 @@ $http_worker->onMessage = function($connection, $request)
     //$request->uri();
     //$request->path();
     //$request->method();
-    // send data to client
-    $connection->send("hello world");
+
+    // Send data to client
+    $connection->send("Hello World");
 };
 
-// run all workers
+// Run all workers
 Worker::runAll();
 ```
 
 ### A tcp server
 ```php
-require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
 
+require_once __DIR__ . '/vendor/autoload.php';
+
 // #### create socket and listen 1234 port ####
-$tcp_worker = new Worker("tcp://0.0.0.0:1234");
+$tcp_worker = new Worker('tcp://0.0.0.0:1234');
 
 // 4 processes
 $tcp_worker->count = 4;
 
 // Emitted when new connection come
-$tcp_worker->onConnect = function($connection)
-{
+$tcp_worker->onConnect = function ($connection) {
     echo "New Connection\n";
 };
 
 // Emitted when data received
-$tcp_worker->onMessage = function($connection, $data)
-{
-    // send data to client
-    $connection->send("hello $data \n");
+$tcp_worker->onMessage = function ($connection, $data) {
+    // Send data to client
+    $connection->send("Hello $data \n");
 };
 
 // Emitted when new connection come
-$tcp_worker->onClose = function($connection)
-{
+$tcp_worker->onClose = function ($connection) {
     echo "Connection closed\n";
 };
 
@@ -126,8 +124,10 @@ Worker::runAll();
 ### Enable SSL
 ```php
 <?php
-require_once __DIR__ . '/vendor/autoload.php';
+
 use Workerman\Worker;
+
+require_once __DIR__ . '/vendor/autoload.php';
 
 // SSL context.
 $context = array(
@@ -139,16 +139,15 @@ $context = array(
 );
 
 // Create a Websocket server with ssl context.
-$ws_worker = new Worker("websocket://0.0.0.0:2346", $context);
+$ws_worker = new Worker('websocket://0.0.0.0:2346', $context);
 
 // Enable SSL. WebSocket+SSL means that Secure WebSocket (wss://). 
 // The similar approaches for Https etc.
 $ws_worker->transport = 'ssl';
 
-$ws_worker->onMessage = function($connection, $data)
-{
+$ws_worker->onMessage = function ($connection, $data) {
     // Send hello $data
-    $connection->send('hello ' . $data);
+    $connection->send('Hello ' . $data);
 };
 
 Worker::runAll();
@@ -157,7 +156,9 @@ Worker::runAll();
 ### Custom protocol
 Protocols/MyTextProtocol.php
 ```php
+
 namespace Protocols;
+
 /**
  * User defined protocol
  * Format Text+"\n"
@@ -168,11 +169,12 @@ class MyTextProtocol
     {
         // Find the position of the first occurrence of "\n"
         $pos = strpos($recv_buffer, "\n");
+
         // Not a complete package. Return 0 because the length of package can not be calculated
-        if($pos === false)
-        {
+        if ($pos === false) {
             return 0;
         }
+
         // Return length of the package
         return $pos+1;
     }
@@ -184,86 +186,84 @@ class MyTextProtocol
 
     public static function encode($data)
     {
-        return $data."\n";
+        return $data . "\n";
     }
 }
 ```
 
 ```php
-require_once __DIR__ . '/vendor/autoload.php';
 use Workerman\Worker;
 
-// #### MyTextProtocol worker ####
-$text_worker = new Worker("MyTextProtocol://0.0.0.0:5678");
+require_once __DIR__ . '/vendor/autoload.php';
 
-$text_worker->onConnect = function($connection)
-{
+// #### MyTextProtocol worker ####
+$text_worker = new Worker('MyTextProtocol://0.0.0.0:5678');
+
+$text_worker->onConnect = function ($connection) {
     echo "New connection\n";
 };
 
-$text_worker->onMessage =  function($connection, $data)
-{
-    // send data to client
-    $connection->send("hello world \n");
+$text_worker->onMessage = function ($connection, $data) {
+    // Send data to client
+    $connection->send("Hello world\n");
 };
 
-$text_worker->onClose = function($connection)
-{
+$text_worker->onClose = function ($connection) {
     echo "Connection closed\n";
 };
 
-// run all workers
+// Run all workers
 Worker::runAll();
 ```
 
 ### Timer
 ```php
-require_once __DIR__ . '/vendor/autoload.php';
+
 use Workerman\Worker;
 use Workerman\Timer;
 
+require_once __DIR__ . '/vendor/autoload.php';
+
 $task = new Worker();
-$task->onWorkerStart = function($task)
-{
+$task->onWorkerStart = function ($task) {
     // 2.5 seconds
     $time_interval = 2.5; 
-    $timer_id = Timer::add($time_interval, 
-        function()
-        {
-            echo "Timer run\n";
-        }
-    );
+    $timer_id = Timer::add($time_interval, function () {
+        echo "Timer run\n";
+    });
 };
 
-// run all workers
+// Run all workers
 Worker::runAll();
 ```
 
 ### AsyncTcpConnection (tcp/ws/text/frame etc...)
 ```php
-require_once __DIR__ . '/vendor/autoload.php';
+
 use Workerman\Worker;
 use Workerman\Connection\AsyncTcpConnection;
 
+require_once __DIR__ . '/vendor/autoload.php';
+
 $worker = new Worker();
-$worker->onWorkerStart = function()
-{
+$worker->onWorkerStart = function () {
     // Websocket protocol for client.
-    $ws_connection = new AsyncTcpConnection("ws://echo.websocket.org:80");
-    $ws_connection->onConnect = function($connection){
-        $connection->send('hello');
+    $ws_connection = new AsyncTcpConnection('ws://echo.websocket.org:80');
+    $ws_connection->onConnect = function ($connection) {
+        $connection->send('Hello');
     };
-    $ws_connection->onMessage = function($connection, $data){
-        echo "recv: $data\n";
+    $ws_connection->onMessage = function ($connection, $data) {
+        echo "Recv: $data\n";
     };
-    $ws_connection->onError = function($connection, $code, $msg){
-        echo "error: $msg\n";
+    $ws_connection->onError = function ($connection, $code, $msg) {
+        echo "Error: $msg\n";
     };
-    $ws_connection->onClose = function($connection){
-        echo "connection closed\n";
+    $ws_connection->onClose = function ($connection) {
+        echo "Connection closed\n";
     };
     $ws_connection->connect();
 };
+
 Worker::runAll();
 ```
 
@@ -301,12 +301,13 @@ PHP:      5.5.9
 ```php
 <?php
 use Workerman\Worker;
+
 $worker = new Worker('tcp://0.0.0.0:1234');
-$worker->count=3;
-$worker->onMessage = function($connection, $data)
-{
+$worker->count = 3;
+$worker->onMessage = function ($connection, $data) {
     $connection->send("HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nServer: workerman\r\nContent-Length: 5\r\n\r\nhello");
 };
+
 Worker::runAll();
 ```
 **Result**
