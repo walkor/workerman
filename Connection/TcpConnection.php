@@ -971,6 +971,8 @@ class TcpConnection extends ConnectionInterface
             }
         }
         $this->_sendBuffer = $this->_recvBuffer = '';
+        $this->_currentPackageLength = 0;
+        $this->_isPaused = $this->_sslHandshakeCompleted = false;
         if ($this->_status === self::STATUS_CLOSED) {
             // Cleaning up the callback to avoid memory leaks.
             $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = null;
