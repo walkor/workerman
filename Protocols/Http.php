@@ -206,11 +206,21 @@ class Http
         }
 
         if (isset($response->file)) {
-            $file = $response->file;
-            $body_len = (int)\filesize($file);
-            $response->header('Content-Length', $body_len);
-            if ($body_len < 1024 * 1024) {
-                $connection->send((string)$response . file_get_contents($file, false, null, 0, $body_len), true);
+            $file = $response->file['file'];
+            $offset = $response->file['offset'];
+            $length = $response->file['length'];
+            $file_size = (int)\filesize($file);
+            $body_len = $length > 0 ? $length : $file_size - $offset;
+            $response->withHeaders(array(
+                'Content-Length' => $body_len,
+                'Accept-Ranges'  => 'bytes',
+            ));
+            if ($offset || $length) {
+                $offset_end = $offset + $body_len - 1;
+                $response->header('Content-Range', "bytes $offset-$offset_end/$file_size");
+            }
+            if ($body_len < 2 * 1024 * 1024) {
+                $connection->send((string)$response . file_get_contents($file, false, null, $offset, $body_len), true);
                 return '';
             }
             $handler = \fopen($file, 'r');
@@ -219,7 +229,7 @@ class Http
                 return '';
             }
             $connection->send((string)$response, true);
-            static::sendStream($connection, $handler);
+            static::sendStream($connection, $handler, $offset, $length);
             return '';
         }
 
@@ -231,16 +241,34 @@ class Http
      *
      * @param TcpConnection $connection
      * @param $handler
+     * @param $offset
+     * @param $length
      */
-    protected static function sendStream(TcpConnection $connection, $handler)
+    protected static function sendStream(TcpConnection $connection, $handler, $offset = 0, $length = 0)
     {
         $connection->bufferFull = false;
+        if ($offset !== 0) {
+            \fseek($handler, $offset);
+        }
+        $offset_end = $offset + $length;
         // Read file content from disk piece by piece and send to client.
-        $do_write = function () use ($connection, $handler) {
+        $do_write = function () use ($connection, $handler, $length, $offset_end) {
             // Send buffer not full.
             while ($connection->bufferFull === false) {
                 // Read from disk.
-                $buffer = \fread($handler, 8192);
+                $size = 1024 * 1024;
+                if ($length !== 0) {
+                    $tell = \ftell($handler);
+                    $remain_size = $offset_end - $tell;
+                    if ($remain_size <= 0) {
+                        fclose($handler);
+                        $connection->onBufferDrain = null;
+                        return;
+                    }
+                    $size = $remain_size > $size ? $size : $remain_size;
+                }
+
+                $buffer = \fread($handler, $size);
                 // Read eof.
                 if ($buffer === '' || $buffer === false) {
                     fclose($handler);
