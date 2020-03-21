@@ -211,16 +211,18 @@ class Response
     }
 
     /**
-     * Set file.
+     * Send file.
      *
      * @param $file
+     * @param int $offset
+     * @param int $length
      * @return $this
      */
-    public function withFile($file) {
+    public function withFile($file, $offset = 0, $length = 0) {
         if (!\is_file($file)) {
             return $this->withStatus(404)->withBody('<h3>404 Not Found</h3>');
         }
-        $this->file = $file;
+        $this->file = array('file' => $file, 'offset' => $offset, 'length' => $length);
         return $this;
     }
 
@@ -253,8 +255,9 @@ class Response
      * @param $file
      * @return string
      */
-    protected function createHeadForFile($file)
+    protected function createHeadForFile($file_info)
     {
+        $file = $file_info['file'];
         $reason = $this->_reason ? $this->_reason : static::$_phrases[$this->_status];
         $head = "HTTP/{$this->_version} {$this->_status} $reason\r\n";
         $headers = $this->_header;
