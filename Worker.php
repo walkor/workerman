@@ -226,7 +226,12 @@ class Worker
     /** 不设置默认使用 onWorkerStart
      * @var callable
      */
-    public $taskWorkerStart = null;
+    public $onTaskWorkerStart = null;
+
+    /**
+     * @var int
+     */
+    public $port = null;
 
     /**
      * Transport layer protocol.
@@ -596,6 +601,37 @@ class Worker
      */
     protected static function init()
     {
+        //init task
+        foreach (static::$_workers as $worker) {
+            if ($worker->task_worker_num > 0) {
+                if (!$worker->task_port) {
+                    $worker->task_port = $worker->port + 100;
+                }
+                if ($worker->task_port) {
+                    $taskWorker = new self('frame://127.0.0.1:' . $worker->task_port);
+                    $taskWorker->port = $worker->task_port;
+                    $taskWorker->name = $worker->name . '_task';
+                    $taskWorker->count = $worker->task_worker_num;
+                    //初始进程事件绑定
+                    $taskWorker->onWorkerStart = $worker->onTaskWorkerStart ? $worker->onTaskWorkerStart : $worker->onWorkerStart;
+                    $taskWorker->onWorkerReload = $worker->onWorkerReload;
+                    //当客户端的连接上发生错误时触发
+                    $taskWorker->onError = $worker->onError;
+                    $taskWorker->onConnect = function (TcpConnection $connection) use ($taskWorker) {
+                        $connection->send($taskWorker->id); //返回进程id
+                    };
+                    $taskWorker->onMessage = function ($connection, $data) use ($taskWorker, $worker) {
+                        $data = unserialize($data);
+                        $ret = null;
+                        if ($worker->onTask) {
+                            call_user_func($worker->onTask, $taskWorker->id, $worker->id, $data);
+                        }
+                    };
+                    $worker->taskWorker = $taskWorker;
+                }
+            }
+        }
+
         \set_error_handler(function($code, $msg, $file, $line){
             Worker::safeEcho("$msg in file $file on line $line\n");
         });
@@ -2214,6 +2250,12 @@ class Worker
                 $context_option['socket']['backlog'] = static::DEFAULT_BACKLOG;
             }
             $this->_context = \stream_context_create($context_option);
+
+            list($scheme, $address) = explode(':', $this->_socketName, 2);
+            if ($scheme != 'unix') {
+                list(, $port) = explode(':', $address);
+                $this->port = (int)$port;
+            }
         }
 
         // Turn reusePort on.
@@ -2383,40 +2425,6 @@ class Worker
      */
     public function run()
     {
-        //init task
-        if ($this->task_worker_num > 0) {
-            if (!$this->task_port) {
-                list($scheme, $address) = explode(':', $this->_socketName, 2);
-                if ($scheme != 'unix') {
-                    list(, $port) = explode(':', $address);
-                    $this->task_port = (int)$port + 100;
-                }
-            }
-            if ($this->task_port) {
-                $taskWorker = new self('frame://127.0.0.1:' . $this->task_port);
-                $taskWorker->port = $this->task_port;
-                $taskWorker->name = $this->name . '_task';
-                $taskWorker->count = $this->task_worker_num;
-                //初始进程事件绑定
-                $taskWorker->onWorkerStart = [$this, $this->taskWorkerStart ? 'taskWorkerStart' : 'taskWorkerStart'];
-                $taskWorker->onWorkerReload = [$this, 'onWorkerReload'];
-
-                //当客户端的连接上发生错误时触发
-                $taskWorker->onError = [$this, 'onError'];
-                $taskWorker->onConnect = function (TcpConnection $connection) use ($taskWorker) {
-                    $connection->send($taskWorker->id); //返回进程id
-                };
-                $taskWorker->onMessage = function ($connection, $data) use ($taskWorker) {
-                    $data = unserialize($data);
-                    $ret = null;
-                    if ($this->onTask) {
-                        call_user_func($this->onTask, $taskWorker->id, $this->id, $data);
-                    }
-                };
-                $this->taskWorker = $taskWorker;
-            }
-        }
-
         //Update process state.
         static::$_status = static::STATUS_RUNNING;
 
