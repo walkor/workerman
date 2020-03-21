@@ -203,6 +203,31 @@ class Worker
      */
     public $onWorkerReload = null;
 
+    /** 异步任务task方法时触发
+     * @var callable
+     */
+    public $onTask = null;
+
+    /** 异步任务进程数 大于0时创建异步进程
+     * @var int
+     */
+    public $task_worker_num = 0;
+
+    /** 异步进程端口 不指定时以当主服务端口+100
+     * @var int
+     */
+    public $task_port = 0;
+
+    /** 异步任务进程
+     * @var Worker
+     */
+    public $taskWorker = null;
+
+    /** 不设置默认使用 onWorkerStart
+     * @var callable
+     */
+    public $taskWorkerStart = null;
+
     /**
      * Transport layer protocol.
      *
@@ -2358,6 +2383,40 @@ class Worker
      */
     public function run()
     {
+        //init task
+        if ($this->task_worker_num > 0) {
+            if (!$this->task_port) {
+                list($scheme, $address) = explode(':', $this->_socketName, 2);
+                if ($scheme != 'unix') {
+                    list(, $port) = explode(':', $address);
+                    $this->task_port = (int)$port + 100;
+                }
+            }
+            if ($this->task_port) {
+                $taskWorker = new self('frame://127.0.0.1:' . $this->task_port);
+                $taskWorker->port = $this->task_port;
+                $taskWorker->name = $this->name . '_task';
+                $taskWorker->count = $this->task_worker_num;
+                //初始进程事件绑定
+                $taskWorker->onWorkerStart = [$this, $this->taskWorkerStart ? 'taskWorkerStart' : 'taskWorkerStart'];
+                $taskWorker->onWorkerReload = [$this, 'onWorkerReload'];
+
+                //当客户端的连接上发生错误时触发
+                $taskWorker->onError = [$this, 'onError'];
+                $taskWorker->onConnect = function (TcpConnection $connection) use ($taskWorker) {
+                    $connection->send($taskWorker->id); //返回进程id
+                };
+                $taskWorker->onMessage = function ($connection, $data) use ($taskWorker) {
+                    $data = unserialize($data);
+                    $ret = null;
+                    if ($this->onTask) {
+                        call_user_func($this->onTask, $taskWorker->id, $this->id, $data);
+                    }
+                };
+                $this->taskWorker = $taskWorker;
+            }
+        }
+
         //Update process state.
         static::$_status = static::STATUS_RUNNING;
 
@@ -2537,5 +2596,28 @@ class Worker
             }
         }
         return true;
+    }
+
+    /** 异步任务
+     * @param mixed $data
+     * @return bool|int  失败false 成功 返回任务进程id
+     */
+    public function task($data){
+        $fp = stream_socket_client("tcp://127.0.0.1:".$this->task_port, $errno, $errstr, 1);
+        if (!$fp) {
+            #echo "$errstr ($errno)",PHP_EOL;
+            static::log("$errstr ($errno)");
+            return false;
+        } else {
+            $taskId = (int)substr(fread($fp, 10),4);
+            $send_data = serialize($data);
+            $len = strlen($send_data)+4;
+            $send_data = pack('N', $len) . $send_data;
+            if(!fwrite($fp, $send_data, $len)){
+                $taskId = false;
+            }
+            fclose($fp);
+            return $taskId;
+        }
     }
 }
