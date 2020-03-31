@@ -601,7 +601,6 @@ class TcpConnection extends ConnectionInterface
             $this->_recvBuffer .= $buffer;
         }
 
-        $recv_len = \strlen($this->_recvBuffer);
         // If the application layer protocol has been set up.
         if ($this->protocol !== null) {
             $parser = $this->protocol;
@@ -609,7 +608,7 @@ class TcpConnection extends ConnectionInterface
                 // The current packet length is known.
                 if ($this->_currentPackageLength) {
                     // Data is not enough for a package.
-                    if ($this->_currentPackageLength > $recv_len) {
+                    if ($this->_currentPackageLength > \strlen($this->_recvBuffer)) {
                         break;
                     }
                 } else {
@@ -624,7 +623,7 @@ class TcpConnection extends ConnectionInterface
                         break;
                     } elseif ($this->_currentPackageLength > 0 && $this->_currentPackageLength <= $this->maxPackageSize) {
                         // Data is not enough for a package.
-                        if ($this->_currentPackageLength > $recv_len) {
+                        if ($this->_currentPackageLength > \strlen($this->_recvBuffer)) {
                             break;
                         }
                     } // Wrong package.
@@ -638,7 +637,7 @@ class TcpConnection extends ConnectionInterface
                 // The data is enough for a packet.
                 ++self::$statistics['total_request'];
                 // The current packet length is equal to the length of the buffer.
-                if ($recv_len === $this->_currentPackageLength) {
+                if (\strlen($this->_recvBuffer) === $this->_currentPackageLength) {
                     $one_request_buffer = $this->_recvBuffer;
                     $this->_recvBuffer  = '';
                 } else {
@@ -646,7 +645,6 @@ class TcpConnection extends ConnectionInterface
                     $one_request_buffer = \substr($this->_recvBuffer, 0, $this->_currentPackageLength);
                     // Remove the current package from the receive buffer.
                     $this->_recvBuffer = \substr($this->_recvBuffer, $this->_currentPackageLength);
-                    $recv_len = \strlen($this->_recvBuffer);
                 }
                 // Reset the current packet length to 0.
                 $this->_currentPackageLength = 0;
