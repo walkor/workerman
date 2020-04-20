@@ -621,7 +621,7 @@ class TcpConnection extends ConnectionInterface
                     // Get current package length.
                     try {
                         $this->_currentPackageLength = $parser::input($this->_recvBuffer, $this);
-                    } catch (\Exception $e){}
+                    } catch (\Exception $e) {} catch (\Error $e) {}
                     // The packet length is unknown.
                     if ($this->_currentPackageLength === 0) {
                         break;
