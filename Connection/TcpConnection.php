@@ -367,9 +367,14 @@ class TcpConnection extends ConnectionInterface
                 $this->checkBufferWillFull();
                 return;
             }
-            \set_error_handler(function(){});
-            $len = \fwrite($this->_socket, $send_buffer);
-            \restore_error_handler();
+            $len = 0;
+            try {
+                $len = \fwrite($this->_socket, $send_buffer);
+            } catch (\Exception $e) {
+                Worker::log($e);
+            } catch (\Error $e) {
+                Worker::log($e);
+            }
             // send successful.
             if ($len === \strlen($send_buffer)) {
                 $this->bytesWritten += $len;
@@ -586,9 +591,10 @@ class TcpConnection extends ConnectionInterface
             }
         }
 
-        \set_error_handler(function(){});
-        $buffer = \fread($socket, self::READ_BUFFER_SIZE);
-        \restore_error_handler();
+        $buffer = '';
+        try {
+            $buffer = \fread($socket, self::READ_BUFFER_SIZE);
+        } catch (\Exception $e) {} catch (\Error $e) {}
 
         // Check connection closed.
         if ($buffer === '' || $buffer === false) {
@@ -613,11 +619,9 @@ class TcpConnection extends ConnectionInterface
                     }
                 } else {
                     // Get current package length.
-                    \set_error_handler(function($code, $msg, $file, $line){
-                        Worker::safeEcho("$msg in file $file on line $line\n");
-                    });
-                    $this->_currentPackageLength = $parser::input($this->_recvBuffer, $this);
-                    \restore_error_handler();
+                    try {
+                        $this->_currentPackageLength = $parser::input($this->_recvBuffer, $this);
+                    } catch (\Exception $e){}
                     // The packet length is unknown.
                     if ($this->_currentPackageLength === 0) {
                         break;
@@ -939,9 +943,9 @@ class TcpConnection extends ConnectionInterface
         Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
 
         // Close socket.
-        \set_error_handler(function(){});
-        \fclose($this->_socket);
-        \restore_error_handler();
+        try {
+            \fclose($this->_socket);
+        } catch (\Exception $e) {} catch (\Error $e) {}
 
         $this->_status = self::STATUS_CLOSED;
         // Try to emit onClose callback.
