@@ -58,7 +58,7 @@ class Http
      *
      * @var bool.
      */
-    public static $_enableCache = true;
+    protected static $_enableCache = true;
 
     /**
      * Get or set session name.
