@@ -100,10 +100,9 @@ class Timer
      * @param callable $func
      * @param mixed    $args
      * @param bool     $persistent
-     * @param int      $persistent_timer_id
      * @return int|bool
      */
-    public static function add($time_interval, $func, $args = array(), $persistent = true, $persistent_timer_id = 0)
+    public static function add($time_interval, $func, $args = array(), $persistent = true)
     {
         if ($time_interval <= 0) {
             Worker::safeEcho(new Exception("bad time_interval"));
@@ -133,8 +132,8 @@ class Timer
             self::$_tasks[$run_time] = array();
         }
 
-        if(true === $persistent && $persistent_timer_id > 0) {
-            self::$_timerId = $persistent_timer_id;
+        if(true === $persistent && !empty($args['__PERSISTENT_TIMER_ID__'])){
+            self::$_timerId = $args['__PERSISTENT_TIMER_ID__'];
         } else {
             self::$_timerId++;
         }
@@ -173,7 +172,8 @@ class Timer
                         Worker::safeEcho($e);
                     }
                     if($persistent && !empty(self::$_status[$index])) {
-                        self::add($time_interval, $task_func, $task_args, true, $index);
+                        $task_args['__PERSISTENT_TIMER_ID__'] = $index;
+                        self::add($time_interval, $task_func, $task_args);
                     }
                 }
                 unset(self::$_tasks[$run_time]);
