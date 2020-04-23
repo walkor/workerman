@@ -369,7 +369,7 @@ class TcpConnection extends ConnectionInterface
             }
             $len = 0;
             try {
-                $len = \fwrite($this->_socket, $send_buffer);
+                $len = @\fwrite($this->_socket, $send_buffer);
             } catch (\Exception $e) {
                 Worker::log($e);
             } catch (\Error $e) {
@@ -701,9 +701,9 @@ class TcpConnection extends ConnectionInterface
     {
         \set_error_handler(function(){});
         if ($this->transport === 'ssl') {
-            $len = \fwrite($this->_socket, $this->_sendBuffer, 8192);
+            $len = @\fwrite($this->_socket, $this->_sendBuffer, 8192);
         } else {
-            $len = \fwrite($this->_socket, $this->_sendBuffer);
+            $len = @\fwrite($this->_socket, $this->_sendBuffer);
         }
         \restore_error_handler();
         if ($len === \strlen($this->_sendBuffer)) {
