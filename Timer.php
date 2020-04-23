@@ -45,6 +45,25 @@ class Timer
     protected static $_event = null;
 
     /**
+     * timer id
+     *
+     * @var int
+     */
+    protected static $_timerId = 0;
+
+    /**
+     * timer status
+     * [
+     *   timer_id1 => bool,
+     *   timer_id2 => bool,
+     *   ....................,
+     * ]
+     *
+     * @var array
+     */
+    protected static $_status = array();
+
+    /**
      * Init.
      *
      * @param EventInterface $event
@@ -81,7 +100,7 @@ class Timer
      * @param callable $func
      * @param mixed    $args
      * @param bool     $persistent
-     * @return int|false
+     * @return int|bool
      */
     public static function add($time_interval, $func, $args = array(), $persistent = true)
     {
@@ -112,8 +131,12 @@ class Timer
         if (!isset(self::$_tasks[$run_time])) {
             self::$_tasks[$run_time] = array();
         }
-        self::$_tasks[$run_time][] = array($func, (array)$args, $persistent, $time_interval);
-        return 1;
+
+        self::$_timerId = self::$_timerId == \PHP_INT_MAX ? 1 : ++self::$_timerId;
+        self::$_status[self::$_timerId] = true;
+        self::$_tasks[$run_time][self::$_timerId] = array($func, (array)$args, $persistent, $time_interval);
+
+        return self::$_timerId;
     }
 
 
@@ -128,7 +151,6 @@ class Timer
             \pcntl_alarm(0);
             return;
         }
-
         $time_now = \time();
         foreach (self::$_tasks as $run_time => $task_data) {
             if ($time_now >= $run_time) {
@@ -142,8 +164,10 @@ class Timer
                     } catch (\Exception $e) {
                         Worker::safeEcho($e);
                     }
-                    if ($persistent) {
-                        self::add($time_interval, $task_func, $task_args);
+                    if($persistent && !empty(self::$_status[$index])) {
+                        $new_run_time = \time() + $time_interval;
+                        if(!isset(self::$_tasks[$new_run_time])) self::$_tasks[$new_run_time] = array();
+                        self::$_tasks[$new_run_time][$index] = array($task_func, (array)$task_args, $persistent, $time_interval);
                     }
                 }
                 unset(self::$_tasks[$run_time]);
@@ -163,7 +187,14 @@ class Timer
             return self::$_event->del($timer_id, EventInterface::EV_TIMER);
         }
 
-        return false;
+        foreach(self::$_tasks as $run_time => $task_data) 
+        {
+            if(array_key_exists($timer_id, $task_data)) unset(self::$_tasks[$run_time][$timer_id]);
+        }
+
+        if(array_key_exists($timer_id, self::$_status)) unset(self::$_status[$timer_id]);
+
+        return true;
     }
 
     /**
@@ -173,7 +204,7 @@ class Timer
      */
     public static function delAll()
     {
-        self::$_tasks = array();
+        self::$_tasks = self::$_status = array();
         \pcntl_alarm(0);
         if (self::$_event) {
             self::$_event->clearAllTimer();
