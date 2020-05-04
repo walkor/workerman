@@ -144,7 +144,7 @@ class Response
      */
     public function __construct(
         $status = 200,
-        array $headers = array(),
+        $headers = array(),
         $body = ''
     ) {
         $this->_status = $status;
