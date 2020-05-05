@@ -369,7 +369,7 @@ class TcpConnection extends ConnectionInterface
             }
             $len = 0;
             try {
-                $len = \fwrite($this->_socket, $send_buffer);
+                $len = @\fwrite($this->_socket, $send_buffer);
             } catch (\Exception $e) {
                 Worker::log($e);
             } catch (\Error $e) {
