@@ -944,7 +944,7 @@ class TcpConnection extends ConnectionInterface
 
         // Close socket.
         try {
-            \fclose($this->_socket);
+            @\fclose($this->_socket);
         } catch (\Exception $e) {} catch (\Error $e) {}
 
         $this->_status = self::STATUS_CLOSED;
