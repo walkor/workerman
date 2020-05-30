@@ -593,7 +593,7 @@ class TcpConnection extends ConnectionInterface
 
         $buffer = '';
         try {
-            $buffer = \fread($socket, self::READ_BUFFER_SIZE);
+            $buffer = @\fread($socket, self::READ_BUFFER_SIZE);
         } catch (\Exception $e) {} catch (\Error $e) {}
 
         // Check connection closed.
