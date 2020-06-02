@@ -457,13 +457,18 @@ class Request
             $this->_data['post'] = static::$_postCache[$body_buffer];
             return;
         }
-        $content_type = $this->header('content-type');
-        if ($content_type !== null && \preg_match('/boundary="?(\S+)"?/', $content_type, $match)) {
+        $content_type = $this->header('content-type') ? $this->header('content-type') : 'application/x-www-form-urlencoded';
+        if (\preg_match('/x-www-form-urlencoded/', $content_type, $match)) {
+            \parse_str($body_buffer, $this->_data['post']);
+        }
+        if (\preg_match('/json/', $content_type, $match)) {
+            $this->_data['post'] = json_decode($body_buffer, true);
+        }
+        if (\preg_match('/boundary="?(\S+)"?/', $content_type, $match)) {
             $http_post_boundary = '--' . $match[1];
             $this->parseUploadFiles($http_post_boundary);
             return;
         }
-        \parse_str($body_buffer, $this->_data['post']);
         if ($cacheable) {
             static::$_postCache[$body_buffer] = $this->_data['post'];
             if (\count(static::$_postCache) > 256) {
