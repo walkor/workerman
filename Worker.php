@@ -1539,6 +1539,9 @@ class Worker
             $worker->setUserAndGroup();
             $worker->id = $id;
             $worker->run();
+            if (strpos(static::$eventLoopClass, 'Workerman\Events\Swoole') !== false) {
+                exit(0);
+            }
             $err = new Exception('event-loop exited');
             static::log($err);
             exit(250);
@@ -1856,7 +1859,12 @@ class Worker
                 if (static::$globalEvent) {
                     static::$globalEvent->destroy();
                 }
-                exit(0);
+
+                try {
+                    exit(0);
+                } catch (Exception $e) {
+
+                }
             }
         }
     }
@@ -2292,9 +2300,9 @@ class Worker
         // Check application layer protocol class.
         if (!isset(static::$_builtinTransports[$scheme])) {
             $scheme         = \ucfirst($scheme);
-            $this->protocol = \substr($scheme,0,1)==='\\' ? $scheme : '\\Protocols\\' . $scheme;
+            $this->protocol = \substr($scheme,0,1)==='\\' ? $scheme : 'Protocols\\' . $scheme;
             if (!\class_exists($this->protocol)) {
-                $this->protocol = "\\Workerman\\Protocols\\$scheme";
+                $this->protocol = "Workerman\\Protocols\\$scheme";
                 if (!\class_exists($this->protocol)) {
                     throw new Exception("class \\Protocols\\$scheme not exist");
                 }
