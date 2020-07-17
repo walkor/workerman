@@ -607,6 +607,7 @@ class Request
     public function __destruct()
     {
         if (isset($this->_data['files'])) {
+            \clearstatecache();
             foreach ($this->_data['files'] as $item) {
                 if (\is_file($item['tmp_name'])) {
                     \unlink($item['tmp_name']);
