@@ -113,7 +113,7 @@ $tcp_worker->onMessage = function ($connection, $data) {
     $connection->send("Hello $data \n");
 };
 
-// Emitted when new connection come
+// Emitted when connection is closed
 $tcp_worker->onClose = function ($connection) {
     echo "Connection closed\n";
 };
