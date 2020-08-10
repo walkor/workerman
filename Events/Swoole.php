@@ -206,6 +206,7 @@ class Swoole implements EventInterface
     public function destroy()
     {
         Event::exit();
+        posix_kill(posix_getpid(), SIGINT);
     }
 
     /**
