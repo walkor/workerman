@@ -808,7 +808,7 @@ class TcpConnection extends ConnectionInterface
             $dest->send($data);
         };
         $this->onClose       = function ($source) use ($dest) {
-            $dest->destroy();
+            $dest->close();
         };
         $dest->onBufferFull  = function ($dest) use ($source) {
             $source->pauseRecv();
