@@ -293,11 +293,6 @@ class Http
      */
     public static function header($content, $replace = true, $http_response_code = null)
     {
-        if (NO_CLI) {
-            \header($content, $replace, $http_response_code);
-            return;
-        }
-
         if (\strpos($content, 'HTTP') === 0) {
             HttpCache::$status = $content;
             return true;
@@ -332,10 +327,6 @@ class Http
      */
     public static function headerRemove($name)
     {
-        if (NO_CLI) {
-            \header_remove($name);
-            return;
-        }
         unset(HttpCache::$header[$name]);
     }
 
@@ -347,9 +338,6 @@ class Http
      */
     public static function responseCode($code) 
     {
-        if (NO_CLI) {
-            return \http_response_code($code);
-        }
         if (isset(HttpCache::$codes[$code])) {
             HttpCache::$status = "HTTP/1.1 $code " . HttpCache::$codes[$code];
             return $code;
@@ -378,10 +366,6 @@ class Http
         $secure = false,
         $HTTPOnly = false
     ) {
-        if (NO_CLI) {
-            return \setcookie($name, $value, $maxage, $path, $domain, $secure, $HTTPOnly);
-        }
-
         HttpCache::$cookie[] = 'Set-Cookie: ' . $name . '=' . rawurlencode($value)
                                 . (empty($domain) ? '' : '; Domain=' . $domain)
                                 . (empty($maxage) ? '' : '; Max-Age=' . $maxage)
@@ -412,9 +396,6 @@ class Http
      */
     public static function sessionId($id = null)
     {
-        if (NO_CLI) {
-            return $id ? \session_id($id) : \session_id();
-        }
         if (static::sessionStarted() && HttpCache::$instance->sessionFile) {
             return \str_replace('ses_', '', \basename(HttpCache::$instance->sessionFile));
         }
@@ -430,9 +411,6 @@ class Http
      */
     public static function sessionName($name = null)
     {
-        if (NO_CLI) {
-            return $name ? \session_name($name) : \session_name();
-        }
         $session_name = HttpCache::$sessionName;
         if ($name && ! static::sessionStarted()) {
             HttpCache::$sessionName = $name;
@@ -449,9 +427,6 @@ class Http
      */
     public static function sessionSavePath($path = null)
     {
-        if (NO_CLI) {
-            return $path ? \session_save_path($path) : \session_save_path();
-        }
         if ($path && \is_dir($path) && \is_writable($path) && !static::sessionStarted()) {
             HttpCache::$sessionPath = $path;
         }
@@ -477,10 +452,6 @@ class Http
      */
     public static function sessionStart()
     {
-        if (NO_CLI) {
-            return \session_start();
-        }
-
         self::tryGcSessions();
 
         if (HttpCache::$instance->sessionStarted) {
@@ -526,10 +497,6 @@ class Http
      */
     public static function sessionWriteClose()
     {
-        if (NO_CLI) {
-            \session_write_close();
-            return true;
-        }
         if (!empty(HttpCache::$instance->sessionStarted) && !empty($_SESSION)) {
             $session_str = \serialize($_SESSION);
             if ($session_str && HttpCache::$instance->sessionFile) {
@@ -547,9 +514,6 @@ class Http
      */
     public static function end($msg = '')
     {
-        if (NO_CLI) {
-            exit($msg);
-        }
         if ($msg) {
             echo $msg;
         }
@@ -752,5 +716,3 @@ class HttpCache
 }
 
 HttpCache::init();
-
-define('NO_CLI', \PHP_SAPI !== 'cli');
