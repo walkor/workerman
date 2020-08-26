@@ -306,6 +306,7 @@ class Request
                     . (empty($cookie_params['domain']) ? '' : '; Domain=' . $cookie_params['domain'])
                     . (empty($cookie_params['lifetime']) ? '' : '; Max-Age=' . ($cookie_params['lifetime'] + \time()))
                     . (empty($cookie_params['path']) ? '' : '; Path=' . $cookie_params['path'])
+                    . (empty($cookie_params['samesite']) ? '' : '; SameSite=' . $cookie_params['samesite'])
                     . (!$cookie_params['secure'] ? '' : '; Secure')
                     . (!$cookie_params['httponly'] ? '' : '; HttpOnly'));
             }
