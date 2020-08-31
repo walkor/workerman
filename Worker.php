@@ -466,10 +466,8 @@ class Worker
      * @var array
      */
     protected static $_availableEventLoops = array(
-        'libevent' => '\Workerman\Events\Libevent',
-        'event'    => '\Workerman\Events\Event'
-        // Temporarily removed swoole because it is not stable enough
-        //'swoole'   => '\Workerman\Events\Swoole'
+        'event'    => '\Workerman\Events\Event',
+        'libevent' => '\Workerman\Events\Libevent'
     );
 
     /**
@@ -535,13 +533,11 @@ class Worker
     {
         static::checkSapiEnv();
         static::init();
-        static::lock();
         static::parseCommand();
         static::daemonize();
         static::initWorkers();
         static::installSignal();
         static::saveMasterPid();
-        static::unlock();
         static::displayUI();
         static::forkWorkers();
         static::resetStd();
