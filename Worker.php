@@ -960,6 +960,9 @@ class Worker
                     $sig = \SIGINT;
                     static::log("Workerman[$start_file] is stopping ...");
                 }
+                if (static::$onMasterStop) {
+                    \call_user_func(static::$onMasterStop);
+                }
                 // Send stop signal to master process.
                 $master_pid && \posix_kill($master_pid, $sig);
                 // Timeout.
