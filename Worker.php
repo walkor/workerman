@@ -953,7 +953,7 @@ class Worker
             case 'stop':
                 if ($command2 === '-g') {
                     static::$_gracefulStop = true;
-                    $sig = \SIGTERM;
+                    $sig = \SIGHUP;
                     static::log("Workerman[$start_file] is gracefully stopping ...");
                 } else {
                     static::$_gracefulStop = false;
@@ -1101,8 +1101,10 @@ class Worker
         $signalHandler = '\Workerman\Worker::signalHandler';
         // stop
         \pcntl_signal(\SIGINT, $signalHandler, false);
-        // graceful stop
+        // stop
         \pcntl_signal(\SIGTERM, $signalHandler, false);
+        // graceful stop
+        \pcntl_signal(\SIGHUP, $signalHandler, false);
         // reload
         \pcntl_signal(\SIGUSR1, $signalHandler, false);
         // graceful reload
@@ -1128,8 +1130,10 @@ class Worker
         $signalHandler = '\Workerman\Worker::signalHandler';
         // uninstall stop signal handler
         \pcntl_signal(\SIGINT, \SIG_IGN, false);
-        // uninstall graceful stop signal handler
+        // uninstall stop signal handler
         \pcntl_signal(\SIGTERM, \SIG_IGN, false);
+        // uninstall graceful stop signal handler
+        \pcntl_signal(\SIGHUP, \SIG_IGN, false);
         // uninstall reload signal handler
         \pcntl_signal(\SIGUSR1, \SIG_IGN, false);
         // uninstall graceful reload signal handler
@@ -1141,7 +1145,7 @@ class Worker
         // reinstall stop signal handler
         static::$globalEvent->add(\SIGINT, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall graceful stop signal handler
-        static::$globalEvent->add(\SIGTERM, EventInterface::EV_SIGNAL, $signalHandler);
+        static::$globalEvent->add(\SIGHUP, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall reload signal handler
         static::$globalEvent->add(\SIGUSR1, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall graceful reload signal handler
@@ -1162,11 +1166,12 @@ class Worker
         switch ($signal) {
             // Stop.
             case \SIGINT:
+            case \SIGTERM:
                 static::$_gracefulStop = false;
                 static::stopAll();
                 break;
             // Graceful stop.
-            case \SIGTERM:
+            case \SIGHUP:
                 static::$_gracefulStop = true;
                 static::stopAll();
                 break;
@@ -1826,7 +1831,7 @@ class Worker
             $worker_pid_array = static::getAllWorkerPids();
             // Send stop signal to all child processes.
             if (static::$_gracefulStop) {
-                $sig = \SIGTERM;
+                $sig = \SIGHUP;
             } else {
                 $sig = \SIGINT;
             }
