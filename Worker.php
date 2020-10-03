@@ -756,7 +756,7 @@ class Worker
      */
     protected static function displayUI()
     {
-        global $argv;
+        $argv = $_SERVER['argv'];
         if (\in_array('-q', $argv)) {
             return;
         }
@@ -860,9 +860,10 @@ class Worker
         if (static::$_OS !== \OS_TYPE_LINUX) {
             return;
         }
-        global $argv;
+        $argv = $_SERVER['argv'];
         // Check argv;
         $start_file = $argv[0];
+        $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in DEBUG mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
         $available_commands = array(
             'start',
             'stop',
@@ -871,28 +872,33 @@ class Worker
             'status',
             'connections',
         );
-        $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in DEBUG mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
-        if (!isset($argv[1]) || !\in_array($argv[1], $available_commands)) {
-            if (isset($argv[1])) {
-                static::safeEcho('Unknown command: ' . $argv[1] . "\n");
+        $available_mode = array(
+            '-d',
+            '-g'
+        );
+        $command = $mode = '';
+        foreach ($argv as $value) {
+            if (\in_array($value, $available_commands)) {
+                $command = $value;
+            } elseif (\in_array($value, $available_mode)) {
+                $mode = $value;
             }
+        }
+
+        if (!$command) {
             exit($usage);
         }
 
-        // Get command.
-        $command  = \trim($argv[1]);
-        $command2 = isset($argv[2]) ? $argv[2] : '';
-
         // Start command.
-        $mode = '';
+        $mode_str = '';
         if ($command === 'start') {
-            if ($command2 === '-d' || static::$daemonize) {
-                $mode = 'in DAEMON mode';
+            if ($mode === '-d' || static::$daemonize) {
+                $mode_str = 'in DAEMON mode';
             } else {
-                $mode = 'in DEBUG mode';
+                $mode_str = 'in DEBUG mode';
             }
         }
-        static::log("Workerman[$start_file] $command $mode");
+        static::log("Workerman[$start_file] $command $mode_str");
 
         // Get master process PID.
         $master_pid      = \is_file(static::$pidFile) ? \file_get_contents(static::$pidFile) : 0;
@@ -911,7 +917,7 @@ class Worker
         // execute command.
         switch ($command) {
             case 'start':
-                if ($command2 === '-d') {
+                if ($mode === '-d') {
                     static::$daemonize = true;
                 }
                 break;
@@ -925,12 +931,12 @@ class Worker
                     // Sleep 1 second.
                     \sleep(1);
                     // Clear terminal.
-                    if ($command2 === '-d') {
+                    if ($mode === '-d') {
                         static::safeEcho("\33[H\33[2J\33(B\33[m", true);
                     }
                     // Echo status data.
                     static::safeEcho(static::formatStatusData());
-                    if ($command2 !== '-d') {
+                    if ($mode !== '-d') {
                         exit(0);
                     }
                     static::safeEcho("\nPress Ctrl+C to quit.\n\n");
@@ -951,7 +957,7 @@ class Worker
                 exit(0);
             case 'restart':
             case 'stop':
-                if ($command2 === '-g') {
+                if ($mode === '-g') {
                     static::$_gracefulStop = true;
                     $sig = \SIGHUP;
                     static::log("Workerman[$start_file] is gracefully stopping ...");
@@ -983,14 +989,14 @@ class Worker
                     if ($command === 'stop') {
                         exit(0);
                     }
-                    if ($command2 === '-d') {
+                    if ($mode === '-d') {
                         static::$daemonize = true;
                     }
                     break;
                 }
                 break;
             case 'reload':
-                if($command2 === '-g'){
+                if($mode === '-g'){
                     $sig = \SIGQUIT;
                 }else{
                     $sig = \SIGUSR1;
