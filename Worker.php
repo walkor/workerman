@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.0.11';
+    const VERSION = '4.0.12';
 
     /**
      * Status starting.
@@ -803,7 +803,14 @@ class Worker
         !empty($content) && static::safeEcho($line_last);
 
         if (static::$daemonize) {
-            static::safeEcho("Input \"php $argv[0] stop\" to stop. Start success.\n\n");
+            foreach ($argv as $index => $value) {
+                if ($value == '-d') {
+                    unset($argv[$index]);
+                } elseif ($value == 'start') {
+                    $argv[$index] = 'stop';
+                }
+            }
+            static::safeEcho("Input \"php ".implode($argv, ' ')."\" to stop. Start success.\n\n");
         } else {
             static::safeEcho("Press Ctrl+C to stop. Start success.\n");
         }
