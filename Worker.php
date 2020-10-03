@@ -1191,11 +1191,7 @@ class Worker
             // Reload.
             case \SIGQUIT:
             case \SIGUSR1:
-                if($signal === \SIGQUIT){
-                    static::$_gracefulStop = true;
-                }else{
-                    static::$_gracefulStop = false;
-                }
+                static::$_gracefulStop = $signal === \SIGQUIT;
                 static::$_pidsToRestart = static::getAllWorkerPids();
                 static::reload();
                 break;
