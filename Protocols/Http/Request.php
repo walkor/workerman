@@ -458,8 +458,8 @@ class Request
             $this->_data['post'] = static::$_postCache[$body_buffer];
             return;
         }
-        $content_type = $this->header('content-type');
-        if ($content_type !== null && \preg_match('/boundary="?(\S+)"?/', $content_type, $match)) {
+        $content_type = $this->header('content-type', '');
+        if (\preg_match('/boundary="?(\S+)"?/', $content_type, $match)) {
             $http_post_boundary = '--' . $match[1];
             $this->parseUploadFiles($http_post_boundary);
             return;
