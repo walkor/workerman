@@ -2208,6 +2208,8 @@ class Worker
             }
             $this->_context = \stream_context_create($context_option);
         }
+        
+        $this->parseSocketAddress();
 
         // Turn reusePort on.
         if (static::$_OS === \OS_TYPE_LINUX  // if linux
