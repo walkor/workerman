@@ -806,11 +806,11 @@ class Worker
             foreach ($argv as $index => $value) {
                 if ($value == '-d') {
                     unset($argv[$index]);
-                } elseif ($value == 'start') {
+                } elseif ($value == 'start' || $value == 'restart') {
                     $argv[$index] = 'stop';
                 }
             }
-            static::safeEcho("Input \"php ".implode($argv, ' ')."\" to stop. Start success.\n\n");
+            static::safeEcho("Input \"php ".implode(' ', $argv)."\" to stop. Start success.\n\n");
         } else {
             static::safeEcho("Press Ctrl+C to stop. Start success.\n");
         }
