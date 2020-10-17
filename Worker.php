@@ -2208,14 +2208,12 @@ class Worker
             }
             $this->_context = \stream_context_create($context_option);
         }
-        
-        $this->parseSocketAddress();
 
         // Turn reusePort on.
         if (static::$_OS === \OS_TYPE_LINUX  // if linux
             && \version_compare(\PHP_VERSION,'7.0.0', 'ge') // if php >= 7.0.0
             && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
-            && $this->transport !== 'unix') { // if not unix socket
+            && strpos($socket_name,'unix') !== 0) { // if not unix socket
 
             $this->reusePort = true;
         }
