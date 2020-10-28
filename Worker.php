@@ -1250,8 +1250,12 @@ class Worker
         if ($handle) {
             unset($handle);
             \set_error_handler(function(){});
-            \fclose($STDOUT);
-            \fclose($STDERR);
+            if ($STDOUT) {
+                \fclose($STDOUT);
+            }
+            if ($STDERR) {
+                \fclose($STDERR);
+            }
             \fclose(\STDOUT);
             \fclose(\STDERR);
             $STDOUT = \fopen(static::$stdoutFile, "a");
