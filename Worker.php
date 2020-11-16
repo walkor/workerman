@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.0.15';
+    const VERSION = '4.0.16';
 
     /**
      * Status starting.
@@ -756,7 +756,7 @@ class Worker
      */
     protected static function displayUI()
     {
-        $argv = $_SERVER['argv'];
+        global $argv;
         if (\in_array('-q', $argv)) {
             return;
         }
@@ -867,7 +867,7 @@ class Worker
         if (static::$_OS !== \OS_TYPE_LINUX) {
             return;
         }
-        $argv = $_SERVER['argv'];
+        global $argv;
         // Check argv;
         $start_file = $argv[0];
         $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in DEBUG mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
