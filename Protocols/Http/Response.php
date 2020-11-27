@@ -187,7 +187,7 @@ class Response
     }
     
     /**
-     * Remove headers.
+     * Remove header.
      *
      * @param $name
      * @return $this
@@ -211,7 +211,7 @@ class Response
     }
 
     /**
-     * Get header.
+     * Get headers.
      *
      * @return array
      */
