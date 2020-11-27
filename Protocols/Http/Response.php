@@ -165,6 +165,17 @@ class Response
     }
 
     /**
+     * Set header.
+     *
+     * @param $name
+     * @param $value
+     * @return Response
+     */
+    public function withHeader($name, $value) {
+        return $this->header($name, $value);
+    }
+
+    /**
      * Set headers.
      *
      * @param $headers
@@ -173,6 +184,39 @@ class Response
     public function withHeaders($headers) {
         $this->_header = \array_merge($this->_header, $headers);
         return $this;
+    }
+    
+    /**
+     * Remove headers.
+     *
+     * @param $name
+     * @return $this
+     */
+    public function withoutHeader($name) {
+        unset($this->_header[$name]);
+        return $this;
+    }
+
+    /**
+     * Get header.
+     *
+     * @param $name
+     * @return null|array|string
+     */
+    public function getHeader($name) {
+        if (!isset($this->_header[$name])) {
+            return null;
+        }
+        return $this->_header[$name];
+    }
+
+    /**
+     * Get header.
+     *
+     * @return array
+     */
+    public function getHeaders() {
+        return $this->_header;
     }
 
     /**
@@ -208,6 +252,13 @@ class Response
     public function withBody($body) {
         $this->_body = $body;
         return $this;
+    }
+
+    /**
+     * Get http raw body.
+     */
+    public function rawBody() {
+        return $this->_body;
     }
 
     /**
