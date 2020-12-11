@@ -125,9 +125,6 @@ class Http
                 }
             }
             return $head_len;
-        } else if ($method !== 'POST' && $method !== 'PUT') {
-            $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
-            return 0;
         }
 
         $header = \substr($recv_buffer, 0, $crlf_pos);
