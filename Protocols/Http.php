@@ -124,32 +124,27 @@ class Http
                     unset($input[key($input)]);
                 }
             }
-            return $head_len;
         } else if ($method !== 'POST' && $method !== 'PUT') {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
 
         $header = \substr($recv_buffer, 0, $crlf_pos);
-        $length = false;
         if ($pos = \strpos($header, "\r\nContent-Length: ")) {
             $length = $head_len + (int)\substr($header, $pos + 18, 10);
         } else if (\preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
             $length = $head_len + $match[1];
+        } else {
+            $length = $head_len;
         }
 
-        if ($length !== false) {
-            if (!isset($recv_buffer[512])) {
-                $input[$recv_buffer] = $length;
-                if (\count($input) > 512) {
-                    unset($input[key($input)]);
-                }
+        if (!isset($recv_buffer[512])) {
+            $input[$recv_buffer] = $length;
+            if (\count($input) > 512) {
+                unset($input[key($input)]);
             }
-            return $length;
         }
-
-        $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
-        return 0;
+        return $length;
     }
 
     /**
