@@ -352,7 +352,7 @@ class AsyncTcpConnection extends TcpConnection
                 }
             }
             // Try to emit protocol::onConnect
-            if (\method_exists($this->protocol, 'onConnect')) {
+            if (\is_callable($this->protocol, 'onConnect')) {
                 try {
                     \call_user_func(array($this->protocol, 'onConnect'), $this);
                 } catch (\Exception $e) {

@@ -2527,7 +2527,7 @@ class Worker
                 if ($this->protocol !== null) {
                     /** @var \Workerman\Protocols\ProtocolInterface $parser */
                     $parser      = $this->protocol;
-                    if(\method_exists($parser,'input')){
+                    if(\is_callable($parser,'input')){
                         while($recv_buffer !== ''){
                             $len = $parser::input($recv_buffer, $connection);
                             if($len === 0)
