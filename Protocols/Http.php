@@ -196,7 +196,7 @@ class Http
             $connection->__request->connection = null;
             $connection->__request = null;
         }
-        if (\is_scalar($response) || null === $response) {
+        if (!\is_object($response)) {
             $ext_header = '';
             if (isset($connection->__header)) {
                 foreach ($connection->__header as $name => $value) {
