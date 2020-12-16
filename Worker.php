@@ -2526,27 +2526,27 @@ class Worker
             try {
                 if ($this->protocol !== null) {
                     /** @var \Workerman\Protocols\ProtocolInterface $parser */
-                    $parser      = $this->protocol;
-                    if(\is_callable($parser,'input')){
-                        while($recv_buffer !== ''){
+                    $parser = $this->protocol;
+                    if ($parser && \method_exists($parser, 'input')) {
+                        while ($recv_buffer !== '') {
                             $len = $parser::input($recv_buffer, $connection);
-                            if($len === 0)
+                            if ($len === 0)
                                 return true;
-                            $package = \substr($recv_buffer,0,$len);
-                            $recv_buffer = \substr($recv_buffer,$len);
-                            $data = $parser::decode($package,$connection);
+                            $package = \substr($recv_buffer, 0, $len);
+                            $recv_buffer = \substr($recv_buffer, $len);
+                            $data = $parser::decode($package, $connection);
                             if ($data === false)
                                 continue;
                             \call_user_func($this->onMessage, $connection, $data);
                         }
-                    }else{
+                    } else {
                         $data = $parser::decode($recv_buffer, $connection);
                         // Discard bad packets.
                         if ($data === false)
                             return true;
                         \call_user_func($this->onMessage, $connection, $data);
                     }
-                }else{
+                } else {
                     \call_user_func($this->onMessage, $connection, $recv_buffer);
                 }
                 ++ConnectionInterface::$statistics['total_request'];

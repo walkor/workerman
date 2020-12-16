@@ -261,29 +261,6 @@ class TcpConnection extends ConnectionInterface
         self::STATUS_CLOSED      => 'CLOSED',
     );
 
-
-    /**
-     * Adding support of custom functions within protocols
-     *
-     * @param string $name
-     * @param array  $arguments
-     * @return void
-     */
-    public function __call($name, array $arguments) {
-        // Try to emit custom function within protocol
-        if (\is_callable($this->protocol, $name)) {
-            try {
-                return \call_user_func(array($this->protocol, $name), $this, $arguments);
-            } catch (\Exception $e) {
-                Worker::log($e);
-                exit(250);
-            } catch (\Error $e) {
-                Worker::log($e);
-                exit(250);
-            }
-        }
-    }
-
     /**
      * Construct.
      *
@@ -961,7 +938,7 @@ class TcpConnection extends ConnectionInterface
             }
         }
         // Try to emit protocol::onClose
-        if ($this->protocol && \is_callable($this->protocol, 'onClose')) {
+        if ($this->protocol && \method_exists($this->protocol, 'onClose')) {
             try {
                 \call_user_func(array($this->protocol, 'onClose'), $this);
             } catch (\Exception $e) {
