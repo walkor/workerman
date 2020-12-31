@@ -233,6 +233,24 @@ class Response
     }
 
     /**
+     * Get status code.
+     *
+     * @return int
+     */
+    public function getStatusCode() {
+        return $this->_status;
+    }
+
+    /**
+     * Get reason phrase.
+     *
+     * @return string
+     */
+    public function getReasonPhrase() {
+        return $this->_reason;
+    }
+
+    /**
      * Set protocol version.
      *
      * @param $version
