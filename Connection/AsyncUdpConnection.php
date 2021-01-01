@@ -178,7 +178,7 @@ class AsyncUdpConnection extends UdpConnection
             $this->_socket = \stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg,
                 30, \STREAM_CLIENT_CONNECT, $context);
         } else {
-            $this->_socket = \stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg);
+            $this->_socket = \stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg,30,\STREAM_CLIENT_CONNECT);
         }
 
         if (!$this->_socket) {
