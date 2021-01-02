@@ -202,9 +202,7 @@ class Event implements EventInterface
      */
     public function destroy()
     {
-        foreach ($this->_eventSignal as $event) {
-            $event->del();
-        }
+        $this->_eventBase->exit();
     }
 
     /**
