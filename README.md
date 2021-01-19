@@ -77,7 +77,7 @@ $http_worker->onMessage = function ($connection, $request) {
     //$request->post();
     //$request->header();
     //$request->cookie();
-    //$requset->session();
+    //$request->session();
     //$request->uri();
     //$request->path();
     //$request->method();
