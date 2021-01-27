@@ -909,9 +909,8 @@ class Worker
 
         // Get master process PID.
         $master_pid      = \is_file(static::$pidFile) ? \file_get_contents(static::$pidFile) : 0;
-        $master_is_alive = $master_pid && \posix_kill($master_pid, 0) && \posix_getpid() !== $master_pid;
         // Master is still alive?
-        if ($master_is_alive) {
+        if (static::checkMasterIsAlive($master_pid)) {
             if ($command === 'start') {
                 static::log("Workerman[$start_file] already running");
                 exit;
@@ -2560,5 +2559,30 @@ class Worker
             }
         }
         return true;
+    }
+
+    /**
+     * Check master process is alive
+     *
+     * @param $master_pid
+     * @return bool
+     */
+    protected static function checkMasterIsAlive($master_pid)
+    {
+        if (empty($master_pid)) {
+            return false;
+        }
+
+        $master_is_alive = $master_pid && \posix_kill($master_pid, 0) && \posix_getpid() !== $master_pid;
+        if (!$master_is_alive) {
+            return false;
+        }
+
+        // Master process will send SIGUSR2 signal to all child processes.
+        \posix_kill($master_pid, SIGUSR2);
+        // Sleep 1 second.
+        \sleep(1);
+
+        return stripos(static::formatStatusData(), 'PROCESS STATUS') !== false;
     }
 }
