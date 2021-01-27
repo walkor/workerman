@@ -605,6 +605,14 @@ class Request
     }
 
     /**
+     * __toString.
+     */
+    public function __toString()
+    {
+        return $this->_buffer;
+    }
+
+    /**
      * __destruct.
      *
      * @return void
