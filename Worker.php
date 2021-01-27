@@ -2578,11 +2578,14 @@ class Worker
             return false;
         }
 
-        // Master process will send SIGUSR2 signal to all child processes.
-        \posix_kill($master_pid, SIGUSR2);
-        // Sleep 1 second.
-        \sleep(1);
+        $cmdline = "/proc/{$master_pid}/cmdline";
+        if (!is_readable($cmdline)) {
+            return true;
+        }
 
-        return stripos(static::formatStatusData(), 'PROCESS STATUS') !== false;
+        $pattern = sprintf('#%s#', preg_quote(static::$processTitle));
+        $subject = file_get_contents($cmdline);
+
+        return preg_match($pattern, $subject) > 0;
     }
 }
