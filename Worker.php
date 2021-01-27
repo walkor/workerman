@@ -909,9 +909,8 @@ class Worker
 
         // Get master process PID.
         $master_pid      = \is_file(static::$pidFile) ? \file_get_contents(static::$pidFile) : 0;
-        $master_is_alive = $master_pid && \posix_kill($master_pid, 0) && \posix_getpid() !== $master_pid;
         // Master is still alive?
-        if ($master_is_alive) {
+        if (static::checkMasterIsAlive($master_pid)) {
             if ($command === 'start') {
                 static::log("Workerman[$start_file] already running");
                 exit;
@@ -2560,5 +2559,35 @@ class Worker
             }
         }
         return true;
+    }
+
+    /**
+     * Check master process is alive
+     *
+     * @param $master_pid
+     * @return bool
+     */
+    protected static function checkMasterIsAlive($master_pid)
+    {
+        if (empty($master_pid)) {
+            return false;
+        }
+
+        $master_is_alive = $master_pid && \posix_kill($master_pid, 0) && \posix_getpid() !== $master_pid;
+        if (!$master_is_alive) {
+            return false;
+        }
+
+        $cmdline = "/proc/{$master_pid}/cmdline";
+        if (!is_readable($cmdline) || empty(static::$processTitle)) {
+            return true;
+        }
+
+        $content = file_get_contents($cmdline);
+        if (empty($content)) {
+            return true;
+        }
+
+        return stripos($content, static::$processTitle) !== false;
     }
 }
