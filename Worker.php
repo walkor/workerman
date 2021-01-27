@@ -2579,13 +2579,15 @@ class Worker
         }
 
         $cmdline = "/proc/{$master_pid}/cmdline";
-        if (!is_readable($cmdline)) {
+        if (!is_readable($cmdline) || empty(static::$processTitle)) {
             return true;
         }
 
-        $pattern = sprintf('#%s#', preg_quote(static::$processTitle));
-        $subject = file_get_contents($cmdline);
+        $content = file_get_contents($cmdline);
+        if (empty($content)) {
+            return true;
+        }
 
-        return preg_match($pattern, $subject) > 0;
+        return stripos($content, static::$processTitle) !== false;
     }
 }
