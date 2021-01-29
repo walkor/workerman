@@ -504,7 +504,7 @@ class Request
                 switch ($header_key) {
                     case "content-disposition":
                         // Is file data.
-                        if (\preg_match('/name="(.*?)"; filename="(.*?)"$/i', $header_value, $match)) {
+                        if (\preg_match('/name="(.*?)"; filename="(.*?)"/i', $header_value, $match)) {
                             $error = 0;
                             $tmp_file = '';
                             $size = \strlen($boundary_value);
