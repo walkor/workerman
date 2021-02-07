@@ -392,7 +392,13 @@ class Request
     {
         $this->_data['headers'] = array();
         $raw_head = $this->rawHead();
-        $head_buffer = \substr($raw_head, \strpos($raw_head, "\r\n") + 2);
+        
+        $endFirsLinePosition = \strpos($raw_head, "\r\n");
+        if ($endFirsLinePosition === false) {
+            return;
+        }
+        
+        $head_buffer = \substr($raw_head, $endFirsLinePosition + 2);
         $cacheable = static::$_enableCache && !isset($head_buffer[2048]);
         if ($cacheable && isset(static::$_headerCache[$head_buffer])) {
             $this->_data['headers'] = static::$_headerCache[$head_buffer];
