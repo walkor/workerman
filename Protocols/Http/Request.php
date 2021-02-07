@@ -392,13 +392,11 @@ class Request
     {
         $this->_data['headers'] = array();
         $raw_head = $this->rawHead();
-        
         $end_line_position = \strpos($raw_head, "\r\n");
         if ($end_line_position === false) {
             return;
         }
-        
-        $head_buffer = \substr($raw_head, $endFirsLinePosition + 2);
+        $head_buffer = \substr($raw_head, $end_line_position + 2);
         $cacheable = static::$_enableCache && !isset($head_buffer[2048]);
         if ($cacheable && isset(static::$_headerCache[$head_buffer])) {
             $this->_data['headers'] = static::$_headerCache[$head_buffer];
@@ -408,9 +406,16 @@ class Request
         foreach ($head_data as $content) {
             if (false !== \strpos($content, ':')) {
                 list($key, $value) = \explode(':', $content, 2);
-                $this->_data['headers'][\strtolower($key)] = \ltrim($value);
+                $key = \strtolower($key);
+                $value = \ltrim($value);
             } else {
-                $this->_data['headers'][\strtolower($content)] = '';
+                $key = \strtolower($content);
+                $value = '';
+            }
+            if (isset($this->_data['headers'][$key])) {
+                $this->_data['headers'][$key] = "{$this->_data['headers'][$key]},$value";
+            } else {
+                $this->_data['headers'][$key] = $value;
             }
         }
         if ($cacheable) {
