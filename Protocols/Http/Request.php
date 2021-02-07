@@ -393,8 +393,8 @@ class Request
         $this->_data['headers'] = array();
         $raw_head = $this->rawHead();
         
-        $endFirsLinePosition = \strpos($raw_head, "\r\n");
-        if ($endFirsLinePosition === false) {
+        $end_line_position = \strpos($raw_head, "\r\n");
+        if ($end_line_position === false) {
             return;
         }
         
