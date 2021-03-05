@@ -2213,14 +2213,14 @@ class Worker
         }
 
         // Turn reusePort on.
-        if (static::$_OS === \OS_TYPE_LINUX  // if linux
+        /*if (static::$_OS === \OS_TYPE_LINUX  // if linux
             && \version_compare(\PHP_VERSION,'7.0.0', 'ge') // if php >= 7.0.0
             && \version_compare(php_uname('r'), '3.9', 'ge') // if kernel >=3.9
             && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
             && strpos($socket_name,'unix') !== 0) { // if not unix socket
 
             $this->reusePort = true;
-        }
+        }*/
     }
 
 
