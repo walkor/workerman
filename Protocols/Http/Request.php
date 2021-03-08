@@ -139,7 +139,7 @@ class Request
      *
      * @param null $name
      * @param null $default
-     * @return string|null
+     * @return array|string|null
      */
     public function header($name = null, $default = null)
     {
@@ -158,7 +158,7 @@ class Request
      *
      * @param null $name
      * @param null $default
-     * @return string|null
+     * @return array|string|null
      */
     public function cookie($name = null, $default = null)
     {
@@ -204,7 +204,7 @@ class Request
     /**
      * Get http protocol version.
      *
-     * @return string.
+     * @return string
      */
     public function protocolVersion()
     {
