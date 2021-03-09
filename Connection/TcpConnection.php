@@ -716,7 +716,7 @@ class TcpConnection extends ConnectionInterface
     /**
      * SSL handshake.
      *
-     * @param $socket
+     * @param resource $socket
      * @return bool
      */
     public function doSslHandshake($socket){

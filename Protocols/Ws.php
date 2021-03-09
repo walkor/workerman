@@ -336,7 +336,7 @@ class Ws
     /**
      * Clean
      *
-     * @param $connection
+     * @param TcpConnection $connection
      */
     public static function onClose($connection)
     {

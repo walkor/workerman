@@ -29,7 +29,7 @@ class Chunk
 
     /**
      * Chunk constructor.
-     * @param $buffer
+     * @param string $buffer
      */
     public function __construct($buffer)
     {

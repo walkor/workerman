@@ -123,7 +123,7 @@ class FileSessionHandler implements \SessionHandlerInterface
     /**
      * Get session file path.
      *
-     * @param $session_id
+     * @param string $session_id
      * @return string
      */
     protected static function sessionFile($session_id) {
@@ -133,7 +133,7 @@ class FileSessionHandler implements \SessionHandlerInterface
     /**
      * Get or set session file path.
      *
-     * @param $path
+     * @param string $path
      * @return string
      */
     public static function sessionSavePath($path) {

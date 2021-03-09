@@ -27,6 +27,13 @@ class UdpConnection extends ConnectionInterface
     public $protocol = null;
 
     /**
+     * Transport layer protocol.
+     *
+     * @var string
+     */
+    public $transport = 'udp';
+
+    /**
      * Udp socket.
      *
      * @var resource

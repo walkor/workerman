@@ -56,7 +56,7 @@ class Http
     /**
      * Get or set session name.
      *
-     * @param null $name
+     * @param string|null $name
      * @return string
      */
     public static function sessionName($name = null)
@@ -70,7 +70,7 @@ class Http
     /**
      * Get or set the request class name.
      *
-     * @param null $class_name
+     * @param string|null $class_name
      * @return string
      */
     public static function requestClass($class_name = null)
@@ -84,7 +84,7 @@ class Http
     /**
      * Enable or disable Cache.
      *
-     * @param $value
+     * @param mixed $value
      */
     public static function enableCache($value)
     {
@@ -254,9 +254,9 @@ class Http
      * Send remainder of a stream to client.
      *
      * @param TcpConnection $connection
-     * @param $handler
-     * @param $offset
-     * @param $length
+     * @param resource $handler
+     * @param int $offset
+     * @param int $length
      */
     protected static function sendStream(TcpConnection $connection, $handler, $offset = 0, $length = 0)
     {
