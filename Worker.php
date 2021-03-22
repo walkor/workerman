@@ -1310,7 +1310,7 @@ class Worker
         }
 
         if ($loop_name) {
-            if (\interface_exists('\React\EventLoop\LoopInterface')) {
+            /*if (\interface_exists('\React\EventLoop\LoopInterface')) {
                 switch ($loop_name) {
                     case 'libevent':
                         static::$eventLoopClass = '\Workerman\Events\React\ExtLibEventLoop';
@@ -1322,12 +1322,12 @@ class Worker
                         static::$eventLoopClass = '\Workerman\Events\React\StreamSelectLoop';
                         break;
                 }
-            } else {
+            } else {*/
                 static::$eventLoopClass = static::$_availableEventLoops[$loop_name];
-            }
-        } else {
+            //}
+        }/* else {
             static::$eventLoopClass = \interface_exists('\React\EventLoop\LoopInterface') ? '\Workerman\Events\React\StreamSelectLoop' : '\Workerman\Events\Select';
-        }
+        }*/
         return static::$eventLoopClass;
     }
 
