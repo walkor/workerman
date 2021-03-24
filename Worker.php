@@ -1310,24 +1310,10 @@ class Worker
         }
 
         if ($loop_name) {
-            /*if (\interface_exists('\React\EventLoop\LoopInterface')) {
-                switch ($loop_name) {
-                    case 'libevent':
-                        static::$eventLoopClass = '\Workerman\Events\React\ExtLibEventLoop';
-                        break;
-                    case 'event':
-                        static::$eventLoopClass = '\Workerman\Events\React\ExtEventLoop';
-                        break;
-                    default :
-                        static::$eventLoopClass = '\Workerman\Events\React\StreamSelectLoop';
-                        break;
-                }
-            } else {*/
-                static::$eventLoopClass = static::$_availableEventLoops[$loop_name];
-            //}
-        }/* else {
-            static::$eventLoopClass = \interface_exists('\React\EventLoop\LoopInterface') ? '\Workerman\Events\React\StreamSelectLoop' : '\Workerman\Events\Select';
-        }*/
+            static::$eventLoopClass = static::$_availableEventLoops[$loop_name];
+        } else {
+            static::$eventLoopClass =  '\Workerman\Events\Select';
+        }
         return static::$eventLoopClass;
     }
 
@@ -2591,3 +2577,4 @@ class Worker
         return stripos($content, static::$processTitle) !== false;
     }
 }
+
