@@ -261,9 +261,10 @@ class Select implements EventInterface
                 \pcntl_signal_dispatch();
             }
 
-            $read  = $this->_readFds;
-            $write = $this->_writeFds;
+            $read   = $this->_readFds;
+            $write  = $this->_writeFds;
             $except = $this->_exceptFds;
+            $ret    = false;
 
             if ($read || $write || $except) {
                 // Waiting read/write/signal/timeout events.
