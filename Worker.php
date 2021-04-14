@@ -598,7 +598,6 @@ class Worker
 
         // For statistics.
         static::$_globalStatistics['start_timestamp'] = \time();
-        static::$_statisticsFile                      = \sys_get_temp_dir() . "/$unique_prefix.status";
 
         // Process title.
         static::setProcessTitle(static::$processTitle . ': master process  start_file=' . static::$_startFile);
@@ -645,6 +644,7 @@ class Worker
         if (static::$_OS !== \OS_TYPE_LINUX) {
             return;
         }
+        static::$_statisticsFile = \sys_get_temp_dir() . "/".posix_getpid().".status";
         foreach (static::$_workers as $worker) {
             // Worker name.
             if (empty($worker->name)) {
@@ -920,6 +920,8 @@ class Worker
             exit;
         }
 
+        $statistics_file = \sys_get_temp_dir() . "/".$master_pid.".status";;
+
         // execute command.
         switch ($command) {
             case 'start':
@@ -929,8 +931,8 @@ class Worker
                 break;
             case 'status':
                 while (1) {
-                    if (\is_file(static::$_statisticsFile)) {
-                        @\unlink(static::$_statisticsFile);
+                    if (\is_file($statistics_file)) {
+                        @\unlink($statistics_file);
                     }
                     // Master process will send SIGUSR2 signal to all child processes.
                     \posix_kill($master_pid, SIGUSR2);
@@ -941,7 +943,7 @@ class Worker
                         static::safeEcho("\33[H\33[2J\33(B\33[m", true);
                     }
                     // Echo status data.
-                    static::safeEcho(static::formatStatusData());
+                    static::safeEcho(static::formatStatusData($statistics_file));
                     if ($mode !== '-d') {
                         exit(0);
                     }
@@ -949,16 +951,16 @@ class Worker
                 }
                 exit(0);
             case 'connections':
-                if (\is_file(static::$_statisticsFile) && \is_writable(static::$_statisticsFile)) {
-                    \unlink(static::$_statisticsFile);
+                if (\is_file($statistics_file) && \is_writable($statistics_file)) {
+                    \unlink($statistics_file);
                 }
                 // Master process will send SIGIO signal to all child processes.
                 \posix_kill($master_pid, SIGIO);
                 // Waiting amoment.
                 \usleep(500000);
                 // Display statisitcs data from a disk file.
-                if(\is_readable(static::$_statisticsFile)) {
-                    \readfile(static::$_statisticsFile);
+                if(\is_readable($statistics_file)) {
+                    \readfile($statistics_file);
                 }
                 exit(0);
             case 'restart':
@@ -1020,15 +1022,16 @@ class Worker
     /**
      * Format status data.
      *
+     * @param $statistics_file
      * @return string
      */
-    protected static function formatStatusData()
+    protected static function formatStatusData($statistics_file)
     {
         static $total_request_cache = array();
-        if (!\is_readable(static::$_statisticsFile)) {
+        if (!\is_readable($statistics_file)) {
             return '';
         }
-        $info = \file(static::$_statisticsFile, \FILE_IGNORE_NEW_LINES);
+        $info = \file($statistics_file, \FILE_IGNORE_NEW_LINES);
         if (!$info) {
             return '';
         }
@@ -1310,23 +1313,9 @@ class Worker
         }
 
         if ($loop_name) {
-            if (\interface_exists('\React\EventLoop\LoopInterface')) {
-                switch ($loop_name) {
-                    case 'libevent':
-                        static::$eventLoopClass = '\Workerman\Events\React\ExtLibEventLoop';
-                        break;
-                    case 'event':
-                        static::$eventLoopClass = '\Workerman\Events\React\ExtEventLoop';
-                        break;
-                    default :
-                        static::$eventLoopClass = '\Workerman\Events\React\StreamSelectLoop';
-                        break;
-                }
-            } else {
-                static::$eventLoopClass = static::$_availableEventLoops[$loop_name];
-            }
+            static::$eventLoopClass = static::$_availableEventLoops[$loop_name];
         } else {
-            static::$eventLoopClass = \interface_exists('\React\EventLoop\LoopInterface') ? '\Workerman\Events\React\StreamSelectLoop' : '\Workerman\Events\Select';
+            static::$eventLoopClass =  '\Workerman\Events\Select';
         }
         return static::$eventLoopClass;
     }
@@ -2591,3 +2580,4 @@ class Worker
         return stripos($content, static::$processTitle) !== false;
     }
 }
+
