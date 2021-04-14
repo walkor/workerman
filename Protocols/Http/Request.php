@@ -496,13 +496,14 @@ class Request
      */
     protected function parseUploadFiles($http_post_boundary)
     {
-        $http_body = $this->rawBody();
-        $http_body = \substr($http_body, 0, \strlen($http_body) - (\strlen($http_post_boundary) + 4));
+        $http_post_boundary  = \trim($http_post_boundary, '"');
+        $http_body           = $this->rawBody();
+        $http_body           = \substr($http_body, 0, \strlen($http_body) - (\strlen($http_post_boundary) + 4));
         $boundary_data_array = \explode($http_post_boundary . "\r\n", $http_body);
-        if ($boundary_data_array[0] === '') {
+        if ($boundary_data_array[0] === '' || $boundary_data_array[0] === "\r\n") {
             unset($boundary_data_array[0]);
         }
-        $key = -1;
+        $key   = -1;
         $files = array();
         foreach ($boundary_data_array as $boundary_data_buffer) {
             list($boundary_header_buffer, $boundary_value) = \explode("\r\n\r\n", $boundary_data_buffer, 2);
@@ -516,9 +517,9 @@ class Request
                     case "content-disposition":
                         // Is file data.
                         if (\preg_match('/name="(.*?)"; filename="(.*?)"/i', $header_value, $match)) {
-                            $error = 0;
-                            $tmp_file = '';
-                            $size = \strlen($boundary_value);
+                            $error          = 0;
+                            $tmp_file       = '';
+                            $size           = \strlen($boundary_value);
                             $tmp_upload_dir = HTTP::uploadTmpDir();
                             if (!$tmp_upload_dir) {
                                 $error = UPLOAD_ERR_NO_TMP_DIR;
@@ -528,13 +529,16 @@ class Request
                                     $error = UPLOAD_ERR_CANT_WRITE;
                                 }
                             }
+                            if (!isset($files[$key])) {
+                                $files[$key] = array();
+                            }
                             // Parse upload files.
-                            $files[$key] = array(
-                                'key' => $match[1],
-                                'name' => $match[2],
+                            $files[$key] += array(
+                                'key'      => $match[1],
+                                'name'     => $match[2],
                                 'tmp_name' => $tmp_file,
-                                'size' => $size,
-                                'error' => $error
+                                'size'     => $size,
+                                'error'    => $error
                             );
                             break;
                         } // Is post field.
@@ -547,16 +551,20 @@ class Request
                         break;
                     case "content-type":
                         // add file_type
+                        if (!isset($files[$key])) {
+                            $files[$key] = array();
+                        }
                         $files[$key]['type'] = \trim($header_value);
                         break;
                 }
             }
         }
-
         foreach ($files as $file) {
-            $key = $file['key'];
-            unset($file['key']);
-            $this->_data['files'][$key] = $file;
+            if (isset($file['key'])) {
+                $key = $file['key'];
+                unset($file['key']);
+                $this->_data['files'][$key] = $file;
+            }
         }
     }
 
