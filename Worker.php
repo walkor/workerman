@@ -2147,7 +2147,7 @@ class Worker
     }
 
     /**
-     * @param null $stream
+     * @param resource|null $stream
      * @return bool|resource
      */
     private static function outputStream($stream = null)
@@ -2553,7 +2553,7 @@ class Worker
     /**
      * Check master process is alive
      *
-     * @param $master_pid
+     * @param int $master_pid
      * @return bool
      */
     protected static function checkMasterIsAlive($master_pid)

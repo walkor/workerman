@@ -150,7 +150,7 @@ class Event implements EventInterface
     
     /**
      * Timer callback.
-     * @param null $fd
+     * @param int|null $fd
      * @param int $what
      * @param int $timer_id
      */

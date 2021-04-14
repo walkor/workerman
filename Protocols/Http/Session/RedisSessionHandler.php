@@ -32,7 +32,7 @@ class RedisSessionHandler extends \SessionHandler
 
     /**
      * RedisSessionHandler constructor.
-     * @param $config = [
+     * @param array $config = [
      *  'host'     => '127.0.0.1',
      *  'port'     => 6379,
      *  'timeout'  => 2,

@@ -86,7 +86,7 @@ class Session
     /**
      * Session constructor.
      *
-     * @param $session_id
+     * @param string $session_id
      */
     public function __construct($session_id)
     {
@@ -113,8 +113,8 @@ class Session
     /**
      * Get session.
      *
-     * @param $name
-     * @param null $default
+     * @param string $name
+     * @param mixed|null $default
      * @return mixed|null
      */
     public function get($name, $default = null)
@@ -125,8 +125,8 @@ class Session
     /**
      * Store data in the session.
      *
-     * @param $name
-     * @param $value
+     * @param string $name
+     * @param mixed $value
      */
     public function set($name, $value)
     {
@@ -137,7 +137,7 @@ class Session
     /**
      * Delete an item from the session.
      *
-     * @param $name
+     * @param string $name
      */
     public function delete($name)
     {
@@ -148,8 +148,8 @@ class Session
     /**
      * Retrieve and delete an item from the session.
      *
-     * @param $name
-     * @param null $default
+     * @param string $name
+     * @param mixed|null $default
      * @return mixed|null
      */
     public function pull($name, $default = null)
@@ -162,8 +162,8 @@ class Session
     /**
      * Store data in the session.
      *
-     * @param $key
-     * @param null $value
+     * @param string $key
+     * @param mixed|null $value
      */
     public function put($key, $value = null)
     {
@@ -181,7 +181,7 @@ class Session
     /**
      * Remove a piece of data from the session.
      *
-     * @param $name
+     * @param string $name
      */
     public function forget($name)
     {
@@ -221,7 +221,7 @@ class Session
     /**
      * Determining If An Item Exists In The Session.
      *
-     * @param $name
+     * @param string $name
      * @return bool
      */
     public function has($name)
@@ -232,7 +232,7 @@ class Session
     /**
      * To determine if an item is present in the session, even if its value is null.
      *
-     * @param $name
+     * @param string $name
      * @return bool
      */
     public function exists($name)
@@ -280,8 +280,8 @@ class Session
     /**
      * Set session handler class.
      *
-     * @param null $class_name
-     * @param null $config
+     * @param mixed|null $class_name
+     * @param mixed|null $config
      * @return string
      */
     public static function handlerClass($class_name = null, $config = null)
@@ -336,7 +336,7 @@ class Session
     /**
      * Check session id.
      *
-     * @param $session_id
+     * @param string $session_id
      */
     protected static function checkSessionId($session_id)
     {

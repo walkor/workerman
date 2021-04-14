@@ -55,6 +55,13 @@ class Response
     protected $_body = null;
 
     /**
+     * Send file info
+     *
+     * @var array
+     */
+    protected $file = null;
+
+    /**
      * Mine type map.
      * @var array
      */
@@ -155,8 +162,8 @@ class Response
     /**
      * Set header.
      *
-     * @param $name
-     * @param $value
+     * @param string $name
+     * @param string $value
      * @return $this
      */
     public function header($name, $value) {
@@ -167,8 +174,8 @@ class Response
     /**
      * Set header.
      *
-     * @param $name
-     * @param $value
+     * @param string $name
+     * @param string $value
      * @return Response
      */
     public function withHeader($name, $value) {
@@ -178,7 +185,7 @@ class Response
     /**
      * Set headers.
      *
-     * @param $headers
+     * @param array $headers
      * @return $this
      */
     public function withHeaders($headers) {
@@ -189,7 +196,7 @@ class Response
     /**
      * Remove header.
      *
-     * @param $name
+     * @param string $name
      * @return $this
      */
     public function withoutHeader($name) {
@@ -200,7 +207,7 @@ class Response
     /**
      * Get header.
      *
-     * @param $name
+     * @param string $name
      * @return null|array|string
      */
     public function getHeader($name) {
@@ -222,8 +229,8 @@ class Response
     /**
      * Set status.
      *
-     * @param $code
-     * @param null $reason_phrase
+     * @param int $code
+     * @param string|null $reason_phrase
      * @return $this
      */
     public function withStatus($code, $reason_phrase = null) {
@@ -253,7 +260,7 @@ class Response
     /**
      * Set protocol version.
      *
-     * @param $version
+     * @param int $version
      * @return $this
      */
     public function withProtocolVersion($version) {
@@ -264,7 +271,7 @@ class Response
     /**
      * Set http body.
      *
-     * @param $body
+     * @param string $body
      * @return $this
      */
     public function withBody($body) {
@@ -274,6 +281,8 @@ class Response
 
     /**
      * Get http raw body.
+     * 
+     * @return string
      */
     public function rawBody() {
         return $this->_body;
@@ -282,7 +291,7 @@ class Response
     /**
      * Send file.
      *
-     * @param $file
+     * @param string $file
      * @param int $offset
      * @param int $length
      * @return $this
@@ -298,7 +307,7 @@ class Response
     /**
      * Set cookie.
      *
-     * @param $name
+     * @param string $name
      * @param string $value
      * @param int $maxage
      * @param string $path
@@ -321,7 +330,7 @@ class Response
     /**
      * Create header for file.
      *
-     * @param $file
+     * @param array $file_info
      * @return string
      */
     protected function createHeadForFile($file_info)

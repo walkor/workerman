@@ -91,7 +91,7 @@ class Request
     /**
      * Request constructor.
      *
-     * @param $buffer
+     * @param string $buffer
      */
     public function __construct($buffer)
     {
@@ -101,8 +101,8 @@ class Request
     /**
      * $_GET.
      *
-     * @param null $name
-     * @param null $default
+     * @param string|null $name
+     * @param mixed|null $default
      * @return mixed|null
      */
     public function get($name = null, $default = null)
@@ -119,8 +119,8 @@ class Request
     /**
      * $_POST.
      *
-     * @param $name
-     * @param null $default
+     * @param string|null $name
+     * @param mixed|null $default
      * @return mixed|null
      */
     public function post($name = null, $default = null)
@@ -137,8 +137,8 @@ class Request
     /**
      * Get header item by name.
      *
-     * @param null $name
-     * @param null $default
+     * @param string|null $name
+     * @param mixed|null $default
      * @return array|string|null
      */
     public function header($name = null, $default = null)
@@ -156,8 +156,8 @@ class Request
     /**
      * Get cookie item by name.
      *
-     * @param null $name
-     * @param null $default
+     * @param string|null $name
+     * @param mixed|null $default
      * @return array|string|null
      */
     public function cookie($name = null, $default = null)
@@ -174,7 +174,7 @@ class Request
     /**
      * Get upload files.
      *
-     * @param null $name
+     * @param string|null $name
      * @return array|null
      */
     public function file($name = null)
@@ -351,7 +351,7 @@ class Request
     /**
      * Enable or disable cache.
      *
-     * @param $value
+     * @param mixed $value
      */
     public static function enableCache($value)
     {
@@ -491,7 +491,7 @@ class Request
     /**
      * Parse upload files.
      *
-     * @param $http_post_boundary
+     * @param string $http_post_boundary
      * @return void
      */
     protected function parseUploadFiles($http_post_boundary)
@@ -573,8 +573,8 @@ class Request
     /**
      * Setter.
      *
-     * @param $name
-     * @param $value
+     * @param string $name
+     * @param mixed $value
      * @return void
      */
     public function __set($name, $value)
@@ -585,7 +585,7 @@ class Request
     /**
      * Getter.
      *
-     * @param $name
+     * @param string $name
      * @return mixed|null
      */
     public function __get($name)
@@ -596,7 +596,7 @@ class Request
     /**
      * Isset.
      *
-     * @param $name
+     * @param string $name
      * @return bool
      */
     public function __isset($name)
@@ -607,7 +607,7 @@ class Request
     /**
      * Unset.
      *
-     * @param $name
+     * @param string $name
      * @return void
      */
     public function __unset($name)

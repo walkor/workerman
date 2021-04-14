@@ -54,9 +54,9 @@ class Base implements LoopInterface
     /**
      * Add event listener to event loop.
      *
-     * @param $fd
-     * @param $flag
-     * @param $func
+     * @param int $fd
+     * @param int $flag
+     * @param callable $func
      * @param array $args
      * @return bool
      */
