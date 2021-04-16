@@ -981,7 +981,7 @@ class Worker
                 $start_time = \time();
                 // Check master process is still alive?
                 while (1) {
-                    $master_is_alive = $master_pid && \posix_kill($master_pid, 0);
+                    $master_is_alive = $master_pid && \posix_kill((int) $master_pid, 0);
                     if ($master_is_alive) {
                         // Timeout?
                         if (!static::$_gracefulStop && \time() - $start_time >= $timeout) {
@@ -2562,7 +2562,7 @@ class Worker
             return false;
         }
 
-        $master_is_alive = $master_pid && \posix_kill($master_pid, 0) && \posix_getpid() !== $master_pid;
+        $master_is_alive = $master_pid && \posix_kill((int) $master_pid, 0) && \posix_getpid() !== $master_pid;
         if (!$master_is_alive) {
             return false;
         }
