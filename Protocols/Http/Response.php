@@ -59,7 +59,7 @@ class Response
      *
      * @var array
      */
-    protected $file = null;
+    public $file = null;
 
     /**
      * Mine type map.
