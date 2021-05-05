@@ -168,7 +168,7 @@ class Http
         static $requests = array();
         $cacheable = static::$_enableCache && !isset($recv_buffer[512]);
         if (true === $cacheable && isset($requests[$recv_buffer])) {
-            $request = $requests[$recv_buffer];
+            $request = clone $requests[$recv_buffer];
             $request->connection = $connection;
             $connection->__request = $request;
             $request->properties = array();
