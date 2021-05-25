@@ -556,7 +556,7 @@ class Http
                 switch ($header_key) {
                     case "content-disposition":
                         // Is file data.
-                        if (\preg_match('/name="(.*?)"; filename="(.*?)"$/', $header_value, $match)) {
+                        if (\preg_match('/name="(.*?)"; filename="(.*?)"/', $header_value, $match)) {
                             // Parse $_FILES.
                             $_FILES[$key] = array(
                                 'name' => $match[1],
