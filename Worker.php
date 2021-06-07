@@ -644,7 +644,7 @@ class Worker
         if (static::$_OS !== \OS_TYPE_LINUX) {
             return;
         }
-        static::$_statisticsFile = \sys_get_temp_dir() . "/".posix_getpid().".status";
+        static::$_statisticsFile = __DIR__ . '/../workerman-' .posix_getpid().'.status';
         foreach (static::$_workers as $worker) {
             // Worker name.
             if (empty($worker->name)) {
@@ -920,7 +920,7 @@ class Worker
             exit;
         }
 
-        $statistics_file = \sys_get_temp_dir() . "/".$master_pid.".status";;
+        $statistics_file =  __DIR__ . "/../workerman-$master_pid.status";
 
         // execute command.
         switch ($command) {
