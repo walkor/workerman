@@ -292,7 +292,7 @@ class Request
      */
     public function sessionId()
     {
-        if (!isset($this->_data['sid'])) {
+        if (!isset($this->sid)) {
             $session_name = Http::sessionName();
             $sid = $this->cookie($session_name);
             if ($sid === '' || $sid === null) {
@@ -310,9 +310,9 @@ class Request
                     . (!$cookie_params['secure'] ? '' : '; Secure')
                     . (!$cookie_params['httponly'] ? '' : '; HttpOnly'));
             }
-            $this->_data['sid'] = $sid;
+            $this->sid = $sid;
         }
-        return $this->_data['sid'];
+        return $this->sid;
     }
 
     /**
