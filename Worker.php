@@ -908,7 +908,7 @@ class Worker
         static::log("Workerman[$start_file] $command $mode_str");
 
         // Get master process PID.
-        $master_pid      = intval(\is_file(static::$pidFile) ? \file_get_contents(static::$pidFile) : 0);
+        $master_pid      = \is_file(static::$pidFile) ? (int)\file_get_contents(static::$pidFile) : 0)
         // Master is still alive?
         if (static::checkMasterIsAlive($master_pid)) {
             if ($command === 'start') {
