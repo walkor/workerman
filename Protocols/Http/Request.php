@@ -560,9 +560,13 @@ class Request
             }
         }
         foreach ($files as $file) {
-            if (isset($file['key'])) {
-                $key = $file['key'];
-                unset($file['key']);
+            $key = $file['key'];
+            unset($file['key']);
+            // Multi files
+            if (\strlen($key) > 2 && \substr($key, -2) == '[]') {
+                $key = \substr($key, 0, -2);
+                $this->_data['files'][$key][] = $file;
+            } else {
                 $this->_data['files'][$key] = $file;
             }
         }
@@ -640,9 +644,14 @@ class Request
     {
         if (isset($this->_data['files'])) {
             \clearstatcache();
-            foreach ($this->_data['files'] as $item) {
-                if (\is_file($item['tmp_name'])) {
-                    \unlink($item['tmp_name']);
+            foreach ($this->_data['files'] as $items) {
+                if (!\is_array(\current($items))) {
+                    $items = [$items];
+                }
+                foreach ($items as $item) {
+                    if (\is_file($item['tmp_name'])) {
+                        \unlink($item['tmp_name']);
+                    }
                 }
             }
         }
