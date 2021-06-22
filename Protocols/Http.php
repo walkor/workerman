@@ -125,7 +125,7 @@ class Http
                 }
             }
             return $head_len;
-        } else if ($method !== 'POST' && $method !== 'PUT') {
+        } else if ($method !== 'POST' && $method !== 'PUT' && $method !== 'PATCH') {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
