@@ -1368,9 +1368,9 @@ class Worker
                     static::$_maxWorkerNameLength = $worker_name_length;
                 }
             }
-
-            while (\count(static::$_pidMap[$worker->workerId]) < $worker->count) {
-                static::forkOneWorkerForLinux($worker);
+            // Get available worker id as key of static::$_idMap[$worker->workerId] and then fork
+            while (($id = static::getId($worker->workerId, 0)) !== false) {
+                static::forkOneWorkerForLinux($worker, $id);
             }
         }
     }
@@ -1504,15 +1504,11 @@ class Worker
      * Fork one worker process.
      *
      * @param self $worker
+     * @param int $id
      * @throws Exception
      */
-    protected static function forkOneWorkerForLinux(self $worker)
+    protected static function forkOneWorkerForLinux(self $worker,$id)
     {
-        // Get available worker id.
-        $id = static::getId($worker->workerId, 0);
-        if ($id === false) {
-            return;
-        }
         $pid = \pcntl_fork();
         // For master process.
         if ($pid > 0) {
