@@ -1716,6 +1716,7 @@ class Worker
             $socket_name = $worker->getSocketName();
             if ($worker->transport === 'unix' && $socket_name) {
                 list(, $address) = \explode(':', $socket_name, 2);
+                $address = substr($address, strpos($address, '/') + 2);
                 @\unlink($address);
             }
         }

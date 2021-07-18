@@ -114,6 +114,9 @@ class AsyncTcpConnection extends TcpConnection
         $address_info = \parse_url($remote_address);
         if (!$address_info) {
             list($scheme, $this->_remoteAddress) = \explode(':', $remote_address, 2);
+            if('unix' === strtolower($scheme)) { 
+                $this->_remoteAddress = substr($remote_address, strpos($remote_address, '/') + 2);
+            }
             if (!$this->_remoteAddress) {
                 Worker::safeEcho(new \Exception('bad remote_address'));
             }
@@ -129,11 +132,13 @@ class AsyncTcpConnection extends TcpConnection
             } else {
                 $address_info['query'] = '?' . $address_info['query'];
             }
-            $this->_remoteAddress = "{$address_info['host']}:{$address_info['port']}";
             $this->_remoteHost    = $address_info['host'];
             $this->_remotePort    = $address_info['port'];
             $this->_remoteURI     = "{$address_info['path']}{$address_info['query']}";
             $scheme               = isset($address_info['scheme']) ? $address_info['scheme'] : 'tcp';
+            $this->_remoteAddress = 'unix' === strtolower($scheme) 
+                                    ? substr($remote_address, strpos($remote_address, '/') + 2)
+                                    : $this->_remoteHost . ':' . $this->_remotePort;
         }
 
         $this->id = $this->_id = self::$_idRecorder++;
