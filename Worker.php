@@ -2578,7 +2578,7 @@ class Worker
             return true;
         }
 
-        return stripos($content, static::$processTitle) !== false;
+        return stripos($content, static::$processTitle) !== false || stripos($content, 'php') !== false;
     }
 }
 
