@@ -375,7 +375,7 @@ class Response
 
         if (!isset($headers['Last-Modified'])) {
             if ($mtime = \filemtime($file)) {
-                $head .= 'Last-Modified: '.\date('D, d M Y H:i:s', $mtime) . ' ' . \date_default_timezone_get() ."\r\n";
+                $head .= 'Last-Modified: '. \gmdate('D, d M Y H:i:s', $mtime) . ' GMT' . "\r\n";
             }
         }
 
