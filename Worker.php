@@ -1209,7 +1209,7 @@ class Worker
     }
 
     /**
-     * Run as deamon mode.
+     * Run as daemon mode.
      *
      * @throws Exception
      */
