@@ -303,6 +303,11 @@ class TcpConnection extends ConnectionInterface
      */
     public function send($send_buffer, $raw = false)
     {
+        // Sometimes you want to change the data before it is sent, you can define a beforeSend method on the connection to modify the data.
+        if(method_exists($this, "beforeSend")) {
+            $send_buffer = $this->beforeSend($send_buffer);
+        }
+
         if ($this->_status === self::STATUS_CLOSING || $this->_status === self::STATUS_CLOSED) {
             return false;
         }
@@ -676,7 +681,7 @@ class TcpConnection extends ConnectionInterface
             $this->bytesWritten += $len;
             Worker::$globalEvent->del($this->_socket, EventInterface::EV_WRITE);
             $this->_sendBuffer = '';
-            // Try to emit onBufferDrain callback when the send buffer becomes empty. 
+            // Try to emit onBufferDrain callback when the send buffer becomes empty.
             if ($this->onBufferDrain) {
                 try {
                     call_user_func($this->onBufferDrain, $this);
