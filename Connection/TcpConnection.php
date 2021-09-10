@@ -304,8 +304,8 @@ class TcpConnection extends ConnectionInterface
     public function send($send_buffer, $raw = false)
     {
         // Sometimes you want to change the data before it is sent, you can define a beforeSend method on the connection to modify the data.
-        if(method_exists($this, "beforeSend")) {
-            $send_buffer = $this->beforeSend($send_buffer);
+        if(property_exists($this, "beforeSend")) {
+            $send_buffer = call_user_func($this->beforeSend, $send_buffer);
         }
 
         if ($this->_status === self::STATUS_CLOSING || $this->_status === self::STATUS_CLOSED) {
