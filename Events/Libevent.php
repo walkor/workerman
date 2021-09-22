@@ -138,7 +138,7 @@ class Libevent implements EventInterface
                     unset($this->_allEvents[$fd_key]);
                 }
                 break;
-            case  self::EV_SIGNAL:
+            case self::EV_SIGNAL:
                 $fd_key = (int)$fd;
                 if (isset($this->_eventSignal[$fd_key])) {
                     \event_del($this->_eventSignal[$fd_key]);
