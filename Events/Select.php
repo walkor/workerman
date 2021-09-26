@@ -273,7 +273,7 @@ class Select implements EventInterface
                 } catch (\Exception $e) {} catch (\Error $e) {}
 
             } else {
-                usleep($this->_selectTimeout);
+                usleep((int)$this->_selectTimeout);
                 $ret = false;
             }
 
