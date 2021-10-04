@@ -385,11 +385,34 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
 
             $has_server_header = false;
 
+            if (isset($connection->headers)) {
+                if (\is_array($connection->headers))  {
+                    foreach ($connection->headers as $header) {
+                        if (\strpos($header, 'Server:') === 0) {
+                            $has_server_header = true;
+                        }
+                        $handshake_message .= "$header\r\n";
+                    }
+                } else {
+                    $handshake_message .= "$connection->headers\r\n";
+                }
+            }
+            if (!$has_server_header) {
+                $handshake_message .= "Server: workerman/".Worker::VERSION."\r\n";
+            }
+            $handshake_message .= "\r\n";
+            // Send handshake response.
+            $connection->send($handshake_message, true);
+            // Mark handshake complete..
+            $connection->websocketHandshake = true;
+
             // Try to emit onWebSocketConnect callback.
-            if (isset($connection->onWebSocketConnect) || isset($connection->worker->onWebSocketConnect)) {
+            $on_websocket_connect = isset($connection->onWebSocketConnect) ? $connection->onWebSocketConnect :
+                (isset($connection->worker->onWebSocketConnect) ? $connection->worker->onWebSocketConnect : false);
+            if ($on_websocket_connect) {
                 static::parseHttpHeader($buffer);
                 try {
-                    \call_user_func(isset($connection->onWebSocketConnect)?$connection->onWebSocketConnect:$connection->worker->onWebSocketConnect, $connection, $buffer);
+                    \call_user_func($on_websocket_connect, $connection, $buffer);
                 } catch (\Exception $e) {
                     Worker::log($e);
                     exit(250);
@@ -401,28 +424,8 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     $connection->session = \GatewayWorker\Lib\Context::sessionEncode($_SESSION);
                 }
                 $_GET = $_SERVER = $_SESSION = $_COOKIE = array();
+            }
 
-                if (isset($connection->headers)) {
-                    if (\is_array($connection->headers))  {
-                        foreach ($connection->headers as $header) {
-                            if (\strpos($header, 'Server:') === 0) {
-                                $has_server_header = true;
-                            }
-                            $handshake_message .= "$header\r\n";
-                        }
-                    } else {
-                        $handshake_message .= "$connection->headers\r\n";
-                    }
-                }
-            }
-            if (!$has_server_header) {
-                $handshake_message .= "Server: workerman/".Worker::VERSION."\r\n";
-            }
-            $handshake_message .= "\r\n";
-            // Send handshake response.
-            $connection->send($handshake_message, true);
-            // Mark handshake complete..
-            $connection->websocketHandshake = true;
             // There are data waiting to be sent.
             if (!empty($connection->tmpWebsocketData)) {
                 $connection->send($connection->tmpWebsocketData, true);
