@@ -13,11 +13,7 @@
  * @link      http://www.workerman.net/
  */
 
-// Display errors.
-ini_set('display_errors', 'on');
-// Reporting all.
-error_reporting(E_ALL);
-// JIT is not stable, temporarily disabled.
+// Pcre.jit is not stable, temporarily disabled.
 ini_set('pcre.jit', 0);
 
 // For onError callback.
