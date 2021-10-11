@@ -369,11 +369,9 @@ class TcpConnection extends ConnectionInterface
                         try {
                             \call_user_func($this->onError, $this, \WORKERMAN_SEND_FAIL, 'client closed');
                         } catch (\Exception $e) {
-                            Worker::log($e);
-                            exit(250);
+                            Worker::stopAll(250, $e);
                         } catch (\Error $e) {
-                            Worker::log($e);
-                            exit(250);
+                            Worker::stopAll(250, $e);
                         }
                     }
                     $this->destroy();
@@ -636,11 +634,9 @@ class TcpConnection extends ConnectionInterface
                     // Decode request buffer before Emitting onMessage callback.
                     \call_user_func($this->onMessage, $this, $parser::decode($one_request_buffer, $this));
                 } catch (\Exception $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 } catch (\Error $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 }
             }
             return;
@@ -659,11 +655,9 @@ class TcpConnection extends ConnectionInterface
         try {
             \call_user_func($this->onMessage, $this, $this->_recvBuffer);
         } catch (\Exception $e) {
-            Worker::log($e);
-            exit(250);
+            Worker::stopAll(250, $e);
         } catch (\Error $e) {
-            Worker::log($e);
-            exit(250);
+            Worker::stopAll(250, $e);
         }
         // Clean receive buffer.
         $this->_recvBuffer = '';
@@ -692,11 +686,9 @@ class TcpConnection extends ConnectionInterface
                 try {
                     \call_user_func($this->onBufferDrain, $this);
                 } catch (\Exception $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 } catch (\Error $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 }
             }
             if ($this->_status === self::STATUS_CLOSING) {
@@ -762,11 +754,9 @@ class TcpConnection extends ConnectionInterface
             try {
                 \call_user_func($this->onSslHandshake, $this);
             } catch (\Exception $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             } catch (\Error $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             }
         }
         return true;
@@ -859,11 +849,9 @@ class TcpConnection extends ConnectionInterface
                 try {
                     \call_user_func($this->onBufferFull, $this);
                 } catch (\Exception $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 } catch (\Error $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 }
             }
         }
@@ -882,11 +870,9 @@ class TcpConnection extends ConnectionInterface
                 try {
                     \call_user_func($this->onError, $this, \WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
                 } catch (\Exception $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 } catch (\Error $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 }
             }
             return true;
@@ -930,11 +916,9 @@ class TcpConnection extends ConnectionInterface
             try {
                 \call_user_func($this->onClose, $this);
             } catch (\Exception $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             } catch (\Error $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             }
         }
         // Try to emit protocol::onClose
@@ -942,11 +926,9 @@ class TcpConnection extends ConnectionInterface
             try {
                 \call_user_func(array($this->protocol, 'onClose'), $this);
             } catch (\Exception $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             } catch (\Error $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             }
         }
         $this->_sendBuffer = $this->_recvBuffer = '';

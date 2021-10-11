@@ -98,11 +98,9 @@ class AsyncUdpConnection extends UdpConnection
             try {
                 \call_user_func($this->onMessage, $this, $recv_buffer);
             } catch (\Exception $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             } catch (\Error $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             }
         }
         return true;
@@ -152,11 +150,9 @@ class AsyncUdpConnection extends UdpConnection
             try {
                 \call_user_func($this->onClose, $this);
             } catch (\Exception $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             } catch (\Error $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             }
         }
         $this->onConnect = $this->onMessage = $this->onClose = null;
@@ -197,11 +193,9 @@ class AsyncUdpConnection extends UdpConnection
             try {
                 \call_user_func($this->onConnect, $this);
             } catch (\Exception $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             } catch (\Error $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             }
         }
     }

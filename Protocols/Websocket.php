@@ -94,11 +94,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         try {
                             \call_user_func(isset($connection->onWebSocketClose)?$connection->onWebSocketClose:$connection->worker->onWebSocketClose, $connection);
                         } catch (\Exception $e) {
-                            Worker::log($e);
-                            exit(250);
+                            Worker::stopAll(250, $e);
                         } catch (\Error $e) {
-                            Worker::log($e);
-                            exit(250);
+                            Worker::stopAll(250, $e);
                         }
                     } // Close connection.
                     else {
@@ -157,11 +155,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                             try {
                                 \call_user_func(isset($connection->onWebSocketPing)?$connection->onWebSocketPing:$connection->worker->onWebSocketPing, $connection, $ping_data);
                             } catch (\Exception $e) {
-                                Worker::log($e);
-                                exit(250);
+                                Worker::stopAll(250, $e);
                             } catch (\Error $e) {
-                                Worker::log($e);
-                                exit(250);
+                                Worker::stopAll(250, $e);
                             }
                         } else {
                             $connection->send($ping_data);
@@ -183,11 +179,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                             try {
                                 \call_user_func(isset($connection->onWebSocketPong)?$connection->onWebSocketPong:$connection->worker->onWebSocketPong, $connection, $pong_data);
                             } catch (\Exception $e) {
-                                Worker::log($e);
-                                exit(250);
+                                Worker::stopAll(250, $e);
                             } catch (\Error $e) {
-                                Worker::log($e);
-                                exit(250);
+                                Worker::stopAll(250, $e);
                             }
                         }
                         $connection->websocketType = $tmp_connection_type;
@@ -263,11 +257,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     try {
                         \call_user_func($connection->onError, $connection, \WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
                     } catch (\Exception $e) {
-                        Worker::log($e);
-                        exit(250);
+                        Worker::stopAll(250, $e);
                     } catch (\Error $e) {
-                        Worker::log($e);
-                        exit(250);
+                        Worker::stopAll(250, $e);
                     }
                 }
                 return '';
@@ -279,11 +271,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     try {
                         \call_user_func($connection->onBufferFull, $connection);
                     } catch (\Exception $e) {
-                        Worker::log($e);
-                        exit(250);
+                        Worker::stopAll(250, $e);
                     } catch (\Error $e) {
-                        Worker::log($e);
-                        exit(250);
+                        Worker::stopAll(250, $e);
                     }
                 }
             }
@@ -414,11 +404,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 try {
                     \call_user_func($on_websocket_connect, $connection, $buffer);
                 } catch (\Exception $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 } catch (\Error $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 }
                 if (!empty($_SESSION) && \class_exists('\GatewayWorker\Lib\Context')) {
                     $connection->session = \GatewayWorker\Lib\Context::sessionEncode($_SESSION);

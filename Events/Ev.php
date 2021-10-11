@@ -59,11 +59,9 @@ class Ev implements EventInterface
             try {
                 \call_user_func($func, $fd);
             } catch (\Exception $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             } catch (\Error $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             }
         };
         switch ($flag) {
@@ -140,11 +138,9 @@ class Ev implements EventInterface
         try {
             \call_user_func_array($param[0], $param[1]);
         } catch (\Exception $e) {
-            Worker::log($e);
-            exit(250);
+            Worker::stopAll(250, $e);
         } catch (\Error $e) {
-            Worker::log($e);
-            exit(250);
+            Worker::stopAll(250, $e);
         }
     }
 

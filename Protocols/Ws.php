@@ -97,11 +97,9 @@ class Ws
                         try {
                             \call_user_func($connection->onWebSocketClose, $connection);
                         } catch (\Exception $e) {
-                            Worker::log($e);
-                            exit(250);
+                            Worker::stopAll(250, $e);
                         } catch (\Error $e) {
-                            Worker::log($e);
-                            exit(250);
+                            Worker::stopAll(250, $e);
                         }
                     } // Close connection.
                     else {
@@ -155,11 +153,9 @@ class Ws
                             try {
                                 \call_user_func($connection->onWebSocketPing, $connection, $ping_data);
                             } catch (\Exception $e) {
-                                Worker::log($e);
-                                exit(250);
+                                Worker::stopAll(250, $e);
                             } catch (\Error $e) {
-                                Worker::log($e);
-                                exit(250);
+                                Worker::stopAll(250, $e);
                             }
                         } else {
                             $connection->send($ping_data);
@@ -182,11 +178,9 @@ class Ws
                             try {
                                 \call_user_func($connection->onWebSocketPong, $connection, $pong_data);
                             } catch (\Exception $e) {
-                                Worker::log($e);
-                                exit(250);
+                                Worker::stopAll(250, $e);
                             } catch (\Error $e) {
-                                Worker::log($e);
-                                exit(250);
+                                Worker::stopAll(250, $e);
                             }
                         }
                         $connection->websocketType = $tmp_connection_type;
@@ -264,11 +258,9 @@ class Ws
                     try {
                         \call_user_func($connection->onError, $connection, \WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
                     } catch (\Exception $e) {
-                        Worker::log($e);
-                        exit(250);
+                        Worker::stopAll(250, $e);
                     } catch (\Error $e) {
-                        Worker::log($e);
-                        exit(250);
+                        Worker::stopAll(250, $e);
                     }
                 }
                 return '';
@@ -280,11 +272,9 @@ class Ws
                     try {
                         \call_user_func($connection->onBufferFull, $connection);
                     } catch (\Exception $e) {
-                        Worker::log($e);
-                        exit(250);
+                        Worker::stopAll(250, $e);
                     } catch (\Error $e) {
-                        Worker::log($e);
-                        exit(250);
+                        Worker::stopAll(250, $e);
                     }
                 }
             }
@@ -432,11 +422,9 @@ class Ws
                 try {
                     \call_user_func($connection->onWebSocketConnect, $connection, \substr($buffer, 0, $handshake_response_length));
                 } catch (\Exception $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 } catch (\Error $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 }
             }
             // Headbeat.

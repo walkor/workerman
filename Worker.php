@@ -1746,11 +1746,9 @@ class Worker
                     try {
                         \call_user_func(static::$onMasterReload);
                     } catch (\Exception $e) {
-                        static::log($e);
-                        exit(250);
+                        static::stopAll(250, $e);
                     } catch (\Error $e) {
-                        static::log($e);
-                        exit(250);
+                        static::stopAll(250, $e);
                     }
                     static::initId();
                 }
@@ -1805,11 +1803,9 @@ class Worker
                 try {
                     \call_user_func($worker->onWorkerReload, $worker);
                 } catch (\Exception $e) {
-                    static::log($e);
-                    exit(250);
+                    static::stopAll(250, $e);
                 } catch (\Error $e) {
-                    static::log($e);
-                    exit(250);
+                    static::stopAll(250, $e);
                 }
             }
 
@@ -1820,12 +1816,17 @@ class Worker
     }
 
     /**
-     * Stop.
+     * Stop all.
      *
-     * @return void
+     * @param int $code
+     * @param string $log
      */
-    public static function stopAll()
+    public static function stopAll($code = 0, $log = '')
     {
+        if ($log) {
+            static::log($log);
+        }
+
         static::$_status = static::STATUS_SHUTDOWN;
         // For master process.
         if (static::$_masterPid === \posix_getpid()) {
@@ -1864,7 +1865,7 @@ class Worker
                 }
 
                 try {
-                    exit(0);
+                    exit($code);
                 } catch (Exception $e) {
 
                 }
@@ -2404,15 +2405,13 @@ class Worker
             try {
                 \call_user_func($this->onWorkerStart, $this);
             } catch (\Exception $e) {
-                static::log($e);
                 // Avoid rapid infinite loop exit.
                 sleep(1);
-                exit(250);
+                static::stopAll(250, $e);
             } catch (\Error $e) {
-                static::log($e);
                 // Avoid rapid infinite loop exit.
                 sleep(1);
-                exit(250);
+                static::stopAll(250, $e);
             }
         }
 
@@ -2432,11 +2431,9 @@ class Worker
             try {
                 \call_user_func($this->onWorkerStop, $this);
             } catch (\Exception $e) {
-                static::log($e);
-                exit(250);
+                static::stopAll(250, $e);
             } catch (\Error $e) {
-                static::log($e);
-                exit(250);
+                static::stopAll(250, $e);
             }
         }
         // Remove listener for server socket.
@@ -2486,11 +2483,9 @@ class Worker
             try {
                 \call_user_func($this->onConnect, $connection);
             } catch (\Exception $e) {
-                static::log($e);
-                exit(250);
+                static::stopAll(250, $e);
             } catch (\Error $e) {
-                static::log($e);
-                exit(250);
+                static::stopAll(250, $e);
             }
         }
     }
@@ -2541,11 +2536,9 @@ class Worker
                 }
                 ++ConnectionInterface::$statistics['total_request'];
             } catch (\Exception $e) {
-                static::log($e);
-                exit(250);
+                static::stopAll(250, $e);
             } catch (\Error $e) {
-                static::log($e);
-                exit(250);
+                static::stopAll(250, $e);
             }
         }
         return true;

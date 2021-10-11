@@ -281,11 +281,9 @@ class AsyncTcpConnection extends TcpConnection
             try {
                 \call_user_func($this->onError, $this, $code, $msg);
             } catch (\Exception $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             } catch (\Error $e) {
-                Worker::log($e);
-                exit(250);
+                Worker::stopAll(250, $e);
             }
         }
     }
@@ -349,11 +347,9 @@ class AsyncTcpConnection extends TcpConnection
                 try {
                     \call_user_func($this->onConnect, $this);
                 } catch (\Exception $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 } catch (\Error $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 }
             }
             // Try to emit protocol::onConnect
@@ -361,11 +357,9 @@ class AsyncTcpConnection extends TcpConnection
                 try {
                     \call_user_func(array($this->protocol, 'onConnect'), $this);
                 } catch (\Exception $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 } catch (\Error $e) {
-                    Worker::log($e);
-                    exit(250);
+                    Worker::stopAll(250, $e);
                 }
             }
         } else {
