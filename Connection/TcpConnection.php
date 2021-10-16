@@ -469,6 +469,9 @@ class TcpConnection extends ConnectionInterface
      */
     public function getLocalAddress()
     {
+        if (!\is_resource($this->_socket)) {
+            return '';
+        }
         return (string)@\stream_socket_get_name($this->_socket, false);
     }
 
