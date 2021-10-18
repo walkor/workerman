@@ -1384,7 +1384,7 @@ class Worker
     {
         $files = static::getStartFilesForWindows();
         global $argv;
-        if(\in_array('-q', $argv) || \count($files) === 1)
+        if(\in_array('-q', $argv))
         {
             if(\count(static::$_workers) > 1)
             {
@@ -1451,9 +1451,8 @@ class Worker
             2 => array('file', $std_file, 'w') // stderr
         );
 
-
         $pipes       = array();
-        $process     = \proc_open("php \"$start_file\" -q", $descriptorspec, $pipes);
+        $process     = \proc_open(PHP_BINARY . " \"$start_file\" -q", $descriptorspec, $pipes);
         $std_handler = \fopen($std_file, 'a+');
         \stream_set_blocking($std_handler, false);
 
