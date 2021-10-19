@@ -345,9 +345,8 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             if (\preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
                 $Sec_WebSocket_Key = $match[1];
             } else {
-                $connection->send("HTTP/1.1 200 WebSocket\r\nServer: workerman/".Worker::VERSION."\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman/".Worker::VERSION."</div>",
+                $connection->close("HTTP/1.1 200 WebSocket\r\nServer: workerman/".Worker::VERSION."\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman/".Worker::VERSION."</div>",
                     true);
-                $connection->close();
                 return 0;
             }
             // Calculation websocket key.
@@ -431,9 +430,8 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             return 0;
         }
         // Bad websocket handshake request.
-        $connection->send("HTTP/1.1 200 WebSocket\r\nServer: workerman/".Worker::VERSION."\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman/".Worker::VERSION."</div>",
+        $connection->close("HTTP/1.1 200 WebSocket\r\nServer: workerman/".Worker::VERSION."\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman/".Worker::VERSION."</div>",
             true);
-        $connection->close();
         return 0;
     }
 
