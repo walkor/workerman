@@ -1452,7 +1452,7 @@ class Worker
         );
 
         $pipes       = array();
-        $process     = \proc_open(PHP_BINARY . " \"$start_file\" -q", $descriptorspec, $pipes);
+        $process     = \proc_open('"'.PHP_BINARY . "\" \"$start_file\" -q", $descriptorspec, $pipes);
         $std_handler = \fopen($std_file, 'a+');
         \stream_set_blocking($std_handler, false);
 
