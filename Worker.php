@@ -1384,7 +1384,7 @@ class Worker
     {
         $files = static::getStartFilesForWindows();
         global $argv;
-        if(\in_array('-q', $argv))
+        if(\in_array('-q', $argv) || \count($files) === 1)
         {
             if(\count(static::$_workers) > 1)
             {
