@@ -243,6 +243,20 @@ class Request
     }
 
     /**
+     * Get uri not query_string.
+     *
+     * @return mixed
+     */
+    public function baseUri()
+    {
+        if (!isset($this->_data['base_uri'])) {
+            $str = $this->_data['uri'];
+            $this->_data['base_uri'] = strpos($str, '?') ? strstr($str, '?', true) : $str;
+        }
+        return $this->_data['base_uri'];
+    }
+    
+    /**
      * Get path.
      *
      * @return mixed
