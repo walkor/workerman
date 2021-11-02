@@ -17,7 +17,7 @@ namespace Workerman\Protocols\Http\Session;
  * Class RedisSessionHandler
  * @package Workerman\Protocols\Http\Session
  */
-class RedisSessionHandler extends \SessionHandler
+class RedisSessionHandler extends \SessionHandler implements SessionHandlerInterface
 {
 
     /**
@@ -90,6 +90,14 @@ class RedisSessionHandler extends \SessionHandler
     public function write($session_id, $session_data)
     {
         return true === $this->_redis->setex($session_id, $this->_maxLifeTime, $session_data);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function updateTimestamp($id, $data = "")
+    {
+        return true === $this->_redis->expire($id, $this->_maxLifeTime);
     }
 
     /**

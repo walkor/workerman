@@ -13,6 +13,7 @@
  */
 namespace Workerman\Protocols\Http;
 
+use Workerman\Protocols\Http\Session\SessionHandlerInterface;
 
 /**
  * Class Session
@@ -58,7 +59,7 @@ class Session
     /**
      * Session handler instance.
      *
-     * @var \SessionHandlerInterface
+     * @var SessionHandlerInterface
      */
     protected static $_handler = null;
 
@@ -255,6 +256,16 @@ class Session
             }
         }
         $this->_needSave = false;
+    }
+
+    /**
+     * Refresh session expire time.
+     * 
+     * @return bool
+     */
+    public function refresh()
+    {
+        static::$_handler->updateTimestamp($this->getId());
     }
 
     /**
