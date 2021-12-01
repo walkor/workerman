@@ -546,7 +546,13 @@ class Request
                         else {
                             // Parse $_POST.
                             if (\preg_match('/name="(.*?)"$/', $header_value, $match)) {
-                                $this->_data['post'][$match[1]] = $boundary_value;
+                                $key = $match[1];
+                                if (\strlen($key) > 2 && \substr($key, -2) == '[]') {
+                                    $key = \substr($key, 0, -2);
+                                    $this->_data['post'][$key][] = $boundary_value;
+                                } else {
+                                    $this->_data['post'][$key] = $boundary_value;
+                                }
                             }
                         }
                         break;
