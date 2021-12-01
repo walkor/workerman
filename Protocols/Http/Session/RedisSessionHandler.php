@@ -17,7 +17,7 @@ namespace Workerman\Protocols\Http\Session;
  * Class RedisSessionHandler
  * @package Workerman\Protocols\Http\Session
  */
-class RedisSessionHandler extends \SessionHandler implements SessionHandlerInterface
+class RedisSessionHandler implements SessionHandlerInterface
 {
 
     /**

@@ -156,7 +156,7 @@ class Response
     ) {
         $this->_status = $status;
         $this->_header = $headers;
-        $this->_body = $body;
+        $this->_body = (string)$body;
     }
 
     /**
