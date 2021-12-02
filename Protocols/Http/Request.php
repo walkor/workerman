@@ -251,7 +251,7 @@ class Request
     public function path()
     {
         if (!isset($this->_data['path'])) {
-            $this->_data['path'] = \parse_url($this->uri(), PHP_URL_PATH);
+            $this->_data['path'] = (string)\parse_url($this->uri(), PHP_URL_PATH);
         }
         return $this->_data['path'];
     }
@@ -264,7 +264,7 @@ class Request
     public function queryString()
     {
         if (!isset($this->_data['query_string'])) {
-            $this->_data['query_string'] = \parse_url($this->uri(), PHP_URL_QUERY);
+            $this->_data['query_string'] = (string)\parse_url($this->uri(), PHP_URL_QUERY);
         }
         return $this->_data['query_string'];
     }
