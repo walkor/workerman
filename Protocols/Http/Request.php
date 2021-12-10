@@ -506,6 +506,7 @@ class Request
         }
         $key   = -1;
         $files = array();
+        $post_str = '';
         foreach ($boundary_data_array as $boundary_data_buffer) {
             list($boundary_header_buffer, $boundary_value) = \explode("\r\n\r\n", $boundary_data_buffer, 2);
             // Remove \r\n from the end of buffer.
@@ -547,12 +548,7 @@ class Request
                             // Parse $_POST.
                             if (\preg_match('/name="(.*?)"$/', $header_value, $match)) {
                                 $key = $match[1];
-                                if (\strlen($key) > 2 && \substr($key, -2) == '[]') {
-                                    $key = \substr($key, 0, -2);
-                                    $this->_data['post'][$key][] = $boundary_value;
-                                } else {
-                                    $this->_data['post'][$key] = $boundary_value;
-                                }
+                                $post_str .= \urlencode($key)."=".\urlencode($boundary_value).'&';
                             }
                         }
                         break;
@@ -569,13 +565,16 @@ class Request
         foreach ($files as $file) {
             $key = $file['key'];
             unset($file['key']);
-            // Multi files
-            if (\strlen($key) > 2 && \substr($key, -2) == '[]') {
-                $key = \substr($key, 0, -2);
-                $this->_data['files'][$key][] = $file;
-            } else {
-                $this->_data['files'][$key] = $file;
-            }
+            $str = \urlencode($key)."=1";
+            $result = [];
+            \parse_str($str, $result);
+            \array_walk_recursive($result, function(&$value) use ($file) {
+                $value = $file;
+            });
+            $this->_data['files'] = \array_merge($this->_data['files'], $result);
+        }
+        if ($post_str) {
+            parse_str($post_str, $this->_data['post']);
         }
     }
 
