@@ -650,16 +650,13 @@ class Request
     {
         if (isset($this->_data['files'])) {
             \clearstatcache();
-            foreach ($this->_data['files'] as $items) {
-                if (!\is_array(\current($items))) {
-                    $items = [$items];
-                }
-                foreach ($items as $item) {
-                    if (\is_file($item['tmp_name'])) {
-                        \unlink($item['tmp_name']);
+            \array_walk_recursive($this->_data['files'], function($value, $key){
+                if ($key === 'tmp_name') {
+                    if (\is_file($value)) {
+                        \unlink($value);
                     }
                 }
-            }
+            });
         }
     }
 }
