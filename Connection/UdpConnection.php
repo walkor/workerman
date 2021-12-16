@@ -195,4 +195,14 @@ class UdpConnection extends ConnectionInterface
         }
         return true;
     }
+    
+    /**
+     * Get the real socket.
+     *
+     * @return resource
+     */
+    public function getSocket()
+    {
+        return $this->_socket;
+    }
 }
