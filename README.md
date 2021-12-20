@@ -298,6 +298,7 @@ https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=plaintext&l=
 
 ## Sponsors
 [opencollective.com/walkor](https://opencollective.com/walkor)
+
 [patreon.com/walkor](https://patreon.com/walkor)
 
 ## Donate
