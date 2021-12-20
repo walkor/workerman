@@ -296,7 +296,12 @@ https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=plaintext&l=
 [php-socks5](https://github.com/walkor/php-socks5)  
 [php-http-proxy](https://github.com/walkor/php-http-proxy)  
 
+## Sponsors
+[opencollective.com/walkor](https://opencollective.com/walkor)
+[patreon.com/walkor](https://patreon.com/walkor)
+
 ## Donate
+
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UQGGS9UB35WWG"><img src="http://donate.workerman.net/img/donate.png"></a>
 
 ## LICENSE
