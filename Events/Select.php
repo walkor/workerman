@@ -143,6 +143,7 @@ class Select implements EventInterface
                 $this->_scheduler->insert($timer_id, -$run_time);
                 $this->_eventTimer[$timer_id] = array($func, (array)$args, $flag, $fd);
                 $select_timeout = ($run_time - \microtime(true)) * 1000000;
+                $select_timeout = $select_timeout <= 0 ? 1 : $select_timeout;
                 if( $this->_selectTimeout > $select_timeout ){ 
                     $this->_selectTimeout = $select_timeout;   
                 }  
