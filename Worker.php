@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.0.26';
+    const VERSION = '4.0.27';
 
     /**
      * Status starting.
@@ -1443,30 +1443,21 @@ class Worker
     public static function forkOneWorkerForWindows($start_file)
     {
         $start_file = \realpath($start_file);
-        $std_file = \sys_get_temp_dir() . '/'.\str_replace(array('/', "\\", ':'), '_', $start_file).'.out.txt';
 
         $descriptorspec = array(
-            0 => array('pipe', 'a'), // stdin
-            1 => array('file', $std_file, 'w'), // stdout
-            2 => array('file', $std_file, 'w') // stderr
+            STDIN, STDOUT, STDOUT
         );
 
         $pipes       = array();
         $process     = \proc_open("php \"$start_file\" -q", $descriptorspec, $pipes);
-        $std_handler = \fopen($std_file, 'a+');
-        \stream_set_blocking($std_handler, false);
 
         if (empty(static::$globalEvent)) {
             static::$globalEvent = new Select();
             Timer::init(static::$globalEvent);
         }
-        $timer_id = Timer::add(0.1, function()use($std_handler)
-        {
-            Worker::safeEcho(\fread($std_handler, 65535));
-        });
 
         // 保存子进程句柄
-        static::$_processForWindows[$start_file] = array($process, $start_file, $timer_id);
+        static::$_processForWindows[$start_file] = array($process, $start_file);
     }
 
     /**
@@ -1479,14 +1470,12 @@ class Worker
         {
             $process = $process_data[0];
             $start_file = $process_data[1];
-            $timer_id = $process_data[2];
             $status = \proc_get_status($process);
             if(isset($status['running']))
             {
                 if(!$status['running'])
                 {
                     static::safeEcho("process $start_file terminated and try to restart\n");
-                    Timer::del($timer_id);
                     \proc_close($process);
                     static::forkOneWorkerForWindows($start_file);
                 }
