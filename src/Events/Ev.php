@@ -78,7 +78,9 @@ class Ev implements EventInterface
         if (isset($this->_eventTimer[$timer_id])) {
             $this->_eventTimer[$timer_id]->stop();
             unset($this->_eventTimer[$timer_id]);
+            return true;
         }
+        return false;
     }
 
     /**

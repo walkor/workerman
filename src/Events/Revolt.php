@@ -213,7 +213,9 @@ class Revolt implements EventInterface
         if (isset($this->_eventTimer[$timer_id])) {
             $this->_driver->cancel($this->_eventTimer[$timer_id]);
             unset($this->_eventTimer[$timer_id]);
+            return true;
         }
+        return false;
     }
 
     /**

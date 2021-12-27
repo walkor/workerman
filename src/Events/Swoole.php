@@ -43,9 +43,6 @@ class Swoole implements EventInterface
      */
     public function delay(float $delay, $func, $args)
     {
-        if ($this->mapId > \PHP_INT_MAX) {
-            $this->mapId = 0;
-        }
         $t = (int)($delay * 1000);
         $t = $t < 1 ? 1 : $t;
         $timer_id = Timer::after($t, function () use ($func, $args, &$timer_id) {
@@ -65,12 +62,12 @@ class Swoole implements EventInterface
      */
     public function deleteTimer($timer_id)
     {
-        if (!isset($this->_eventTimer[$timer_id])) {
-            return true;
+        if (isset($this->_eventTimer[$timer_id])) {
+            $res = Timer::clear($timer_id);
+            unset($this->_eventTimer[$timer_id]);
+            return $res;
         }
-        $res = Timer::clear($timer_id);
-        unset($this->_eventTimer[$timer_id]);
-        return $res;
+        return false;
     }
 
     /**

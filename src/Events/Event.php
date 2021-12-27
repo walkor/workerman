@@ -112,7 +112,9 @@ class Event implements EventInterface
         if (isset($this->_eventTimer[$timer_id])) {
             $this->_eventTimer[$timer_id]->del();
             unset($this->_eventTimer[$timer_id]);
+            return true;
         }
+        return false;
     }
 
     /**
