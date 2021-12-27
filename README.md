@@ -127,13 +127,13 @@ use Workerman\Worker;
 require_once __DIR__ . '/vendor/autoload.php';
 
 // SSL context.
-$context = array(
-    'ssl' => array(
+$context = [
+    'ssl' => [
         'local_cert'  => '/your/path/of/server.pem',
         'local_pk'    => '/your/path/of/server.key',
         'verify_peer' => false,
-    )
-);
+    ]
+];
 
 // Create a Websocket server with ssl context.
 $ws_worker = new Worker('websocket://0.0.0.0:2346', $context);
@@ -286,17 +286,8 @@ Worker::runAll();
 Documentation:[https://github.com/walkor/workerman-manual](https://github.com/walkor/workerman-manual/blob/master/english/SUMMARY.md)
 
 # Benchmarks
-https://www.techempower.com/benchmarks/#section=data-r20&hw=ph&test=db&l=yyku7z-e7&a=2
-![image](https://user-images.githubusercontent.com/6073368/146704320-1559fe97-aa67-4ee3-95d6-61e341b3c93b.png)
+https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=plaintext&l=zik073-1r
 
-## Sponsors
-[opencollective.com/walkor](https://opencollective.com/walkor)
-
-[patreon.com/walkor](https://patreon.com/walkor)
-
-## Donate
-
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UQGGS9UB35WWG"><img src="http://donate.workerman.net/img/donate.png"></a>
 
 ## Other links with workerman
 
@@ -304,6 +295,9 @@ https://www.techempower.com/benchmarks/#section=data-r20&hw=ph&test=db&l=yyku7z-
 [PHPSocket.IO](https://github.com/walkor/phpsocket.io)   
 [php-socks5](https://github.com/walkor/php-socks5)  
 [php-http-proxy](https://github.com/walkor/php-http-proxy)  
+
+## Donate
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UQGGS9UB35WWG"><img src="http://donate.workerman.net/img/donate.png"></a>
 
 ## LICENSE
 
