@@ -192,7 +192,7 @@ class Timer
     public static function del($timer_id)
     {
         if (self::$_event) {
-            return self::$_event->removeDelay($timer_id);
+            return self::$_event->deleteTimer($timer_id);
         }
 
         foreach(self::$_tasks as $run_time => $task_data) 
