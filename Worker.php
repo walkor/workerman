@@ -770,7 +770,7 @@ class Worker
 
         //show version
         $line_version = 'Workerman version:' . static::VERSION . \str_pad('PHP version:', 22, ' ', \STR_PAD_LEFT) . \PHP_VERSION . \PHP_EOL;
-        !\defined('LINE_VERSIOIN_LENGTH') && \define('LINE_VERSIOIN_LENGTH', \strlen($line_version));
+        !\defined('LINE_VERSION_LENGTH') && \define('LINE_VERSION_LENGTH', \strlen($line_version));
         $total_length = static::getSingleLineTotalLength();
         $line_one = '<n>' . \str_pad('<w> WORKERMAN </w>', $total_length + \strlen('<w></w>'), '-', \STR_PAD_BOTH) . '</n>'. \PHP_EOL;
         $line_two = \str_pad('<w> WORKERS </w>' , $total_length  + \strlen('<w></w>'), '-', \STR_PAD_BOTH) . \PHP_EOL;
@@ -850,9 +850,9 @@ class Worker
             $total_length += static::$$key + static::UI_SAFE_LENGTH;
         }
 
-        //keep beauty when show less colums
-        !\defined('LINE_VERSIOIN_LENGTH') && \define('LINE_VERSIOIN_LENGTH', 0);
-        $total_length <= LINE_VERSIOIN_LENGTH && $total_length = LINE_VERSIOIN_LENGTH;
+        //keep beauty when show less columns
+        !\defined('LINE_VERSION_LENGTH') && \define('LINE_VERSION_LENGTH', 0);
+        $total_length <= LINE_VERSION_LENGTH && $total_length = LINE_VERSION_LENGTH;
 
         return $total_length;
     }
@@ -958,7 +958,7 @@ class Worker
                 \posix_kill($master_pid, SIGIO);
                 // Waiting amoment.
                 \usleep(500000);
-                // Display statisitcs data from a disk file.
+                // Display statistics data from a disk file.
                 if(\is_readable($statistics_file)) {
                     \readfile($statistics_file);
                 }
