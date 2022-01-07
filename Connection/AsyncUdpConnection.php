@@ -18,7 +18,7 @@ use Workerman\Worker;
 use \Exception;
 
 /**
- * AsyncTcpConnection.
+ * AsyncUdpConnection.
  */
 class AsyncUdpConnection extends UdpConnection
 {

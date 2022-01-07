@@ -803,14 +803,15 @@ class Worker
         !empty($content) && static::safeEcho($line_last);
 
         if (static::$daemonize) {
-            foreach ($argv as $index => $value) {
+            $tmpArgv = $argv;
+            foreach ($tmpArgv as $index => $value) {
                 if ($value == '-d') {
-                    unset($argv[$index]);
+                    unset($tmpArgv[$index]);
                 } elseif ($value == 'start' || $value == 'restart') {
-                    $argv[$index] = 'stop';
+                    $tmpArgv[$index] = 'stop';
                 }
             }
-            static::safeEcho("Input \"php ".implode(' ', $argv)."\" to stop. Start success.\n\n");
+            static::safeEcho("Input \"php ".implode(' ', $tmpArgv)."\" to stop. Start success.\n\n");
         } else {
             static::safeEcho("Press Ctrl+C to stop. Start success.\n");
         }
