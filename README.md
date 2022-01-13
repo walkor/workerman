@@ -281,7 +281,7 @@ Worker::runAll();
 
 中文主页:[http://www.workerman.net](https://www.workerman.net)
 
-中文文档: [http://doc.workerman.net](https://www.workerman.net/doc/worekrman)
+中文文档: [https://www.workerman.net/doc/workerman](https://www.workerman.net/doc/workerman)
 
 Documentation:[https://github.com/walkor/workerman-manual](https://github.com/walkor/workerman-manual/blob/master/english/SUMMARY.md)
 
