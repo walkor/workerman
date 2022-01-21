@@ -543,6 +543,8 @@ class Request
                             $tmp_upload_dir = HTTP::uploadTmpDir();
                             if (!$tmp_upload_dir) {
                                 $error = UPLOAD_ERR_NO_TMP_DIR;
+                            } else if ($boundary_value === '') {
+                                $error = UPLOAD_ERR_NO_FILE;
                             } else {
                                 $tmp_file = \tempnam($tmp_upload_dir, 'workerman.upload.');
                                 if ($tmp_file === false || false == \file_put_contents($tmp_file, $boundary_value)) {
@@ -558,7 +560,8 @@ class Request
                                 'name' => $match[2],
                                 'tmp_name' => $tmp_file,
                                 'size' => $size,
-                                'error' => $error
+                                'error' => $error,
+                                'type' => null,
                             ];
                             break;
                         } // Is post field.
