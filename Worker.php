@@ -266,6 +266,15 @@ class Worker
     public static $pidFile = '';
 
     /**
+     * Phar support.
+     * The filename prefix used to store the master process status file.
+     * Allow user-defined file paths to store the master process status file.
+     *
+     * @var string
+     */
+    public static $statisticsFileNamePrefix = '';
+    
+    /**
      * Log file.
      *
      * @var mixed
@@ -644,7 +653,9 @@ class Worker
         if (static::$_OS !== \OS_TYPE_LINUX) {
             return;
         }
-        static::$_statisticsFile = __DIR__ . '/../workerman-' .posix_getpid().'.status';
+        
+        static::$_statisticsFile =  !empty(static::$statisticsFileNamePrefix) ? static::$statisticsFileNamePrefix  . posix_getpid().'.status' : __DIR__ . '/../workerman-' .posix_getpid().'.status';
+
         foreach (static::$_workers as $worker) {
             // Worker name.
             if (empty($worker->name)) {
@@ -921,7 +932,7 @@ class Worker
             exit;
         }
 
-        $statistics_file =  __DIR__ . "/../workerman-$master_pid.status";
+        $statistics_file =  !empty(static::$statisticsFileNamePrefix) ? static::$statisticsFileNamePrefix . "$master_pid.status" : __DIR__ . "/../workerman-$master_pid.status";
 
         // execute command.
         switch ($command) {
