@@ -764,7 +764,7 @@ class Worker
             static::safeEcho("----------------------- WORKERMAN -----------------------------\r\n");
             static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. \PHP_VERSION. "\r\n");
             static::safeEcho("------------------------ WORKERS -------------------------------\r\n");
-            static::safeEcho("worker               listen                              processes status\r\n");
+            static::safeEcho("worker                        listen                              processes status\r\n");
             return;
         }
 
@@ -1402,7 +1402,7 @@ class Worker
             $worker = current(static::$_workers);
 
             // Display UI.
-            static::safeEcho(\str_pad($worker->name, 21) . \str_pad($worker->getSocketName(), 36) . \str_pad($worker->count, 10) . "[ok]\n");
+            static::safeEcho(\str_pad($worker->name, 30) . \str_pad($worker->getSocketName(), 36) . \str_pad($worker->count, 10) . "[ok]\n");
             $worker->listen();
             $worker->run();
             exit("@@@child exit@@@\r\n");
