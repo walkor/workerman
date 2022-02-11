@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.0.27';
+    const VERSION = '4.0.28';
 
     /**
      * Status starting.
@@ -1827,7 +1827,7 @@ class Worker
 
         static::$_status = static::STATUS_SHUTDOWN;
         // For master process.
-        if (static::$_masterPid === \posix_getpid()) {
+        if (\DIRECTORY_SEPARATOR === '/' && static::$_masterPid === \posix_getpid()) {
             static::log("Workerman[" . \basename(static::$_startFile) . "] stopping ...");
             $worker_pid_array = static::getAllWorkerPids();
             // Send stop signal to all child processes.
