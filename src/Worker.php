@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.0.25';
+    const VERSION = '5.0.0';
 
     /**
      * Status starting.
@@ -62,14 +62,6 @@ class Worker
      * @var int
      */
     const STATUS_RELOADING = 8;
-
-    /**
-     * After sending the restart command to the child process KILL_WORKER_TIMER_TIME seconds,
-     * if the process is still living then forced to kill.
-     *
-     * @var int
-     */
-    const KILL_WORKER_TIMER_TIME = 2;
 
     /**
      * Default backlog. Backlog is the maximum length of the queue of pending connections.
@@ -225,13 +217,6 @@ class Worker
     public $protocol = null;
 
     /**
-     * Root path for autoload.
-     *
-     * @var string
-     */
-    protected $_autoloadRootPath = '';
-
-    /**
      * Pause accept new connections or not.
      *
      * @var bool
@@ -306,6 +291,20 @@ class Worker
      * @var string
      */
     public static $processTitle = 'WorkerMan';
+
+    /**
+     * After sending the stop command to the child process stopTimeout seconds,
+     * if the process is still living then forced to kill.
+     *
+     * @var int
+     */
+    public static $stopTimeout = 2;
+
+    /**
+     * Command
+     * @var string
+     */
+    public static $command = '';
 
     /**
      * The PID of master process.
@@ -746,8 +745,8 @@ class Worker
      */
     protected static function displayUI()
     {
-        global $argv;
-        if (\in_array('-q', $argv)) {
+        $tmp_argv = static::getArgv();
+        if (\in_array('-q', $tmp_argv)) {
             return;
         }
         if (\DIRECTORY_SEPARATOR !== '/') {
@@ -759,7 +758,7 @@ class Worker
         }
 
         //show version
-        $line_version = 'Workerman version:' . static::VERSION . \str_pad('PHP version:', 22, ' ', \STR_PAD_LEFT) . \PHP_VERSION . \PHP_EOL;
+        $line_version = 'Workerman version:' . static::VERSION . \str_pad('PHP version:', 16, ' ', \STR_PAD_LEFT) . \PHP_VERSION . \str_pad('Event-loop:', 16, ' ', \STR_PAD_LEFT) . static::getEventLoopName() . \PHP_EOL;
         !\defined('LINE_VERSIOIN_LENGTH') && \define('LINE_VERSIOIN_LENGTH', \strlen($line_version));
         $total_length = static::getSingleLineTotalLength();
         $line_one = '<n>' . \str_pad('<w> WORKERMAN </w>', $total_length + \strlen('<w></w>'), '-', \STR_PAD_BOTH) . '</n>'. \PHP_EOL;
@@ -793,14 +792,9 @@ class Worker
         !empty($content) && static::safeEcho($line_last);
 
         if (static::$daemonize) {
-            foreach ($argv as $index => $value) {
-                if ($value == '-d') {
-                    unset($argv[$index]);
-                } elseif ($value == 'start' || $value == 'restart') {
-                    $argv[$index] = 'stop';
-                }
-            }
-            static::safeEcho("Input \"php ".implode(' ', $argv)."\" to stop. Start success.\n\n");
+            global $argv;
+            $start_file = $argv[0];
+            static::safeEcho('Input "php '. $start_file . ' stop" to stop. Start success.' . "\n\n");
         } else {
             static::safeEcho("Press Ctrl+C to stop. Start success.\n");
         }
@@ -874,7 +868,7 @@ class Worker
             '-g'
         ];
         $command = $mode = '';
-        foreach ($argv as $value) {
+        foreach (static::getArgv() as $value) {
             if (\in_array($value, $available_commands)) {
                 $command = $value;
             } elseif (\in_array($value, $available_mode)) {
@@ -1007,6 +1001,12 @@ class Worker
                 }
                 exit($usage);
         }
+    }
+
+    public static function getArgv()
+    {
+        global $argv;
+        return isset($argv[1]) ? $argv : (static::$command ? \explode(' ', static::$command) : $argv);
     }
 
     /**
@@ -1373,8 +1373,7 @@ class Worker
     protected static function forkWorkersForWindows()
     {
         $files = static::getStartFilesForWindows();
-        global $argv;
-        if(\in_array('-q', $argv) || \count($files) === 1)
+        if(\in_array('-q', static::getArgv()) || \count($files) === 1)
         {
             if(\count(static::$_workers) > 1)
             {
@@ -1413,9 +1412,8 @@ class Worker
      * @return array
      */
     public static function getStartFilesForWindows() {
-        global $argv;
         $files = [];
-        foreach($argv as $file)
+        foreach(static::getArgv() as $file)
         {
             if(\is_file($file))
             {
@@ -1766,9 +1764,9 @@ class Worker
             $one_worker_pid = \current(static::$_pidsToRestart);
             // Send reload signal to a worker process.
             \posix_kill($one_worker_pid, $sig);
-            // If the process does not exit after static::KILL_WORKER_TIMER_TIME seconds try to kill it.
+            // If the process does not exit after stopTimeout seconds try to kill it.
             if(!static::$_gracefulStop){
-                Timer::add(static::KILL_WORKER_TIMER_TIME, '\posix_kill', [$one_worker_pid, \SIGKILL], false);
+                Timer::add(static::$stopTimeout, '\posix_kill', [$one_worker_pid, \SIGKILL], false);
             }
         } // For child processes.
         else {
@@ -1803,7 +1801,7 @@ class Worker
 
         static::$_status = static::STATUS_SHUTDOWN;
         // For master process.
-        if (static::$_masterPid === \posix_getpid()) {
+        if (\DIRECTORY_SEPARATOR === '/' && static::$_masterPid === \posix_getpid()) {
             static::log("Workerman[" . \basename(static::$_startFile) . "] stopping ...");
             $worker_pid_array = static::getAllWorkerPids();
             // Send stop signal to all child processes.
@@ -1815,7 +1813,7 @@ class Worker
             foreach ($worker_pid_array as $worker_pid) {
                 \posix_kill($worker_pid, $sig);
                 if(!static::$_gracefulStop){
-                    Timer::add(static::KILL_WORKER_TIMER_TIME, '\posix_kill', [$worker_pid, \SIGKILL], false);
+                    Timer::add(static::$stopTimeout, '\posix_kill', [$worker_pid, \SIGKILL], false);
                 }
             }
             Timer::add(1, "\\Workerman\\Worker::checkIfChildRunning");
@@ -2163,10 +2161,6 @@ class Worker
         static::$_workers[$this->workerId] = $this;
         static::$_pidMap[$this->workerId]  = [];
 
-        // Get autoload root path.
-        $backtrace               = \debug_backtrace();
-        $this->_autoloadRootPath = \dirname($backtrace[0]['file']);
-
         // Context for socket.
         if ($socket_name) {
             $this->_socketName = $socket_name;
@@ -2287,7 +2281,9 @@ class Worker
                 throw new Exception('Bad worker->transport ' . \var_export($this->transport, true));
             }
         } else {
-            $this->transport = $scheme;
+            if ($this->transport === 'tcp') {
+                $this->transport = $scheme;
+            }
         }
         //local socket
         return static::$_builtinTransports[$this->transport] . ":" . $address;
