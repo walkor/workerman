@@ -165,7 +165,7 @@ class Request
     {
         if (!isset($this->_data['cookie'])) {
             $this->_data['cookie'] = [];
-            \parse_str(\str_replace('; ', '&', $this->header('cookie', '')), $this->_data['cookie']);
+            \parse_str(\preg_replace('/; ?/', '&', $this->header('cookie', '')), $this->_data['cookie']);
         }
         if ($name === null) {
             return $this->_data['cookie'];
