@@ -17,8 +17,6 @@ namespace Workerman\Protocols;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
-use Workerman\Protocols\Websocket;
-use Workerman\Worker;
 
 /**
  * Class Http.
@@ -31,7 +29,7 @@ class Http
      *
      * @var string
      */
-    protected static $_requestClass = 'Workerman\Protocols\Http\Request';
+    protected static $_requestClass = Request::class;
 
     /**
      * Session name.
@@ -169,7 +167,7 @@ class Http
         static $requests = [];
         $cacheable = static::$_enableCache && !isset($recv_buffer[512]);
         if (true === $cacheable && isset($requests[$recv_buffer])) {
-            $request = $requests[$recv_buffer];
+            $request = clone $requests[$recv_buffer];
             $request->connection = $connection;
             $connection->__request = $request;
             $request->properties = [];

@@ -15,8 +15,8 @@
 namespace Workerman\Connection;
 
 use Workerman\Events\EventInterface;
+use Workerman\Protocols\Http\Request;
 use Workerman\Worker;
-use \Exception;
 
 /**
  * TcpConnection.
@@ -583,6 +583,13 @@ class TcpConnection extends ConnectionInterface
                 if (!isset($requests[512]) && isset($requests[$buffer])) {
                     ++self::$statistics['total_request'];
                     $request = $requests[$buffer];
+                    if ($request instanceof Request) {
+                        $request = clone $request;
+                        $requests[$buffer] = $request;
+                        $request->connection = $this;
+                        $this->__request = $request;
+                        $request->properties = [];
+                    }
                     try {
                         ($this->onMessage)($this, $request);
                     } catch (\Throwable $e) {
@@ -644,7 +651,7 @@ class TcpConnection extends ConnectionInterface
                 try {
                     // Decode request buffer before Emitting onMessage callback.
                     $request = $this->protocol::decode($one_request_buffer, $this);
-                    if ($one && !isset($one_request_buffer[512])) {
+                    if ((!\is_object($request) || $request instanceof Request) && $one && !isset($one_request_buffer[512])) {
                         $requests[$one_request_buffer] = $request;
                         if (\count($requests) > 512) {
                             unset($requests[\key($requests)]);
