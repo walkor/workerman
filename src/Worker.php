@@ -1531,7 +1531,7 @@ class Worker
     /**
      * Get worker id.
      *
-     * @param int $worker_id
+     * @param string $worker_id
      * @param int $pid
      *
      * @return integer
