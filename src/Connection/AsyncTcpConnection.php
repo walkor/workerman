@@ -15,7 +15,7 @@
 namespace Workerman\Connection;
 
 use Workerman\Events\EventInterface;
-use Workerman\Lib\Timer;
+use Workerman\Timer;
 use Workerman\Worker;
 use \Exception;
 
