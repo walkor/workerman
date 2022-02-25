@@ -251,6 +251,13 @@ class Worker
     public static $pidFile = '';
 
     /**
+     * The file used to store the master process status file.
+     *
+     * @var string
+     */
+    public static $statusFile = '';
+
+    /**
      * Log file.
      *
      * @var mixed
@@ -633,7 +640,7 @@ class Worker
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-        static::$_statisticsFile = __DIR__ . '/../workerman-' .posix_getpid().'.status';
+        static::$_statisticsFile =  static::$statusFile ?: __DIR__ . '/../workerman-' .posix_getpid().'.status';
         foreach (static::$_workers as $worker) {
             // Worker name.
             if (empty($worker->name)) {
@@ -904,7 +911,7 @@ class Worker
             exit;
         }
 
-        $statistics_file =  __DIR__ . "/../workerman-$master_pid.status";
+        $statistics_file =  static::$statusFile ?: __DIR__ . "/../workerman-$master_pid.status";
 
         // execute command.
         switch ($command) {
@@ -918,8 +925,8 @@ class Worker
                     if (\is_file($statistics_file)) {
                         @\unlink($statistics_file);
                     }
-                    // Master process will send SIGUSR2 signal to all child processes.
-                    \posix_kill($master_pid, SIGUSR2);
+                    // Master process will send SIGIOT signal to all child processes.
+                    \posix_kill($master_pid, SIGIOT);
                     // Sleep 1 second.
                     \sleep(1);
                     // Clear terminal.
@@ -951,7 +958,7 @@ class Worker
             case 'stop':
                 if ($mode === '-g') {
                     static::$_gracefulStop = true;
-                    $sig = \SIGHUP;
+                    $sig = \SIGQUIT;
                     static::log("Workerman[$start_file] is gracefully stopping ...");
                 } else {
                     static::$_gracefulStop = false;
@@ -989,9 +996,9 @@ class Worker
                 break;
             case 'reload':
                 if($mode === '-g'){
-                    $sig = \SIGQUIT;
-                }else{
                     $sig = \SIGUSR1;
+                }else{
+                    $sig = \SIGUSR2;
                 }
                 \posix_kill($master_pid, $sig);
                 exit;
@@ -1103,21 +1110,10 @@ class Worker
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-        $signalHandler = '\Workerman\Worker::signalHandler';
-        // stop
-        \pcntl_signal(\SIGINT, $signalHandler, false);
-        // stop
-        \pcntl_signal(\SIGTERM, $signalHandler, false);
-        // graceful stop
-        \pcntl_signal(\SIGHUP, $signalHandler, false);
-        // reload
-        \pcntl_signal(\SIGUSR1, $signalHandler, false);
-        // graceful reload
-        \pcntl_signal(\SIGQUIT, $signalHandler, false);
-        // status
-        \pcntl_signal(\SIGUSR2, $signalHandler, false);
-        // connection status
-        \pcntl_signal(\SIGIO, $signalHandler, false);
+        $signals = [\SIGINT, \SIGTERM, \SIGHUP, \SIGTSTP, \SIGQUIT, \SIGUSR2, \SIGUSR1, \SIGIOT, \SIGIO];
+        foreach ($signals as $signal) {
+            \pcntl_signal($signal, [Worker::class, 'signalHandler'], false);
+        }
         // ignore
         \pcntl_signal(\SIGPIPE, \SIG_IGN, false);
     }
@@ -1132,33 +1128,11 @@ class Worker
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-        $signalHandler = '\Workerman\Worker::signalHandler';
-        // uninstall stop signal handler
-        \pcntl_signal(\SIGINT, \SIG_IGN, false);
-        // uninstall stop signal handler
-        \pcntl_signal(\SIGTERM, \SIG_IGN, false);
-        // uninstall graceful stop signal handler
-        \pcntl_signal(\SIGHUP, \SIG_IGN, false);
-        // uninstall reload signal handler
-        \pcntl_signal(\SIGUSR1, \SIG_IGN, false);
-        // uninstall graceful reload signal handler
-        \pcntl_signal(\SIGQUIT, \SIG_IGN, false);
-        // uninstall status signal handler
-        \pcntl_signal(\SIGUSR2, \SIG_IGN, false);
-        // uninstall connections status signal handler
-        \pcntl_signal(\SIGIO, \SIG_IGN, false);
-        // reinstall stop signal handler
-        static::$globalEvent->onSignal(\SIGINT, $signalHandler);
-        // reinstall graceful stop signal handler
-        static::$globalEvent->onSignal(\SIGHUP, $signalHandler);
-        // reinstall reload signal handler
-        static::$globalEvent->onSignal(\SIGUSR1, $signalHandler);
-        // reinstall graceful reload signal handler
-        static::$globalEvent->onSignal(\SIGQUIT, $signalHandler);
-        // reinstall status signal handler
-        static::$globalEvent->onSignal(\SIGUSR2, $signalHandler);
-        // reinstall connection status signal handler
-        static::$globalEvent->onSignal(\SIGIO, $signalHandler);
+        $signals = [\SIGINT, \SIGTERM, \SIGHUP, \SIGTSTP, \SIGQUIT, \SIGUSR2, \SIGUSR1, \SIGIOT, \SIGIO];
+        foreach ($signals as $signal) {
+            \pcntl_signal($signal, \SIG_IGN, false);
+            static::$globalEvent->onSignal($signal, '\Workerman\Worker::signalHandler');
+        };
     }
 
     /**
@@ -1172,23 +1146,25 @@ class Worker
             // Stop.
             case \SIGINT:
             case \SIGTERM:
+            case \SIGHUP:
+            case \SIGTSTP;
                 static::$_gracefulStop = false;
                 static::stopAll();
                 break;
             // Graceful stop.
-            case \SIGHUP:
+            case \SIGQUIT:
                 static::$_gracefulStop = true;
                 static::stopAll();
                 break;
             // Reload.
-            case \SIGQUIT:
             case \SIGUSR1:
-                static::$_gracefulStop = $signal === \SIGQUIT;
+            case \SIGUSR2:
+                static::$_gracefulStop = $signal === \SIGUSR1;
                 static::$_pidsToRestart = static::getAllWorkerPids();
                 static::reload();
                 break;
             // Show status.
-            case \SIGUSR2:
+            case \SIGIOT:
                 static::writeStatisticsToStatusFile();
                 break;
             // Show connection status.
@@ -1729,9 +1705,9 @@ class Worker
             }
 
             if (static::$_gracefulStop) {
-                $sig = \SIGQUIT;
-            } else {
                 $sig = \SIGUSR1;
+            } else {
+                $sig = \SIGUSR2;
             }
 
             // Send reload signal to all child processes.
@@ -1806,7 +1782,7 @@ class Worker
             $worker_pid_array = static::getAllWorkerPids();
             // Send stop signal to all child processes.
             if (static::$_gracefulStop) {
-                $sig = \SIGHUP;
+                $sig = \SIGQUIT;
             } else {
                 $sig = \SIGINT;
             }
@@ -1939,7 +1915,7 @@ class Worker
             \chmod(static::$_statisticsFile, 0722);
 
             foreach (static::getAllWorkerPids() as $worker_pid) {
-                \posix_kill($worker_pid, \SIGUSR2);
+                \posix_kill($worker_pid, \SIGIOT);
             }
             return;
         }
