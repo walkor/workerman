@@ -1015,9 +1015,9 @@ class Worker
                 break;
             case 'reload':
                 if($mode === '-g'){
-                    $sig = \SIGUSR1;
-                }else{
                     $sig = \SIGUSR2;
+                }else{
+                    $sig = \SIGUSR1;
                 }
                 \posix_kill($master_pid, $sig);
                 exit;
@@ -1135,9 +1135,9 @@ class Worker
         // graceful stop
         \pcntl_signal(\SIGQUIT, $signalHandler, false);
         // reload
-        \pcntl_signal(\SIGUSR2, $signalHandler, false);
-        // graceful reload
         \pcntl_signal(\SIGUSR1, $signalHandler, false);
+        // graceful reload
+        \pcntl_signal(\SIGUSR2, $signalHandler, false);
         // status
         \pcntl_signal(\SIGIOT, $signalHandler, false);
         // connection status
@@ -1168,9 +1168,9 @@ class Worker
         // uninstall graceful stop signal handler
         \pcntl_signal(\SIGQUIT, \SIG_IGN, false);
         // uninstall reload signal handler
-        \pcntl_signal(\SIGUSR2, \SIG_IGN, false);
-        // uninstall graceful reload signal handler
         \pcntl_signal(\SIGUSR1, \SIG_IGN, false);
+        // uninstall graceful reload signal handler
+        \pcntl_signal(\SIGUSR2, \SIG_IGN, false);
         // uninstall status signal handler
         \pcntl_signal(\SIGIOT, \SIG_IGN, false);
         // uninstall connections status signal handler
@@ -1184,9 +1184,9 @@ class Worker
         // reinstall graceful stop signal handler
         static::$globalEvent->add(\SIGTSTP, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall reload signal handler
-        static::$globalEvent->add(\SIGUSR2, EventInterface::EV_SIGNAL, $signalHandler);
-        // reinstall graceful reload signal handler
         static::$globalEvent->add(\SIGUSR1, EventInterface::EV_SIGNAL, $signalHandler);
+        // reinstall graceful reload signal handler
+        static::$globalEvent->add(\SIGUSR2, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall status signal handler
         static::$globalEvent->add(\SIGIOT, EventInterface::EV_SIGNAL, $signalHandler);
         // reinstall connection status signal handler
@@ -1215,9 +1215,9 @@ class Worker
                 static::stopAll();
                 break;
             // Reload.
-            case \SIGUSR1:
             case \SIGUSR2:
-                static::$_gracefulStop = $signal === \SIGUSR1;
+            case \SIGUSR1:
+                static::$_gracefulStop = $signal === \SIGUSR2;
                 static::$_pidsToRestart = static::getAllWorkerPids();
                 static::reload();
                 break;
@@ -1767,9 +1767,9 @@ class Worker
             }
 
             if (static::$_gracefulStop) {
-                $sig = \SIGUSR1;
-            } else {
                 $sig = \SIGUSR2;
+            } else {
+                $sig = \SIGUSR1;
             }
 
             // Send reload signal to all child processes.
