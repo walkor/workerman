@@ -996,9 +996,9 @@ class Worker
                 break;
             case 'reload':
                 if($mode === '-g'){
-                    $sig = \SIGUSR1;
-                }else{
                     $sig = \SIGUSR2;
+                }else{
+                    $sig = \SIGUSR1;
                 }
                 \posix_kill($master_pid, $sig);
                 exit;
@@ -1110,7 +1110,7 @@ class Worker
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-        $signals = [\SIGINT, \SIGTERM, \SIGHUP, \SIGTSTP, \SIGQUIT, \SIGUSR2, \SIGUSR1, \SIGIOT, \SIGIO];
+        $signals = [\SIGINT, \SIGTERM, \SIGHUP, \SIGTSTP, \SIGQUIT, \SIGUSR1, \SIGUSR2, \SIGIOT, \SIGIO];
         foreach ($signals as $signal) {
             \pcntl_signal($signal, [Worker::class, 'signalHandler'], false);
         }
@@ -1128,7 +1128,7 @@ class Worker
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-        $signals = [\SIGINT, \SIGTERM, \SIGHUP, \SIGTSTP, \SIGQUIT, \SIGUSR2, \SIGUSR1, \SIGIOT, \SIGIO];
+        $signals = [\SIGINT, \SIGTERM, \SIGHUP, \SIGTSTP, \SIGQUIT, \SIGUSR1, \SIGUSR2, \SIGIOT, \SIGIO];
         foreach ($signals as $signal) {
             \pcntl_signal($signal, \SIG_IGN, false);
             static::$globalEvent->onSignal($signal, '\Workerman\Worker::signalHandler');
@@ -1157,9 +1157,9 @@ class Worker
                 static::stopAll();
                 break;
             // Reload.
-            case \SIGUSR1:
             case \SIGUSR2:
-                static::$_gracefulStop = $signal === \SIGUSR1;
+            case \SIGUSR1:
+                static::$_gracefulStop = $signal === \SIGUSR2;
                 static::$_pidsToRestart = static::getAllWorkerPids();
                 static::reload();
                 break;
@@ -1705,9 +1705,9 @@ class Worker
             }
 
             if (static::$_gracefulStop) {
-                $sig = \SIGUSR1;
-            } else {
                 $sig = \SIGUSR2;
+            } else {
+                $sig = \SIGUSR1;
             }
 
             // Send reload signal to all child processes.
