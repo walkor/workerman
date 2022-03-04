@@ -213,7 +213,7 @@ class Http
                 }
                 unset($connection->__header);
             }
-            $body_len = \strlen($response);
+            $body_len = \strlen((string)$response);
             return "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$ext_header}Connection: keep-alive\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\n\r\n$response";
         }
 
