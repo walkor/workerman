@@ -678,7 +678,7 @@ class Worker
             // Get column mapping for UI
             foreach(static::getUiColumns() as $column_name => $prop){
                 !isset($worker->{$prop}) && $worker->{$prop} = 'NNNN';
-                $prop_length = \strlen($worker->{$prop});
+                $prop_length = \strlen((string) $worker->{$prop});
                 $key = '_max' . \ucfirst(\strtolower($column_name)) . 'NameLength';
                 static::$$key = \max(static::$$key, $prop_length);
             }
@@ -800,9 +800,9 @@ class Worker
             $content = '';
             foreach(static::getUiColumns() as $column_name => $prop){
                 $key = '_max' . \ucfirst(\strtolower($column_name)) . 'NameLength';
-                \preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", $worker->{$prop}, $matches);
+                \preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", (string) $worker->{$prop}, $matches);
                 $place_holder_length = !empty($matches) ? \strlen(\implode('', $matches[0])) : 0;
-                $content .= \str_pad($worker->{$prop}, static::$$key + static::UI_SAFE_LENGTH + $place_holder_length);
+                $content .= \str_pad((string) $worker->{$prop}, static::$$key + static::UI_SAFE_LENGTH + $place_holder_length);
             }
             $content && static::safeEcho($content . \PHP_EOL);
         }
