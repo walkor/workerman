@@ -678,7 +678,7 @@ class Worker
             // Get column mapping for UI
             foreach(static::getUiColumns() as $column_name => $prop){
                 !isset($worker->{$prop}) && $worker->{$prop} = 'NNNN';
-                $prop_length = \strlen($worker->{$prop});
+                $prop_length = \strlen((string) $worker->{$prop});
                 $key = '_max' . \ucfirst(\strtolower($column_name)) . 'NameLength';
                 static::$$key = \max(static::$$key, $prop_length);
             }
