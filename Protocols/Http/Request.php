@@ -305,7 +305,7 @@ class Request
                 $cookie_params = \session_get_cookie_params();
                 $this->connection->__header['Set-Cookie'] = array($session_name . '=' . $sid
                     . (empty($cookie_params['domain']) ? '' : '; Domain=' . $cookie_params['domain'])
-                    . (empty($cookie_params['lifetime']) ? '' : '; Max-Age=' . ($cookie_params['lifetime'] + \time()))
+                    . (empty($cookie_params['lifetime']) ? '' : '; Max-Age=' . $cookie_params['lifetime'])
                     . (empty($cookie_params['path']) ? '' : '; Path=' . $cookie_params['path'])
                     . (empty($cookie_params['samesite']) ? '' : '; SameSite=' . $cookie_params['samesite'])
                     . (!$cookie_params['secure'] ? '' : '; Secure')
