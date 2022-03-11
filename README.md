@@ -118,6 +118,28 @@ $tcp_worker->onClose = function ($connection) {
 Worker::runAll();
 ```
 
+### A udp server
+
+```php
+<?php
+use Workerman\Worker;
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+$worker = new Worker('udp://0.0.0.0:1234');
+
+// 4 processes
+$tcp_worker->count = 4;
+
+// Emitted when data received
+$worker->onMessage = function($connection, $data)
+{
+    $connection->send($data);
+};
+
+Worker::runAll();
+```
+
 ### Enable SSL
 ```php
 <?php
