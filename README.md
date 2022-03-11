@@ -58,6 +58,8 @@ Worker::runAll();
 
 ### An http server
 ```php
+<?php
+
 use Workerman\Worker;
 
 require_once __DIR__ . '/vendor/autoload.php';
@@ -89,6 +91,8 @@ Worker::runAll();
 
 ### A tcp server
 ```php
+<?php
+
 use Workerman\Worker;
 
 require_once __DIR__ . '/vendor/autoload.php';
@@ -122,6 +126,7 @@ Worker::runAll();
 
 ```php
 <?php
+
 use Workerman\Worker;
 
 require_once __DIR__ . '/vendor/autoload.php';
@@ -175,6 +180,7 @@ Worker::runAll();
 ### Custom protocol
 Protocols/MyTextProtocol.php
 ```php
+<?php
 
 namespace Protocols;
 
@@ -211,6 +217,8 @@ class MyTextProtocol
 ```
 
 ```php
+<?php
+
 use Workerman\Worker;
 
 require_once __DIR__ . '/vendor/autoload.php';
@@ -237,6 +245,7 @@ Worker::runAll();
 
 ### Timer
 ```php
+<?php
 
 use Workerman\Worker;
 use Workerman\Timer;
@@ -258,6 +267,7 @@ Worker::runAll();
 
 ### AsyncTcpConnection (tcp/ws/text/frame etc...)
 ```php
+<?php
 
 use Workerman\Worker;
 use Workerman\Connection\AsyncTcpConnection;
