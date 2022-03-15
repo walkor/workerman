@@ -75,7 +75,7 @@ class UdpConnection extends ConnectionInterface
                 return;
             }
         }
-        return \strlen($send_buffer) === \stream_socket_sendto($this->_socket, $send_buffer, 0, $this->_remoteAddress);
+        return \strlen($send_buffer) === \stream_socket_sendto($this->_socket, $send_buffer, 0, $this->isIpV6() ? '[' . $this->getRemoteIp() . ']:' . $this->getRemotePort() : $this->_remoteAddress);
     }
 
     /**
