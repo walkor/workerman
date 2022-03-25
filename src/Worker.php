@@ -17,9 +17,8 @@ use Workerman\Events\EventInterface;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
-use Workerman\Timer;
 use Workerman\Events\Select;
-use \Exception;
+use Exception;
 
 
 /**
@@ -334,12 +333,12 @@ class Worker
      */
     protected $_socketName = '';
 
-    /** parse from _socketName avoid parse again in master or worker
+    /**
+     * parse from _socketName avoid parse again in master or worker
      * LocalSocket The format is like tcp://0.0.0.0:8080
      * @var string
      */
-
-    protected $_localSocket=null;
+    protected $_localSocket = null;
 
     /**
      * Context of socket.
@@ -726,9 +725,9 @@ class Worker
     {
         foreach (static::$_workers as $worker_id => $worker) {
             $new_id_map = [];
-            $worker->count = $worker->count < 1 ? 1 : $worker->count;
+            $worker->count = max($worker->count, 1);
             for($key = 0; $key < $worker->count; $key++) {
-                $new_id_map[$key] = isset(static::$_idMap[$worker_id][$key]) ? static::$_idMap[$worker_id][$key] : 0;
+                $new_id_map[$key] = static::$_idMap[$worker_id][$key] ?? 0;
             }
             static::$_idMap[$worker_id] = $new_id_map;
         }
@@ -972,7 +971,7 @@ class Worker
                 $start_time = \time();
                 // Check master process is still alive?
                 while (1) {
-                    $master_is_alive = $master_pid && \posix_kill((int) $master_pid, 0);
+                    $master_is_alive = $master_pid && \posix_kill($master_pid, 0);
                     if ($master_is_alive) {
                         // Timeout?
                         if (!static::$_gracefulStop && \time() - $start_time >= $timeout) {
@@ -1003,9 +1002,7 @@ class Worker
                 \posix_kill($master_pid, $sig);
                 exit;
             default :
-                if (isset($command)) {
-                    static::safeEcho('Unknown command: ' . $command . "\n");
-                }
+                static::safeEcho('Unknown command: ' . $command . "\n");
                 exit($usage);
         }
     }
@@ -1047,7 +1044,7 @@ class Worker
         $total_timers = 0;
         $maxLen1 = static::$_maxSocketNameLength;
         $maxLen2 = static::$_maxWorkerNameLength;
-        foreach($info as $key => $value) {
+        foreach($info as $value) {
             if (!$read_process_status) {
                 $status_str .= $value . "\n";
                 if (\preg_match('/^pid.*?memory.*?listening/', $value)) {
@@ -1354,7 +1351,7 @@ class Worker
             if(\count(static::$_workers) > 1)
             {
                 static::safeEcho("@@@ Error: multi workers init in one php file are not support @@@\r\n");
-                static::safeEcho("@@@ See http://doc.workerman.net/faq/multi-woker-for-windows.html @@@\r\n");
+                static::safeEcho("@@@ See https://www.workerman.net/doc/workerman/faq/multi-woker-for-windows.html @@@\r\n");
             }
             elseif(\count(static::$_workers) <= 0)
             {
@@ -1373,7 +1370,7 @@ class Worker
         }
         else
         {
-            static::$globalEvent = new \Workerman\Events\Select();
+            static::$globalEvent = new Select();
             Timer::init(static::$globalEvent);
             foreach($files as $start_file)
             {
@@ -1462,9 +1459,6 @@ class Worker
     {
         // Get available worker id.
         $id = static::getId($worker->workerId, 0);
-        if ($id === false) {
-            return;
-        }
         $pid = \pcntl_fork();
         // For master process.
         if ($pid > 0) {
