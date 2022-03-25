@@ -289,7 +289,7 @@ class Response
      */
     public function withBody($body)
     {
-        $this->_body = $body;
+        $this->_body = (string)$body;
         return $this;
     }
 
@@ -354,7 +354,7 @@ class Response
     protected function createHeadForFile($file_info)
     {
         $file = $file_info['file'];
-        $reason = $this->_reason ? $this->_reason : static::$_phrases[$this->_status];
+        $reason = $this->_reason ?: static::$_phrases[$this->_status];
         $head = "HTTP/{$this->_version} {$this->_status} $reason\r\n";
         $headers = $this->_header;
         if (!isset($headers['Server'])) {
@@ -409,8 +409,8 @@ class Response
             return $this->createHeadForFile($this->file);
         }
 
-        $reason = $this->_reason ? $this->_reason : static::$_phrases[$this->_status];
-        $body_len = \strlen($this->_body ?? "");
+        $reason = $this->_reason ?: static::$_phrases[$this->_status];
+        $body_len = \strlen($this->_body);
         if (empty($this->_header)) {
             return "HTTP/{$this->_version} {$this->_status} $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\nConnection: keep-alive\r\n\r\n{$this->_body}";
         }
