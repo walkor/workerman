@@ -269,9 +269,7 @@ Worker::runAll();
 ## Available commands
 ```php start.php start  ```  
 ```php start.php start -d  ```  
-![workerman start](http://www.workerman.net/img/workerman-start.png)  
 ```php start.php status  ```  
-![workerman satus](http://www.workerman.net/img/workerman-status.png?a=123)  
 ```php start.php connections```  
 ```php start.php stop  ```  
 ```php start.php restart  ```  
