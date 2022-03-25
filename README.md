@@ -12,7 +12,7 @@ Workerman supports HTTP, Websocket, SSL and other custom protocols.
 Workerman supports event extension.
 
 ## Requires
-PHP 5.3 or Higher  
+PHP 7.0 or Higher  
 A POSIX compatible operating system (Linux, OSX, BSD)  
 POSIX and PCNTL extensions required   
 Event extension recommended for better performance  
@@ -173,7 +173,7 @@ class MyTextProtocol
         }
 
         // Return length of the package
-        return $pos+1;
+        return $pos + 1;
     }
 
     public static function decode($recv_buffer)
@@ -279,11 +279,11 @@ Worker::runAll();
 
 ## Documentation
 
-中文主页:[http://www.workerman.net](https://www.workerman.net)
+中文主页: [http://www.workerman.net](https://www.workerman.net)
 
 中文文档: [http://doc.workerman.net](https://www.workerman.net/doc/worekrman)
 
-Documentation:[https://github.com/walkor/workerman-manual](https://github.com/walkor/workerman-manual/blob/master/english/SUMMARY.md)
+Documentation: [https://github.com/walkor/workerman-manual](https://github.com/walkor/workerman-manual/blob/master/english/SUMMARY.md)
 
 # Benchmarks
 https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=plaintext&l=zik073-1r
