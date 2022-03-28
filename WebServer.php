@@ -279,37 +279,62 @@ class WebServer extends Worker
         $file_info = \pathinfo($file_path);
         $extension = isset($file_info['extension']) ? $file_info['extension'] : '';
         $file_name = isset($file_info['filename']) ? $file_info['filename'] : '';
-        $header = "HTTP/1.1 200 OK\r\n";
+        $start = 0;
+        $content_length = $file_size;
+
+        if(isset($_SERVER['HTTP_RANGE']) && !empty($_SERVER['HTTP_RANGE'])) {
+            list(, $range) = explode('=', $_SERVER['HTTP_RANGE'], 2);
+            list($start, $end) = explode('-', $range);
+            $end = is_numeric($end) ? $end : $file_size - 1;
+            $content_length = $end - $start + 1;
+
+            $header = "HTTP/1.1 206 Partial Content\r\n";
+            $header .= "Accept-Ranges: bytes\r\n";
+            $header .= "Content-Length: ${content_length}\r\n";
+            $header .= "Content-Range: bytes ${start}-${end}/${file_size}\r\n";
+        } else {
+            $header = "HTTP/1.1 200 OK\r\n";
+            $header .= "Content-Length: ${content_length}\r\n";
+        }
+
         if (isset(self::$mimeTypeMap[$extension])) {
             $header .= "Content-Type: " . self::$mimeTypeMap[$extension] . "\r\n";
-        } else {
-            $header .= "Content-Type: application/octet-stream\r\n"
-                    ."Content-Disposition: attachment; filename=\"$file_name\"\r\n";
         }
-        $header .= "Connection: keep-alive\r\n"
-                .$modified_time
-                ."Content-Length: $file_size\r\n\r\n";
-        $trunk_limit_size = 1024*1024;
-        if ($file_size < $trunk_limit_size) {
-            return $connection->send($header.\file_get_contents($file_path), true);
-        }
+
+        $header .= "Content-Type: application/octet-stream\r\n";
+        $header .= "Cache-Control: public\r\n";
+        $header .= "Pragma: public\r\n";
+        $header .= "Content-Disposition:attachment; filename=${file_name}\r\n";
+        $header .= "Connection: keep-alive\r\n";
+        $header .= $modified_time;
+        $header .= "\r\n";
+
         $connection->send($header, true);
 
         // Read file content from disk piece by piece and send to client.
         $connection->fileHandler = \fopen($file_path, 'r');
-        $do_write = function()use($connection)
+        \fseek($connection->fileHandler, $start);
+        $do_write = function()use($connection, $content_length)
         {
+            $step_length = 8192;
             // Send buffer not full.
             while(empty($connection->bufferFull))
             {
+                $read_length = $content_length > $step_length ? $step_length : $content_length;
+                $content_length -= $read_length;
                 // Read from disk.
-                $buffer = \fread($connection->fileHandler, 8192);
+                $buffer = \fread($connection->fileHandler, $read_length);
                 // Read eof.
                 if($buffer === '' || $buffer === false)
                 {
                     return;
                 }
-                $connection->send($buffer, true);
+                if ($content_length === 0) {
+                    $connection->close($buffer, true);
+                    return;
+                } else {
+                    $connection->send($buffer, true);
+                }
             }
         };
         // Send buffer full.
