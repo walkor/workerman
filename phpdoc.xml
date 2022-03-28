@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpdocumentor
+        configVersion="3"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="https://www.phpdoc.org"
+        xsi:noNamespaceSchemaLocation="data/xsd/phpdoc.xsd"
+>
+  <title>Workerman-phpDocumentor</title>
+  <paths>
+    <output>build/website/docs</output>
+    <cache>build/cache</cache>
+  </paths>
+  <version number="3.0">
+    <folder>latest</folder>
+    <api format="php">
+      <source dsn=".">
+        <path>.</path>
+      </source>
+      <output>api</output>
+      <extensions>
+        <extension>php</extension>
+      </extensions>
+      <default-package-name>defaultPackage</default-package-name>
+    </api>
+    
+  </version>
+  <template name="default"/>
+</phpdocumentor>
+
