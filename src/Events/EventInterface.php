@@ -20,7 +20,7 @@ interface EventInterface
      * @param float $delay
      * @param $func
      * @param $args
-     * @return string
+     * @return int|bool
      */
     public function delay(float $delay, $func, $args);
 
@@ -29,14 +29,14 @@ interface EventInterface
      * @param float $interval
      * @param $func
      * @param $args
-     * @return string
+     * @return int|bool
      */
     public function repeat(float $interval, $func, $args);
 
     /**
      * Delete a timer.
      * @param $timer_id
-     * @return mixed
+     * @return bool
      */
     public function deleteTimer($timer_id);
 
@@ -105,7 +105,7 @@ interface EventInterface
 
     /**
      * 
-     * @return void
+     * @return int
      */
     public function getTimerCount();
 }
