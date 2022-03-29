@@ -574,7 +574,7 @@ class Request
             \array_walk_recursive($result, function(&$value) use ($file) {
                 $value = $file;
             });
-            $this->_data['files'] = \array_walk_recursive($this->_data['files'], $result);
+            $this->_data['files'] = \array_merge_recursive($this->_data['files'], $result);
         }
         if ($post_str) {
             parse_str($post_str, $this->_data['post']);
