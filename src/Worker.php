@@ -13,6 +13,7 @@
  */
 namespace Workerman;
 
+use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
@@ -461,11 +462,10 @@ class Worker
     /**
      * Available event loops.
      *
-     * @var array
+     * @var array<string, string>
      */
     protected static $_availableEventLoops = [
-        'event'    => '\Workerman\Events\Event',
-        'libevent' => '\Workerman\Events\Libevent'
+        "event" => Event::class,
     ];
 
     /**
@@ -521,6 +521,13 @@ class Worker
      * @var bool
      */
     protected static $_outputDecorated = null;
+
+    /**
+     * Worker object's hash id(unique identifier).
+     *
+     * @var string
+     */
+    protected $workerId = null;
 
     /**
      * Run all worker instances.
@@ -1257,18 +1264,18 @@ class Worker
      *
      * @return string
      */
-    protected static function getEventLoopName()
+    protected static function getEventLoopName(): string
     {
         if (static::$eventLoopClass) {
             return static::$eventLoopClass;
         }
 
-        if (!\class_exists('\Swoole\Event', false)) {
+        if (!class_exists(\Swoole\Event::class, false)) {
             unset(static::$_availableEventLoops['swoole']);
         }
 
         $loop_name = '';
-        foreach (static::$_availableEventLoops as $name=>$class) {
+        foreach (static::$_availableEventLoops as $name => $class) {
             if (\extension_loaded($name)) {
                 $loop_name = $name;
                 break;
@@ -1278,7 +1285,7 @@ class Worker
         if ($loop_name) {
             static::$eventLoopClass = static::$_availableEventLoops[$loop_name];
         } else {
-            static::$eventLoopClass =  '\Workerman\Events\Select';
+            static::$eventLoopClass = Select::class;
         }
         return static::$eventLoopClass;
     }
@@ -2113,17 +2120,17 @@ class Worker
     }
 
     /**
-     * Construct.
+     * Constructor.
      *
      * @param string $socket_name
-     * @param array  $context_option
+     * @param array $context_option
      */
-    public function __construct($socket_name = '', array $context_option = [])
+    public function __construct(string $socket_name = '', array $context_option = [])
     {
         // Save all worker instances.
-        $this->workerId                    = \spl_object_hash($this);
+        $this->workerId = \spl_object_hash($this);
         static::$_workers[$this->workerId] = $this;
-        static::$_pidMap[$this->workerId]  = [];
+        static::$_pidMap[$this->workerId] = [];
 
         // Context for socket.
         if ($socket_name) {
@@ -2136,11 +2143,10 @@ class Worker
 
         // Turn reusePort on.
         /*if (\DIRECTORY_SEPARATOR === '/'  // if linux
-            && \version_compare(\PHP_VERSION,'7.0.0', 'ge') // if php >= 7.0.0
+            && \version_compare(\PHP_VERSION, '7.0.0', 'ge') // if php >= 7.0.0
             && \version_compare(php_uname('r'), '3.9', 'ge') // if kernel >=3.9
             && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
-            && strpos($socket_name,'unix') !== 0) { // if not unix socket
-
+            && strpos($socket_name, 'unix') !== 0) { // if not unix socket
             $this->reusePort = true;
         }*/
     }
