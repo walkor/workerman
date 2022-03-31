@@ -13,6 +13,8 @@
  */
 namespace Workerman\Protocols\Http\Session;
 
+use Workerman\Timer;
+
 /**
  * Class RedisSessionHandler
  * @package Workerman\Protocols\Http\Session
@@ -39,6 +41,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      *  'auth'     => '******',
      *  'database' => 2,
      *  'prefix'   => 'redis_session_',
+     *  'ping'     => 55,
      * ]
      */
     public function __construct($config)
@@ -66,6 +69,10 @@ class RedisSessionHandler implements SessionHandlerInterface
             $config['prefix'] = 'redis_session_';
         }
         $this->_redis->setOption(\Redis::OPT_PREFIX, $config['prefix']);
+
+        Timer::add(isset($config['ping']) ? $config['ping'] : 55, function () {
+            $this->_redis->get('ping');
+        });
     }
 
     /**
