@@ -260,7 +260,7 @@ class Worker
     /**
      * Log file.
      *
-     * @var mixed
+     * @var string
      */
     public static $logFile = '';
 
@@ -569,14 +569,13 @@ class Worker
      */
     protected static function init()
     {
-        \set_error_handler(function($code, $msg, $file, $line){
+        \set_error_handler(function ($code, $msg, $file, $line) {
             Worker::safeEcho("$msg in file $file on line $line\n");
         });
 
         // Start file.
-        $backtrace        = \debug_backtrace();
-        static::$_startFile = $backtrace[\count($backtrace) - 1]['file'];
-
+        $backtrace = \debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        static::$_startFile = end($backtrace)['file'];
 
         $unique_prefix = \str_replace('/', '_', static::$_startFile);
 
@@ -589,10 +588,10 @@ class Worker
         if (empty(static::$logFile)) {
             static::$logFile = __DIR__ . '/../../workerman.log';
         }
-        $log_file = (string)static::$logFile;
-        if (!\is_file($log_file)) {
-            \touch($log_file);
-            \chmod($log_file, 0622);
+
+        if (!\is_file(static::$logFile)) {
+            \touch(static::$logFile);
+            \chmod(static::$logFile, 0622);
         }
 
         // State.
@@ -726,14 +725,15 @@ class Worker
 
     /**
      * Init idMap.
-     * return void
+     *
+     * @return void
      */
     protected static function initId()
     {
         foreach (static::$_workers as $worker_id => $worker) {
             $new_id_map = [];
             $worker->count = max($worker->count, 1);
-            for($key = 0; $key < $worker->count; $key++) {
+            for ($key = 0; $key < $worker->count; $key++) {
                 $new_id_map[$key] = static::$_idMap[$worker_id][$key] ?? 0;
             }
             static::$_idMap[$worker_id] = $new_id_map;
@@ -1558,7 +1558,7 @@ class Worker
      * @param string $title
      * @return void
      */
-    protected static function setProcessTitle($title)
+    protected static function setProcessTitle(string $title)
     {
         \set_error_handler(function(){});
         \cli_set_process_title($title);
@@ -2057,17 +2057,17 @@ class Worker
         if (!static::$daemonize) {
             static::safeEcho($msg);
         }
-        \file_put_contents((string)static::$logFile, \date('Y-m-d H:i:s') . ' ' . 'pid:'
+        \file_put_contents(static::$logFile, \date('Y-m-d H:i:s') . ' ' . 'pid:'
             . (\DIRECTORY_SEPARATOR === '/' ? \posix_getpid() : 1) . ' ' . $msg, \FILE_APPEND | \LOCK_EX);
     }
 
     /**
      * Safe Echo.
      * @param string $msg
-     * @param bool   $decorated
+     * @param bool $decorated
      * @return bool
      */
-    public static function safeEcho($msg, $decorated = false)
+    public static function safeEcho(string $msg, bool $decorated = false): bool
     {
         $stream = static::outputStream();
         if (!$stream) {
@@ -2092,13 +2092,15 @@ class Worker
     }
 
     /**
+     * set and get output stream.
+     *
      * @param resource|null $stream
-     * @return bool|resource
+     * @return false|resource
      */
     private static function outputStream($stream = null)
     {
         if (!$stream) {
-            $stream = static::$_outputStream ? static::$_outputStream : \STDOUT;
+            $stream = static::$_outputStream ?: \STDOUT;
         }
         if (!$stream || !\is_resource($stream) || 'stream' !== \get_resource_type($stream)) {
             return false;
@@ -2107,14 +2109,14 @@ class Worker
         if (!$stat) {
             return false;
         }
-        if (($stat['mode'] & 0170000) === 0100000) {
-            // file
+
+        if (($stat['mode'] & 0170000) === 0100000) { // whether is regular file
             static::$_outputDecorated = false;
         } else {
             static::$_outputDecorated =
-                \DIRECTORY_SEPARATOR === '/' &&
+                \DIRECTORY_SEPARATOR === '/' && // linux or unix
                 \function_exists('posix_isatty') &&
-                \posix_isatty($stream);
+                \posix_isatty($stream); // whether is interactive terminal
         }
         return static::$_outputStream = $stream;
     }
