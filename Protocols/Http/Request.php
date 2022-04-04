@@ -287,21 +287,25 @@ class Request
     }
 
     /**
-     * Get session id.
+     * Get/Set session id.
      *
-     * @return bool|mixed
+     * @param $session_id
+     * @return string
      */
-    public function sessionId()
+    public function sessionId($session_id = null)
     {
+        if ($session_id) {
+            unset($this->sid);
+        }
         if (!isset($this->sid)) {
             $session_name = Http::sessionName();
-            $sid = $this->cookie($session_name);
+            $sid = $session_id ? '' : $this->cookie($session_name);
             if ($sid === '' || $sid === null) {
                 if ($this->connection === null) {
                     Worker::safeEcho('Request->session() fail, header already send');
                     return false;
                 }
-                $sid = static::createSessionId();
+                $sid = $session_id ? $session_id : static::createSessionId();
                 $cookie_params = \session_get_cookie_params();
                 $this->connection->__header['Set-Cookie'] = array($session_name . '=' . $sid
                     . (empty($cookie_params['domain']) ? '' : '; Domain=' . $cookie_params['domain'])
