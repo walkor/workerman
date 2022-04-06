@@ -2143,14 +2143,28 @@ class Worker
             $this->_context = \stream_context_create($context_option);
         }
 
-        // Turn reusePort on.
-        /*if (\DIRECTORY_SEPARATOR === '/'  // if linux
-            && \version_compare(\PHP_VERSION, '7.0.0', 'ge') // if php >= 7.0.0
+        // Try to turn reusePort on.
+        if (\DIRECTORY_SEPARATOR === '/'  // if linux
+            && $socket_name
             && \version_compare(php_uname('r'), '3.9', 'ge') // if kernel >=3.9
             && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
-            && strpos($socket_name, 'unix') !== 0) { // if not unix socket
-            $this->reusePort = true;
-        }*/
+            && strpos($socket_name,'unix') !== 0 // if not unix socket
+            && strpos($socket_name,'udp') !== 0) { // if not udp socket
+            
+            $address = \parse_url($socket_name);
+            if (isset($address['host']) && isset($address['port'])) {
+                try {
+                    \set_error_handler(function(){});
+                    // If address not in use, turn reusePort on automatically.
+                    $server = stream_socket_server("tcp://{$address['host']}:{$address['port']}");
+                    if ($server) {
+                        $this->reusePort = true;
+                        fclose($server);
+                    }
+                    \restore_error_handler();
+                } catch (\Throwable $e) {}
+            }
+        }
     }
 
 
