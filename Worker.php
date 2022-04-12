@@ -64,14 +64,6 @@ class Worker
     const STATUS_RELOADING = 8;
 
     /**
-     * After sending the restart command to the child process KILL_WORKER_TIMER_TIME seconds,
-     * if the process is still living then forced to kill.
-     *
-     * @var int
-     */
-    const KILL_WORKER_TIMER_TIME = 2;
-
-    /**
      * Default backlog. Backlog is the maximum length of the queue of pending connections.
      *
      * @var int
@@ -313,6 +305,14 @@ class Worker
      * @var string
      */
     public static $processTitle = 'WorkerMan';
+
+    /**
+     * After sending the stop command to the child process stopTimeout seconds,
+     * if the process is still living then forced to kill.
+     *
+     * @var int
+     */
+    public static $stopTimeout = 2;
 
     /**
      * The PID of master process.
@@ -987,7 +987,7 @@ class Worker
                 // Send stop signal to master process.
                 $master_pid && \posix_kill($master_pid, $sig);
                 // Timeout.
-                $timeout    = 5;
+                $timeout    = static::$stopTimeout + 3;
                 $start_time = \time();
                 // Check master process is still alive?
                 while (1) {
@@ -1802,9 +1802,9 @@ class Worker
             $one_worker_pid = \current(static::$_pidsToRestart);
             // Send reload signal to a worker process.
             \posix_kill($one_worker_pid, $sig);
-            // If the process does not exit after static::KILL_WORKER_TIMER_TIME seconds try to kill it.
+            // If the process does not exit after static::$stopTimeout seconds try to kill it.
             if(!static::$_gracefulStop){
-                Timer::add(static::KILL_WORKER_TIMER_TIME, '\posix_kill', array($one_worker_pid, \SIGKILL), false);
+                Timer::add(static::$stopTimeout, '\posix_kill', array($one_worker_pid, \SIGKILL), false);
             }
         } // For child processes.
         else {
@@ -1853,7 +1853,7 @@ class Worker
             foreach ($worker_pid_array as $worker_pid) {
                 \posix_kill($worker_pid, $sig);
                 if(!static::$_gracefulStop){
-                    Timer::add(static::KILL_WORKER_TIMER_TIME, '\posix_kill', array($worker_pid, \SIGKILL), false);
+                    Timer::add(static::$stopTimeout, '\posix_kill', array($worker_pid, \SIGKILL), false);
                 }
             }
             Timer::add(1, "\\Workerman\\Worker::checkIfChildRunning");
