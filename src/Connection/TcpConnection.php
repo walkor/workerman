@@ -836,11 +836,15 @@ class TcpConnection extends ConnectionInterface
             return;
         }
 
+        $completed = true;
+
         if ($data !== null) {
-            $this->send($data, $raw);
+            $completed = $this->send($data, $raw);
         }
 
-        $this->_status = self::STATUS_CLOSING;
+        if ($completed) {
+            $this->_status = self::STATUS_CLOSING;
+        }
 
         if ($this->_sendBuffer === '') {
             $this->destroy();
