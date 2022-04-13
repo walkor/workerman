@@ -805,8 +805,7 @@ class Worker
         !empty($content) && static::safeEcho($line_last);
 
         if (static::$daemonize) {
-            global $argv;
-            $start_file = $argv[0];
+            $start_file = $_SERVER['argv'][0];
             static::safeEcho('Input "php '. $start_file . ' stop" to stop. Start success.' . "\n\n");
         } else {
             static::safeEcho("Press Ctrl+C to stop. Start success.\n");
@@ -864,9 +863,9 @@ class Worker
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-        global $argv;
+
         // Check argv;
-        $start_file = $argv[0];
+        $start_file = $_SERVER['argv'][0];
         $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in DEBUG mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
         $available_commands = [
             'start',
@@ -1016,8 +1015,7 @@ class Worker
 
     public static function getArgv()
     {
-        global $argv;
-        return isset($argv[1]) ? $argv : (static::$command ? \explode(' ', static::$command) : $argv);
+        return isset($_SERVER['argv'][1]) ? $_SERVER['argv'] : (static::$command ? \explode(' ', static::$command) : $_SERVER['argv']);
     }
 
     /**
