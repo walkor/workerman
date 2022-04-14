@@ -590,6 +590,10 @@ class Worker
         }
 
         if (!\is_file(static::$logFile)) {
+            // if /runtime/logs  default folder not exists
+            if(!is_dir(dirname(static::$logFile))){
+                @mkdir(dirname(static::$logFile),0777,true);
+            }
             \touch(static::$logFile);
             \chmod(static::$logFile, 0622);
         }
