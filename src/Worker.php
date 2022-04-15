@@ -1116,7 +1116,7 @@ class Worker
         }
         $signals = [\SIGINT, \SIGTERM, \SIGHUP, \SIGTSTP, \SIGQUIT, \SIGUSR1, \SIGUSR2, \SIGIOT, \SIGIO];
         foreach ($signals as $signal) {
-            \pcntl_signal($signal, [Worker::class, 'signalHandler'], false);
+            \pcntl_signal($signal, [static::class, 'signalHandler'], false);
         }
         // ignore
         \pcntl_signal(\SIGPIPE, \SIG_IGN, false);
@@ -1135,7 +1135,7 @@ class Worker
         $signals = [\SIGINT, \SIGTERM, \SIGHUP, \SIGTSTP, \SIGQUIT, \SIGUSR1, \SIGUSR2, \SIGIOT, \SIGIO];
         foreach ($signals as $signal) {
             \pcntl_signal($signal, \SIG_IGN, false);
-            static::$globalEvent->onSignal($signal, '\Workerman\Worker::signalHandler');
+            static::$globalEvent->onSignal($signal, staitc::class . '::signalHandler');
         };
     }
 
@@ -1917,7 +1917,7 @@ class Worker
 
         // For child processes.
         \reset(static::$_workers);
-        /** @var \Workerman\Worker $worker */
+        /** @var static $worker */
         $worker            = current(static::$_workers);
         $worker_status_str = \posix_getpid() . "\t" . \str_pad(round(memory_get_usage(true) / (1024 * 1024), 2) . "M", 7)
             . " " . \str_pad($worker->getSocketName(), static::$_maxSocketNameLength) . " "
@@ -1972,7 +1972,7 @@ class Worker
         $current_worker = current(static::$_workers);
         $default_worker_name = $current_worker->name;
 
-        /** @var \Workerman\Worker $worker */
+        /** @var static $worker */
         foreach(TcpConnection::$connections as $connection) {
             /** @var \Workerman\Connection\TcpConnection $connection */
             $transport      = $connection->transport;
