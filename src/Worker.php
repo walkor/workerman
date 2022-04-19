@@ -1805,7 +1805,7 @@ class Worker
                     $worker->stopping = true;
                 }
             }
-            if (!static::$_gracefulStop || ConnectionInterface::$statistics['connection_count'] <= 0) {
+            if (!static::$_gracefulStop || $worker->getSocketName() === 'none' || ConnectionInterface::$statistics['connection_count'] <= 0) {
                 static::$_workers = [];
                 if (static::$globalEvent) {
                     static::$globalEvent->stop();
@@ -2154,7 +2154,7 @@ class Worker
             && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
             && strpos($socket_name,'unix') !== 0 // if not unix socket
             && strpos($socket_name,'udp') !== 0) { // if not udp socket
-            
+
             $address = \parse_url($socket_name);
             if (isset($address['host']) && isset($address['port'])) {
                 try {
