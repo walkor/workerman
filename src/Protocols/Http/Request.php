@@ -523,14 +523,14 @@ class Request
         if ($boundary_data_array[0] === '' || $boundary_data_array[0] === "\r\n") {
             unset($boundary_data_array[0]);
         }
-        $key = -1;
+        $index = -1;
         $files = [];
         $post_str = '';
         foreach ($boundary_data_array as $boundary_data_buffer) {
             list($boundary_header_buffer, $boundary_value) = \explode("\r\n\r\n", $boundary_data_buffer, 2);
             // Remove \r\n from the end of buffer.
             $boundary_value = \substr($boundary_value, 0, -2);
-            $key++;
+            $index++;
             foreach (\explode("\r\n", $boundary_header_buffer) as $item) {
                 list($header_key, $header_value) = \explode(": ", $item);
                 $header_key = \strtolower($header_key);
@@ -552,11 +552,11 @@ class Request
                                     $error = UPLOAD_ERR_CANT_WRITE;
                                 }
                             }
-                            if (!isset($files[$key])) {
-                                $files[$key] = [];
+                            if (!isset($files[$index])) {
+                                $files[$index] = [];
                             }
                             // Parse upload files.
-                            $files[$key] += [
+                            $files[$index] += [
                                 'key' => $match[1],
                                 'name' => $match[2],
                                 'tmp_name' => $tmp_file,
@@ -569,22 +569,30 @@ class Request
                         else {
                             // Parse $_POST.
                             if (\preg_match('/name="(.*?)"$/', $header_value, $match)) {
-                                $key = $match[1];
-                                $post_str .= \urlencode($key) . "=" . \urlencode($boundary_value) . '&';
+                                $k = $match[1];
+                                $post_str .= \urlencode($k) . "=" . \urlencode($boundary_value) . '&';
                             }
                         }
                         break;
                     case "content-type":
                         // add file_type
-                        if (!isset($files[$key])) {
-                            $files[$key] = [];
+                        if (!isset($files[$index])) {
+                            $files[$index] = [];
                         }
-                        $files[$key]['type'] = \trim($header_value);
+                        $files[$index]['type'] = \trim($header_value);
                         break;
                 }
             }
         }
-        foreach ($files as $file) {
+        $files_unique = [];
+        foreach ($files as $index => $file) {
+            $key = $file['key'];
+            if (\substr($key, -2) === '[]') {
+                $key = $index;
+            }
+            $files_unique[$key] = $file;
+        }
+        foreach ($files_unique as $file) {
             $key = $file['key'];
             unset($file['key']);
             $str = \urlencode($key) . "=1";
