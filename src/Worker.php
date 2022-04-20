@@ -1139,7 +1139,7 @@ class Worker
         $signals = [\SIGINT, \SIGTERM, \SIGHUP, \SIGTSTP, \SIGQUIT, \SIGUSR1, \SIGUSR2, \SIGIOT, \SIGIO];
         foreach ($signals as $signal) {
             \pcntl_signal($signal, \SIG_IGN, false);
-            static::$globalEvent->onSignal($signal, staitc::class . '::signalHandler');
+            static::$globalEvent->onSignal($signal, [static::class, 'signalHandler']);
         };
     }
 
