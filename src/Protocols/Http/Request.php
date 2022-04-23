@@ -307,7 +307,7 @@ class Request
                     return false;
                 }
                 $sid = $session_id ?: static::createSessionId();
-                $cookie_params = \session_get_cookie_params();
+                $cookie_params = Session::getCookieParams();
                 $this->setSidCookie($session_name, $sid, $cookie_params);
             }
             $this->sid = $sid;
@@ -330,7 +330,7 @@ class Request
         $new_sid = static::createSessionId();
         $session = new Session($new_sid);
         $session->put($session_data);
-        $cookie_params = \session_get_cookie_params();
+        $cookie_params = Session::getCookieParams();
         $session_name = Http::sessionName();
         $this->setSidCookie($session_name, $new_sid, $cookie_params);
     }

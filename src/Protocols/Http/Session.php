@@ -14,6 +14,7 @@
 
 namespace Workerman\Protocols\Http;
 
+use Workerman\Protocols\Http\Session\FileSessionHandler;
 use Workerman\Protocols\Http\Session\SessionHandlerInterface;
 
 /**
@@ -27,7 +28,7 @@ class Session
      *
      * @var string
      */
-    protected static $_handlerClass = 'Workerman\Protocols\Http\Session\FileSessionHandler';
+    protected static $_handlerClass = FileSessionHandler::class;
 
     /**
      * Parameters of __constructor for session handler class.
@@ -37,25 +38,60 @@ class Session
     protected static $_handlerConfig = null;
 
     /**
-     * Session.gc_probability
+     * Session lifetime.
      *
      * @var int
      */
-    protected static $_sessionGcProbability = 1;
+    public static $lifetime = 1440;
 
     /**
-     * Session.gc_divisor
+     * Cookie lifetime.
      *
      * @var int
      */
-    protected static $_sessionGcDivisor = 1000;
+    public static $cookieLifetime = 1440;
 
     /**
-     * Session.gc_maxlifetime
+     * Session cookie path.
      *
-     * @var int
+     * @var string
      */
-    protected static $_sessionGcMaxLifeTime = 1440;
+    public static $cookiePath = '/';
+
+    /**
+     * Session cookie domain.
+     *
+     * @var string
+     */
+    public static $domain = '';
+
+    /**
+     * HTTPS only cookies.
+     *
+     * @var bool
+     */
+    public static $secure = false;
+
+    /**
+     * HTTP access only.
+     *
+     * @var bool
+     */
+    public static $httpOnly = true;
+
+    /**
+     * Same-site cookies.
+     *
+     * @var string
+     */
+    public static $sameSite = '';
+
+    /**
+     * Gc probability.
+     *
+     * @var int[]
+     */
+    public static $gcProbability = [1, 1000];
 
     /**
      * Session handler instance.
@@ -276,17 +312,20 @@ class Session
      */
     public static function init()
     {
-        if ($gc_probability = \ini_get('session.gc_probability')) {
-            self::$_sessionGcProbability = (int)$gc_probability;
-        }
-
-        if ($gc_divisor = \ini_get('session.gc_divisor')) {
-            self::$_sessionGcDivisor = (int)$gc_divisor;
+        if ($gc_probability = (int)\ini_get('session.gc_probability') && $gc_divisor = (int)\ini_get('session.gc_divisor')) {
+            static::$gcProbability = [$gc_probability, $gc_divisor];
         }
 
         if ($gc_max_life_time = \ini_get('session.gc_maxlifetime')) {
-            self::$_sessionGcMaxLifeTime = (int)$gc_max_life_time;
+            self::$lifetime = (int)$gc_max_life_time;
         }
+
+        $session_cookie_params = \session_get_cookie_params();
+        static::$cookieLifetime = $session_cookie_params['lifetime'];
+        static::$cookiePath = $session_cookie_params['path'];
+        static::$domain = $session_cookie_params['domain'];
+        static::$secure = $session_cookie_params['secure'];
+        static::$httpOnly = $session_cookie_params['httponly'];
     }
 
     /**
@@ -305,6 +344,23 @@ class Session
             static::$_handlerConfig = $config;
         }
         return static::$_handlerClass;
+    }
+
+    /**
+     * Get cookie params.
+     *
+     * @return array
+     */
+    public static function getCookieParams()
+    {
+        return [
+            'lifetime' => static::$cookieLifetime,
+            'path' => static::$cookiePath,
+            'domain' => static::$domain,
+            'secure' => static::$secure,
+            'httponly' => static::$httpOnly,
+            'samesite' => static::$sameSite,
+        ];
     }
 
     /**
@@ -328,10 +384,10 @@ class Session
      */
     public function tryGcSessions()
     {
-        if (\rand(1, static::$_sessionGcDivisor) > static::$_sessionGcProbability) {
+        if (\rand(1, static::$gcProbability[1]) > static::$gcProbability[0]) {
             return;
         }
-        static::$_handler->gc(static::$_sessionGcMaxLifeTime);
+        static::$_handler->gc(static::$lifetime);
     }
 
     /**
