@@ -14,20 +14,22 @@
 
 namespace Workerman\Protocols\Http\Session;
 
+use Workerman\Protocols\Http\Session;
+
 class RedisClusterSessionHandler extends RedisSessionHandler
 {
     public function __construct($config)
     {
-        $this->_maxLifeTime = (int)ini_get('session.gc_maxlifetime');
-        $timeout = $config['timeout'] ?? 2;
-        $read_timeout = $config['read_timeout'] ?? $timeout;
-        $persistent = $config['persistent'] ?? false;
-        $auth = $config['auth'] ?? '';
-        $args = [null, $config['host'], $timeout, $read_timeout, $persistent];
+        $this->_maxLifetime = (int)Session::$lifetime;
+        $timeout = isset($config['timeout']) ? $config['timeout'] : 2;
+        $read_timeout = isset($config['read_timeout']) ? $config['read_timeout'] : $timeout;
+        $persistent = isset($config['persistent']) ? $config['persistent'] : false;
+        $auth = isset($config['auth']) ? $config['auth'] : '';
         if ($auth) {
-            $args[] = $auth;
+            $this->_redis = new \RedisCluster(null, $config['host'], $timeout, $read_timeout, $persistent, $auth);
+        } else {
+            $this->_redis = new \RedisCluster(null, $config['host'], $timeout, $read_timeout, $persistent);
         }
-        $this->_redis = new \RedisCluster(...$args);
         if (empty($config['prefix'])) {
             $config['prefix'] = 'redis_session_';
         }
