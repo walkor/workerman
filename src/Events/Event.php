@@ -175,7 +175,7 @@ class Event implements EventInterface
         if (!$event || !$event->add()) {
             return false;
         }
-        $this->_readEvents[$fd_key] = $event;
+        $this->_writeEvents[$fd_key] = $event;
         return true;
     }
 
