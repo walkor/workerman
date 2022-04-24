@@ -2148,7 +2148,7 @@ class Worker
         }
 
         // Try to turn reusePort on.
-        if (\DIRECTORY_SEPARATOR === '/'  // if linux
+        /*if (\DIRECTORY_SEPARATOR === '/'  // if linux
             && $socket_name
             && \version_compare(php_uname('r'), '3.9', 'ge') // if kernel >=3.9
             && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
@@ -2168,7 +2168,7 @@ class Worker
                     \restore_error_handler();
                 } catch (\Throwable $e) {}
             }
-        }
+        }*/
     }
 
 
