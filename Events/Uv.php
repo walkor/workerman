@@ -67,7 +67,7 @@ class Uv implements EventInterface
             throw new \Exception(__CLASS__ . ' requires the UV extension, but detected it has NOT been installed yet.');
         } 
 
-        if(empty($loop) || $loop instanceof \UVLoop) 
+        if(empty($loop) || !$loop instanceof \UVLoop) 
         {
             $this->_eventLoop = \uv_default_loop();
             return;
@@ -106,8 +106,8 @@ class Uv implements EventInterface
                 return true;
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
-                $repeat                             = $flag === self::EV_TIMER_ONCE ? 0 : ((int)$fd) * 1000;
-                $param                              = array($func, (array)$args, $flag, $fd, self::$_timerId);
+                $repeat = $flag === self::EV_TIMER_ONCE ? 0 : (int)($fd * 1000);
+                $param  = array($func, (array)$args, $flag, $fd, self::$_timerId);
                 $timerWatcher = \uv_timer_init(); 
                 \uv_timer_start($timerWatcher, 1, $repeat, function($watcher)use($param){
                     call_user_func_array([$this, 'timerCallback'], [$param]);
@@ -116,7 +116,7 @@ class Uv implements EventInterface
                 return self::$_timerId++;
             case self::EV_READ:
             case self::EV_WRITE:
-                $fd_key                           = (int)$fd;
+                $fd_key = (int)$fd;
                 $ioCallback = function($watcher, $status, $events, $fd)use($func){
                     try {
                         \call_user_func($func, $fd);
