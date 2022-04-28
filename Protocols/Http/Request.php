@@ -298,7 +298,7 @@ class Request
             unset($this->sid);
         }
         if (!isset($this->sid)) {
-            $session_name = Http::sessionName();
+            $session_name = Session::$name;
             $sid = $session_id ? '' : $this->cookie($session_name);
             if ($sid === '' || $sid === null) {
                 if ($this->connection === null) {

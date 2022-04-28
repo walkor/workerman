@@ -37,6 +37,13 @@ class Session
     protected static $_handlerConfig = null;
 
     /**
+     * Session name.
+     *
+     * @var string
+     */
+    public static $name = 'PHPSID';
+
+    /**
      * Session lifetime.
      *
      * @var int
