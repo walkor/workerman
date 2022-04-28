@@ -33,7 +33,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.1.0';
+    const VERSION = '4.1.1';
 
     /**
      * Status starting.
@@ -1985,6 +1985,10 @@ class Worker
         }
 
         // For child processes.
+        \gc_collect_cycles();
+        if (\function_exists('gc_mem_caches')) {
+            \gc_mem_caches();
+        }
         \reset(static::$_workers);
         /** @var \Workerman\Worker $worker */
         $worker            = current(static::$_workers);
