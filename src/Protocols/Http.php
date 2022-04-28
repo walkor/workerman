@@ -32,13 +32,6 @@ class Http
     protected static $_requestClass = Request::class;
 
     /**
-     * Session name.
-     *
-     * @var string
-     */
-    protected static $_sessionName = 'PHPSID';
-
-    /**
      * Upload tmp dir.
      *
      * @var string
@@ -51,20 +44,6 @@ class Http
      * @var bool.
      */
     protected static $_enableCache = true;
-
-    /**
-     * Get or set session name.
-     *
-     * @param string|null $name
-     * @return string
-     */
-    public static function sessionName($name = null)
-    {
-        if ($name !== null && $name !== '') {
-            static::$_sessionName = (string)$name;
-        }
-        return static::$_sessionName;
-    }
 
     /**
      * Get or set the request class name.
