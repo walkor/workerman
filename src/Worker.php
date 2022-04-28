@@ -1927,7 +1927,7 @@ class Worker
         \reset(static::$_workers);
         /** @var static $worker */
         $worker            = current(static::$_workers);
-        $worker_status_str = \posix_getpid() . "\t" . \str_pad(round(memory_get_usage(true) / (1024 * 1024), 2) . "M", 7)
+        $worker_status_str = \posix_getpid() . "\t" . \str_pad(round(memory_get_usage() / (1024 * 1024), 2) . "M", 7)
             . " " . \str_pad($worker->getSocketName(), static::$_maxSocketNameLength) . " "
             . \str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name), static::$_maxWorkerNameLength)
             . " ";
