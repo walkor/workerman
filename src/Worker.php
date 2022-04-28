@@ -1920,6 +1920,10 @@ class Worker
         }
 
         // For child processes.
+        \gc_collect_cycles();
+        if (\function_exists('gc_mem_caches')) {
+            \gc_mem_caches();
+        }
         \reset(static::$_workers);
         /** @var static $worker */
         $worker            = current(static::$_workers);
