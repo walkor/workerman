@@ -14,7 +14,7 @@
  */
 namespace Workerman\Connection\Traits;
 
-trait
+trait SerializeTrait
 {
     public function jsonSerialize()
     {
