@@ -17,8 +17,10 @@ namespace Workerman\Connection;
 /**
  * UdpConnection.
  */
-class UdpConnection extends ConnectionInterface
+class UdpConnection extends ConnectionInterface implements \JsonSerializable, \Serializable
 {
+    use Traits\SerializeTrait;
+
     /**
      * Application layer protocol.
      * The format is like this Workerman\\Protocols\\Http.
