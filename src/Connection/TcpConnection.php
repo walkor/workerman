@@ -25,6 +25,8 @@ use Serializable;
  */
 class TcpConnection extends ConnectionInterface implements JsonSerializable, Serializable
 {
+    use Traits\SerializeTrait;
+
     /**
      * Read buffer size.
      *
@@ -973,34 +975,5 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable, Ser
                 Worker::stopAll();
             }
         }
-    }
-
-    public function jsonSerialize()
-    {
-        return [
-            'transport' => $this->transport,
-            'id' => $this->id,
-            'status' => $this->getStatus(),
-            'getRemoteIp' => $this->getRemoteIp(),
-            'remotePort' => $this->getRemotePort(),
-            'getRemoteAddress' => $this->getRemoteAddress(),
-            'getLocalIp' => $this->getLocalIp(),
-            'getLocalPort' => $this->getLocalPort(),
-            'getLocalAddress' => $this->getLocalAddress(),
-            'isIpV4' => $this->isIpV4(),
-            'isIpV6' => $this->isIpV6(),
-        ];
-    }
-
-    public function serialize()
-    {
-        return serialize($this->jsonSerialize());
-    }
-
-    public function unserialize(string $data)
-    {
-        // 仅仅打印信息，不做操作，进程数据不可进行改变
-        var_export(sprintf("unserialize %s \n", get_class($this)));
-        var_export(unserialize($data));
     }
 }
