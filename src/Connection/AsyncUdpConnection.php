@@ -21,10 +21,8 @@ use \Exception;
 /**
  * AsyncUdpConnection.
  */
-class AsyncUdpConnection extends UdpConnection implements \JsonSerializable, \Serializable
+class AsyncUdpConnection extends UdpConnection
 {
-    use Traits\SerializeTrait;
-
     /**
      * Emitted when socket connection is successfully established.
      *
