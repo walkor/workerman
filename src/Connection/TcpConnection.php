@@ -1,5 +1,4 @@
 <?php
-
 /**
  * This file is part of workerman.
  *
@@ -16,17 +15,12 @@ namespace Workerman\Connection;
 
 use Workerman\Events\EventInterface;
 use Workerman\Worker;
-use \Exception;
-use JsonSerializable;
-use Serializable;
 
 /**
  * TcpConnection.
  */
-class TcpConnection extends ConnectionInterface implements JsonSerializable, Serializable
+class TcpConnection extends ConnectionInterface implements \JsonSerializable, \Serializable
 {
-    use Traits\SerializeTrait;
-
     /**
      * Read buffer size.
      *
