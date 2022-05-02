@@ -18,10 +18,16 @@ trait SerializeTrait
 {
     public function jsonSerialize()
     {
-        return [
+        $data = [];
+        if ($this->transport === 'tcp') {
+            $data = [
+                'id' => $this->id,
+                'status' => $this->getStatus(),
+            ];
+        }
+        
+        return $data + [
             'transport' => $this->transport,
-            'id' => $this->id,
-            'status' => $this->getStatus(),
             'getRemoteIp' => $this->getRemoteIp(),
             'remotePort' => $this->getRemotePort(),
             'getRemoteAddress' => $this->getRemoteAddress(),
