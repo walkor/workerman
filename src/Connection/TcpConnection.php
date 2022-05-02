@@ -21,6 +21,8 @@ use Workerman\Worker;
  */
 class TcpConnection extends ConnectionInterface implements \JsonSerializable, \Serializable
 {
+    use Traits\SerializeTrait;
+
     /**
      * Read buffer size.
      *
