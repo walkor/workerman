@@ -1214,9 +1214,11 @@ class Worker
     /**
      * Redirect standard input and output.
      *
+     * @param bool $throw_exception
+     * @return void
      * @throws Exception
      */
-    public static function resetStd()
+    public static function resetStd(bool $throw_exception = true)
     {
         if (!static::$daemonize || \DIRECTORY_SEPARATOR !== '/') {
             return;
@@ -1242,8 +1244,9 @@ class Worker
             \restore_error_handler();
             return;
         }
-
-        throw new Exception('Can not open stdoutFile ' . static::$stdoutFile);
+        if ($throw_exception) {
+            throw new Exception('Can not open stdoutFile ' . static::$stdoutFile);
+        }
     }
 
     /**
@@ -1692,6 +1695,8 @@ class Worker
             if (static::$_status !== static::STATUS_RELOADING && static::$_status !== static::STATUS_SHUTDOWN) {
                 static::log("Workerman[" . \basename(static::$_startFile) . "] reloading");
                 static::$_status = static::STATUS_RELOADING;
+
+                static::resetStd(false);
                 // Try to emit onMasterReload callback.
                 if (static::$onMasterReload) {
                     try {
@@ -1758,6 +1763,8 @@ class Worker
 
             if ($worker->reloadable) {
                 static::stopAll();
+            } else {
+                static::resetStd(false);
             }
         }
     }
