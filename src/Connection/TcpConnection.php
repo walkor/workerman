@@ -587,7 +587,7 @@ class TcpConnection extends ConnectionInterface
         } else {
             $this->bytesRead += \strlen($buffer);
             if ($this->_recvBuffer === '') {
-                if (static::$_enableCache && !isset($requests[512]) && isset($requests[$buffer])) {
+                if (static::$_enableCache && !isset($buffer[512]) && isset($requests[$buffer])) {
                     ++self::$statistics['total_request'];
                     $request = $requests[$buffer];
                     if ($request instanceof Request) {
