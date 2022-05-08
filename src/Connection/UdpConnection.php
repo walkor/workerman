@@ -17,10 +17,8 @@ namespace Workerman\Connection;
 /**
  * UdpConnection.
  */
-class UdpConnection extends ConnectionInterface implements \JsonSerializable, \Serializable
+class UdpConnection extends ConnectionInterface implements \JsonSerializable
 {
-    use Traits\SerializeTrait;
-
     /**
      * Application layer protocol.
      * The format is like this Workerman\\Protocols\\Http.
@@ -207,5 +205,25 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable, \S
     public function getSocket()
     {
         return $this->_socket;
+    }
+    
+    /**
+     * Get the json_encode informattion.
+     *
+     * @return string
+     */
+    public function jsonSerialize()
+    {
+        return [
+            'transport' => $this->transport,
+            'getRemoteIp' => $this->getRemoteIp(),
+            'remotePort' => $this->getRemotePort(),
+            'getRemoteAddress' => $this->getRemoteAddress(),
+            'getLocalIp' => $this->getLocalIp(),
+            'getLocalPort' => $this->getLocalPort(),
+            'getLocalAddress' => $this->getLocalAddress(),
+            'isIpV4' => $this->isIpV4(),
+            'isIpV6' => $this->isIpV6(),
+        ];
     }
 }
