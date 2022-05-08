@@ -38,16 +38,4 @@ trait SerializeTrait
             'isIpV6' => $this->isIpV6(),
         ];
     }
-
-    public function serialize()
-    {
-        return serialize($this->jsonSerialize());
-    }
-
-    public function unserialize(string $data)
-    {
-        // Only print information, do nothing, proccess data should not be changed.
-        var_export(sprintf("unserialize %s \n", get_class($this)));
-        var_export(unserialize($data));
-    }
 }
