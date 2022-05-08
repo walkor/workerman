@@ -970,6 +970,11 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
         static::$_enableCache = (bool)$value;
     }
     
+    /**
+     * Get the json_encode informattion.
+     *
+     * @return string
+     */
     public function jsonSerialize()
     {        
         return [
