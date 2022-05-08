@@ -46,7 +46,7 @@ trait SerializeTrait
 
     public function unserialize(string $data)
     {
-        // 仅仅打印信息，不做操作，进程数据不可进行改变
+        // Only print information, do nothing, proccess data should not be changed.
         var_export(sprintf("unserialize %s \n", get_class($this)));
         var_export(unserialize($data));
     }
