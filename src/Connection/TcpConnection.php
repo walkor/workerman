@@ -21,7 +21,7 @@ use Workerman\Worker;
 /**
  * TcpConnection.
  */
-class TcpConnection extends ConnectionInterface
+class TcpConnection extends ConnectionInterface implements \JsonSerializable
 {
     /**
      * Read buffer size.
@@ -968,6 +968,28 @@ class TcpConnection extends ConnectionInterface
     public static function enableCache($value)
     {
         static::$_enableCache = (bool)$value;
+    }
+    
+    /**
+     * Get the json_encode informattion.
+     *
+     * @return string
+     */
+    public function jsonSerialize()
+    {        
+        return [
+            'id' => $this->id,
+            'status' => $this->getStatus(),
+            'transport' => $this->transport,
+            'getRemoteIp' => $this->getRemoteIp(),
+            'remotePort' => $this->getRemotePort(),
+            'getRemoteAddress' => $this->getRemoteAddress(),
+            'getLocalIp' => $this->getLocalIp(),
+            'getLocalPort' => $this->getLocalPort(),
+            'getLocalAddress' => $this->getLocalAddress(),
+            'isIpV4' => $this->isIpV4(),
+            'isIpV6' => $this->isIpV6(),
+        ];
     }
 
     /**
