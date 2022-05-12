@@ -142,9 +142,9 @@ class Timer
      * @param array $args
      * @return bool|int
      */
-    public function delay(float $delay, $func, $args = [])
+    public static function delay(float $delay, $func, $args = [])
     {
-        return $this->add($delay, $func, $args);
+        return static::add($delay, $func, $args, false);
     }
 
 
