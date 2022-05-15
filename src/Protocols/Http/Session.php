@@ -45,6 +45,13 @@ class Session
     public static $name = 'PHPSID';
 
     /**
+     * Auto update timestamp.
+     *
+     * @var bool
+     */
+    public static $autoUpdateTimestamp = false;
+
+    /**
      * Session lifetime.
      *
      * @var int
@@ -298,6 +305,8 @@ class Session
             } else {
                 static::$_handler->write($this->_sessionId, \serialize($this->_data));
             }
+        } elseif (static::$autoUpdateTimestamp) {
+            static::refresh();
         }
         $this->_needSave = false;
     }
@@ -385,15 +394,12 @@ class Session
     }
 
     /**
-     * Try GC sessions.
+     * GC sessions.
      *
      * @return void
      */
-    public function tryGcSessions()
+    public function gc()
     {
-        if (\rand(1, static::$gcProbability[1]) > static::$gcProbability[0]) {
-            return;
-        }
         static::$_handler->gc(static::$lifetime);
     }
 
@@ -405,7 +411,9 @@ class Session
     public function __destruct()
     {
         $this->save();
-        $this->tryGcSessions();
+        if (\rand(1, static::$gcProbability[1]) >= static::$gcProbability[0]) {
+            $this->gc();
+        }
     }
 
     /**
