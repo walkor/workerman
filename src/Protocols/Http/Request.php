@@ -586,6 +586,10 @@ class Request
         }
         $files_unique = [];
         foreach ($files as $index => $file) {
+            if (!isset($file['key'])) {
+                unset($files[$index]);
+                continue;
+            }
             $key = $file['key'];
             if (\substr($key, -2) === '[]') {
                 $key = $index;
