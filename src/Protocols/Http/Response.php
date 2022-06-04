@@ -356,10 +356,7 @@ class Response
         $file = $file_info['file'];
         $reason = $this->_reason ?: static::$_phrases[$this->_status];
         $head = "HTTP/{$this->_version} {$this->_status} $reason\r\n";
-        $headers = $this->_header;
-        if (!isset($headers['Server'])) {
-            $head .= "Server: workerman\r\n";
-        }
+        $headers = $this->_header;      
         foreach ($headers as $name => $value) {
             if (\is_array($value)) {
                 foreach ($value as $item) {
@@ -412,14 +409,11 @@ class Response
         $reason = $this->_reason ?: static::$_phrases[$this->_status];
         $body_len = \strlen($this->_body);
         if (empty($this->_header)) {
-            return "HTTP/{$this->_version} {$this->_status} $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\nConnection: keep-alive\r\n\r\n{$this->_body}";
+            return "HTTP/{$this->_version} {$this->_status} $reason\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\nConnection: keep-alive\r\n\r\n{$this->_body}";
         }
 
         $head = "HTTP/{$this->_version} {$this->_status} $reason\r\n";
-        $headers = $this->_header;
-        if (!isset($headers['Server'])) {
-            $head .= "Server: workerman\r\n";
-        }
+        $headers = $this->_header;       
         foreach ($headers as $name => $value) {
             if (\is_array($value)) {
                 foreach ($value as $item) {
