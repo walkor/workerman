@@ -20,7 +20,6 @@ class RedisClusterSessionHandler extends RedisSessionHandler
 {
     public function __construct($config)
     {
-        $this->_maxLifetime = (int)Session::$lifetime;
         $timeout = $config['timeout'] ?? 2;
         $read_timeout = $config['read_timeout'] ?? $timeout;
         $persistent = $config['persistent'] ?? false;
