@@ -317,15 +317,15 @@ class Response
      * @param bool $same_site
      * @return $this
      */
-    public function cookie($name, $value = '', $max_age = 0, $path = '', $domain = '', $secure = false, $http_only = false, $same_site  = false)
+    public function cookie($name, $value = '', $max_age = null, $path = '', $domain = '', $secure = false, $http_only = false, $same_site  = false)
     {
         $this->_header['Set-Cookie'][] = $name . '=' . \rawurlencode($value)
             . (empty($domain) ? '' : '; Domain=' . $domain)
-            . (empty($max_age) ? '' : '; Max-Age=' . $max_age)
+            . ($max_age === null ? '' : '; Max-Age=' . $max_age)
             . (empty($path) ? '' : '; Path=' . $path)
             . (!$secure ? '' : '; Secure')
             . (!$http_only ? '' : '; HttpOnly')
-            . (empty($same_site ) ? '' : '; SameSite=' . $same_site);
+            . (empty($same_site) ? '' : '; SameSite=' . $same_site);
         return $this;
     }
 
