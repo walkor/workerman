@@ -120,7 +120,6 @@ class Timer
         
         // If not workerman runtime just return.
         if (!Worker::getAllWorkers()) {
-            throw new \Exception();
             return;
         }
 
