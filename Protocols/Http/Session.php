@@ -410,7 +410,7 @@ class Session
     public function __destruct()
     {
         $this->save();
-        if (\rand(1, static::$gcProbability[1]) >= static::$gcProbability[0]) {
+        if (\rand(1, static::$gcProbability[1]) <= static::$gcProbability[0]) {
             $this->gc();
         }
     }
