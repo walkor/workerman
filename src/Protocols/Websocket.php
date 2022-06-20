@@ -328,11 +328,11 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         // HTTP protocol.
         if (0 === \strpos($buffer, 'GET')) {
             // Find \r\n\r\n.
-            $heder_end_pos = \strpos($buffer, "\r\n\r\n");
-            if (!$heder_end_pos) {
+            $header_end_pos = \strpos($buffer, "\r\n\r\n");
+            if (!$header_end_pos) {
                 return 0;
             }
-            $header_length = $heder_end_pos + 4;
+            $header_length = $header_end_pos + 4;
 
             // Get Sec-WebSocket-Key.
             $Sec_WebSocket_Key = '';
