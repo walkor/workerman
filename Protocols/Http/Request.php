@@ -604,7 +604,7 @@ class Request
      */
     protected static function createSessionId()
     {
-        return \bin2hex(\pack('d', \microtime(true)) . \pack('N', \mt_rand()));
+        return \bin2hex(\pack('d', \microtime(true)) . random_bytes(8));
     }
 
     /**
