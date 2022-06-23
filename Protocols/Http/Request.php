@@ -65,27 +65,6 @@ class Request
     protected $_data = null;
 
     /**
-     * Header cache.
-     *
-     * @var array
-     */
-    protected static $_headerCache = array();
-
-    /**
-     * Get cache.
-     *
-     * @var array
-     */
-    protected static $_getCache = array();
-
-    /**
-     * Post cache.
-     *
-     * @var array
-     */
-    protected static $_postCache = array();
-
-    /**
      * Enable cache.
      *
      * @var bool
@@ -400,6 +379,7 @@ class Request
      */
     protected function parseHeaders()
     {
+        static $cache = [];
         $this->_data['headers'] = array();
         $raw_head = $this->rawHead();
         $end_line_position = \strpos($raw_head, "\r\n");
@@ -408,8 +388,8 @@ class Request
         }
         $head_buffer = \substr($raw_head, $end_line_position + 2);
         $cacheable = static::$_enableCache && !isset($head_buffer[2048]);
-        if ($cacheable && isset(static::$_headerCache[$head_buffer])) {
-            $this->_data['headers'] = static::$_headerCache[$head_buffer];
+        if ($cacheable && isset($cache[$head_buffer])) {
+            $this->_data['headers'] = $cache[$head_buffer];
             return;
         }
         $head_data = \explode("\r\n", $head_buffer);
@@ -429,9 +409,9 @@ class Request
             }
         }
         if ($cacheable) {
-            static::$_headerCache[$head_buffer] = $this->_data['headers'];
-            if (\count(static::$_headerCache) > 128) {
-                unset(static::$_headerCache[key(static::$_headerCache)]);
+            $cache[$head_buffer] = $this->_data['headers'];
+            if (\count($cache) > 128) {
+                unset($cache[key($cache)]);
             }
         }
     }
@@ -443,21 +423,22 @@ class Request
      */
     protected function parseGet()
     {
+        static $cache = [];
         $query_string = $this->queryString();
         $this->_data['get'] = array();
         if ($query_string === '') {
             return;
         }
         $cacheable = static::$_enableCache && !isset($query_string[1024]);
-        if ($cacheable && isset(static::$_getCache[$query_string])) {
-            $this->_data['get'] = static::$_getCache[$query_string];
+        if ($cacheable && isset($cache[$query_string])) {
+            $this->_data['get'] = $cache[$query_string];
             return;
         }
         \parse_str($query_string, $this->_data['get']);
         if ($cacheable) {
-            static::$_getCache[$query_string] = $this->_data['get'];
-            if (\count(static::$_getCache) > 256) {
-                unset(static::$_getCache[key(static::$_getCache)]);
+            $cache[$query_string] = $this->_data['get'];
+            if (\count($cache) > 256) {
+                unset($cache[key($cache)]);
             }
         }
     }
@@ -469,20 +450,21 @@ class Request
      */
     protected function parsePost()
     {
-        $body_buffer = $this->rawBody();
+        static $cache = [];
         $this->_data['post'] = $this->_data['files'] = array();
-        if ($body_buffer === '') {
-            return;
-        }
-        $cacheable = static::$_enableCache && !isset($body_buffer[1024]);
-        if ($cacheable && isset(static::$_postCache[$body_buffer])) {
-            $this->_data['post'] = static::$_postCache[$body_buffer];
-            return;
-        }
         $content_type = $this->header('content-type', '');
         if (\preg_match('/boundary="?(\S+)"?/', $content_type, $match)) {
             $http_post_boundary = '--' . $match[1];
             $this->parseUploadFiles($http_post_boundary);
+            return;
+        }
+        $body_buffer = $this->rawBody();
+        if ($body_buffer === '') {
+            return;
+        }
+        $cacheable = static::$_enableCache && !isset($body_buffer[1024]);
+        if ($cacheable && isset($cache[$body_buffer])) {
+            $this->_data['post'] = $cache[$body_buffer];
             return;
         }
         if (\preg_match('/\bjson\b/i', $content_type)) {
@@ -491,9 +473,9 @@ class Request
             \parse_str($body_buffer, $this->_data['post']);
         }
         if ($cacheable) {
-            static::$_postCache[$body_buffer] = $this->_data['post'];
-            if (\count(static::$_postCache) > 256) {
-                unset(static::$_postCache[key(static::$_postCache)]);
+            $cache[$body_buffer] = $this->_data['post'];
+            if (\count($cache) > 256) {
+                unset($cache[key($cache)]);
             }
         }
     }
