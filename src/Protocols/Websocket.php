@@ -339,7 +339,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             if (\preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
                 $Sec_WebSocket_Key = $match[1];
             } else {
-                $connection->close("HTTP/1.1 200 WebSocket\r\nServer: workerman/" . Worker::VERSION . "\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman/" . Worker::VERSION . "</div>",
+                $connection->close("HTTP/1.1 200 WebSocket\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1></div>",
                     true);
                 return 0;
             }
@@ -366,26 +366,15 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 $connection->websocketType = static::BINARY_TYPE_BLOB;
             }
 
-            $has_server_header = false;
-
             if (isset($connection->headers)) {
                 if (\is_array($connection->headers)) {
-                    foreach ($connection->headers as $header) {
-                        if (\stripos($header, 'Server:') === 0) {
-                            $has_server_header = true;
-                        }
+                    foreach ($connection->headers as $header) {                       
                         $handshake_message .= "$header\r\n";
                     }
-                } else {
-                    if (\stripos($connection->headers, 'Server:') !== false) {
-                        $has_server_header = true;
-                    }
+                } else {                   
                     $handshake_message .= "$connection->headers\r\n";
                 }
-            }
-            if (!$has_server_header) {
-                $handshake_message .= "Server: workerman/" . Worker::VERSION . "\r\n";
-            }
+            }            
             $handshake_message .= "\r\n";
             // Send handshake response.
             $connection->send($handshake_message, true);
@@ -419,7 +408,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             return 0;
         }
         // Bad websocket handshake request.
-        $connection->close("HTTP/1.1 200 WebSocket\r\nServer: workerman/" . Worker::VERSION . "\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman/" . Worker::VERSION . "</div>",
+        $connection->close("HTTP/1.1 200 WebSocket\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1></div>",
             true);
         return 0;
     }
