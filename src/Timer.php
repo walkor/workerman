@@ -114,6 +114,11 @@ class Timer
         if (self::$_event) {
             return $persistent ? self::$_event->repeat($time_interval, $func, $args) : self::$_event->delay($time_interval, $func, $args);
         }
+        
+        // If not workerman runtime just return.
+        if (!Worker::getAllWorkers()) {
+            return;
+        }
 
         if (!\is_callable($func)) {
             Worker::safeEcho(new Exception("not callable"));

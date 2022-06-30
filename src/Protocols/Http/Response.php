@@ -333,11 +333,11 @@ class Response
      * @param bool $same_site
      * @return $this
      */
-    public function cookie($name, $value = '', $max_age = 0, $path = '', $domain = '', $secure = false, $http_only = false, $same_site = false)
+    public function cookie($name, $value = '', $max_age = null, $path = '', $domain = '', $secure = false, $http_only = false, $same_site  = false)
     {
         $this->_header['Set-Cookie'][] = $name . '=' . \rawurlencode($value)
             . (empty($domain) ? '' : '; Domain=' . $domain)
-            . (empty($max_age) ? '' : '; Max-Age=' . $max_age)
+            . ($max_age === null ? '' : '; Max-Age=' . $max_age)
             . (empty($path) ? '' : '; Path=' . $path)
             . (!$secure ? '' : '; Secure')
             . (!$http_only ? '' : '; HttpOnly')
@@ -406,7 +406,7 @@ class Response
             return $this->createHeadForFile($this->file);
         }
 
-        $reason = $this->_reason ?: static::$_phrases[$this->_status];
+        $reason = $this->_reason ?: static::$_phrases[$this->_status] ?? '';
         $body_len = \strlen($this->_body);
         if (empty($this->_header)) {
             return "HTTP/{$this->_version} {$this->_status} $reason\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\nConnection: keep-alive\r\n\r\n{$this->_body}";

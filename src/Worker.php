@@ -1488,7 +1488,7 @@ class Worker
             if (static::$_status === static::STATUS_STARTING) {
                 static::resetStd();
             }
-            static::$_pidMap  = [];
+            static::$_pidsToRestart = static::$_pidMap  = [];
             // Remove other listener.
             foreach(static::$_workers as $key => $one_worker) {
                 if ($one_worker->workerId !== $worker->workerId) {
@@ -1708,11 +1708,7 @@ class Worker
                 }
             }
 
-            if (static::$_gracefulStop) {
-                $sig = \SIGUSR2;
-            } else {
-                $sig = \SIGUSR1;
-            }
+            $sig = static::$_gracefulStop ? \SIGUSR2 : \SIGUSR1;
 
             // Send reload signal to all child processes.
             $reloadable_pid_array = [];
@@ -1787,11 +1783,8 @@ class Worker
             static::log("Workerman[" . \basename(static::$_startFile) . "] stopping ...");
             $worker_pid_array = static::getAllWorkerPids();
             // Send stop signal to all child processes.
-            if (static::$_gracefulStop) {
-                $sig = \SIGQUIT;
-            } else {
-                $sig = \SIGINT;
-            }
+            $sig = static::$_gracefulStop ? \SIGQUIT : \SIGINT;
+
             foreach ($worker_pid_array as $worker_pid) {
                 \posix_kill($worker_pid, $sig);
                 if(!static::$_gracefulStop){
