@@ -110,10 +110,8 @@ class Http
 
         $header = \substr($recv_buffer, 0, $crlf_pos);
         $length = false;
-        if ($pos = \strpos($header, "\r\nContent-Length: ")) {
+        if ($pos = \strripos($header, "\r\nContent-Length: ")) {
             $length = $head_len + (int)\substr($header, $pos + 18, 10);
-        } else if (\preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
-            $length = $head_len + $match[1];
         }
 
         if ($length !== false) {
