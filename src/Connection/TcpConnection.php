@@ -971,10 +971,11 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
     }
     
     /**
-     * Get the json_encode informattion.
+     * Get the json_encode information.
      *
-     * @return string
+     * @return mixed
      */
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {        
         return [
