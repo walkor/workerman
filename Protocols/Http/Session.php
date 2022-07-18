@@ -327,7 +327,7 @@ class Session
      */
     public static function init()
     {
-        if ($gc_probability = (int)\ini_get('session.gc_probability') && $gc_divisor = (int)\ini_get('session.gc_divisor')) {
+        if (($gc_probability = (int)\ini_get('session.gc_probability')) && ($gc_divisor = (int)\ini_get('session.gc_divisor'))) {
             static::$gcProbability = [$gc_probability, $gc_divisor];
         }
 
