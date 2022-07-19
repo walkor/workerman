@@ -13,13 +13,12 @@
  */
 namespace Workerman;
 
-use Workerman\Events\Event;
-use Workerman\Events\EventInterface;
+use Exception;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
+use Workerman\Events\Event;
 use Workerman\Events\Select;
-use Exception;
 
 
 /**
@@ -1234,10 +1233,20 @@ class Worker
             if ($STDERR) {
                 \fclose($STDERR);
             }
-            \fclose(\STDOUT);
-            \fclose(\STDERR);
+            if (\is_resource(\STDOUT)) {
+                \fclose(\STDOUT);
+            }
+            if (\is_resource(\STDERR)) {
+                \fclose(\STDERR);
+            }
             $STDOUT = \fopen(static::$stdoutFile, "a");
             $STDERR = \fopen(static::$stdoutFile, "a");
+            // Fix standard output cannot redirect of PHP 8.1.8's bug
+            if (\posix_isatty(2)) {
+                \ob_start(function ($string) {
+                    \file_put_contents(static::$stdoutFile, $string, FILE_APPEND);
+                }, 1);
+            }
             // change output stream
             static::$_outputStream = null;
             static::outputStream($STDOUT);
