@@ -1270,7 +1270,7 @@ class Worker
      */
     public static function resetStd()
     {
-        if (!static::$daemonize || static::$_OS !== \OS_TYPE_LINUX) {
+        if (!static::$daemonize || \DIRECTORY_SEPARATOR !== '/') {
             return;
         }
         global $STDOUT, $STDERR;
@@ -1284,10 +1284,20 @@ class Worker
             if ($STDERR) {
                 \fclose($STDERR);
             }
-            \fclose(\STDOUT);
-            \fclose(\STDERR);
+            if (\is_resource(\STDOUT)) {
+                \fclose(\STDOUT);
+            }
+            if (\is_resource(\STDERR)) {
+                \fclose(\STDERR);
+            }
             $STDOUT = \fopen(static::$stdoutFile, "a");
             $STDERR = \fopen(static::$stdoutFile, "a");
+            // Fix standard output cannot redirect of PHP 8.1.8's bug
+            if (\posix_isatty(2)) {
+                \ob_start(function ($string) {
+                    \file_put_contents(static::$stdoutFile, $string, FILE_APPEND);
+                }, 1);
+            }
             // change output stream
             static::$_outputStream = null;
             static::outputStream($STDOUT);
