@@ -199,7 +199,7 @@ class Worker
     /**
      * Emitted when worker processes exited.
      *
-     * @var null
+     * @var callable
      */
     public $onWorkerExit = null;
 
