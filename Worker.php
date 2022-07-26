@@ -197,6 +197,13 @@ class Worker
     public $onWorkerReload = null;
 
     /**
+     * Emitted when worker processes exited.
+     *
+     * @var callable
+     */
+    public $onWorkerExit = null;
+
+    /**
      * Transport layer protocol.
      *
      * @var string
@@ -1680,7 +1687,18 @@ class Worker
                         $worker = static::$_workers[$worker_id];
                         // Exit status.
                         if ($status !== 0) {
-                            static::log("worker[" . $worker->name . ":$pid] exit with status $status");
+                            static::log("worker[{$worker->name}:$pid] exit with status $status");
+                        }
+
+                        // onWorkerExit
+                        if ($worker->onWorkerExit) {
+                            try {
+                                call_user_func($worker->onWorkerExit, $worker, $status, $pid);
+                            } catch (\Exception $e) {
+                                static::log("worker[{$worker->name}] onWorkerExit $e");
+                            } catch (\Error $e) {
+                                static::log("worker[{$worker->name}] onWorkerExit $e");
+                            }
                         }
 
                         // For Statistics.
