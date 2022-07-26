@@ -181,7 +181,7 @@ class Worker
     public $onBufferDrain = null;
 
     /**
-     * Emitted when worker processes stoped.
+     * Emitted when worker processes stopped.
      *
      * @var callable
      */
@@ -193,6 +193,13 @@ class Worker
      * @var callable
      */
     public $onWorkerReload = null;
+
+    /**
+     * Emitted when worker processes exited.
+     *
+     * @var callable
+     */
+    public $onWorkerExit = null;
 
     /**
      * Transport layer protocol.
@@ -1619,7 +1626,16 @@ class Worker
                         $worker = static::$_workers[$worker_id];
                         // Exit status.
                         if ($status !== 0) {
-                            static::log("worker[" . $worker->name . ":$pid] exit with status $status");
+                            static::log("worker[{$worker->name}:$pid] exit with status $status");
+                        }
+
+                        // onWorkerExit
+                        if ($worker->onWorkerExit) {
+                            try {
+                                ($worker->onWorkerExit)($worker, $status, $pid);
+                            } catch (\Throwable $exception) {
+                                static::log("worker[{$worker->name}] onWorkerExit $exception");
+                            }
                         }
 
                         // For Statistics.
