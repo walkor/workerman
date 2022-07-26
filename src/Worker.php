@@ -14,6 +14,7 @@
 namespace Workerman;
 
 use Exception;
+use Throwable;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
@@ -1633,7 +1634,7 @@ class Worker
                         if ($worker->onWorkerExit) {
                             try {
                                 ($worker->onWorkerExit)($worker, $status, $pid);
-                            } catch (\Throwable $exception) {
+                            } catch (Throwable $exception) {
                                 static::log("worker[{$worker->name}] onWorkerExit $exception");
                             }
                         }
@@ -1726,7 +1727,7 @@ class Worker
                 if (static::$onMasterReload) {
                     try {
                         \call_user_func(static::$onMasterReload);
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         static::stopAll(250, $e);
                     }
                     static::initId();
@@ -1777,7 +1778,7 @@ class Worker
             if ($worker->onWorkerReload) {
                 try {
                     \call_user_func($worker->onWorkerReload, $worker);
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     static::stopAll(250, $e);
                 }
             }
@@ -2386,7 +2387,7 @@ class Worker
         if ($this->onWorkerStart) {
             try {
                 ($this->onWorkerStart)($this);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Avoid rapid infinite loop exit.
                 sleep(1);
                 static::stopAll(250, $e);
@@ -2408,7 +2409,7 @@ class Worker
         if ($this->onWorkerStop) {
             try {
                 ($this->onWorkerStop)($this);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Worker::log($e);
             }
         }
@@ -2458,7 +2459,7 @@ class Worker
         if ($this->onConnect) {
             try {
                 ($this->onConnect)($connection);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 static::stopAll(250, $e);
             }
         }
@@ -2512,7 +2513,7 @@ class Worker
                     $message_cb($connection, $recv_buffer);
                 }
                 ++ConnectionInterface::$statistics['total_request'];
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 static::stopAll(250, $e);
             }
         }
