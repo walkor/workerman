@@ -124,7 +124,7 @@ class Http
                 }
             }
             if ($length > $connection->maxPackageSize) {
-                $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n");
+                $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n", true);
                 return 0;
             }
             return $length;
