@@ -490,11 +490,24 @@ class Request
     {
         $http_post_boundary = \trim($http_post_boundary, '"');
         $buffer = $this->_buffer;
+        $post_encode_string = '';
+        $files_encode_string = '';
+        $files = [];
         $boday_position = strpos($buffer, "\r\n\r\n") + 4;
         $offset = $boday_position + strlen($http_post_boundary) + 2;
         $max_count = static::$maxFileUploads;
         while ($max_count-- > 0 && $offset) {
-            $offset = $this->parseUploadFile($http_post_boundary, $offset);
+            $offset = $this->parseUploadFile($http_post_boundary, $offset, $post_encode_string, $files_encode_string, $files);
+        }
+        if ($post_encode_string) {
+            parse_str($post_encode_string, $this->_data['post']);
+        }
+
+        if ($files_encode_string) {
+            parse_str($files_encode_string, $this->_data['files']);
+            \array_walk_recursive($this->_data['files'], function (&$value) use ($files) {
+                $value = $files[$value];
+            });
         }
     }
 
@@ -503,7 +516,7 @@ class Request
      * @param $section_start_offset
      * @return int
      */
-    protected function parseUploadFile($boundary, $section_start_offset)
+    protected function parseUploadFile($boundary, $section_start_offset, &$post_encode_string, &$files_encode_str, &$files)
     {
         $file = [];
         $boundary = "\r\n$boundary";
@@ -523,7 +536,7 @@ class Request
             if (!\strpos($content_line, ': ')) {
                 return 0;
             }
-            [$key, $value] = \explode(': ', $content_line);
+            list($key, $value) = \explode(': ', $content_line);
             switch (strtolower($key)) {
                 case "content-disposition":
                     // Is file data.
@@ -557,12 +570,7 @@ class Request
                         // Parse $_POST.
                         if (\preg_match('/name="(.*?)"$/', $value, $match)) {
                             $k = $match[1];
-                            $post_str = \urlencode($k) . "=" . \urlencode($boundary_value);
-                            $post = [];
-                            parse_str($post_str, $post);
-                            if ($post) {
-                                $this->_data['post'] = \array_merge_recursive($this->_data['post'], $post);
-                            }
+                            $post_encode_string .= \urlencode($k) . "=" . \urlencode($boundary_value) . '&';
                         }
                         return $section_end_offset + \strlen($boundary) + 2;
                     }
@@ -575,13 +583,8 @@ class Request
         if ($upload_key === false) {
             return 0;
         }
-        $str = \urlencode($upload_key) . "=1";
-        $result = [];
-        \parse_str($str, $result);
-        \array_walk_recursive($result, function (&$value) use ($file) {
-            $value = $file;
-        });
-        $this->_data['files'] = \array_merge_recursive($this->_data['files'], $result);
+        $files_encode_str .= \urlencode($upload_key) . '=' . \count($files) . '&';
+        $files[] = $file;
 
         return $section_end_offset + \strlen($boundary) + 2;
     }
