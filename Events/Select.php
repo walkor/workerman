@@ -13,6 +13,8 @@
  */
 namespace Workerman\Events;
 
+use Workerman\Worker;
+
 /**
  * select eventloop
  */
@@ -114,7 +116,7 @@ class Select implements EventInterface
                 } else if (\DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
                     echo "Warning: system call select exceeded the maximum number of connections 256.\n";
                 }
-                $fd_key                           = (int)$fd;
+                $fd_key                           = (int) $fd;
                 $this->_allEvents[$fd_key][$flag] = array($func, $fd);
                 if ($flag === self::EV_READ) {
                     $this->_readFds[$fd_key] = $fd;
@@ -123,16 +125,16 @@ class Select implements EventInterface
                 }
                 break;
             case self::EV_EXCEPT:
-                $fd_key = (int)$fd;
+                $fd_key                           = (int) $fd;
                 $this->_allEvents[$fd_key][$flag] = array($func, $fd);
-                $this->_exceptFds[$fd_key] = $fd;
+                $this->_exceptFds[$fd_key]        = $fd;
                 break;
             case self::EV_SIGNAL:
                 // Windows not support signal.
-                if(\DIRECTORY_SEPARATOR !== '/') {
+                if (\DIRECTORY_SEPARATOR !== '/') {
                     return false;
                 }
-                $fd_key                              = (int)$fd;
+                $fd_key                              = (int) $fd;
                 $this->_signalEvents[$fd_key][$flag] = array($func, $fd);
                 \pcntl_signal($fd, array($this, 'signalHandler'));
                 break;
@@ -141,12 +143,12 @@ class Select implements EventInterface
                 $timer_id = $this->_timerId++;
                 $run_time = \microtime(true) + $fd;
                 $this->_scheduler->insert($timer_id, -$run_time);
-                $this->_eventTimer[$timer_id] = array($func, (array)$args, $flag, $fd);
-                $select_timeout = ($run_time - \microtime(true)) * 1000000;
-                $select_timeout = $select_timeout <= 0 ? 1 : $select_timeout;
-                if( $this->_selectTimeout > $select_timeout ){ 
-                    $this->_selectTimeout = (int) $select_timeout;   
-                }  
+                $this->_eventTimer[$timer_id] = array($func, (array) $args, $flag, $fd);
+                $select_timeout               = ($run_time-\microtime(true)) * 1000000;
+                $select_timeout               = $select_timeout <= 0 ? 1 : $select_timeout;
+                if ($this->_selectTimeout > $select_timeout) {
+                    $this->_selectTimeout = (int) $select_timeout;
+                }
                 return $timer_id;
         }
 
@@ -168,7 +170,7 @@ class Select implements EventInterface
      */
     public function del($fd, $flag)
     {
-        $fd_key = (int)$fd;
+        $fd_key = (int) $fd;
         switch ($flag) {
             case self::EV_READ:
                 unset($this->_allEvents[$fd_key][$flag], $this->_readFds[$fd_key]);
@@ -184,13 +186,12 @@ class Select implements EventInterface
                 return true;
             case self::EV_EXCEPT:
                 unset($this->_allEvents[$fd_key][$flag], $this->_exceptFds[$fd_key]);
-                if(empty($this->_allEvents[$fd_key]))
-                {
+                if (empty($this->_allEvents[$fd_key])) {
                     unset($this->_allEvents[$fd_key]);
                 }
                 return true;
             case self::EV_SIGNAL:
-                if(\DIRECTORY_SEPARATOR !== '/') {
+                if (\DIRECTORY_SEPARATOR !== '/') {
                     return false;
                 }
                 unset($this->_signalEvents[$fd_key]);
@@ -265,7 +266,7 @@ class Select implements EventInterface
     public function loop()
     {
         while (1) {
-            if(\DIRECTORY_SEPARATOR === '/') {
+            if (\DIRECTORY_SEPARATOR === '/') {
                 // Calls signal handlers for pending signals
                 \pcntl_signal_dispatch();
             }
@@ -286,7 +287,6 @@ class Select implements EventInterface
                 $ret = false;
             }
 
-
             if (!$this->_scheduler->isEmpty()) {
                 $this->tick();
             }
@@ -297,7 +297,7 @@ class Select implements EventInterface
 
             if ($read) {
                 foreach ($read as $fd) {
-                    $fd_key = (int)$fd;
+                    $fd_key = (int) $fd;
                     if (isset($this->_allEvents[$fd_key][self::EV_READ])) {
                         \call_user_func_array($this->_allEvents[$fd_key][self::EV_READ][0],
                             array($this->_allEvents[$fd_key][self::EV_READ][1]));
@@ -307,7 +307,7 @@ class Select implements EventInterface
 
             if ($write) {
                 foreach ($write as $fd) {
-                    $fd_key = (int)$fd;
+                    $fd_key = (int) $fd;
                     if (isset($this->_allEvents[$fd_key][self::EV_WRITE])) {
                         \call_user_func_array($this->_allEvents[$fd_key][self::EV_WRITE][0],
                             array($this->_allEvents[$fd_key][self::EV_WRITE][1]));
@@ -315,10 +315,10 @@ class Select implements EventInterface
                 }
             }
 
-            if($except) {
-                foreach($except as $fd) {
+            if ($except) {
+                foreach ($except as $fd) {
                     $fd_key = (int) $fd;
-                    if(isset($this->_allEvents[$fd_key][self::EV_EXCEPT])) {
+                    if (isset($this->_allEvents[$fd_key][self::EV_EXCEPT])) {
                         \call_user_func_array($this->_allEvents[$fd_key][self::EV_EXCEPT][0],
                             array($this->_allEvents[$fd_key][self::EV_EXCEPT][1]));
                     }
