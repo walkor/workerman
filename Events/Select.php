@@ -13,6 +13,9 @@
  */
 namespace Workerman\Events;
 
+use Throwable;
+use Workerman\Worker;
+
 /**
  * select eventloop
  */
@@ -211,6 +214,7 @@ class Select implements EventInterface
      */
     protected function tick()
     {
+        $tasks_to_insert = [];
         while (!$this->_scheduler->isEmpty()) {
             $scheduler_data       = $this->_scheduler->top();
             $timer_id             = $scheduler_data['data'];
@@ -228,14 +232,28 @@ class Select implements EventInterface
                 $task_data = $this->_eventTimer[$timer_id];
                 if ($task_data[2] === self::EV_TIMER) {
                     $next_run_time = $time_now + $task_data[3];
-                    $this->_scheduler->insert($timer_id, -$next_run_time);
+                    $tasks_to_insert[] = [$timer_id, -$next_run_time];
                 }
-                \call_user_func_array($task_data[0], $task_data[1]);
+                try {
+                    \call_user_func_array($task_data[0], $task_data[1]);
+                } catch (Throwable $e) {
+                    Worker::stopAll(250, $e);
+                }
                 if (isset($this->_eventTimer[$timer_id]) && $task_data[2] === self::EV_TIMER_ONCE) {
                     $this->del($timer_id, self::EV_TIMER_ONCE);
                 }
-                continue;
+            } else {
+                break;
             }
+        }
+        foreach ($tasks_to_insert as $item) {
+            $this->_scheduler->insert($item[0], $item[1]);
+        }
+        if (!$this->_scheduler->isEmpty()) {
+            $scheduler_data       = $this->_scheduler->top();
+            $next_run_time        = -$scheduler_data['priority'];
+            $time_now             = \microtime(true);
+            $this->_selectTimeout = \max((int) (($next_run_time - $time_now) * 1000000), 0);
             return;
         }
         $this->_selectTimeout = 100000000;
@@ -275,9 +293,7 @@ class Select implements EventInterface
 
             } else {
                 $this->_selectTimeout >= 1 && usleep($this->_selectTimeout);
-                $ret = false;
             }
-
 
             if (!$this->_scheduler->isEmpty()) {
                 $this->tick();
