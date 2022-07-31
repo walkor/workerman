@@ -211,34 +211,42 @@ class Select implements EventInterface
      */
     protected function tick()
     {
-        while (!$this->_scheduler->isEmpty()) {
-            $scheduler_data       = $this->_scheduler->top();
-            $timer_id             = $scheduler_data['data'];
-            $next_run_time        = -$scheduler_data['priority'];
-            $time_now             = \microtime(true);
-            $this->_selectTimeout = (int) (($next_run_time - $time_now) * 1000000);
-            if ($this->_selectTimeout <= 0) {
-                $this->_scheduler->extract();
-
-                if (!isset($this->_eventTimer[$timer_id])) {
-                    continue;
-                }
-
-                // [func, args, flag, timer_interval]
-                $task_data = $this->_eventTimer[$timer_id];
-                if ($task_data[2] === self::EV_TIMER) {
-                    $next_run_time = $time_now + $task_data[3];
-                    $this->_scheduler->insert($timer_id, -$next_run_time);
-                }
-                \call_user_func_array($task_data[0], $task_data[1]);
-                if (isset($this->_eventTimer[$timer_id]) && $task_data[2] === self::EV_TIMER_ONCE) {
-                    $this->del($timer_id, self::EV_TIMER_ONCE);
-                }
-                continue;
-            }
+        if ($this->_scheduler->isEmpty()) {
+            $this->_selectTimeout = 100000000;
             return;
         }
-        $this->_selectTimeout = 100000000;
+
+        $scheduler_data       = $this->_scheduler->top();
+        $timer_id             = $scheduler_data['data'];
+        $next_run_time        = -$scheduler_data['priority'];
+        $time_now             = \microtime(true);
+        $this->_selectTimeout = (int) (($next_run_time - $time_now) * 1000000);
+        if ($this->_selectTimeout <= 0) {
+            $this->_scheduler->extract();
+
+            if (!isset($this->_eventTimer[$timer_id])) {
+                return;
+            }
+
+            // [func, args, flag, timer_interval]
+            $task_data = $this->_eventTimer[$timer_id];
+            if ($task_data[2] === self::EV_TIMER) {
+                $next_run_time = $time_now + $task_data[3];
+                $this->_scheduler->insert($timer_id, -$next_run_time);
+            }
+
+            try {
+                \call_user_func_array($task_data[0], $task_data[1]);
+            } catch (\Exception $e) {
+                Worker::stopAll(250, $e);
+            } catch (\Error $e) {
+                Worker::stopAll(250, $e);
+            }
+
+            if (isset($this->_eventTimer[$timer_id]) && $task_data[2] === self::EV_TIMER_ONCE) {
+                $this->del($timer_id, self::EV_TIMER_ONCE);
+            }
+        }
     }
 
     /**
