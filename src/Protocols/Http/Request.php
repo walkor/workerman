@@ -369,8 +369,13 @@ class Request
      */
     protected function parseHeadFirstLine()
     {
+        //GET //XXX//XX/XX?id=cc
         $first_line = \strstr($this->_buffer, "\r\n", true);
-        $tmp = \explode(' ', $first_line, 3);
+        $tmp = \explode(' ', $first_line, 3);//tmp 数据 去掉了GET  //XXX//XX/XX?id=cc
+        $temp_array=explode('?',$tmp[1],2);
+        $tmp[1]= implode('/',array_filter(\explode('/',$temp_array[0])));
+        //如果请求后面存在参数
+        if(!empty($temp_array[1]))$tmp[1].='?'.$temp_array[1];
         $this->_data['method'] = $tmp[0];
         $this->_data['uri'] = isset($tmp[1]) ? $tmp[1] : '/';
     }
