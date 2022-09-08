@@ -271,7 +271,7 @@ class Worker
      * @var string
      */
     public static $statusFile = '';
-    
+
     /**
      * Log file.
      *
@@ -456,7 +456,7 @@ class Worker
      *
      * @var string
      */
-    protected static $_OS = \OS_TYPE_LINUX;
+    protected static $_OS = \DIRECTORY_SEPARATOR === '/' ? \OS_TYPE_LINUX : OS_TYPE_WINDOWS;
 
     /**
      * Processes for windows.
@@ -546,13 +546,16 @@ class Worker
      */
     public static function runAll()
     {
+        \register_shutdown_function(array("\\Workerman\\Worker", 'unlockPid'));
         static::checkSapiEnv();
         static::init();
         static::parseCommand();
         static::daemonize();
+        static::lockPid();
         static::initWorkers();
         static::installSignal();
         static::saveMasterPid();
+        static::unlockPid();
         static::displayUI();
         static::forkWorkers();
         static::resetStd();
@@ -569,9 +572,6 @@ class Worker
         // Only for cli.
         if (\PHP_SAPI !== 'cli') {
             exit("Only run in command line mode \n");
-        }
-        if (\DIRECTORY_SEPARATOR === '\\') {
-            self::$_OS = \OS_TYPE_WINDOWS;
         }
     }
 
@@ -625,6 +625,36 @@ class Worker
     }
 
     /**
+     * Lock pid.
+     *
+     * @return void
+     */
+    public static function lockPid()
+    {
+        // 重要: 如果不声明静态变量，方法执行完后局部变量被释放，锁也就被释放了
+        static $fd;
+        $fd = \fopen(static::$pidFile . '.lock', 'w');
+        if ($fd && flock($fd, LOCK_EX | LOCK_NB)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Unlock pid.
+     *
+     * @return void
+     */
+    public static function unlockPid()
+    {
+        if ($fd = @\fopen(static::$pidFile . '.lock', 'r')) {
+            flock($fd, \LOCK_UN);
+            fclose($fd);
+            unlink(static::$pidFile . '.lock');
+        }
+    }
+
+    /**
      * Lock.
      *
      * @return void
@@ -659,7 +689,7 @@ class Worker
         if (static::$_OS !== \OS_TYPE_LINUX) {
             return;
         }
-        
+
         static::$_statisticsFile =  static::$statusFile ? static::$statusFile : __DIR__ . '/../workerman-' .posix_getpid().'.status';
 
         foreach (static::$_workers as $worker) {
@@ -925,6 +955,11 @@ class Worker
             }
         }
         static::log("Workerman[$start_file] $command $mode_str");
+
+        if (!static::lockPid()) {
+            static::log("Workerman[$start_file] parseCommand running");
+            exit;
+        }
 
         // Get master process PID.
         $master_pid      = \is_file(static::$pidFile) ? (int)\file_get_contents(static::$pidFile) : 0;
@@ -1277,7 +1312,7 @@ class Worker
      */
     public static function resetStd()
     {
-        if (!static::$daemonize || \DIRECTORY_SEPARATOR !== '/') {
+        if (!static::$daemonize || static::$_OS !== \OS_TYPE_LINUX) {
             return;
         }
         global $STDOUT, $STDERR;
@@ -1869,7 +1904,7 @@ class Worker
 
         static::$_status = static::STATUS_SHUTDOWN;
         // For master process.
-        if (\DIRECTORY_SEPARATOR === '/' && static::$_masterPid === \posix_getpid()) {
+        if (static::$_OS === \OS_TYPE_LINUX && static::$_masterPid === \posix_getpid()) {
             static::log("Workerman[" . \basename(static::$_startFile) . "] stopping ...");
             $worker_pid_array = static::getAllWorkerPids();
             // Send stop signal to all child processes.
