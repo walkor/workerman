@@ -647,11 +647,13 @@ class Worker
      */
     public static function unlockPid()
     {
-        if ($fd = @\fopen(static::$pidFile . '.lock', 'r')) {
+        \set_error_handler(function () {});
+        if ($fd = \fopen(static::$pidFile . '.lock', 'r')) {
             flock($fd, \LOCK_UN);
             fclose($fd);
             unlink(static::$pidFile . '.lock');
         }
+        \restore_error_handler();
     }
 
     /**
