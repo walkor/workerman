@@ -459,6 +459,13 @@ class Worker
     protected static $_OS = \DIRECTORY_SEPARATOR === '/' ? \OS_TYPE_LINUX : OS_TYPE_WINDOWS;
 
     /**
+     * is NFS.
+     *
+     * @var bool
+     */
+    public static $isNFS  = false;
+
+    /**
      * Processes for windows.
      *
      * @var array
@@ -633,6 +640,12 @@ class Worker
     {
         // 重要: 如果不声明静态变量，方法执行完后局部变量被释放，锁也就被释放了
         static $fd;
+
+        // https://github.com/walkor/workerman/pull/803
+        if (static::$isNFS) {
+            return true;
+        }
+
         $fd = \fopen(static::$pidFile . '.lock', 'w');
         if ($fd && flock($fd, LOCK_EX | LOCK_NB)) {
             return true;
@@ -647,6 +660,9 @@ class Worker
      */
     public static function unlockPid()
     {
+        if (static::$isNFS) {
+            return;
+        }
         \set_error_handler(function () {});
         if ($fd = \fopen(static::$pidFile . '.lock', 'r')) {
             flock($fd, \LOCK_UN);
