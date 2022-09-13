@@ -545,11 +545,13 @@ class Worker
     {
         static::checkSapiEnv();
         static::init();
+        static::lock();
         static::parseCommand();
         static::daemonize();
         static::initWorkers();
         static::installSignal();
         static::saveMasterPid();
+        static::unlock();
         static::displayUI();
         static::forkWorkers();
         static::resetStd();
@@ -628,7 +630,7 @@ class Worker
      */
     protected static function lock()
     {
-        $fd = \fopen(static::$_startFile, 'r');
+        $fd = \fopen(static::$_startFile, 'a+');
         if ($fd && !flock($fd, LOCK_EX)) {
             static::log('Workerman['.static::$_startFile.'] already running.');
             exit;
