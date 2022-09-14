@@ -221,6 +221,7 @@ class Http
             $file = $response->file['file'];
             $offset = $response->file['offset'];
             $length = $response->file['length'];
+            clearstatcache();
             $file_size = (int)\filesize($file);
             $body_len = $length > 0 ? $length : $file_size - $offset;
             $response->withHeaders(array(
