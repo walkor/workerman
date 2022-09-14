@@ -551,7 +551,7 @@ class Worker
         static::initWorkers();
         static::installSignal();
         static::saveMasterPid();
-        static::unlock();
+        static::lock(\LOCK_UN);
         static::displayUI();
         static::forkWorkers();
         static::resetStd();
@@ -628,24 +628,13 @@ class Worker
      *
      * @return void
      */
-    protected static function lock()
+    protected static function lock($flag = \LOCK_EX)
     {
-        $fd = \fopen(static::$_startFile, 'a+');
-        if ($fd && !flock($fd, LOCK_EX)) {
-            static::log('Workerman['.static::$_startFile.'] already running.');
-            exit;
+        static $fd;
+        $fd = $fd ?: \fopen(static::$_startFile, 'a+');
+        if ($fd) {
+            flock($fd, $flag);
         }
-    }
-
-    /**
-     * Unlock.
-     *
-     * @return void
-     */
-    protected static function unlock()
-    {
-        $fd = \fopen(static::$_startFile, 'r');
-        $fd && flock($fd, \LOCK_UN);
     }
 
     /**
