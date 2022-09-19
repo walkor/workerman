@@ -85,53 +85,49 @@ class Http
         $crlf_pos = \strpos($recv_buffer, "\r\n\r\n");
         if (false === $crlf_pos) {
             // Judge whether the package length exceeds the limit.
-            if ($recv_len = \strlen($recv_buffer) >= 16384) {
+            if (\strlen($recv_buffer) >= 16384) {
                 $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n", true);
                 return 0;
             }
             return 0;
         }
 
-        $head_len = $crlf_pos + 4;
+        $length = $crlf_pos + 4;
         $method = \strstr($recv_buffer, ' ', true);
 
-        if ($method === 'GET' || $method === 'OPTIONS' || $method === 'HEAD' || $method === 'DELETE') {
-            if (!isset($recv_buffer[512])) {
-                $input[$recv_buffer] = $head_len;
-                if (\count($input) > 512) {
-                    unset($input[\key($input)]);
-                }
-            }
-            return $head_len;
-        } else if ($method !== 'POST' && $method !== 'PUT' && $method !== 'PATCH') {
+        if (!\in_array($method, ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
 
         $header = \substr($recv_buffer, 0, $crlf_pos);
-        $length = false;
+        $has_content_length = false;
         if ($pos = \strpos($header, "\r\nContent-Length: ")) {
-            $length = $head_len + (int)\substr($header, $pos + 18, 10);
+            $length = $length + (int)\substr($header, $pos + 18, 10);
+            $has_content_length = true;
         } else if (\preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
-            $length = $head_len + $match[1];
+            $length = $length + $match[1];
+            $has_content_length = true;
         }
 
-        if ($length !== false) {
-            if (!isset($recv_buffer[512])) {
-                $input[$recv_buffer] = $length;
-                if (\count($input) > 512) {
-                    unset($input[\key($input)]);
-                }
-            }
+        if ($has_content_length) {
             if ($length > $connection->maxPackageSize) {
                 $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n", true);
                 return 0;
             }
-            return $length;
+        } elseif (\in_array($method, ['POST', 'PUT', 'PATCH'])) {
+            $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+            return 0;
         }
 
-        $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
-        return 0;
+        if (!isset($recv_buffer[512])) {
+            $input[$recv_buffer] = $length;
+            if (\count($input) > 512) {
+                unset($input[key($input)]);
+            }
+        }
+
+        return $length;
     }
 
     /**
