@@ -318,7 +318,7 @@ class Session
      */
     public function refresh()
     {
-        static::$_handler->updateTimestamp($this->getId());
+        return static::$_handler->updateTimestamp($this->getId());
     }
 
     /**

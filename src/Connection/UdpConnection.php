@@ -210,7 +210,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
     /**
      * Get the json_encode informattion.
      *
-     * @return string
+     * @return array
      */
     public function jsonSerialize()
     {

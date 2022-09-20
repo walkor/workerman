@@ -181,7 +181,7 @@ class AsyncUdpConnection extends UdpConnection
         \stream_set_blocking($this->_socket, false);
 
         if ($this->onMessage) {
-            Worker::$globalEvent->add($this->_socket, EventInterface::EV_READ, [$this, 'baseRead']);
+            Worker::$globalEvent->onWritable($this->_socket, [$this, 'baseRead']);
         }
         $this->connected = true;
         // Try to emit onConnect callback.
