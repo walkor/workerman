@@ -125,6 +125,10 @@ class Http
             $has_content_length = true;
         } else {
             $has_content_length = false;
+            if (false !== stripos($header, "\r\nTransfer-Encoding:")) {
+                $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+                return 0;
+            }
         }
 
         if ($has_content_length) {
