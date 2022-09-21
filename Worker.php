@@ -634,7 +634,7 @@ class Worker
     protected static function lock($flag = \LOCK_EX)
     {
         static $fd;
-        $fd = $fd ?: \fopen(static::$_startFile, 'a+');
+        $fd = $fd ?: \fopen(__DIR__ . '/../../' . md5(static::$_startFile) . '.lock', 'a+');
         if ($fd) {
             flock($fd, $flag);
         }
