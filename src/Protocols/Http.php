@@ -76,7 +76,7 @@ class Http
      * @param TcpConnection $connection
      * @return int
      */
-    public static function input($recv_buffer, TcpConnection $connection)
+    public static function input(string $recv_buffer, TcpConnection $connection)
     {
         static $input = [];
         if (!isset($recv_buffer[512]) && isset($input[$recv_buffer])) {
@@ -101,13 +101,18 @@ class Http
         }
 
         $header = \substr($recv_buffer, 0, $crlf_pos);
-        $has_content_length = false;
         if ($pos = \strpos($header, "\r\nContent-Length: ")) {
             $length = $length + (int)\substr($header, $pos + 18, 10);
             $has_content_length = true;
         } else if (\preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
             $length = $length + $match[1];
             $has_content_length = true;
+        } else {
+            $has_content_length = false;
+            if (false !== stripos($header, "\r\nTransfer-Encoding:")) {
+                $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+                return 0;
+            }
         }
 
         if ($has_content_length) {
@@ -115,9 +120,6 @@ class Http
                 $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n", true);
                 return 0;
             }
-        } elseif (\in_array($method, ['POST', 'PUT', 'PATCH'])) {
-            $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
-            return 0;
         }
 
         if (!isset($recv_buffer[512])) {
