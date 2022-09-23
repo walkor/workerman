@@ -631,6 +631,9 @@ class Worker
     protected static function lock($flag = \LOCK_EX)
     {
         static $fd;
+        if (\DIRECTORY_SEPARATOR !== '/') {
+            return;
+        }
         $fd = $fd ?: \fopen(static::$pidFile . '.lock', 'a+');
         if ($fd) {
             flock($fd, $flag);
