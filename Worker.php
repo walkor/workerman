@@ -637,9 +637,18 @@ class Worker
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-        $fd = $fd ?: \fopen(static::$pidFile . '.lock', 'a+');
+        $lock_file = static::$pidFile . '.lock';
+        $fd = $fd ?: \fopen($lock_file, 'a+');
         if ($fd) {
             flock($fd, $flag);
+            if ($flag === \LOCK_UN) {
+                fclose($fd);
+                $fd = null;
+                clearstatcache();
+                if (\is_file($lock_file)) {
+                    unlink($lock_file);
+                }
+            }
         }
     }
 
