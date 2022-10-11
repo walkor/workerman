@@ -158,6 +158,8 @@ class TcpConnection extends ConnectionInterface
     public $maxSendBufferSize = 1048576;
 
     /**
+     * Context.
+     *
      * @var array
      */
     public $context = null;

@@ -367,11 +367,18 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             // Try to emit onWebSocketConnect callback.
             $on_websocket_connect = $connection->onWebSocketConnect ?? $connection->worker->onWebSocketConnect ?? false;
             if ($on_websocket_connect) {
+                static::parseHttpHeader($buffer);
                 try {
-                    $on_websocket_connect($connection, new Request($buffer));
-                } catch (\Throwable $e) {
+                    \call_user_func($on_websocket_connect, $connection, $buffer);
+                } catch (\Exception $e) {
+                    Worker::stopAll(250, $e);
+                } catch (\Error $e) {
                     Worker::stopAll(250, $e);
                 }
+                if (!empty($_SESSION) && \class_exists('\GatewayWorker\Lib\Context')) {
+                    $connection->session = \GatewayWorker\Lib\Context::sessionEncode($_SESSION);
+                }
+                $_GET = $_SERVER = $_SESSION = $_COOKIE = array();
             }
 
             // blob or arraybuffer
@@ -421,4 +428,59 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         return 0;
     }
 
+    /**
+     * Parse http header.
+     *
+     * @param string $buffer
+     * @return void
+     */
+    protected static function parseHttpHeader($buffer)
+    {
+        // Parse headers.
+        list($http_header, ) = \explode("\r\n\r\n", $buffer, 2);
+        $header_data = \explode("\r\n", $http_header);
+
+        if ($_SERVER) {
+            $_SERVER = array();
+        }
+
+        list($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SERVER_PROTOCOL']) = \explode(' ',
+            $header_data[0]);
+
+        unset($header_data[0]);
+        foreach ($header_data as $content) {
+            // \r\n\r\n
+            if (empty($content)) {
+                continue;
+            }
+            list($key, $value)       = \explode(':', $content, 2);
+            $key                     = \str_replace('-', '_', \strtoupper($key));
+            $value                   = \trim($value);
+            $_SERVER['HTTP_' . $key] = $value;
+            switch ($key) {
+                // HTTP_HOST
+                case 'HOST':
+                    $tmp                    = \explode(':', $value);
+                    $_SERVER['SERVER_NAME'] = $tmp[0];
+                    if (isset($tmp[1])) {
+                        $_SERVER['SERVER_PORT'] = $tmp[1];
+                    }
+                    break;
+                // cookie
+                case 'COOKIE':
+                    \parse_str(\str_replace('; ', '&', $_SERVER['HTTP_COOKIE']), $_COOKIE);
+                    break;
+            }
+        }
+
+        // QUERY_STRING
+        $_SERVER['QUERY_STRING'] = \parse_url($_SERVER['REQUEST_URI'], \PHP_URL_QUERY);
+        if ($_SERVER['QUERY_STRING']) {
+            // $GET
+            \parse_str($_SERVER['QUERY_STRING'], $_GET);
+        } else {
+            $_SERVER['QUERY_STRING'] = '';
+        }
+    }
+    
 }
