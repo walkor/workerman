@@ -55,14 +55,14 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         }
 
         // Has not yet completed the handshake.
-        if (empty($connection->websocketHandshake)) {
+        if (empty($connection->context->websocketHandshake)) {
             return static::dealHandshake($buffer, $connection);
         }
 
         // Buffer websocket frame data.
-        if ($connection->websocketCurrentFrameLength) {
+        if ($connection->context->websocketCurrentFrameLength) {
             // We need more frame data.
-            if ($connection->websocketCurrentFrameLength > $recv_len) {
+            if ($connection->context->websocketCurrentFrameLength > $recv_len) {
                 // Return 0, because it is not clear the full packet length, waiting for the frame of fin=1.
                 return 0;
             }
@@ -110,7 +110,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 // Pong package.
                 case 0xa:
                     break;
-                // Wrong opcode. 
+                // Wrong opcode.
                 default :
                     Worker::safeEcho("error opcode $opcode and close websocket connection. Buffer:" . bin2hex($buffer) . "\n");
                     $connection->close();
@@ -138,7 +138,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             }
             $current_frame_length = $head_len + $data_len;
 
-            $total_package_size = \strlen($connection->websocketDataBuffer) + $current_frame_length;
+            $total_package_size = \strlen($connection->context->websocketDataBuffer) + $current_frame_length;
             if ($total_package_size > $connection->maxPackageSize) {
                 Worker::safeEcho("error package. package_length=$total_package_size\n");
                 $connection->close();
@@ -192,22 +192,22 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 }
                 return $current_frame_length;
             } else {
-                $connection->websocketCurrentFrameLength = $current_frame_length;
+                $connection->context->websocketCurrentFrameLength = $current_frame_length;
             }
         }
 
         // Received just a frame length data.
-        if ($connection->websocketCurrentFrameLength === $recv_len) {
+        if ($connection->context->websocketCurrentFrameLength === $recv_len) {
             static::decode($buffer, $connection);
-            $connection->consumeRecvBuffer($connection->websocketCurrentFrameLength);
-            $connection->websocketCurrentFrameLength = 0;
+            $connection->consumeRecvBuffer($connection->context->websocketCurrentFrameLength);
+            $connection->context->websocketCurrentFrameLength = 0;
             return 0;
         } // The length of the received data is greater than the length of a frame.
-        elseif ($connection->websocketCurrentFrameLength < $recv_len) {
-            static::decode(\substr($buffer, 0, $connection->websocketCurrentFrameLength), $connection);
-            $connection->consumeRecvBuffer($connection->websocketCurrentFrameLength);
-            $current_frame_length = $connection->websocketCurrentFrameLength;
-            $connection->websocketCurrentFrameLength = 0;
+        elseif ($connection->context->websocketCurrentFrameLength < $recv_len) {
+            static::decode(\substr($buffer, 0, $connection->context->websocketCurrentFrameLength), $connection);
+            $connection->consumeRecvBuffer($connection->context->websocketCurrentFrameLength);
+            $current_frame_length = $connection->context->websocketCurrentFrameLength;
+            $connection->context->websocketCurrentFrameLength = 0;
             // Continue to read next frame.
             return static::input(\substr($buffer, $current_frame_length), $connection);
         } // The length of the received data is less than the length of a frame.
@@ -246,12 +246,12 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         }
 
         // Handshake not completed so temporary buffer websocket data waiting for send.
-        if (empty($connection->websocketHandshake)) {
-            if (empty($connection->tmpWebsocketData)) {
-                $connection->tmpWebsocketData = '';
+        if (empty($connection->context->websocketHandshake)) {
+            if (empty($connection->context->tmpWebsocketData)) {
+                $connection->context->tmpWebsocketData = '';
             }
             // If buffer has already full then discard the current package.
-            if (\strlen($connection->tmpWebsocketData) > $connection->maxSendBufferSize) {
+            if (\strlen($connection->context->tmpWebsocketData) > $connection->maxSendBufferSize) {
                 if ($connection->onError) {
                     try {
                         ($connection->onError)($connection, ConnectionInterface::SEND_FAIL, 'send buffer full and drop package');
@@ -261,9 +261,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 }
                 return '';
             }
-            $connection->tmpWebsocketData .= $encode_buffer;
+            $connection->context->tmpWebsocketData .= $encode_buffer;
             // Check buffer is full.
-            if ($connection->maxSendBufferSize <= \strlen($connection->tmpWebsocketData)) {
+            if ($connection->maxSendBufferSize <= \strlen($connection->context->tmpWebsocketData)) {
                 if ($connection->onBufferFull) {
                     try {
                         ($connection->onBufferFull)($connection);
@@ -288,7 +288,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      */
     public static function decode($buffer, ConnectionInterface $connection)
     {
-        $len = \ord($buffer[1]) & 127;
+        $first_byte = \ord($buffer[1]);
+        $len = $first_byte & 127;
+        $rsv1 = $first_byte & 64;
+
         if ($len === 126) {
             $masks = \substr($buffer, 4, 4);
             $data = \substr($buffer, 8);
@@ -304,13 +307,13 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         $dataLength = \strlen($data);
         $masks = \str_repeat($masks, \floor($dataLength / 4)) . \substr($masks, 0, $dataLength % 4);
         $decoded = $data ^ $masks;
-        if ($connection->websocketCurrentFrameLength) {
-            $connection->websocketDataBuffer .= $decoded;
-            return $connection->websocketDataBuffer;
+        if ($connection->context->websocketCurrentFrameLength) {
+            $connection->context->websocketDataBuffer .= $decoded;
+            return $connection->context->websocketDataBuffer;
         } else {
-            if ($connection->websocketDataBuffer !== '') {
-                $decoded = $connection->websocketDataBuffer . $decoded;
-                $connection->websocketDataBuffer = '';
+            if ($connection->context->websocketDataBuffer !== '') {
+                $decoded = $connection->context->websocketDataBuffer . $decoded;
+                $connection->context->websocketDataBuffer = '';
             }
             return $decoded;
         }
@@ -353,13 +356,23 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 . "Sec-WebSocket-Accept: " . $new_key . "\r\n";
 
             // Websocket data buffer.
-            $connection->websocketDataBuffer = '';
+            $connection->context->websocketDataBuffer = '';
             // Current websocket frame length.
-            $connection->websocketCurrentFrameLength = 0;
+            $connection->context->websocketCurrentFrameLength = 0;
             // Current websocket frame data.
-            $connection->websocketCurrentFrameBuffer = '';
+            $connection->context->websocketCurrentFrameBuffer = '';
             // Consume handshake data.
             $connection->consumeRecvBuffer($header_length);
+
+            // Try to emit onWebSocketConnect callback.
+            $on_websocket_connect = $connection->onWebSocketConnect ?? $connection->worker->onWebSocketConnect ?? false;
+            if ($on_websocket_connect) {
+                try {
+                    $on_websocket_connect($connection, new Request($buffer));
+                } catch (\Throwable $e) {
+                    Worker::stopAll(250, $e);
+                }
+            }
 
             // blob or arraybuffer
             if (empty($connection->websocketType)) {
@@ -390,32 +403,16 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             // Send handshake response.
             $connection->send($handshake_message, true);
             // Mark handshake complete..
-            $connection->websocketHandshake = true;
-
-            // Try to emit onWebSocketConnect callback.
-            $on_websocket_connect = $connection->onWebSocketConnect ?? $connection->worker->onWebSocketConnect ?? false;
-            if ($on_websocket_connect) {
-                try {
-                    $on_websocket_connect($connection, new Request($buffer));
-                } catch (\Throwable $e) {
-                    Worker::stopAll(250, $e);
-                }
-            }
+            $connection->context->websocketHandshake = true;
 
             // There are data waiting to be sent.
-            if (!empty($connection->tmpWebsocketData)) {
-                $connection->send($connection->tmpWebsocketData, true);
-                $connection->tmpWebsocketData = '';
+            if (!empty($connection->context->tmpWebsocketData)) {
+                $connection->send($connection->context->tmpWebsocketData, true);
+                $connection->context->tmpWebsocketData = '';
             }
             if (\strlen($buffer) > $header_length) {
                 return static::input(\substr($buffer, $header_length), $connection);
             }
-            return 0;
-        } // Is flash policy-file-request.
-        elseif (0 === \strpos($buffer, '<polic')) {
-            $policy_xml = '<?xml version="1.0"?><cross-domain-policy><site-control permitted-cross-domain-policies="all"/><allow-access-from domain="*" to-ports="*"/></cross-domain-policy>' . "\0";
-            $connection->send($policy_xml, true);
-            $connection->consumeRecvBuffer(\strlen($buffer));
             return 0;
         }
         // Bad websocket handshake request.
