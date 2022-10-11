@@ -158,6 +158,11 @@ class TcpConnection extends ConnectionInterface
     public $maxSendBufferSize = 1048576;
 
     /**
+     * @var array
+     */
+    public $context = null;
+
+    /**
      * Default send buffer size.
      *
      * @var int
@@ -170,7 +175,7 @@ class TcpConnection extends ConnectionInterface
      * @var int
      */
     public $maxPackageSize = 1048576;
-    
+
     /**
      * Default maximum acceptable packet size.
      *
@@ -285,6 +290,7 @@ class TcpConnection extends ConnectionInterface
         $this->maxPackageSize           = self::$defaultMaxPackageSize;
         $this->_remoteAddress           = $remote_address;
         static::$connections[$this->id] = $this;
+        $this->context = new \stdClass;
     }
 
     /**
@@ -720,23 +726,23 @@ class TcpConnection extends ConnectionInterface
             return false;
         }
         $async = $this instanceof AsyncTcpConnection;
-        
+
         /**
-          *  We disabled ssl3 because https://blog.qualys.com/ssllabs/2014/10/15/ssl-3-is-dead-killed-by-the-poodle-attack.
-          *  You can enable ssl3 by the codes below.
-          */
+         *  We disabled ssl3 because https://blog.qualys.com/ssllabs/2014/10/15/ssl-3-is-dead-killed-by-the-poodle-attack.
+         *  You can enable ssl3 by the codes below.
+         */
         /*if($async){
             $type = STREAM_CRYPTO_METHOD_SSLv2_CLIENT | STREAM_CRYPTO_METHOD_SSLv23_CLIENT | STREAM_CRYPTO_METHOD_SSLv3_CLIENT;
         }else{
             $type = STREAM_CRYPTO_METHOD_SSLv2_SERVER | STREAM_CRYPTO_METHOD_SSLv23_SERVER | STREAM_CRYPTO_METHOD_SSLv3_SERVER;
         }*/
-        
+
         if($async){
             $type = \STREAM_CRYPTO_METHOD_SSLv2_CLIENT | \STREAM_CRYPTO_METHOD_SSLv23_CLIENT;
         }else{
             $type = \STREAM_CRYPTO_METHOD_SSLv2_SERVER | \STREAM_CRYPTO_METHOD_SSLv23_SERVER;
         }
-        
+
         // Hidden error.
         \set_error_handler(function($errno, $errstr, $file){
             if (!Worker::$daemonize) {
@@ -822,7 +828,7 @@ class TcpConnection extends ConnectionInterface
         }
 
         $this->_status = self::STATUS_CLOSING;
-        
+
         if ($this->_sendBuffer === '') {
             $this->destroy();
         } else {
@@ -882,7 +888,7 @@ class TcpConnection extends ConnectionInterface
         }
         return false;
     }
-    
+
     /**
      * Whether send buffer is Empty.
      *
@@ -890,7 +896,7 @@ class TcpConnection extends ConnectionInterface
      */
     public function bufferIsEmpty()
     {
-    	return empty($this->_sendBuffer);
+        return empty($this->_sendBuffer);
     }
 
     /**
