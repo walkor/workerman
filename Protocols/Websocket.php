@@ -32,11 +32,25 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     const BINARY_TYPE_BLOB = "\x81";
 
     /**
+     * Websocket blob type.
+     *
+     * @var string
+     */
+    const BINARY_TYPE_BLOB_DEFLATE = "\xc1";
+
+    /**
      * Websocket arraybuffer type.
      *
      * @var string
      */
     const BINARY_TYPE_ARRAYBUFFER = "\x82";
+
+    /**
+     * Websocket arraybuffer type.
+     *
+     * @var string
+     */
+    const BINARY_TYPE_ARRAYBUFFER_DEFLATE = "\xc2";
 
     /**
      * Check the integrity of the package.
@@ -228,12 +242,18 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         if (!is_scalar($buffer)) {
             throw new \Exception("You can't send(" . \gettype($buffer) . ") to client, you need to convert it to a string. ");
         }
-        $len = \strlen($buffer);
+
         if (empty($connection->websocketType)) {
             $connection->websocketType = static::BINARY_TYPE_BLOB;
         }
 
+        // permessage-deflate
+        if (\ord($connection->websocketType) & 64) {
+            $buffer = static::deflate($connection, $buffer);
+        }
+
         $first_byte = $connection->websocketType;
+        $len = \strlen($buffer);
 
         if ($len <= 125) {
             $encode_buffer = $first_byte . \chr($len) . $buffer;
@@ -288,9 +308,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      */
     public static function decode($buffer, ConnectionInterface $connection)
     {
-        $first_byte = \ord($buffer[1]);
-        $len = $first_byte & 127;
-        $rsv1 = $first_byte & 64;
+        $firstbyte = \ord($buffer[1]);
+        $len = $firstbyte & 127;
+        $rsv1 = 64 === ($firstbyte & 64);
+        $is_fin_frame = $firstbyte >> 7;
 
         if ($len === 126) {
             $masks = \substr($buffer, 4, 4);
@@ -309,14 +330,70 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         $decoded = $data ^ $masks;
         if ($connection->context->websocketCurrentFrameLength) {
             $connection->context->websocketDataBuffer .= $decoded;
+            if (!$rsv1) {
+                return static::inflate($connection, $connection->context->websocketDataBuffer, $is_fin_frame);
+            }
             return $connection->context->websocketDataBuffer;
         } else {
             if ($connection->context->websocketDataBuffer !== '') {
                 $decoded = $connection->context->websocketDataBuffer . $decoded;
                 $connection->context->websocketDataBuffer = '';
             }
+            if (!$rsv1) {
+                return static::inflate($connection, $decoded, $is_fin_frame);
+            }
             return $decoded;
         }
+    }
+
+    /**
+     * Inflate.
+     *
+     * @param $connection
+     * @param $buffer
+     * @param $is_fin_frame
+     * @return false|string
+     */
+    protected static function inflate($connection, $buffer, $is_fin_frame)
+    {
+        if (!isset($connection->context->inflator)) {
+            $connection->context->inflator = \inflate_init(
+                \ZLIB_ENCODING_RAW,
+                [
+                    'level'    => -1,
+                    'memory'   => 8,
+                    'window'   => 9,
+                    'strategy' => \ZLIB_DEFAULT_STRATEGY
+                ]
+            );
+        }
+        if ($is_fin_frame) {
+            $buffer .= "\x00\x00\xff\xff";
+        }
+        return \inflate_add($connection->context->inflator, $buffer);
+    }
+
+    /**
+     * Deflate.
+     *
+     * @param $connection
+     * @param $buffer
+     * @return false|string
+     */
+    protected static function deflate($connection, $buffer)
+    {
+        if (!isset($connection->context->deflator)) {
+            $connection->context->deflator = \deflate_init(
+                \ZLIB_ENCODING_RAW,
+                [
+                    'level'    => -1,
+                    'memory'   => 8,
+                    'window'   => 9,
+                    'strategy' => \ZLIB_DEFAULT_STRATEGY
+                ]
+            );
+        }
+        return \substr(\deflate_add($connection->context->deflator, $buffer), 0, -4);
     }
 
     /**
@@ -326,7 +403,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      * @param TcpConnection $connection
      * @return int
      */
-    public static function dealHandshake($buffer, TcpConnection $connection)
+    public static function dealHandshake($buffer, $connection)
     {
         // HTTP protocol.
         if (0 === \strpos($buffer, 'GET')) {
@@ -482,5 +559,5 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $_SERVER['QUERY_STRING'] = '';
         }
     }
-    
+
 }
