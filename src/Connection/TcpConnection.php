@@ -157,6 +157,13 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
      * @var int
      */
     public $maxSendBufferSize = 1048576;
+    
+    /**
+     * Context.
+     *
+     * @var array
+     */
+    public $context = null;
 
     /**
      * Default send buffer size.
@@ -293,6 +300,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
         $this->maxPackageSize = self::$defaultMaxPackageSize;
         $this->_remoteAddress = $remote_address;
         static::$connections[$this->id] = $this;
+        $this->context = new \stdClass;
     }
 
     /**
