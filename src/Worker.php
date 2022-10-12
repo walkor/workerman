@@ -26,6 +26,7 @@ use Workerman\Events\Select;
  * Worker class
  * A container for listening ports
  */
+#[\AllowDynamicProperties]
 class Worker
 {
     /**
