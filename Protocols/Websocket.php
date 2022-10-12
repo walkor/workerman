@@ -81,11 +81,11 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 return 0;
             }
         } else {
-            $firstbyte = \ord($buffer[0]);
-            $secondbyte = \ord($buffer[1]);
-            $data_len = $secondbyte & 127;
-            $is_fin_frame = $firstbyte >> 7;
-            $masked = $secondbyte >> 7;
+            $first_byte = \ord($buffer[0]);
+            $second_byte = \ord($buffer[1]);
+            $data_len = $second_byte & 127;
+            $is_fin_frame = $first_byte >> 7;
+            $masked = $second_byte >> 7;
 
             if (!$masked) {
                 Worker::safeEcho("frame not masked so close the connection\n");
@@ -93,7 +93,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 return 0;
             }
 
-            $opcode = $firstbyte & 0xf;
+            $opcode = $first_byte & 0xf;
             switch ($opcode) {
                 case 0x0:
                     break;
@@ -308,10 +308,11 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      */
     public static function decode($buffer, ConnectionInterface $connection)
     {
-        $firstbyte = \ord($buffer[1]);
-        $len = $firstbyte & 127;
-        $rsv1 = 64 === ($firstbyte & 64);
-        $is_fin_frame = $firstbyte >> 7;
+        $first_byte = \ord($buffer[0]);
+        $second_byte = \ord($buffer[1]);
+        $len = $second_byte & 127;
+        $is_fin_frame = $first_byte >> 7;
+        $rsv1 = 64 === ($first_byte & 64);
 
         if ($len === 126) {
             $masks = \substr($buffer, 4, 4);
@@ -330,7 +331,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         $decoded = $data ^ $masks;
         if ($connection->context->websocketCurrentFrameLength) {
             $connection->context->websocketDataBuffer .= $decoded;
-            if (!$rsv1) {
+            if ($rsv1) {
                 return static::inflate($connection, $connection->context->websocketDataBuffer, $is_fin_frame);
             }
             return $connection->context->websocketDataBuffer;
@@ -339,7 +340,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 $decoded = $connection->context->websocketDataBuffer . $decoded;
                 $connection->context->websocketDataBuffer = '';
             }
-            if (!$rsv1) {
+            if ($rsv1) {
                 return static::inflate($connection, $decoded, $is_fin_frame);
             }
             return $decoded;
