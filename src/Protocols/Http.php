@@ -93,14 +93,21 @@ class Http
         }
 
         $length = $crlf_pos + 4;
-        $method = \strstr($recv_buffer, ' ', true);
+        $firstLine = \explode(" ", \strstr($recv_buffer, "\r\n", true), 3);
 
-        if (!\in_array($method, ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
+        if (!\in_array($firstLine[0], ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
 
         $header = \substr($recv_buffer, 0, $crlf_pos);
+        $hostHeaderPosition = \strpos($header, "\r\nHost: ");
+
+        if (false === $hostHeaderPosition && $firstLine[2] !== "HTTP/1.1") {
+            $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+            return 0;
+        }
+
         if ($pos = \strpos($header, "\r\nContent-Length: ")) {
             $length = $length + (int)\substr($header, $pos + 18, 10);
             $has_content_length = true;
