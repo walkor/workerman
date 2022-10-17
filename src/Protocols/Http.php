@@ -103,7 +103,7 @@ class Http
         $header = \substr($recv_buffer, 0, $crlf_pos);
         $hostHeaderPosition = \strpos($header, "\r\nHost: ");
 
-        if (false === $hostHeaderPosition && $firstLine[2] !== "HTTP/1.1") {
+        if (false === $hostHeaderPosition && $firstLine[2] === "HTTP/1.1") {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
