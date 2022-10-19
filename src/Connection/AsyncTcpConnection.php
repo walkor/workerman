@@ -91,9 +91,9 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * PHP built-in protocols.
      *
-     * @var array
+     * @var array<string,string>
      */
-    protected static $_builtinTransports = [
+    const BUILD_IN_TRANSPORTS = [
         'tcp' => 'tcp',
         'udp' => 'udp',
         'unix' => 'unix',
@@ -147,7 +147,7 @@ class AsyncTcpConnection extends TcpConnection
             self::$_idRecorder = 0;
         }
         // Check application layer protocol class.
-        if (!isset(self::$_builtinTransports[$scheme])) {
+        if (!isset(self::BUILD_IN_TRANSPORTS[$scheme])) {
             $scheme = \ucfirst($scheme);
             $this->protocol = '\\Protocols\\' . $scheme;
             if (!\class_exists($this->protocol)) {
@@ -157,7 +157,7 @@ class AsyncTcpConnection extends TcpConnection
                 }
             }
         } else {
-            $this->transport = self::$_builtinTransports[$scheme];
+            $this->transport = self::BUILD_IN_TRANSPORTS[$scheme];
         }
 
         // For statistics.
