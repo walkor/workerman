@@ -370,10 +370,6 @@ class Response
             $head .= "$name: $value\r\n";
         }
 
-        if (!isset($headers['Connection'])) {
-            $head .= "Connection: keep-alive\r\n";
-        }
-
         $file_info = \pathinfo($file);
         $extension = isset($file_info['extension']) ? $file_info['extension'] : '';
         $base_name = isset($file_info['basename']) ? $file_info['basename'] : 'unknown';
@@ -412,7 +408,7 @@ class Response
         $reason = $this->_reason ?: static::$_phrases[$this->_status] ?? '';
         $body_len = \strlen($this->_body);
         if (empty($this->_header)) {
-            return "HTTP/{$this->_version} {$this->_status} $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\nConnection: keep-alive\r\n\r\n{$this->_body}";
+            return "HTTP/{$this->_version} {$this->_status} $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\n\r\n{$this->_body}";
         }
 
         $head = "HTTP/{$this->_version} {$this->_status} $reason\r\n";
@@ -428,10 +424,6 @@ class Response
                 continue;
             }
             $head .= "$name: $value\r\n";
-        }
-
-        if (!isset($headers['Connection'])) {
-            $head .= "Connection: keep-alive\r\n";
         }
 
         if (!isset($headers['Content-Type'])) {
