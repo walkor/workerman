@@ -71,9 +71,9 @@ class Response
     /**
      * Phrases.
      *
-     * @var array
+     * @var array<int,string>
      */
-    protected static $_phrases = [
+    const PHRASES = [
         100 => 'Continue',
         101 => 'Switching Protocols',
         102 => 'Processing',
@@ -354,7 +354,7 @@ class Response
     protected function createHeadForFile($file_info)
     {
         $file = $file_info['file'];
-        $reason = $this->_reason ?: static::$_phrases[$this->_status];
+        $reason = $this->_reason ?: static::PHRASES[$this->_status];
         $head = "HTTP/{$this->_version} {$this->_status} $reason\r\n";
         $headers = $this->_header;
         if (!isset($headers['Server'])) {
@@ -409,7 +409,7 @@ class Response
             return $this->createHeadForFile($this->file);
         }
 
-        $reason = $this->_reason ?: static::$_phrases[$this->_status] ?? '';
+        $reason = $this->_reason ?: static::PHRASES[$this->_status] ?? '';
         $body_len = \strlen($this->_body);
         if (empty($this->_header)) {
             return "HTTP/{$this->_version} {$this->_status} $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\nConnection: keep-alive\r\n\r\n{$this->_body}";
