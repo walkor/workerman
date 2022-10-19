@@ -72,6 +72,8 @@ class Response
      * Phrases.
      *
      * @var array<int,string>
+     * 
+     * @link https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
      */
     const PHRASES = [
         100 => 'Continue',
