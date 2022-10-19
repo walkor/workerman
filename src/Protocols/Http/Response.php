@@ -219,10 +219,8 @@ class Response
      */
     public function getHeader($name)
     {
-        if (!isset($this->_header[$name])) {
-            return null;
-        }
-        return $this->_header[$name];
+
+        return $this->_header[$name] ?? null;
     }
 
     /**
@@ -375,8 +373,8 @@ class Response
         }
 
         $file_info = \pathinfo($file);
-        $extension = isset($file_info['extension']) ? $file_info['extension'] : '';
-        $base_name = isset($file_info['basename']) ? $file_info['basename'] : 'unknown';
+        $extension = $file_info['extension'] ?? '';
+        $base_name = $file_info['basename'] ?? 'unknown';
         if (!isset($headers['Content-Type'])) {
             if (isset(self::$_mimeTypeMap[$extension])) {
                 $head .= "Content-Type: " . self::$_mimeTypeMap[$extension] . "\r\n";

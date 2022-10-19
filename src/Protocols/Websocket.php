@@ -150,7 +150,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     if ($recv_len >= $current_frame_length) {
                         $ping_data = static::decode(\substr($buffer, 0, $current_frame_length), $connection);
                         $connection->consumeRecvBuffer($current_frame_length);
-                        $tmp_connection_type = isset($connection->websocketType) ? $connection->websocketType : static::BINARY_TYPE_BLOB;
+                        $tmp_connection_type = $connection->websocketType ?? static::BINARY_TYPE_BLOB;
                         $connection->websocketType = "\x8a";
                         $ping_cb = $connection->onWebSocketPing ?? $connection->worker->onWebSocketPing ?? false;
                         if ($ping_cb) {
@@ -172,7 +172,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     if ($recv_len >= $current_frame_length) {
                         $pong_data = static::decode(\substr($buffer, 0, $current_frame_length), $connection);
                         $connection->consumeRecvBuffer($current_frame_length);
-                        $tmp_connection_type = isset($connection->websocketType) ? $connection->websocketType : static::BINARY_TYPE_BLOB;
+                        $tmp_connection_type = $connection->websocketType ?? static::BINARY_TYPE_BLOB;
                         $connection->websocketType = "\x8a";
                         // Try to emit onWebSocketPong callback.
                         $pong_cb = $connection->onWebSocketPong ?? $connection->worker->onWebSocketPong ?? false;
