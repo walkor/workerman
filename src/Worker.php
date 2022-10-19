@@ -2076,11 +2076,8 @@ class Worker
      */
     protected static function getErrorType($type)
     {
-        if(isset(self::ERROR_TYPE[$type])) {
-            return self::ERROR_TYPE[$type];
-        }
 
-        return '';
+        return self::ERROR_TYPE[$type] ?? '';
     }
 
     /**
