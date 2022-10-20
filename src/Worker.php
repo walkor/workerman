@@ -491,9 +491,9 @@ class Worker
     /**
      * PHP built-in error types.
      *
-     * @var array
+     * @var array<int,string>
      */
-    protected static $_errorType = [
+    const ERROR_TYPE = [
         \E_ERROR             => 'E_ERROR',             // 1
         \E_WARNING           => 'E_WARNING',           // 2
         \E_PARSE             => 'E_PARSE',             // 4
@@ -2076,11 +2076,8 @@ class Worker
      */
     protected static function getErrorType($type)
     {
-        if(isset(self::$_errorType[$type])) {
-            return self::$_errorType[$type];
-        }
 
-        return '';
+        return self::ERROR_TYPE[$type] ?? '';
     }
 
     /**
