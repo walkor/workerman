@@ -136,7 +136,7 @@ class AsyncTcpConnection extends TcpConnection
             $this->_remoteHost = $address_info['host'];
             $this->_remotePort = $address_info['port'];
             $this->_remoteURI = "{$address_info['path']}{$address_info['query']}";
-            $scheme = isset($address_info['scheme']) ? $address_info['scheme'] : 'tcp';
+            $scheme = $address_info['scheme'] ?? 'tcp';
             $this->_remoteAddress = 'unix' === strtolower($scheme)
                 ? substr($remote_address, strpos($remote_address, '/') + 2)
                 : $this->_remoteHost . ':' . $this->_remotePort;

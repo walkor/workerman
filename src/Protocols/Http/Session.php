@@ -171,7 +171,7 @@ class Session
      */
     public function get($name, $default = null)
     {
-        return isset($this->_data[$name]) ? $this->_data[$name] : $default;
+        return $this->_data[$name] ?? $default;
     }
 
     /**

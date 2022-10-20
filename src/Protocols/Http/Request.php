@@ -98,7 +98,7 @@ class Request
         if (null === $name) {
             return $this->_data['get'];
         }
-        return isset($this->_data['get'][$name]) ? $this->_data['get'][$name] : $default;
+        return $this->_data['get'][$name] ?? $default;
     }
 
     /**
@@ -116,7 +116,7 @@ class Request
         if (null === $name) {
             return $this->_data['post'];
         }
-        return isset($this->_data['post'][$name]) ? $this->_data['post'][$name] : $default;
+        return $this->_data['post'][$name] ?? $default;
     }
 
     /**
@@ -135,7 +135,7 @@ class Request
             return $this->_data['headers'];
         }
         $name = \strtolower($name);
-        return isset($this->_data['headers'][$name]) ? $this->_data['headers'][$name] : $default;
+        return $this->_data['headers'][$name] ?? $default;
     }
 
     /**
@@ -154,7 +154,7 @@ class Request
         if ($name === null) {
             return $this->_data['cookie'];
         }
-        return isset($this->_data['cookie'][$name]) ? $this->_data['cookie'][$name] : $default;
+        return $this->_data['cookie'][$name] ?? $default;
     }
 
     /**
@@ -171,7 +171,7 @@ class Request
         if (null === $name) {
             return $this->_data['files'];
         }
-        return isset($this->_data['files'][$name]) ? $this->_data['files'][$name] : null;
+        return $this->_data['files'][$name] ?? null;
     }
 
     /**
@@ -372,7 +372,7 @@ class Request
         $first_line = \strstr($this->_buffer, "\r\n", true);
         $tmp = \explode(' ', $first_line, 3);
         $this->_data['method'] = $tmp[0];
-        $this->_data['uri'] = isset($tmp[1]) ? $tmp[1] : '/';
+        $this->_data['uri'] = $tmp[1] ?? '/';
     }
 
     /**
@@ -637,7 +637,7 @@ class Request
      */
     public function __get($name)
     {
-        return isset($this->properties[$name]) ? $this->properties[$name] : null;
+        return $this->properties[$name] ?? null;
     }
 
     /**
