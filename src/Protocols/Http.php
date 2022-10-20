@@ -86,7 +86,7 @@ class Http
         if (false === $crlf_pos) {
             // Judge whether the package length exceeds the limit.
             if (\strlen($recv_buffer) >= 16384) {
-                $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n", true);
+                $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
                 return 0;
             }
             return 0;
@@ -117,7 +117,7 @@ class Http
 
         if ($has_content_length) {
             if ($length > $connection->maxPackageSize) {
-                $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n", true);
+                $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
                 return 0;
             }
         }
