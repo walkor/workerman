@@ -479,9 +479,9 @@ class Worker
     /**
      * PHP built-in protocols.
      *
-     * @var array
+     * @var array<string,string>
      */
-    protected static $_builtinTransports = [
+    const BUILD_IN_TRANSPORTS = [
         'tcp'   => 'tcp',
         'udp'   => 'udp',
         'unix'  => 'unix',
@@ -2246,7 +2246,7 @@ class Worker
             }
 
             // Try to open keepalive for tcp and disable Nagle algorithm.
-            if (\function_exists('socket_import_stream') && static::$_builtinTransports[$this->transport] === 'tcp') {
+            if (\function_exists('socket_import_stream') && self::BUILD_IN_TRANSPORTS[$this->transport] === 'tcp') {
                 \set_error_handler(function(){});
                 $socket = \socket_import_stream($this->_mainSocket);
                 \socket_set_option($socket, \SOL_SOCKET, \SO_KEEPALIVE, 1);
@@ -2288,7 +2288,7 @@ class Worker
         // Get the application layer communication protocol and listening address.
         list($scheme, $address) = \explode(':', $this->_socketName, 2);
         // Check application layer protocol class.
-        if (!isset(static::$_builtinTransports[$scheme])) {
+        if (!isset(self::BUILD_IN_TRANSPORTS[$scheme])) {
             $scheme         = \ucfirst($scheme);
             $this->protocol = \substr($scheme,0,1)==='\\' ? $scheme : 'Protocols\\' . $scheme;
             if (!\class_exists($this->protocol)) {
@@ -2298,7 +2298,7 @@ class Worker
                 }
             }
 
-            if (!isset(static::$_builtinTransports[$this->transport])) {
+            if (!isset(self::BUILD_IN_TRANSPORTS[$this->transport])) {
                 throw new Exception('Bad worker->transport ' . \var_export($this->transport, true));
             }
         } else {
@@ -2307,7 +2307,7 @@ class Worker
             }
         }
         //local socket
-        return static::$_builtinTransports[$this->transport] . ":" . $address;
+        return self::BUILD_IN_TRANSPORTS[$this->transport] . ":" . $address;
     }
 
     /**
