@@ -506,6 +506,40 @@ class Http
         return empty($_SESSION);
     }
 
+
+    /**
+     * Update the current session id with a newly generated one
+     *
+     * @param bool $delete_old_session
+     * @return bool
+     * 
+     * @link https://www.php.net/manual/en/function.session-regenerate-id.php
+     */
+    public static function session_regenerate_id($delete_old_session = false)
+    {
+        $old_session_file = HttpCache::$instance->sessionFile;
+        // Create a unique session_id and the associated file name.
+        while (true) {
+            $session_id = static::sessionCreateId();
+            if (!\is_file($file_name = HttpCache::$sessionPath . '/ses_' . $session_id)) break;
+        }
+        HttpCache::$instance->sessionFile = $file_name;
+
+        if($delete_old_session) {
+            \unlink($old_session_file);
+        }
+
+        return self::setcookie(
+            HttpCache::$sessionName
+            , $session_id
+            , \ini_get('session.cookie_lifetime')
+            , \ini_get('session.cookie_path')
+            , \ini_get('session.cookie_domain')
+            , \ini_get('session.cookie_secure')
+            , \ini_get('session.cookie_httponly')
+        );
+    }
+
     /**
      * End, like call exit in php-fpm.
      *
