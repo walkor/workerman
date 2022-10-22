@@ -515,7 +515,7 @@ class Http
      * 
      * @link https://www.php.net/manual/en/function.session-regenerate-id.php
      */
-    public static function session_regenerate_id($delete_old_session = false)
+    public static function sessionRegenerateId($delete_old_session = false)
     {
         $old_session_file = HttpCache::$instance->sessionFile;
         // Create a unique session_id and the associated file name.
