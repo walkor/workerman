@@ -237,7 +237,7 @@ class Ws
         $pack = '';
         $length = $length_flag = \strlen($payload);
         if (65535 < $length) {
-            $pack   = \pack('NN', ($length & 0xFFFFFFFF00000000) >> 32, $length & 0x00000000FFFFFFFF);
+            $pack   = \pack('NN', ($length & (int)0xFFFFFFFF00000000) >> 32, $length & (int)0x00000000FFFFFFFF);
             $length_flag = 127;
         } else if (125 < $length) {
             $pack   = \pack('n*', $length);
