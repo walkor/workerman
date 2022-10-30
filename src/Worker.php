@@ -713,7 +713,7 @@ class Worker
     /**
      * Get all worker instances.
      *
-     * @return array
+     * @return Worker[]
      */
     public static function getAllWorkers()
     {
