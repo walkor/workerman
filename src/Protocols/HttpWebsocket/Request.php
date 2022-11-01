@@ -16,7 +16,7 @@
 namespace Workerman\Protocols\HttpWebsocket;
 
 /**
- * Class Request
+ * Websocket Request
  * @package Workerman\Protocols\HttpWebsocket
  */
 class Request extends \Workerman\Protocols\Http\Request
@@ -25,10 +25,9 @@ class Request extends \Workerman\Protocols\Http\Request
     /**
      * Received message content
      *
-     * @var array
+     * @var string
      */
     protected $_message;
-
 
     /**
      * Request constructor.
