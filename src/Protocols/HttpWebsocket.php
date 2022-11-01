@@ -23,26 +23,6 @@ use Workerman\Connection\TcpConnection;
 class HttpWebsocket
 {
     /**
-     * Judge whether it is a Websocket protocol
-     *
-     * @param mixed $buffer 
-     * @param TcpConnection $connection 
-     * @return bool
-     */
-    static function isWebsocket($buffer, $connection): bool
-    {
-        if (isset($connection->context->isWebsocket)) {
-            return true;
-        }
-        if (substr($buffer, 0, 4) === "GET " && strpos($buffer, "\nUpgrade: websocket") !== false) {
-            $connection->context->isWebsocket = true;
-            $connection->context->websocketHandshakeBuffer = $buffer;
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Check the integrity of the package.
      *
      * @param string $buffer
@@ -51,7 +31,16 @@ class HttpWebsocket
      */
     public static function input($buffer, $connection)
     {
-        $isWebsocket = self::isWebsocket($buffer, $connection);
+        if (isset($connection->context->isWebsocket)) {
+            $isWebsocket = true;
+        } else if (substr($buffer, 0, 4) === "GET " && strpos($buffer, "\nUpgrade: websocket") !== false) {
+            $connection->context->isWebsocket = true;
+            $connection->context->websocketHandshakeBuffer = $buffer;
+            $isWebsocket = true;
+        } else {
+            $isWebsocket = false;
+        }
+
         if ($isWebsocket) {
             return Websocket::input($buffer, $connection);
         } else {
