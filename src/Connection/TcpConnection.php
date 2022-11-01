@@ -161,7 +161,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
     /**
      * Context.
      *
-     * @var array
+     * @var object|null
      */
     public $context = null;
 
