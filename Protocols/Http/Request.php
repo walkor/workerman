@@ -562,7 +562,7 @@ class Request
                             'tmp_name' => $tmp_file,
                             'size' => $size,
                             'error' => $error,
-                            'type' => null,
+                            'type' => '',
                         ];
                         break;
                     } // Is post field.
