@@ -218,7 +218,9 @@ class Timer
     public static function delAll()
     {
         self::$_tasks = self::$_status = [];
-        \pcntl_alarm(0);
+        if (\function_exists('pcntl_alarm')) {
+            \pcntl_alarm(0);
+        }
         if (self::$_event) {
             self::$_event->deleteAllTimer();
         }
