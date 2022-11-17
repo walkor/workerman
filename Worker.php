@@ -26,6 +26,7 @@ use \Exception;
  * Worker class
  * A container for listening ports
  */
+#[\AllowDynamicProperties]
 class Worker
 {
     /**
@@ -33,7 +34,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '3.5.32';
+    const VERSION = '3.5.33';
 
     /**
      * Status starting.
