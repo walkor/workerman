@@ -554,7 +554,7 @@ class Request
             if (!\strpos($content_line, ': ')) {
                 return 0;
             }
-            [$key, $value] = \explode(': ', $content_line);
+            list($key, $value) = \explode(': ', $content_line);
             switch (strtolower($key)) {
                 case "content-disposition":
                     // Is file data.
@@ -580,7 +580,7 @@ class Request
                             'tmp_name' => $tmp_file,
                             'size' => $size,
                             'error' => $error,
-                            'type' => null,
+                            'type' => '',
                         ];
                         break;
                     } // Is post field.
