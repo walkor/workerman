@@ -1,38 +1,14 @@
 {
-    "name": "workerman/workerman",
+    "name": "rexpl/workerman",
     "type": "library",
-    "keywords": [
-        "event-loop",
-        "asynchronous"
-    ],
-    "homepage": "https://www.workerman.net",
     "license": "MIT",
-    "description": "An asynchronous event driven PHP framework for easily building fast, scalable network applications.",
-    "authors": [
-        {
-            "name": "walkor",
-            "email": "walkor@workerman.net",
-            "homepage": "https://www.workerman.net",
-            "role": "Developer"
+    "autoload":{
+        "psr-4": {
+            "Rexpl\\Workerman\\": "src/"
         }
-    ],
-    "support": {
-        "email": "walkor@workerman.net",
-        "issues": "https://github.com/walkor/workerman/issues",
-        "forum": "https://www.workerman.net/questions",
-        "wiki": "https://www.workerman.net/doc/workerman/",
-        "source": "https://github.com/walkor/workerman"
     },
     "require": {
-        "php": ">=7.0"
-    },
-    "suggest": {
-        "ext-event": "For better performance. "
-    },
-    "autoload": {
-        "psr-4": {
-            "Workerman\\": "src"
-        }
-    },
-    "minimum-stability": "dev"
+        "symfony/console": "^6.1",
+        "workerman/workerman": "^4.1"
+    }
 }
