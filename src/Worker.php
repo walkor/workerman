@@ -1166,7 +1166,7 @@ class Worker
             case \SIGINT:
             case \SIGTERM:
             case \SIGHUP:
-            case \SIGTSTP;
+            case \SIGTSTP:
                 static::$_gracefulStop = false;
                 static::stopAll();
                 break;
@@ -1556,7 +1556,7 @@ class Worker
         // Get uid.
         $user_info = \posix_getpwnam($this->user);
         if (!$user_info) {
-            static::log("Warning: User {$this->user} not exsits");
+            static::log("Warning: User {$this->user} not exists");
             return;
         }
         $uid = $user_info['uid'];
@@ -1564,7 +1564,7 @@ class Worker
         if ($this->group) {
             $group_info = \posix_getgrnam($this->group);
             if (!$group_info) {
-                static::log("Warning: Group {$this->group} not exsits");
+                static::log("Warning: Group {$this->group} not exists");
                 return;
             }
             $gid = $group_info['gid'];
