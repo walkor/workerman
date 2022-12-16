@@ -321,6 +321,10 @@ class WebServer extends Worker
             while(empty($connection->bufferFull))
             {
                 $read_length = $content_length > $step_length ? $step_length : $content_length;
+		// Warning: fread(): Length parameter must be greater than 0
+		if ($read_length <= 0) {
+		    $read_length = $step_length;
+		}
                 $content_length -= $read_length;
                 // Read from disk.
                 $buffer = \fread($connection->fileHandler, $read_length);
