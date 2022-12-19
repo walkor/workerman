@@ -160,7 +160,7 @@ class TcpConnection extends ConnectionInterface
     /**
      * Context.
      *
-     * @var array
+     * @var object|null
      */
     public $context = null;
 
