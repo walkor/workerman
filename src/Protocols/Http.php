@@ -179,10 +179,14 @@ class Http
     public static function encode($response, TcpConnection $connection)
     {
         if (isset($connection->__request)) {
+            $shouldKeepAlive = self::shouldKeepAlive($connection->__request, $response);
             $connection->__request->session = null;
             $connection->__request->connection = null;
             $connection->__request = null;
+        } else {
+            $shouldKeepAlive = true;
         }
+        $connectionHeaderValue = $shouldKeepAlive ? 'keep-alive' : 'close';
         if (!\is_object($response)) {
             $ext_header = '';
             if (isset($connection->__header)) {
@@ -198,7 +202,13 @@ class Http
                 unset($connection->__header);
             }
             $body_len = \strlen((string)$response);
-            return "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$ext_header}Connection: keep-alive\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\n\r\n$response";
+            $data = "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$ext_header}Connection: {$connectionHeaderValue}\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\n\r\n$response";
+            if ($shouldKeepAlive) {
+                return $data;
+            } else {
+                $connection->close($data, true);
+                return '';
+            }
         }
 
         if (isset($connection->__header)) {
@@ -232,10 +242,18 @@ class Http
             }
             $connection->send((string)$response, true);
             static::sendStream($connection, $handler, $offset, $length);
+            if (!$shouldKeepAlive) {
+                $connection->close();
+            }
             return '';
         }
 
-        return (string)$response;
+        if ($shouldKeepAlive) {
+            return (string)$response;
+        } else {
+            $connection->close((string)$response, true);
+            return '';
+        }
     }
 
     /**
@@ -310,5 +328,25 @@ class Http
             }
         }
         return static::$_uploadTmpDir;
+    }
+
+    /**
+     * Should keep alive
+     * 
+     * @param Request $request
+     * @param string|Response $response
+     * @return bool
+     */
+    public static function shouldKeepAlive($request, $response)
+    {
+        if ($response instanceof Response && ($connectionHeaderValue = $response->getHeader('connection')) && 0 === strcasecmp($connectionHeaderValue, 'close')) {
+            return false;
+        }
+        $connectionHeaderValue = $request->header('connection', '');
+        if (version_compare($request->protocolVersion(), '1.1', '>=')) {
+            return 0 !== strcasecmp($connectionHeaderValue, 'close');
+        } else {
+            return 0 === strcasecmp($connectionHeaderValue, 'keep-alive');
+        }
     }
 }
