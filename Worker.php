@@ -1553,6 +1553,7 @@ class Worker
         elseif (0 === $pid) {
             \srand();
             \mt_srand();
+            static::$_gracefulStop = false;
             if ($worker->reusePort) {
                 $worker->listen();
             }
