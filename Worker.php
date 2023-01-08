@@ -1881,6 +1881,8 @@ class Worker
             } else {
                 $sig = \SIGINT;
             }
+            // Fix exit with status 2
+            usleep(50000);
             foreach ($worker_pid_array as $worker_pid) {
                 \posix_kill($worker_pid, $sig);
                 if(!static::$_gracefulStop){
