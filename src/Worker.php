@@ -1815,7 +1815,8 @@ class Worker
             $worker_pid_array = static::getAllWorkerPids();
             // Send stop signal to all child processes.
             $sig = static::$_gracefulStop ? \SIGQUIT : \SIGINT;
-
+            // Fix exit with status 2
+            usleep(50000);
             foreach ($worker_pid_array as $worker_pid) {
                 \posix_kill($worker_pid, $sig);
                 if(!static::$_gracefulStop){
