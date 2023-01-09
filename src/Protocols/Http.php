@@ -249,7 +249,7 @@ class Http
     protected static function sendStream(TcpConnection $connection, $handler, $offset = 0, $length = 0)
     {
         $connection->bufferFull = false;
-        $connection->__streamSending = true;
+        $connection->context->streamSending = true;
         if ($offset !== 0) {
             \fseek($handler, $offset);
         }
@@ -276,7 +276,7 @@ class Http
                 if ($buffer === '' || $buffer === false) {
                     fclose($handler);
                     $connection->onBufferDrain = null;
-                    $connection->__streamSending = false;
+                    $connection->context->streamSending = false;
                     return;
                 }
                 $connection->send($buffer, true);

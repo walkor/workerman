@@ -723,7 +723,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                 }
             }
             if ($this->_status === self::STATUS_CLOSING) {
-                if ($this->__streamSending) {
+                if ($this->context->streamSending) {
                     return true;
                 }
                 $this->destroy();
