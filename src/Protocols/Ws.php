@@ -346,9 +346,8 @@ class Ws
         $port = $connection->getRemotePort();
         $host = $port === 80 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
         // Handshake header.
-        $connection->websocketSecKey = \base64_encode(\md5(\mt_rand(), true));
-        $user_header = isset($connection->headers) ? $connection->headers :
-            (isset($connection->wsHttpHeader) ? $connection->wsHttpHeader : null);
+        $connection->websocketSecKey = \base64_encode(random_bytes(16));
+        $user_header = $connection->headers ?? $connection->wsHttpHeader ?? null;
         $user_header_str = '';
         if (!empty($user_header)) {
             if (\is_array($user_header)) {

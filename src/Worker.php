@@ -13,19 +13,20 @@
  */
 namespace Workerman;
 
-use Workerman\Events\Event;
-use Workerman\Events\EventInterface;
+use Exception;
+use Throwable;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
+use Workerman\Events\Event;
 use Workerman\Events\Select;
-use Exception;
 
 
 /**
  * Worker class
  * A container for listening ports
  */
+#[\AllowDynamicProperties]
 class Worker
 {
     /**
@@ -182,7 +183,7 @@ class Worker
     public $onBufferDrain = null;
 
     /**
-     * Emitted when worker processes stoped.
+     * Emitted when worker processes stopped.
      *
      * @var callable
      */
@@ -194,6 +195,13 @@ class Worker
      * @var callable
      */
     public $onWorkerReload = null;
+
+    /**
+     * Emitted when worker processes exited.
+     *
+     * @var callable
+     */
+    public $onWorkerExit = null;
 
     /**
      * Transport layer protocol.
@@ -471,9 +479,9 @@ class Worker
     /**
      * PHP built-in protocols.
      *
-     * @var array
+     * @var array<string,string>
      */
-    protected static $_builtinTransports = [
+    const BUILD_IN_TRANSPORTS = [
         'tcp'   => 'tcp',
         'udp'   => 'udp',
         'unix'  => 'unix',
@@ -483,9 +491,9 @@ class Worker
     /**
      * PHP built-in error types.
      *
-     * @var array
+     * @var array<int,string>
      */
-    protected static $_errorType = [
+    const ERROR_TYPE = [
         \E_ERROR             => 'E_ERROR',             // 1
         \E_WARNING           => 'E_WARNING',           // 2
         \E_PARSE             => 'E_PARSE',             // 4
@@ -538,11 +546,13 @@ class Worker
     {
         static::checkSapiEnv();
         static::init();
+        static::lock();
         static::parseCommand();
         static::daemonize();
         static::initWorkers();
         static::installSignal();
         static::saveMasterPid();
+        static::lock(\LOCK_UN);
         static::displayUI();
         static::forkWorkers();
         static::resetStd();
@@ -619,24 +629,25 @@ class Worker
      *
      * @return void
      */
-    protected static function lock()
+    protected static function lock($flag = \LOCK_EX)
     {
-        $fd = \fopen(static::$_startFile, 'r');
-        if ($fd && !flock($fd, LOCK_EX)) {
-            static::log('Workerman['.static::$_startFile.'] already running.');
-            exit;
+        static $fd;
+        if (\DIRECTORY_SEPARATOR !== '/') {
+            return;
         }
-    }
-
-    /**
-     * Unlock.
-     *
-     * @return void
-     */
-    protected static function unlock()
-    {
-        $fd = \fopen(static::$_startFile, 'r');
-        $fd && flock($fd, \LOCK_UN);
+        $lock_file = static::$pidFile . '.lock';
+        $fd = $fd ?: \fopen($lock_file, 'a+');
+        if ($fd) {
+            flock($fd, $flag);
+            if ($flag === \LOCK_UN) {
+                fclose($fd);
+                $fd = null;
+                clearstatcache();
+                if (\is_file($lock_file)) {
+                    unlink($lock_file);
+                }
+            }
+        }
     }
 
     /**
@@ -702,7 +713,7 @@ class Worker
     /**
      * Get all worker instances.
      *
-     * @return array
+     * @return Worker[]
      */
     public static function getAllWorkers()
     {
@@ -1155,7 +1166,7 @@ class Worker
             case \SIGINT:
             case \SIGTERM:
             case \SIGHUP:
-            case \SIGTSTP;
+            case \SIGTSTP:
                 static::$_gracefulStop = false;
                 static::stopAll();
                 break;
@@ -1214,9 +1225,11 @@ class Worker
     /**
      * Redirect standard input and output.
      *
+     * @param bool $throw_exception
+     * @return void
      * @throws Exception
      */
-    public static function resetStd()
+    public static function resetStd(bool $throw_exception = true)
     {
         if (!static::$daemonize || \DIRECTORY_SEPARATOR !== '/') {
             return;
@@ -1232,18 +1245,29 @@ class Worker
             if ($STDERR) {
                 \fclose($STDERR);
             }
-            \fclose(\STDOUT);
-            \fclose(\STDERR);
+            if (\is_resource(\STDOUT)) {
+                \fclose(\STDOUT);
+            }
+            if (\is_resource(\STDERR)) {
+                \fclose(\STDERR);
+            }
             $STDOUT = \fopen(static::$stdoutFile, "a");
             $STDERR = \fopen(static::$stdoutFile, "a");
+            // Fix standard output cannot redirect of PHP 8.1.8's bug
+            if (\function_exists('posix_isatty') && \posix_isatty(2)) {
+                \ob_start(function ($string) {
+                    \file_put_contents(static::$stdoutFile, $string, FILE_APPEND);
+                }, 1);
+            }
             // change output stream
             static::$_outputStream = null;
             static::outputStream($STDOUT);
             \restore_error_handler();
             return;
         }
-
-        throw new Exception('Can not open stdoutFile ' . static::$stdoutFile);
+        if ($throw_exception) {
+            throw new Exception('Can not open stdoutFile ' . static::$stdoutFile);
+        }
     }
 
     /**
@@ -1479,13 +1503,14 @@ class Worker
         elseif (0 === $pid) {
             \srand();
             \mt_srand();
+            static::$_gracefulStop = false;
             if ($worker->reusePort) {
                 $worker->listen();
             }
             if (static::$_status === static::STATUS_STARTING) {
                 static::resetStd();
             }
-            static::$_pidMap  = [];
+            static::$_pidsToRestart = static::$_pidMap  = [];
             // Remove other listener.
             foreach(static::$_workers as $key => $one_worker) {
                 if ($one_worker->workerId !== $worker->workerId) {
@@ -1532,7 +1557,7 @@ class Worker
         // Get uid.
         $user_info = \posix_getpwnam($this->user);
         if (!$user_info) {
-            static::log("Warning: User {$this->user} not exsits");
+            static::log("Warning: User {$this->user} not exists");
             return;
         }
         $uid = $user_info['uid'];
@@ -1540,7 +1565,7 @@ class Worker
         if ($this->group) {
             $group_info = \posix_getgrnam($this->group);
             if (!$group_info) {
-                static::log("Warning: Group {$this->group} not exsits");
+                static::log("Warning: Group {$this->group} not exists");
                 return;
             }
             $gid = $group_info['gid'];
@@ -1607,7 +1632,16 @@ class Worker
                         $worker = static::$_workers[$worker_id];
                         // Exit status.
                         if ($status !== 0) {
-                            static::log("worker[" . $worker->name . ":$pid] exit with status $status");
+                            static::log("worker[{$worker->name}:$pid] exit with status $status");
+                        }
+
+                        // onWorkerExit
+                        if ($worker->onWorkerExit) {
+                            try {
+                                ($worker->onWorkerExit)($worker, $status, $pid);
+                            } catch (Throwable $exception) {
+                                static::log("worker[{$worker->name}] onWorkerExit $exception");
+                            }
                         }
 
                         // For Statistics.
@@ -1692,22 +1726,20 @@ class Worker
             if (static::$_status !== static::STATUS_RELOADING && static::$_status !== static::STATUS_SHUTDOWN) {
                 static::log("Workerman[" . \basename(static::$_startFile) . "] reloading");
                 static::$_status = static::STATUS_RELOADING;
+
+                static::resetStd(false);
                 // Try to emit onMasterReload callback.
                 if (static::$onMasterReload) {
                     try {
                         \call_user_func(static::$onMasterReload);
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         static::stopAll(250, $e);
                     }
                     static::initId();
                 }
             }
 
-            if (static::$_gracefulStop) {
-                $sig = \SIGUSR2;
-            } else {
-                $sig = \SIGUSR1;
-            }
+            $sig = static::$_gracefulStop ? \SIGUSR2 : \SIGUSR1;
 
             // Send reload signal to all child processes.
             $reloadable_pid_array = [];
@@ -1751,13 +1783,15 @@ class Worker
             if ($worker->onWorkerReload) {
                 try {
                     \call_user_func($worker->onWorkerReload, $worker);
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     static::stopAll(250, $e);
                 }
             }
 
             if ($worker->reloadable) {
                 static::stopAll();
+            } else {
+                static::resetStd(false);
             }
         }
     }
@@ -1780,11 +1814,9 @@ class Worker
             static::log("Workerman[" . \basename(static::$_startFile) . "] stopping ...");
             $worker_pid_array = static::getAllWorkerPids();
             // Send stop signal to all child processes.
-            if (static::$_gracefulStop) {
-                $sig = \SIGQUIT;
-            } else {
-                $sig = \SIGINT;
-            }
+            $sig = static::$_gracefulStop ? \SIGQUIT : \SIGINT;
+            // Fix exit with status 2
+            usleep(50000);
             foreach ($worker_pid_array as $worker_pid) {
                 \posix_kill($worker_pid, $sig);
                 if(!static::$_gracefulStop){
@@ -1920,10 +1952,14 @@ class Worker
         }
 
         // For child processes.
+        \gc_collect_cycles();
+        if (\function_exists('gc_mem_caches')) {
+            \gc_mem_caches();
+        }
         \reset(static::$_workers);
         /** @var static $worker */
         $worker            = current(static::$_workers);
-        $worker_status_str = \posix_getpid() . "\t" . \str_pad(round(memory_get_usage(true) / (1024 * 1024), 2) . "M", 7)
+        $worker_status_str = \posix_getpid() . "\t" . \str_pad(round(memory_get_usage() / (1024 * 1024), 2) . "M", 7)
             . " " . \str_pad($worker->getSocketName(), static::$_maxSocketNameLength) . " "
             . \str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name), static::$_maxWorkerNameLength)
             . " ";
@@ -2042,11 +2078,8 @@ class Worker
      */
     protected static function getErrorType($type)
     {
-        if(isset(self::$_errorType[$type])) {
-            return self::$_errorType[$type];
-        }
 
-        return '';
+        return self::ERROR_TYPE[$type] ?? '';
     }
 
     /**
@@ -2148,7 +2181,7 @@ class Worker
         }
 
         // Try to turn reusePort on.
-        if (\DIRECTORY_SEPARATOR === '/'  // if linux
+        /*if (\DIRECTORY_SEPARATOR === '/'  // if linux
             && $socket_name
             && \version_compare(php_uname('r'), '3.9', 'ge') // if kernel >=3.9
             && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
@@ -2168,7 +2201,7 @@ class Worker
                     \restore_error_handler();
                 } catch (\Throwable $e) {}
             }
-        }
+        }*/
     }
 
 
@@ -2215,7 +2248,7 @@ class Worker
             }
 
             // Try to open keepalive for tcp and disable Nagle algorithm.
-            if (\function_exists('socket_import_stream') && static::$_builtinTransports[$this->transport] === 'tcp') {
+            if (\function_exists('socket_import_stream') && self::BUILD_IN_TRANSPORTS[$this->transport] === 'tcp') {
                 \set_error_handler(function(){});
                 $socket = \socket_import_stream($this->_mainSocket);
                 \socket_set_option($socket, \SOL_SOCKET, \SO_KEEPALIVE, 1);
@@ -2257,7 +2290,7 @@ class Worker
         // Get the application layer communication protocol and listening address.
         list($scheme, $address) = \explode(':', $this->_socketName, 2);
         // Check application layer protocol class.
-        if (!isset(static::$_builtinTransports[$scheme])) {
+        if (!isset(self::BUILD_IN_TRANSPORTS[$scheme])) {
             $scheme         = \ucfirst($scheme);
             $this->protocol = \substr($scheme,0,1)==='\\' ? $scheme : 'Protocols\\' . $scheme;
             if (!\class_exists($this->protocol)) {
@@ -2267,7 +2300,7 @@ class Worker
                 }
             }
 
-            if (!isset(static::$_builtinTransports[$this->transport])) {
+            if (!isset(self::BUILD_IN_TRANSPORTS[$this->transport])) {
                 throw new Exception('Bad worker->transport ' . \var_export($this->transport, true));
             }
         } else {
@@ -2276,7 +2309,7 @@ class Worker
             }
         }
         //local socket
-        return static::$_builtinTransports[$this->transport] . ":" . $address;
+        return self::BUILD_IN_TRANSPORTS[$this->transport] . ":" . $address;
     }
 
     /**
@@ -2357,7 +2390,7 @@ class Worker
         if ($this->onWorkerStart) {
             try {
                 ($this->onWorkerStart)($this);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Avoid rapid infinite loop exit.
                 sleep(1);
                 static::stopAll(250, $e);
@@ -2379,7 +2412,7 @@ class Worker
         if ($this->onWorkerStop) {
             try {
                 ($this->onWorkerStop)($this);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Worker::log($e);
             }
         }
@@ -2429,7 +2462,7 @@ class Worker
         if ($this->onConnect) {
             try {
                 ($this->onConnect)($connection);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 static::stopAll(250, $e);
             }
         }
@@ -2483,7 +2516,7 @@ class Worker
                     $message_cb($connection, $recv_buffer);
                 }
                 ++ConnectionInterface::$statistics['total_request'];
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 static::stopAll(250, $e);
             }
         }

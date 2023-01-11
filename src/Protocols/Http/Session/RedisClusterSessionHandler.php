@@ -14,11 +14,12 @@
 
 namespace Workerman\Protocols\Http\Session;
 
+use Workerman\Protocols\Http\Session;
+
 class RedisClusterSessionHandler extends RedisSessionHandler
 {
     public function __construct($config)
     {
-        $this->_maxLifeTime = (int)ini_get('session.gc_maxlifetime');
         $timeout = $config['timeout'] ?? 2;
         $read_timeout = $config['read_timeout'] ?? $timeout;
         $persistent = $config['persistent'] ?? false;

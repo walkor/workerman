@@ -11,8 +11,10 @@
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace Workerman\Protocols\Http\Session;
 
+use Workerman\Protocols\Http\Session;
 use Workerman\Timer;
 use RedisException;
 
@@ -27,11 +29,6 @@ class RedisSessionHandler implements SessionHandlerInterface
      * @var \Redis
      */
     protected $_redis;
-
-    /**
-     * @var int
-     */
-    protected $_maxLifeTime;
 
     /**
      * @var array
@@ -55,7 +52,6 @@ class RedisSessionHandler implements SessionHandlerInterface
         if (false === extension_loaded('redis')) {
             throw new \RuntimeException('Please install redis extension.');
         }
-        $this->_maxLifeTime = (int)ini_get('session.gc_maxlifetime');
 
         if (!isset($config['timeout'])) {
             $config['timeout'] = 2;
@@ -113,7 +109,6 @@ class RedisSessionHandler implements SessionHandlerInterface
             }
             throw $e;
         }
-
     }
 
     /**
@@ -121,7 +116,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      */
     public function write($session_id, $session_data)
     {
-        return true === $this->_redis->setex($session_id, $this->_maxLifeTime, $session_data);
+        return true === $this->_redis->setex($session_id, Session::$lifetime, $session_data);
     }
 
     /**
@@ -129,7 +124,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      */
     public function updateTimestamp($id, $data = "")
     {
-        return true === $this->_redis->expire($id, $this->_maxLifeTime);
+        return true === $this->_redis->expire($id, Session::$lifetime);
     }
 
     /**

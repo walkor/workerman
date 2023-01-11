@@ -56,7 +56,7 @@ class Event implements EventInterface
      * Timer id.
      * @var int
      */
-    protected $_timerId = 1;
+    protected $_timerId = 0;
 
     /**
      * Event class name.
@@ -90,8 +90,10 @@ class Event implements EventInterface
     public function delay(float $delay, $func, $args)
     {
         $class_name = $this->_eventClassName;
-        $event = new $class_name($this->_eventBase, -1, $class_name::TIMEOUT, function () use ($func, $args) {
+        $timer_id = $this->_timerId++;
+        $event = new $class_name($this->_eventBase, -1, $class_name::TIMEOUT, function () use ($func, $args, $timer_id) {
             try {
+                $this->deleteTimer($timer_id);
                 $func(...$args);
             } catch (\Throwable $e) {
                 Worker::stopAll(250, $e);
@@ -100,8 +102,8 @@ class Event implements EventInterface
         if (!$event || !$event->addTimer($delay)) {
             return false;
         }
-        $this->_eventTimer[$this->_timerId] = $event;
-        return $this->_timerId++;
+        $this->_eventTimer[$timer_id] = $event;
+        return $timer_id;
     }
 
     /**
@@ -123,7 +125,8 @@ class Event implements EventInterface
     public function repeat(float $interval, $func, $args)
     {
         $class_name = $this->_eventClassName;
-        $event = new $this->_eventClassName($this->_eventBase, -1, $class_name::TIMEOUT | $class_name::PERSIST, function () use ($func, $args) {
+        $timer_id = $this->_timerId++;
+        $event = new $class_name($this->_eventBase, -1, $class_name::TIMEOUT | $class_name::PERSIST, function () use ($func, $args) {
             try {
                 $func(...$args);
             } catch (\Throwable $e) {
@@ -133,8 +136,8 @@ class Event implements EventInterface
         if (!$event || !$event->addTimer($interval)) {
             return false;
         }
-        $this->_eventTimer[$this->_timerId] = $event;
-        return $this->_timerId++;
+        $this->_eventTimer[$timer_id] = $event;
+        return $timer_id;
     }
 
     /**
@@ -175,7 +178,7 @@ class Event implements EventInterface
         if (!$event || !$event->add()) {
             return false;
         }
-        $this->_readEvents[$fd_key] = $event;
+        $this->_writeEvents[$fd_key] = $event;
         return true;
     }
 

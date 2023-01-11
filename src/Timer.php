@@ -114,6 +114,11 @@ class Timer
         if (self::$_event) {
             return $persistent ? self::$_event->repeat($time_interval, $func, $args) : self::$_event->delay($time_interval, $func, $args);
         }
+        
+        // If not workerman runtime just return.
+        if (!Worker::getAllWorkers()) {
+            return;
+        }
 
         if (!\is_callable($func)) {
             Worker::safeEcho(new Exception("not callable"));
@@ -142,9 +147,9 @@ class Timer
      * @param array $args
      * @return bool|int
      */
-    public function delay(float $delay, $func, $args = [])
+    public static function delay(float $delay, $func, $args = [])
     {
-        return $this->add($delay, $func, $args);
+        return static::add($delay, $func, $args, false);
     }
 
 
@@ -213,7 +218,9 @@ class Timer
     public static function delAll()
     {
         self::$_tasks = self::$_status = [];
-        \pcntl_alarm(0);
+        if (\function_exists('pcntl_alarm')) {
+            \pcntl_alarm(0);
+        }
         if (self::$_event) {
             self::$_event->deleteAllTimer();
         }

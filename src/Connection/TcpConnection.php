@@ -21,7 +21,7 @@ use Workerman\Worker;
 /**
  * TcpConnection.
  */
-class TcpConnection extends ConnectionInterface
+class TcpConnection extends ConnectionInterface implements \JsonSerializable
 {
     /**
      * Read buffer size.
@@ -157,6 +157,13 @@ class TcpConnection extends ConnectionInterface
      * @var int
      */
     public $maxSendBufferSize = 1048576;
+    
+    /**
+     * Context.
+     *
+     * @var object|null
+     */
+    public $context = null;
 
     /**
      * Default send buffer size.
@@ -293,6 +300,7 @@ class TcpConnection extends ConnectionInterface
         $this->maxPackageSize = self::$defaultMaxPackageSize;
         $this->_remoteAddress = $remote_address;
         static::$connections[$this->id] = $this;
+        $this->context = new \stdClass;
     }
 
     /**
@@ -587,7 +595,7 @@ class TcpConnection extends ConnectionInterface
         } else {
             $this->bytesRead += \strlen($buffer);
             if ($this->_recvBuffer === '') {
-                if (static::$_enableCache && !isset($requests[512]) && isset($requests[$buffer])) {
+                if (static::$_enableCache && !isset($buffer[512]) && isset($requests[$buffer])) {
                     ++self::$statistics['total_request'];
                     $request = $requests[$buffer];
                     if ($request instanceof Request) {
@@ -715,6 +723,9 @@ class TcpConnection extends ConnectionInterface
                 }
             }
             if ($this->_status === self::STATUS_CLOSING) {
+                if ($this->context->streamSending) {
+                    return true;
+                }
                 $this->destroy();
             }
             return true;
@@ -968,6 +979,29 @@ class TcpConnection extends ConnectionInterface
     public static function enableCache($value)
     {
         static::$_enableCache = (bool)$value;
+    }
+    
+    /**
+     * Get the json_encode information.
+     *
+     * @return mixed
+     */
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize()
+    {        
+        return [
+            'id' => $this->id,
+            'status' => $this->getStatus(),
+            'transport' => $this->transport,
+            'getRemoteIp' => $this->getRemoteIp(),
+            'remotePort' => $this->getRemotePort(),
+            'getRemoteAddress' => $this->getRemoteAddress(),
+            'getLocalIp' => $this->getLocalIp(),
+            'getLocalPort' => $this->getLocalPort(),
+            'getLocalAddress' => $this->getLocalAddress(),
+            'isIpV4' => $this->isIpV4(),
+            'isIpV6' => $this->isIpV6(),
+        ];
     }
 
     /**

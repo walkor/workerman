@@ -375,10 +375,13 @@ proxy supports TLS1.3, no Sniproxy channel
 ```php start.php start  ```  
 ```php start.php start -d  ```  
 ```php start.php status  ```  
+```php start.php status -d  ```  
 ```php start.php connections```  
 ```php start.php stop  ```  
+```php start.php stop -g  ```  
 ```php start.php restart  ```  
 ```php start.php reload  ```  
+```php start.php reload -g  ```
 
 ## Documentation
 

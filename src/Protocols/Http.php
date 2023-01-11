@@ -32,13 +32,6 @@ class Http
     protected static $_requestClass = Request::class;
 
     /**
-     * Session name.
-     *
-     * @var string
-     */
-    protected static $_sessionName = 'PHPSID';
-
-    /**
      * Upload tmp dir.
      *
      * @var string
@@ -51,20 +44,6 @@ class Http
      * @var bool.
      */
     protected static $_enableCache = true;
-
-    /**
-     * Get or set session name.
-     *
-     * @param string|null $name
-     * @return string
-     */
-    public static function sessionName($name = null)
-    {
-        if ($name !== null && $name !== '') {
-            static::$_sessionName = (string)$name;
-        }
-        return static::$_sessionName;
-    }
 
     /**
      * Get or set the request class name.
@@ -97,7 +76,7 @@ class Http
      * @param TcpConnection $connection
      * @return int
      */
-    public static function input($recv_buffer, TcpConnection $connection)
+    public static function input(string $recv_buffer, TcpConnection $connection)
     {
         static $input = [];
         if (!isset($recv_buffer[512]) && isset($input[$recv_buffer])) {
@@ -106,53 +85,58 @@ class Http
         $crlf_pos = \strpos($recv_buffer, "\r\n\r\n");
         if (false === $crlf_pos) {
             // Judge whether the package length exceeds the limit.
-            if ($recv_len = \strlen($recv_buffer) >= 16384) {
-                $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n");
+            if (\strlen($recv_buffer) >= 16384) {
+                $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
                 return 0;
             }
             return 0;
         }
 
-        $head_len = $crlf_pos + 4;
-        $method = \strstr($recv_buffer, ' ', true);
+        $length = $crlf_pos + 4;
+        $firstLine = \explode(" ", \strstr($recv_buffer, "\r\n", true), 3);
 
-        if ($method === 'GET' || $method === 'OPTIONS' || $method === 'HEAD' || $method === 'DELETE') {
-            if (!isset($recv_buffer[512])) {
-                $input[$recv_buffer] = $head_len;
-                if (\count($input) > 512) {
-                    unset($input[\key($input)]);
-                }
-            }
-            return $head_len;
-        } else if ($method !== 'POST' && $method !== 'PUT' && $method !== 'PATCH') {
+        if (!\in_array($firstLine[0], ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
 
         $header = \substr($recv_buffer, 0, $crlf_pos);
-        $length = false;
-        if ($pos = \strpos($header, "\r\nContent-Length: ")) {
-            $length = $head_len + (int)\substr($header, $pos + 18, 10);
-        } else if (\preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
-            $length = $head_len + $match[1];
+        $hostHeaderPosition = \strpos($header, "\r\nHost: ");
+
+        if (false === $hostHeaderPosition && $firstLine[2] === "HTTP/1.1") {
+            $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+            return 0;
         }
 
-        if ($length !== false) {
-            if (!isset($recv_buffer[512])) {
-                $input[$recv_buffer] = $length;
-                if (\count($input) > 512) {
-                    unset($input[\key($input)]);
-                }
-            }
-            if ($length > $connection->maxPackageSize) {
-                $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n");
+        if ($pos = \strpos($header, "\r\nContent-Length: ")) {
+            $length = $length + (int)\substr($header, $pos + 18, 10);
+            $has_content_length = true;
+        } else if (\preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
+            $length = $length + $match[1];
+            $has_content_length = true;
+        } else {
+            $has_content_length = false;
+            if (false !== stripos($header, "\r\nTransfer-Encoding:")) {
+                $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
                 return 0;
             }
-            return $length;
         }
 
-        $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
-        return 0;
+        if ($has_content_length) {
+            if ($length > $connection->maxPackageSize) {
+                $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
+                return 0;
+            }
+        }
+
+        if (!isset($recv_buffer[512])) {
+            $input[$recv_buffer] = $length;
+            if (\count($input) > 512) {
+                unset($input[key($input)]);
+            }
+        }
+
+        return $length;
     }
 
     /**
@@ -226,6 +210,7 @@ class Http
             $file = $response->file['file'];
             $offset = $response->file['offset'];
             $length = $response->file['length'];
+            \clearstatcache();
             $file_size = (int)\filesize($file);
             $body_len = $length > 0 ? $length : $file_size - $offset;
             $response->withHeaders([
@@ -264,6 +249,7 @@ class Http
     protected static function sendStream(TcpConnection $connection, $handler, $offset = 0, $length = 0)
     {
         $connection->bufferFull = false;
+        $connection->context->streamSending = true;
         if ($offset !== 0) {
             \fseek($handler, $offset);
         }
@@ -290,6 +276,7 @@ class Http
                 if ($buffer === '' || $buffer === false) {
                     fclose($handler);
                     $connection->onBufferDrain = null;
+                    $connection->context->streamSending = false;
                     return;
                 }
                 $connection->send($buffer, true);
