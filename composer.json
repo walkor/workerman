@@ -34,5 +34,8 @@
             "Workerman\\": "src"
         }
     },
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "conflict": {
+        "ext-swow": "<v1.0.0"
+    }
 }
