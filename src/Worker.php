@@ -2350,7 +2350,7 @@ class Worker
      */
     public function getSocketName()
     {
-        return $this->_socketName ? \lcfirst($this->_socketName) : 'none';
+        return $this->_socketName ? $this->_socketName : 'none';
     }
 
     /**
