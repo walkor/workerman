@@ -34,7 +34,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.1.4';
+    const VERSION = '4.1.5';
 
     /**
      * Status starting.
@@ -1557,6 +1557,7 @@ class Worker
         elseif (0 === $pid) {
             \srand();
             \mt_srand();
+            static::$_gracefulStop = false;
             if ($worker->reusePort) {
                 $worker->listen();
             }
@@ -1882,6 +1883,8 @@ class Worker
             } else {
                 $sig = \SIGINT;
             }
+            // Fix exit with status 2
+            usleep(50000);
             foreach ($worker_pid_array as $worker_pid) {
                 \posix_kill($worker_pid, $sig);
                 if(!static::$_gracefulStop){
