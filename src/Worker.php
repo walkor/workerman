@@ -546,8 +546,8 @@ class Worker
     {
         static::checkSapiEnv();
         static::init();
-        static::lock();
         static::parseCommand();
+        static::lock();
         static::daemonize();
         static::initWorkers();
         static::installSignal();
