@@ -685,7 +685,7 @@ class Worker
             $worker->socket = $worker->getSocketName();
 
             // Status name.
-            $worker->sate = '<g> [OK] </g>';
+            $worker->state = '<g> [OK] </g>';
 
             // Get column mapping for UI
             foreach(static::getUiColumns() as $columnName => $prop){

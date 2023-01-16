@@ -15,6 +15,7 @@
 namespace Workerman\Connection;
 
 use Workerman\Events\EventInterface;
+use Workerman\Events\Select;
 use Workerman\Timer;
 use Workerman\Worker;
 use \Exception;
@@ -246,7 +247,7 @@ class AsyncTcpConnection extends TcpConnection
         // Add socket to global event loop waiting connection is successfully established or faild.
         Worker::$globalEvent->onWritable($this->socket, [$this, 'checkConnection']);
         // For windows.
-        if (\DIRECTORY_SEPARATOR === '\\') {
+        if (\DIRECTORY_SEPARATOR === '\\' && Worker::$eventLoopClass === Select::class) {
             Worker::$globalEvent->onExcept($this->socket, [$this, 'checkConnection']);
         }
     }
@@ -329,7 +330,7 @@ class AsyncTcpConnection extends TcpConnection
     public function checkConnection()
     {
         // Remove EV_EXPECT for windows.
-        if (\DIRECTORY_SEPARATOR === '\\') {
+        if (\DIRECTORY_SEPARATOR === '\\' && Worker::$eventLoopClass === Select::class) {
             Worker::$globalEvent->offExcept($this->socket);
         }
         // Remove write listener.
