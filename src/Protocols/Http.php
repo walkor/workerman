@@ -29,21 +29,21 @@ class Http
      *
      * @var string
      */
-    protected static $_requestClass = Request::class;
+    protected static $requestClass = Request::class;
 
     /**
      * Upload tmp dir.
      *
      * @var string
      */
-    protected static $_uploadTmpDir = '';
+    protected static $uploadTmpDir = '';
 
     /**
      * Cache.
      *
      * @var bool.
      */
-    protected static $_enableCache = true;
+    protected static $enableCache = true;
 
     /**
      * Get or set the request class name.
@@ -54,9 +54,9 @@ class Http
     public static function requestClass($class_name = null)
     {
         if ($class_name) {
-            static::$_requestClass = $class_name;
+            static::$requestClass = $class_name;
         }
-        return static::$_requestClass;
+        return static::$requestClass;
     }
 
     /**
@@ -66,7 +66,7 @@ class Http
      */
     public static function enableCache($value)
     {
-        static::$_enableCache = (bool)$value;
+        static::$enableCache = (bool)$value;
     }
 
     /**
@@ -149,17 +149,17 @@ class Http
     public static function decode($recv_buffer, TcpConnection $connection)
     {
         static $requests = [];
-        $cacheable = static::$_enableCache && !isset($recv_buffer[512]);
+        $cacheable = static::$enableCache && !isset($recv_buffer[512]);
         if (true === $cacheable && isset($requests[$recv_buffer])) {
             $request = clone $requests[$recv_buffer];
             $request->connection = $connection;
-            $connection->__request = $request;
+            $connection->request = $request;
             $request->properties = [];
             return $request;
         }
-        $request = new static::$_requestClass($recv_buffer);
+        $request = new static::$requestClass($recv_buffer);
         $request->connection = $connection;
-        $connection->__request = $request;
+        $connection->request = $request;
         if (true === $cacheable) {
             $requests[$recv_buffer] = $request;
             if (\count($requests) > 512) {
@@ -178,15 +178,15 @@ class Http
      */
     public static function encode($response, TcpConnection $connection)
     {
-        if (isset($connection->__request)) {
-            $connection->__request->session = null;
-            $connection->__request->connection = null;
-            $connection->__request = null;
+        if (isset($connection->request)) {
+            $connection->request->session = null;
+            $connection->request->connection = null;
+            $connection->request = null;
         }
         if (!\is_object($response)) {
             $ext_header = '';
-            if (isset($connection->__header)) {
-                foreach ($connection->__header as $name => $value) {
+            if (isset($connection->header)) {
+                foreach ($connection->header as $name => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $item) {
                             $ext_header = "$name: $item\r\n";
@@ -195,15 +195,15 @@ class Http
                         $ext_header = "$name: $value\r\n";
                     }
                 }
-                unset($connection->__header);
+                unset($connection->header);
             }
             $body_len = \strlen((string)$response);
             return "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$ext_header}Connection: keep-alive\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\n\r\n$response";
         }
 
-        if (isset($connection->__header)) {
-            $response->withHeaders($connection->__header);
-            unset($connection->__header);
+        if (isset($connection->header)) {
+            $response->withHeaders($connection->header);
+            unset($connection->header);
         }
 
         if (isset($response->file)) {
@@ -302,15 +302,15 @@ class Http
     public static function uploadTmpDir($dir = null)
     {
         if (null !== $dir) {
-            static::$_uploadTmpDir = $dir;
+            static::$uploadTmpDir = $dir;
         }
-        if (static::$_uploadTmpDir === '') {
+        if (static::$uploadTmpDir === '') {
             if ($upload_tmp_dir = \ini_get('upload_tmp_dir')) {
-                static::$_uploadTmpDir = $upload_tmp_dir;
+                static::$uploadTmpDir = $upload_tmp_dir;
             } else if ($upload_tmp_dir = \sys_get_temp_dir()) {
-                static::$_uploadTmpDir = $upload_tmp_dir;
+                static::$uploadTmpDir = $upload_tmp_dir;
             }
         }
-        return static::$_uploadTmpDir;
+        return static::$uploadTmpDir;
     }
 }

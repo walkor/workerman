@@ -26,7 +26,7 @@ class Chunk
      *
      * @var string
      */
-    protected $_buffer = null;
+    protected $buffer = null;
 
     /**
      * Chunk constructor.
@@ -34,7 +34,7 @@ class Chunk
      */
     public function __construct($buffer)
     {
-        $this->_buffer = $buffer;
+        $this->buffer = $buffer;
     }
 
     /**
@@ -44,6 +44,6 @@ class Chunk
      */
     public function __toString()
     {
-        return \dechex(\strlen($this->_buffer)) . "\r\n$this->_buffer\r\n";
+        return \dechex(\strlen($this->buffer)) . "\r\n$this->buffer\r\n";
     }
 }

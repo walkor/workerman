@@ -25,35 +25,35 @@ class Response
      *
      * @var array
      */
-    protected $_header = null;
+    protected $header = null;
 
     /**
      * Http status.
      *
      * @var int
      */
-    protected $_status = null;
+    protected $status = null;
 
     /**
      * Http reason.
      *
      * @var string
      */
-    protected $_reason = null;
+    protected $reason = null;
 
     /**
      * Http version.
      *
      * @var string
      */
-    protected $_version = '1.1';
+    protected $version = '1.1';
 
     /**
      * Http body.
      *
      * @var string
      */
-    protected $_body = null;
+    protected $body = null;
 
     /**
      * Send file info
@@ -66,7 +66,7 @@ class Response
      * Mine type map.
      * @var array
      */
-    protected static $_mimeTypeMap = null;
+    protected static $mimeTypeMap = null;
 
     /**
      * Phrases.
@@ -168,9 +168,9 @@ class Response
         $body = ''
     )
     {
-        $this->_status = $status;
-        $this->_header = $headers;
-        $this->_body = (string)$body;
+        $this->status = $status;
+        $this->header = $headers;
+        $this->body = (string)$body;
     }
 
     /**
@@ -182,7 +182,7 @@ class Response
      */
     public function header($name, $value)
     {
-        $this->_header[$name] = $value;
+        $this->header[$name] = $value;
         return $this;
     }
 
@@ -206,7 +206,7 @@ class Response
      */
     public function withHeaders($headers)
     {
-        $this->_header = \array_merge_recursive($this->_header, $headers);
+        $this->header = \array_merge_recursive($this->header, $headers);
         return $this;
     }
 
@@ -218,7 +218,7 @@ class Response
      */
     public function withoutHeader($name)
     {
-        unset($this->_header[$name]);
+        unset($this->header[$name]);
         return $this;
     }
 
@@ -231,7 +231,7 @@ class Response
     public function getHeader($name)
     {
 
-        return $this->_header[$name] ?? null;
+        return $this->header[$name] ?? null;
     }
 
     /**
@@ -241,7 +241,7 @@ class Response
      */
     public function getHeaders()
     {
-        return $this->_header;
+        return $this->header;
     }
 
     /**
@@ -253,8 +253,8 @@ class Response
      */
     public function withStatus($code, $reason_phrase = null)
     {
-        $this->_status = $code;
-        $this->_reason = $reason_phrase;
+        $this->status = $code;
+        $this->reason = $reason_phrase;
         return $this;
     }
 
@@ -265,7 +265,7 @@ class Response
      */
     public function getStatusCode()
     {
-        return $this->_status;
+        return $this->status;
     }
 
     /**
@@ -275,7 +275,7 @@ class Response
      */
     public function getReasonPhrase()
     {
-        return $this->_reason;
+        return $this->reason;
     }
 
     /**
@@ -286,7 +286,7 @@ class Response
      */
     public function withProtocolVersion($version)
     {
-        $this->_version = $version;
+        $this->version = $version;
         return $this;
     }
 
@@ -298,7 +298,7 @@ class Response
      */
     public function withBody($body)
     {
-        $this->_body = (string)$body;
+        $this->body = (string)$body;
         return $this;
     }
 
@@ -309,7 +309,7 @@ class Response
      */
     public function rawBody()
     {
-        return $this->_body;
+        return $this->body;
     }
 
     /**
@@ -344,7 +344,7 @@ class Response
      */
     public function cookie($name, $value = '', $max_age = null, $path = '', $domain = '', $secure = false, $http_only = false, $same_site  = false)
     {
-        $this->_header['Set-Cookie'][] = $name . '=' . \rawurlencode($value)
+        $this->header['Set-Cookie'][] = $name . '=' . \rawurlencode($value)
             . (empty($domain) ? '' : '; Domain=' . $domain)
             . ($max_age === null ? '' : '; Max-Age=' . $max_age)
             . (empty($path) ? '' : '; Path=' . $path)
@@ -363,9 +363,9 @@ class Response
     protected function createHeadForFile($file_info)
     {
         $file = $file_info['file'];
-        $reason = $this->_reason ?: self::PHRASES[$this->_status];
-        $head = "HTTP/{$this->_version} {$this->_status} $reason\r\n";
-        $headers = $this->_header;
+        $reason = $this->reason ?: self::PHRASES[$this->status];
+        $head = "HTTP/{$this->version} {$this->status} $reason\r\n";
+        $headers = $this->header;
         if (!isset($headers['Server'])) {
             $head .= "Server: workerman\r\n";
         }
@@ -387,14 +387,14 @@ class Response
         $extension = $file_info['extension'] ?? '';
         $base_name = $file_info['basename'] ?? 'unknown';
         if (!isset($headers['Content-Type'])) {
-            if (isset(self::$_mimeTypeMap[$extension])) {
-                $head .= "Content-Type: " . self::$_mimeTypeMap[$extension] . "\r\n";
+            if (isset(self::$mimeTypeMap[$extension])) {
+                $head .= "Content-Type: " . self::$mimeTypeMap[$extension] . "\r\n";
             } else {
                 $head .= "Content-Type: application/octet-stream\r\n";
             }
         }
 
-        if (!isset($headers['Content-Disposition']) && !isset(self::$_mimeTypeMap[$extension])) {
+        if (!isset($headers['Content-Disposition']) && !isset(self::$mimeTypeMap[$extension])) {
             $head .= "Content-Disposition: attachment; filename=\"$base_name\"\r\n";
         }
 
@@ -418,14 +418,14 @@ class Response
             return $this->createHeadForFile($this->file);
         }
 
-        $reason = $this->_reason ?: self::PHRASES[$this->_status] ?? '';
-        $body_len = \strlen($this->_body);
-        if (empty($this->_header)) {
-            return "HTTP/{$this->_version} {$this->_status} $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\nConnection: keep-alive\r\n\r\n{$this->_body}";
+        $reason = $this->reason ?: self::PHRASES[$this->status] ?? '';
+        $body_len = \strlen($this->body);
+        if (empty($this->header)) {
+            return "HTTP/{$this->version} {$this->status} $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\nConnection: keep-alive\r\n\r\n{$this->body}";
         }
 
-        $head = "HTTP/{$this->_version} {$this->_status} $reason\r\n";
-        $headers = $this->_header;
+        $head = "HTTP/{$this->version} {$this->status} $reason\r\n";
+        $headers = $this->header;
         if (!isset($headers['Server'])) {
             $head .= "Server: workerman\r\n";
         }
@@ -446,17 +446,17 @@ class Response
         if (!isset($headers['Content-Type'])) {
             $head .= "Content-Type: text/html;charset=utf-8\r\n";
         } else if ($headers['Content-Type'] === 'text/event-stream') {
-            return $head . $this->_body;
+            return $head . $this->body;
         }
 
         if (!isset($headers['Transfer-Encoding'])) {
             $head .= "Content-Length: $body_len\r\n\r\n";
         } else {
-            return "$head\r\n" . dechex($body_len) . "\r\n{$this->_body}\r\n";
+            return "$head\r\n" . dechex($body_len) . "\r\n{$this->body}\r\n";
         }
 
         // The whole http package
-        return $head . $this->_body;
+        return $head . $this->body;
     }
 
     /**
@@ -474,7 +474,7 @@ class Response
                 $extension_var = $match[2];
                 $extension_array = \explode(' ', \substr($extension_var, 0, -1));
                 foreach ($extension_array as $file_extension) {
-                    static::$_mimeTypeMap[$file_extension] = $mime_type;
+                    static::$mimeTypeMap[$file_extension] = $mime_type;
                 }
             }
         }

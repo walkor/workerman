@@ -28,11 +28,11 @@ class RedisClusterSessionHandler extends RedisSessionHandler
         if ($auth) {
             $args[] = $auth;
         }
-        $this->_redis = new \RedisCluster(...$args);
+        $this->redis = new \RedisCluster(...$args);
         if (empty($config['prefix'])) {
             $config['prefix'] = 'redis_session_';
         }
-        $this->_redis->setOption(\Redis::OPT_PREFIX, $config['prefix']);
+        $this->redis->setOption(\Redis::OPT_PREFIX, $config['prefix']);
     }
 
     /**
@@ -40,7 +40,7 @@ class RedisClusterSessionHandler extends RedisSessionHandler
      */
     public function read($session_id)
     {
-        return $this->_redis->get($session_id);
+        return $this->redis->get($session_id);
     }
 
 }

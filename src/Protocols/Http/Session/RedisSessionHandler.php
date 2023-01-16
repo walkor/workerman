@@ -28,12 +28,12 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * @var \Redis
      */
-    protected $_redis;
+    protected $redis;
 
     /**
      * @var array
      */
-    protected $_config;
+    protected $config;
 
     /**
      * RedisSessionHandler constructor.
@@ -57,33 +57,33 @@ class RedisSessionHandler implements SessionHandlerInterface
             $config['timeout'] = 2;
         }
 
-        $this->_config = $config;
+        $this->config = $config;
 
         $this->connect();
 
         Timer::add($config['ping'] ?? 55, function () {
-            $this->_redis->get('ping');
+            $this->redis->get('ping');
         });
     }
 
     public function connect()
     {
-        $config = $this->_config;
+        $config = $this->config;
 
-        $this->_redis = new \Redis();
-        if (false === $this->_redis->connect($config['host'], $config['port'], $config['timeout'])) {
+        $this->redis = new \Redis();
+        if (false === $this->redis->connect($config['host'], $config['port'], $config['timeout'])) {
             throw new \RuntimeException("Redis connect {$config['host']}:{$config['port']} fail.");
         }
         if (!empty($config['auth'])) {
-            $this->_redis->auth($config['auth']);
+            $this->redis->auth($config['auth']);
         }
         if (!empty($config['database'])) {
-            $this->_redis->select($config['database']);
+            $this->redis->select($config['database']);
         }
         if (empty($config['prefix'])) {
             $config['prefix'] = 'redis_session_';
         }
-        $this->_redis->setOption(\Redis::OPT_PREFIX, $config['prefix']);
+        $this->redis->setOption(\Redis::OPT_PREFIX, $config['prefix']);
     }
 
     /**
@@ -100,12 +100,12 @@ class RedisSessionHandler implements SessionHandlerInterface
     public function read($session_id)
     {
         try {
-            return $this->_redis->get($session_id);
+            return $this->redis->get($session_id);
         } catch (RedisException $e) {
             $msg = strtolower($e->getMessage());
             if ($msg === 'connection lost' || strpos($msg, 'went away')) {
                 $this->connect();
-                return $this->_redis->get($session_id);
+                return $this->redis->get($session_id);
             }
             throw $e;
         }
@@ -116,7 +116,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      */
     public function write($session_id, $session_data)
     {
-        return true === $this->_redis->setex($session_id, Session::$lifetime, $session_data);
+        return true === $this->redis->setex($session_id, Session::$lifetime, $session_data);
     }
 
     /**
@@ -124,7 +124,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      */
     public function updateTimestamp($id, $data = "")
     {
-        return true === $this->_redis->expire($id, Session::$lifetime);
+        return true === $this->redis->expire($id, Session::$lifetime);
     }
 
     /**
@@ -132,7 +132,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      */
     public function destroy($session_id)
     {
-        $this->_redis->del($session_id);
+        $this->redis->del($session_id);
         return true;
     }
 

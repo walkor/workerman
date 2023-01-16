@@ -23,25 +23,25 @@ class Swow implements EventInterface
      * All listeners for read timer
      * @var array
      */
-    protected $_eventTimer = [];
+    protected $eventTimer = [];
 
     /**
      * All listeners for read event.
      * @var array<Coroutine>
      */
-    protected $_readEvents = [];
+    protected $readEvents = [];
 
     /**
      * All listeners for write event.
      * @var array<Coroutine>
      */
-    protected $_writeEvents = [];
+    protected $writeEvents = [];
 
     /**
      * All listeners for signal.
      * @var array<Coroutine>
      */
-    protected $_signalListener = [];
+    protected $signalListener = [];
 
     /**
      * Get timer count.
@@ -50,7 +50,7 @@ class Swow implements EventInterface
      */
     public function getTimerCount()
     {
-        return \count($this->_eventTimer);
+        return \count($this->eventTimer);
     }
 
     /**
@@ -62,7 +62,7 @@ class Swow implements EventInterface
         $t = max($t, 1);
         $coroutine = Coroutine::run(function () use ($t, $func, $args): void {
             msleep($t);
-            unset($this->_eventTimer[Coroutine::getCurrent()->getId()]);
+            unset($this->eventTimer[Coroutine::getCurrent()->getId()]);
             try {
                 $func(...(array) $args);
             } catch (\Throwable $e) {
@@ -70,7 +70,7 @@ class Swow implements EventInterface
             }
         });
         $timer_id = $coroutine->getId();
-        $this->_eventTimer[$timer_id] = $timer_id;
+        $this->eventTimer[$timer_id] = $timer_id;
         return $timer_id;
     }
 
@@ -92,7 +92,7 @@ class Swow implements EventInterface
             }
         });
         $timer_id = $coroutine->getId();
-        $this->_eventTimer[$timer_id] = $timer_id;
+        $this->eventTimer[$timer_id] = $timer_id;
         return $timer_id;
     }
 
@@ -101,12 +101,12 @@ class Swow implements EventInterface
      */
     public function deleteTimer($timer_id)
     {
-        if (isset($this->_eventTimer[$timer_id])) {
+        if (isset($this->eventTimer[$timer_id])) {
             try {
                 (Coroutine::getAll()[$timer_id])->kill();
                 return true;
             } finally {
-                unset($this->_eventTimer[$timer_id]);
+                unset($this->eventTimer[$timer_id]);
             }
         }
         return false;
@@ -117,7 +117,7 @@ class Swow implements EventInterface
      */
     public function deleteAllTimer()
     {
-        foreach ($this->_eventTimer as $timer_id) {
+        foreach ($this->eventTimer as $timer_id) {
             $this->deleteTimer($timer_id);
         }
     }
@@ -127,10 +127,10 @@ class Swow implements EventInterface
      */
     public function onReadable($stream, $func)
     {
-        if (isset($this->_readEvents[(int) $stream])) {
+        if (isset($this->readEvents[(int) $stream])) {
             $this->offReadable($stream);
         }
-        $this->_readEvents[(int) $stream] = Coroutine::run(function () use ($stream, $func): void {
+        $this->readEvents[(int) $stream] = Coroutine::run(function () use ($stream, $func): void {
             try {
                 while (true) {
                     $rEvent = stream_poll_one($stream, STREAM_POLLIN | STREAM_POLLHUP);
@@ -155,17 +155,17 @@ class Swow implements EventInterface
     public function offReadable($stream, bool $bySelf = false)
     {
         $fd = (int) $stream;
-        if (!isset($this->_readEvents[$fd])) {
+        if (!isset($this->readEvents[$fd])) {
             return;
         }
         if (!$bySelf) {
-            $coroutine = $this->_readEvents[$fd];
+            $coroutine = $this->readEvents[$fd];
             if (!$coroutine->isExecuting()) {
                 return;
             }
             $coroutine->kill();
         }
-        unset($this->_readEvents[$fd]);
+        unset($this->readEvents[$fd]);
     }
 
     /**
@@ -173,10 +173,10 @@ class Swow implements EventInterface
      */
     public function onWritable($stream, $func)
     {
-        if (isset($this->_writeEvents[(int) $stream])) {
+        if (isset($this->writeEvents[(int) $stream])) {
             $this->offWritable($stream);
         }
-        $this->_writeEvents[(int) $stream] = Coroutine::run(function () use ($stream, $func): void {
+        $this->writeEvents[(int) $stream] = Coroutine::run(function () use ($stream, $func): void {
             try {
                 while (true) {
                     $rEvent = stream_poll_one($stream, STREAM_POLLOUT | STREAM_POLLHUP);
@@ -201,17 +201,17 @@ class Swow implements EventInterface
     public function offWritable($stream, bool $bySelf = false)
     {
         $fd = (int) $stream;
-        if (!isset($this->_writeEvents[$fd])) {
+        if (!isset($this->writeEvents[$fd])) {
             return;
         }
         if (!$bySelf) {
-            $coroutine = $this->_writeEvents[$fd];
+            $coroutine = $this->writeEvents[$fd];
             if (!$coroutine->isExecuting()) {
                 return;
             }
             $coroutine->kill();
         }
-        unset($this->_writeEvents[$fd]);
+        unset($this->writeEvents[$fd]);
     }
 
     /**
@@ -219,7 +219,7 @@ class Swow implements EventInterface
      */
     public function onSignal($signal, $func)
     {
-        if (isset($this->_signalListener[$signal])) {
+        if (isset($this->signalListener[$signal])) {
             return false;
         }
         $coroutine = Coroutine::run(static function () use ($signal, $func): void {
@@ -229,7 +229,7 @@ class Swow implements EventInterface
             } catch (SignalException) {
             }
         });
-        $this->_signalListener[$signal] = $coroutine;
+        $this->signalListener[$signal] = $coroutine;
         return true;
     }
 
@@ -238,11 +238,11 @@ class Swow implements EventInterface
      */
     public function offSignal($signal)
     {
-        if (!isset($this->_signalListener[$signal])) {
+        if (!isset($this->signalListener[$signal])) {
             return false;
         }
-        $this->_signalListener[$signal]->kill();
-        unset($this->_signalListener[$signal]);
+        $this->signalListener[$signal]->kill();
+        unset($this->signalListener[$signal]);
         return true;
     }
 

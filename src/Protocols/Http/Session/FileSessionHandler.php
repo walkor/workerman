@@ -27,14 +27,14 @@ class FileSessionHandler implements SessionHandlerInterface
      *
      * @var string
      */
-    protected static $_sessionSavePath = null;
+    protected static $sessionSavePath = null;
 
     /**
      * Session file prefix.
      *
      * @var string
      */
-    protected static $_sessionFilePrefix = 'session_';
+    protected static $sessionFilePrefix = 'session_';
 
     /**
      * Init.
@@ -90,7 +90,7 @@ class FileSessionHandler implements SessionHandlerInterface
      */
     public function write($session_id, $session_data)
     {
-        $temp_file = static::$_sessionSavePath . uniqid(bin2hex(random_bytes(8)), true);
+        $temp_file = static::$sessionSavePath . uniqid(bin2hex(random_bytes(8)), true);
         if (!\file_put_contents($temp_file, $session_data)) {
             return false;
         }
@@ -147,7 +147,7 @@ class FileSessionHandler implements SessionHandlerInterface
     public function gc($maxlifetime)
     {
         $time_now = \time();
-        foreach (\glob(static::$_sessionSavePath . static::$_sessionFilePrefix . '*') as $file) {
+        foreach (\glob(static::$sessionSavePath . static::$sessionFilePrefix . '*') as $file) {
             if (\is_file($file) && $time_now - \filemtime($file) > $maxlifetime) {
                 \unlink($file);
             }
@@ -162,7 +162,7 @@ class FileSessionHandler implements SessionHandlerInterface
      */
     protected static function sessionFile($session_id)
     {
-        return static::$_sessionSavePath . static::$_sessionFilePrefix . $session_id;
+        return static::$sessionSavePath . static::$sessionFilePrefix . $session_id;
     }
 
     /**
@@ -177,7 +177,7 @@ class FileSessionHandler implements SessionHandlerInterface
             if ($path[\strlen($path) - 1] !== DIRECTORY_SEPARATOR) {
                 $path .= DIRECTORY_SEPARATOR;
             }
-            static::$_sessionSavePath = $path;
+            static::$sessionSavePath = $path;
             if (!\is_dir($path)) {
                 \mkdir($path, 0777, true);
             }

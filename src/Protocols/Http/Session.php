@@ -28,14 +28,14 @@ class Session
      *
      * @var string
      */
-    protected static $_handlerClass = FileSessionHandler::class;
+    protected static $handlerClass = FileSessionHandler::class;
 
     /**
      * Parameters of __constructor for session handler class.
      *
      * @var null
      */
-    protected static $_handlerConfig = null;
+    protected static $handlerConfig = null;
 
     /**
      * Session name.
@@ -112,28 +112,28 @@ class Session
      *
      * @var SessionHandlerInterface
      */
-    protected static $_handler = null;
+    protected static $handler = null;
 
     /**
      * Session data.
      *
      * @var array
      */
-    protected $_data = [];
+    protected $data = [];
 
     /**
      * Session changed and need to save.
      *
      * @var bool
      */
-    protected $_needSave = false;
+    protected $needSave = false;
 
     /**
      * Session id.
      *
      * @var null
      */
-    protected $_sessionId = null;
+    protected $sessionId = null;
 
     /**
      * Session constructor.
@@ -143,12 +143,12 @@ class Session
     public function __construct($session_id)
     {
         static::checkSessionId($session_id);
-        if (static::$_handler === null) {
+        if (static::$handler === null) {
             static::initHandler();
         }
-        $this->_sessionId = $session_id;
-        if ($data = static::$_handler->read($session_id)) {
-            $this->_data = \unserialize($data);
+        $this->sessionId = $session_id;
+        if ($data = static::$handler->read($session_id)) {
+            $this->data = \unserialize($data);
         }
     }
 
@@ -159,7 +159,7 @@ class Session
      */
     public function getId()
     {
-        return $this->_sessionId;
+        return $this->sessionId;
     }
 
     /**
@@ -171,7 +171,7 @@ class Session
      */
     public function get($name, $default = null)
     {
-        return $this->_data[$name] ?? $default;
+        return $this->data[$name] ?? $default;
     }
 
     /**
@@ -182,8 +182,8 @@ class Session
      */
     public function set($name, $value)
     {
-        $this->_data[$name] = $value;
-        $this->_needSave = true;
+        $this->data[$name] = $value;
+        $this->needSave = true;
     }
 
     /**
@@ -193,8 +193,8 @@ class Session
      */
     public function delete($name)
     {
-        unset($this->_data[$name]);
-        $this->_needSave = true;
+        unset($this->data[$name]);
+        $this->needSave = true;
     }
 
     /**
@@ -225,9 +225,9 @@ class Session
         }
 
         foreach ($key as $k => $v) {
-            $this->_data[$k] = $v;
+            $this->data[$k] = $v;
         }
-        $this->_needSave = true;
+        $this->needSave = true;
     }
 
     /**
@@ -243,10 +243,10 @@ class Session
         }
         if (\is_array($name)) {
             foreach ($name as $key) {
-                unset($this->_data[$key]);
+                unset($this->data[$key]);
             }
         }
-        $this->_needSave = true;
+        $this->needSave = true;
     }
 
     /**
@@ -256,7 +256,7 @@ class Session
      */
     public function all()
     {
-        return $this->_data;
+        return $this->data;
     }
 
     /**
@@ -266,8 +266,8 @@ class Session
      */
     public function flush()
     {
-        $this->_needSave = true;
-        $this->_data = [];
+        $this->needSave = true;
+        $this->data = [];
     }
 
     /**
@@ -278,7 +278,7 @@ class Session
      */
     public function has($name)
     {
-        return isset($this->_data[$name]);
+        return isset($this->data[$name]);
     }
 
     /**
@@ -289,7 +289,7 @@ class Session
      */
     public function exists($name)
     {
-        return \array_key_exists($name, $this->_data);
+        return \array_key_exists($name, $this->data);
     }
 
     /**
@@ -299,16 +299,16 @@ class Session
      */
     public function save()
     {
-        if ($this->_needSave) {
-            if (empty($this->_data)) {
-                static::$_handler->destroy($this->_sessionId);
+        if ($this->needSave) {
+            if (empty($this->data)) {
+                static::$handler->destroy($this->sessionId);
             } else {
-                static::$_handler->write($this->_sessionId, \serialize($this->_data));
+                static::$handler->write($this->sessionId, \serialize($this->data));
             }
         } elseif (static::$autoUpdateTimestamp) {
             static::refresh();
         }
-        $this->_needSave = false;
+        $this->needSave = false;
     }
 
     /**
@@ -318,7 +318,7 @@ class Session
      */
     public function refresh()
     {
-        return static::$_handler->updateTimestamp($this->getId());
+        return static::$handler->updateTimestamp($this->getId());
     }
 
     /**
@@ -354,12 +354,12 @@ class Session
     public static function handlerClass($class_name = null, $config = null)
     {
         if ($class_name) {
-            static::$_handlerClass = $class_name;
+            static::$handlerClass = $class_name;
         }
         if ($config) {
-            static::$_handlerConfig = $config;
+            static::$handlerConfig = $config;
         }
-        return static::$_handlerClass;
+        return static::$handlerClass;
     }
 
     /**
@@ -386,10 +386,10 @@ class Session
      */
     protected static function initHandler()
     {
-        if (static::$_handlerConfig === null) {
-            static::$_handler = new static::$_handlerClass();
+        if (static::$handlerConfig === null) {
+            static::$handler = new static::$handlerClass();
         } else {
-            static::$_handler = new static::$_handlerClass(static::$_handlerConfig);
+            static::$handler = new static::$handlerClass(static::$handlerConfig);
         }
     }
 
@@ -400,7 +400,7 @@ class Session
      */
     public function gc()
     {
-        static::$_handler->gc(static::$lifetime);
+        static::$handler->gc(static::$lifetime);
     }
 
     /**

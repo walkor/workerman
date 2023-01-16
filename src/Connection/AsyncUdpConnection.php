@@ -49,7 +49,7 @@ class AsyncUdpConnection extends UdpConnection
      *
      * @var array
      */
-    protected $_contextOption = null;
+    protected $contextOption = null;
 
     /**
      * Construct.
@@ -73,8 +73,8 @@ class AsyncUdpConnection extends UdpConnection
             }
         }
 
-        $this->_remoteAddress = \substr($address, 2);
-        $this->_contextOption = $context_option;
+        $this->remoteAddress = \substr($address, 2);
+        $this->contextOption = $context_option;
     }
 
     /**
@@ -123,7 +123,7 @@ class AsyncUdpConnection extends UdpConnection
         if ($this->connected === false) {
             $this->connect();
         }
-        return \strlen($send_buffer) === \stream_socket_sendto($this->_socket, $send_buffer, 0);
+        return \strlen($send_buffer) === \stream_socket_sendto($this->socket, $send_buffer, 0);
     }
 
 
@@ -140,8 +140,8 @@ class AsyncUdpConnection extends UdpConnection
         if ($data !== null) {
             $this->send($data, $raw);
         }
-        Worker::$globalEvent->offReadable($this->_socket);
-        \fclose($this->_socket);
+        Worker::$globalEvent->offReadable($this->socket);
+        \fclose($this->socket);
         $this->connected = false;
         // Try to emit onClose callback.
         if ($this->onClose) {
@@ -165,23 +165,23 @@ class AsyncUdpConnection extends UdpConnection
         if ($this->connected === true) {
             return;
         }
-        if ($this->_contextOption) {
-            $context = \stream_context_create($this->_contextOption);
-            $this->_socket = \stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg,
+        if ($this->contextOption) {
+            $context = \stream_context_create($this->contextOption);
+            $this->socket = \stream_socket_client("udp://{$this->remoteAddress}", $errno, $errmsg,
                 30, \STREAM_CLIENT_CONNECT, $context);
         } else {
-            $this->_socket = \stream_socket_client("udp://{$this->_remoteAddress}", $errno, $errmsg);
+            $this->socket = \stream_socket_client("udp://{$this->remoteAddress}", $errno, $errmsg);
         }
 
-        if (!$this->_socket) {
+        if (!$this->socket) {
             Worker::safeEcho(new \Exception($errmsg));
             return;
         }
 
-        \stream_set_blocking($this->_socket, false);
+        \stream_set_blocking($this->socket, false);
 
         if ($this->onMessage) {
-            Worker::$globalEvent->onWritable($this->_socket, [$this, 'baseRead']);
+            Worker::$globalEvent->onWritable($this->socket, [$this, 'baseRead']);
         }
         $this->connected = true;
         // Try to emit onConnect callback.

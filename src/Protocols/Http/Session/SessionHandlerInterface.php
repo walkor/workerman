@@ -88,7 +88,7 @@ interface SessionHandlerInterface
      * @param string $session_data <p>
      * The encoded session data. This data is the
      * result of the PHP internally encoding
-     * the $_SESSION superglobal to a serialized
+     * the $SESSION superglobal to a serialized
      * string and passing it as this parameter.
      * Please note sessions use an alternative serialization method.
      * </p>

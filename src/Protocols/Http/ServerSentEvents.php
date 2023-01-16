@@ -24,7 +24,7 @@ class ServerSentEvents
      * Data.
      * @var array
      */
-    protected $_data = null;
+    protected $data = null;
 
     /**
      * ServerSentEvents constructor.
@@ -33,7 +33,7 @@ class ServerSentEvents
      */
     public function __construct(array $data)
     {
-        $this->_data = $data;
+        $this->data = $data;
     }
 
     /**
@@ -44,7 +44,7 @@ class ServerSentEvents
     public function __toString()
     {
         $buffer = '';
-        $data = $this->_data;
+        $data = $this->data;
         if (isset($data[''])) {
             $buffer = ": {$data['']}\n";
         }
