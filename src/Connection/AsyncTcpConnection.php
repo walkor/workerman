@@ -156,7 +156,7 @@ class AsyncTcpConnection extends TcpConnection
                 : $this->_remoteHost . ':' . $this->_remotePort;
         }
 
-        $this->id = $this->_id = self::$_idRecorder++;
+        $this->id = $this->realId = self::$_idRecorder++;
         if (\PHP_INT_MAX === self::$_idRecorder) {
             self::$_idRecorder = 0;
         }
@@ -179,7 +179,7 @@ class AsyncTcpConnection extends TcpConnection
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
         $this->maxPackageSize = self::$defaultMaxPackageSize;
         $this->_contextOption = $context_option;
-        static::$connections[$this->_id] = $this;
+        static::$connections[$this->realId] = $this;
     }
 
     /**
@@ -259,7 +259,7 @@ class AsyncTcpConnection extends TcpConnection
     public function reconnect($after = 0)
     {
         $this->_status = self::STATUS_INITIAL;
-        static::$connections[$this->_id] = $this;
+        static::$connections[$this->realId] = $this;
         if ($this->_reconnectTimer) {
             Timer::del($this->_reconnectTimer);
         }

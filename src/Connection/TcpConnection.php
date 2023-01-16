@@ -285,7 +285,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
     public function __construct($socket, $remote_address = '')
     {
         ++self::$statistics['connection_count'];
-        $this->id = $this->_id = self::$_idRecorder++;
+        $this->id = $this->realId = self::$_idRecorder++;
         if (self::$_idRecorder === \PHP_INT_MAX) {
             self::$_idRecorder = 0;
         }
@@ -965,9 +965,9 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
             $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = null;
             // Remove from worker->connections.
             if ($this->worker) {
-                unset($this->worker->connections[$this->_id]);
+                unset($this->worker->connections[$this->realId]);
             }
-            unset(static::$connections[$this->_id]);
+            unset(static::$connections[$this->realId]);
         }
     }
 
