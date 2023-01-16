@@ -15,6 +15,7 @@
 namespace Workerman\Protocols\Http;
 
 use Workerman\Connection\TcpConnection;
+use Workerman\Properties;
 use Workerman\Protocols\Http\Session;
 use Workerman\Protocols\Http;
 use Workerman\Worker;
@@ -38,13 +39,6 @@ class Request
      * @var Session
      */
     public $session = null;
-
-    /**
-     * Properties.
-     *
-     * @var array
-     */
-    public $properties = [];
 
     /**
      * @var int
@@ -72,6 +66,10 @@ class Request
      */
     protected static $enableCache = true;
 
+    /**
+     * Dynamic Properties。
+     */
+    use Properties;
 
     /**
      * Request constructor.
@@ -615,51 +613,6 @@ class Request
     public static function createSessionId()
     {
         return \bin2hex(\pack('d', \microtime(true)) . random_bytes(8));
-    }
-
-    /**
-     * Setter.
-     *
-     * @param string $name
-     * @param mixed $value
-     * @return void
-     */
-    public function __set($name, $value)
-    {
-        $this->properties[$name] = $value;
-    }
-
-    /**
-     * Getter.
-     *
-     * @param string $name
-     * @return mixed|null
-     */
-    public function __get($name)
-    {
-        return $this->properties[$name] ?? null;
-    }
-
-    /**
-     * Isset.
-     *
-     * @param string $name
-     * @return bool
-     */
-    public function __isset($name)
-    {
-        return isset($this->properties[$name]);
-    }
-
-    /**
-     * Unset.
-     *
-     * @param string $name
-     * @return void
-     */
-    public function __unset($name)
-    {
-        unset($this->properties[$name]);
     }
 
     /**

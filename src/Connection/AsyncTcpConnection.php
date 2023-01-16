@@ -39,14 +39,14 @@ class AsyncTcpConnection extends TcpConnection
     public $transport = 'tcp';
 
     /**
-     * Socks5 proxy
+     * Socks5 proxy.
      *
      * @var string
      */
     public $proxySocks5 = '';
 
     /**
-     * Http proxy
+     * Http proxy.
      *
      * @var string
      */

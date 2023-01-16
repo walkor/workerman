@@ -14,6 +14,8 @@
 
 namespace Workerman\Protocols\Http;
 
+use Workerman\Properties;
+
 /**
  * Class Response
  * @package Workerman\Protocols\Http
@@ -144,6 +146,11 @@ class Response
         510 => 'Not Extended', // RFC 2774
         511 => 'Network Authentication Required', // RFC 6585
     ];
+
+    /**
+     * Dynamic Properties。
+     */
+    use Properties;
 
     /**
      * Init.

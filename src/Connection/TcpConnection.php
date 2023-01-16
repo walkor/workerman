@@ -16,6 +16,7 @@ namespace Workerman\Connection;
 
 use Workerman\Events\EventInterface;
 use Workerman\Protocols\Http\Request;
+use Workerman\Protocols\ProtocolInterface;
 use Workerman\Worker;
 
 /**
@@ -104,7 +105,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
      * Application layer protocol.
      * The format is like this Workerman\\Protocols\\Http.
      *
-     * @var \Workerman\Protocols\ProtocolInterface
+     * @var ProtocolInterface
      */
     public $protocol = null;
 
@@ -323,7 +324,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
      *
      * @param mixed $sendBuffer
      * @param bool $raw
-     * @return bool|null
+     * @return bool|void
      */
     public function send($sendBuffer, $raw = false)
     {

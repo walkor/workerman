@@ -26,7 +26,6 @@ use Workerman\Events\Select;
  * Worker class
  * A container for listening ports
  */
-#[\AllowDynamicProperties]
 class Worker
 {
     /**
@@ -536,6 +535,11 @@ class Worker
      * @var string
      */
     protected $workerId = null;
+
+    /**
+     * Dynamic Properties。
+     */
+    use Properties;
 
     /**
      * Run all worker instances.

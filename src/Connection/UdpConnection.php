@@ -14,6 +14,8 @@
 
 namespace Workerman\Connection;
 
+use Workerman\Protocols\ProtocolInterface;
+
 /**
  * UdpConnection.
  */
@@ -23,7 +25,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      * Application layer protocol.
      * The format is like this Workerman\\Protocols\\Http.
      *
-     * @var \Workerman\Protocols\ProtocolInterface
+     * @var ProtocolInterface
      */
     public $protocol = null;
 

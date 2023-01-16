@@ -14,6 +14,7 @@
 
 namespace Workerman\Protocols\Http;
 
+use Workerman\Properties;
 use Workerman\Protocols\Http\Session\FileSessionHandler;
 use Workerman\Protocols\Http\Session\SessionHandlerInterface;
 
@@ -134,6 +135,11 @@ class Session
      * @var null
      */
     protected $sessionId = null;
+
+    /**
+     * Dynamic Properties。
+     */
+    use Properties;
 
     /**
      * Session constructor.
