@@ -86,8 +86,8 @@ class Revolt implements EventInterface
      */
     public function stop()
     {
-        foreach ($this->eventSignal as $cb_id) {
-            $this->driver->cancel($cb_id);
+        foreach ($this->eventSignal as $cbId) {
+            $this->driver->cancel($cbId);
         }
         $this->driver->stop();
         pcntl_signal(SIGINT, SIG_IGN);
@@ -99,14 +99,14 @@ class Revolt implements EventInterface
     public function delay(float $delay, $func, $args)
     {
         $args = (array)$args;
-        $timer_id = $this->timerId++;
-        $closure = function () use ($func, $args, $timer_id) {
-            unset($this->eventTimer[$timer_id]);
+        $timerId = $this->timerId++;
+        $closure = function () use ($func, $args, $timerId) {
+            unset($this->eventTimer[$timerId]);
             $func(...$args);
         };
-        $cb_id = $this->driver->delay($delay, $closure);
-        $this->eventTimer[$timer_id] = $cb_id;
-        return $timer_id;
+        $cbId = $this->driver->delay($delay, $closure);
+        $this->eventTimer[$timerId] = $cbId;
+        return $timerId;
     }
 
     /**
@@ -115,13 +115,13 @@ class Revolt implements EventInterface
     public function repeat(float $interval, $func, $args)
     {
         $args = (array)$args;
-        $timer_id = $this->timerId++;
-        $closure = function () use ($func, $args, $timer_id) {
+        $timerId = $this->timerId++;
+        $closure = function () use ($func, $args, $timerId) {
             $func(...$args);
         };
-        $cb_id = $this->driver->repeat($interval, $closure);
-        $this->eventTimer[$timer_id] = $cb_id;
-        return $timer_id;
+        $cbId = $this->driver->repeat($interval, $closure);
+        $this->eventTimer[$timerId] = $cbId;
+        return $timerId;
     }
 
     /**
@@ -129,13 +129,13 @@ class Revolt implements EventInterface
      */
     public function onReadable($stream, $func)
     {
-        $fd_key = (int)$stream;
-        if (isset($this->readEvents[$fd_key])) {
-            $this->driver->cancel($this->readEvents[$fd_key]);
-            unset($this->readEvents[$fd_key]);
+        $fdKey = (int)$stream;
+        if (isset($this->readEvents[$fdKey])) {
+            $this->driver->cancel($this->readEvents[$fdKey]);
+            unset($this->readEvents[$fdKey]);
         }
 
-        $this->readEvents[$fd_key] = $this->driver->onReadable($stream, function () use ($stream, $func) {
+        $this->readEvents[$fdKey] = $this->driver->onReadable($stream, function () use ($stream, $func) {
             $func($stream);
         });
     }
@@ -145,10 +145,10 @@ class Revolt implements EventInterface
      */
     public function offReadable($stream)
     {
-        $fd_key = (int)$stream;
-        if (isset($this->readEvents[$fd_key])) {
-            $this->driver->cancel($this->readEvents[$fd_key]);
-            unset($this->readEvents[$fd_key]);
+        $fdKey = (int)$stream;
+        if (isset($this->readEvents[$fdKey])) {
+            $this->driver->cancel($this->readEvents[$fdKey]);
+            unset($this->readEvents[$fdKey]);
         }
     }
 
@@ -157,12 +157,12 @@ class Revolt implements EventInterface
      */
     public function onWritable($stream, $func)
     {
-        $fd_key = (int)$stream;
-        if (isset($this->writeEvents[$fd_key])) {
-            $this->driver->cancel($this->writeEvents[$fd_key]);
-            unset($this->writeEvents[$fd_key]);
+        $fdKey = (int)$stream;
+        if (isset($this->writeEvents[$fdKey])) {
+            $this->driver->cancel($this->writeEvents[$fdKey]);
+            unset($this->writeEvents[$fdKey]);
         }
-        $this->writeEvents[$fd_key] = $this->driver->onWritable($stream, function () use ($stream, $func) {
+        $this->writeEvents[$fdKey] = $this->driver->onWritable($stream, function () use ($stream, $func) {
             $func($stream);
         });
     }
@@ -172,10 +172,10 @@ class Revolt implements EventInterface
      */
     public function offWritable($stream)
     {
-        $fd_key = (int)$stream;
-        if (isset($this->writeEvents[$fd_key])) {
-            $this->driver->cancel($this->writeEvents[$fd_key]);
-            unset($this->writeEvents[$fd_key]);
+        $fdKey = (int)$stream;
+        if (isset($this->writeEvents[$fdKey])) {
+            $this->driver->cancel($this->writeEvents[$fdKey]);
+            unset($this->writeEvents[$fdKey]);
         }
     }
 
@@ -184,12 +184,12 @@ class Revolt implements EventInterface
      */
     public function onSignal($signal, $func)
     {
-        $fd_key = (int)$signal;
-        if (isset($this->eventSignal[$fd_key])) {
-            $this->driver->cancel($this->eventSignal[$fd_key]);
-            unset($this->eventSignal[$fd_key]);
+        $fdKey = (int)$signal;
+        if (isset($this->eventSignal[$fdKey])) {
+            $this->driver->cancel($this->eventSignal[$fdKey]);
+            unset($this->eventSignal[$fdKey]);
         }
-        $this->eventSignal[$fd_key] = $this->driver->onSignal($signal, function () use ($signal, $func) {
+        $this->eventSignal[$fdKey] = $this->driver->onSignal($signal, function () use ($signal, $func) {
             $func($signal);
         });
     }
@@ -199,21 +199,21 @@ class Revolt implements EventInterface
      */
     public function offSignal($signal)
     {
-        $fd_key = (int)$signal;
-        if (isset($this->eventSignal[$fd_key])) {
-            $this->driver->cancel($this->eventSignal[$fd_key]);
-            unset($this->eventSignal[$fd_key]);
+        $fdKey = (int)$signal;
+        if (isset($this->eventSignal[$fdKey])) {
+            $this->driver->cancel($this->eventSignal[$fdKey]);
+            unset($this->eventSignal[$fdKey]);
         }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timer_id)
+    public function deleteTimer($timerId)
     {
-        if (isset($this->eventTimer[$timer_id])) {
-            $this->driver->cancel($this->eventTimer[$timer_id]);
-            unset($this->eventTimer[$timer_id]);
+        if (isset($this->eventTimer[$timerId])) {
+            $this->driver->cancel($this->eventTimer[$timerId]);
+            unset($this->eventTimer[$timerId]);
             return true;
         }
         return false;
@@ -224,8 +224,8 @@ class Revolt implements EventInterface
      */
     public function deleteAllTimer()
     {
-        foreach ($this->eventTimer as $cb_id) {
-            $this->driver->cancel($cb_id);
+        foreach ($this->eventTimer as $cbId) {
+            $this->driver->cancel($cbId);
         }
         $this->eventTimer = [];
     }

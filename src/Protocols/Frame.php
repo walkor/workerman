@@ -33,8 +33,8 @@ class Frame
         if (\strlen($buffer) < 4) {
             return 0;
         }
-        $unpack_data = \unpack('Ntotal_length', $buffer);
-        return $unpack_data['total_length'];
+        $unpackData = \unpack('Ntotal_length', $buffer);
+        return $unpackData['total_length'];
     }
 
     /**
@@ -56,7 +56,7 @@ class Frame
      */
     public static function encode($buffer)
     {
-        $total_length = 4 + \strlen($buffer);
-        return \pack('N', $total_length) . $buffer;
+        $totalLength = 4 + \strlen($buffer);
+        return \pack('N', $totalLength) . $buffer;
     }
 }

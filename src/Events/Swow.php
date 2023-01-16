@@ -69,9 +69,9 @@ class Swow implements EventInterface
                 Worker::stopAll(250, $e);
             }
         });
-        $timer_id = $coroutine->getId();
-        $this->eventTimer[$timer_id] = $timer_id;
-        return $timer_id;
+        $timerId = $coroutine->getId();
+        $this->eventTimer[$timerId] = $timerId;
+        return $timerId;
     }
 
     /**
@@ -91,22 +91,22 @@ class Swow implements EventInterface
                 }
             }
         });
-        $timer_id = $coroutine->getId();
-        $this->eventTimer[$timer_id] = $timer_id;
-        return $timer_id;
+        $timerId = $coroutine->getId();
+        $this->eventTimer[$timerId] = $timerId;
+        return $timerId;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timer_id)
+    public function deleteTimer($timerId)
     {
-        if (isset($this->eventTimer[$timer_id])) {
+        if (isset($this->eventTimer[$timerId])) {
             try {
-                (Coroutine::getAll()[$timer_id])->kill();
+                (Coroutine::getAll()[$timerId])->kill();
                 return true;
             } finally {
-                unset($this->eventTimer[$timer_id]);
+                unset($this->eventTimer[$timerId]);
             }
         }
         return false;
@@ -117,8 +117,8 @@ class Swow implements EventInterface
      */
     public function deleteAllTimer()
     {
-        foreach ($this->eventTimer as $timer_id) {
-            $this->deleteTimer($timer_id);
+        foreach ($this->eventTimer as $timerId) {
+            $this->deleteTimer($timerId);
         }
     }
 

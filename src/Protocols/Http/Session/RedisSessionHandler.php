@@ -89,7 +89,7 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function open($save_path, $name)
+    public function open($savePath, $name)
     {
         return true;
     }
@@ -97,15 +97,15 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function read($session_id)
+    public function read($sessionId)
     {
         try {
-            return $this->redis->get($session_id);
+            return $this->redis->get($sessionId);
         } catch (RedisException $e) {
             $msg = strtolower($e->getMessage());
             if ($msg === 'connection lost' || strpos($msg, 'went away')) {
                 $this->connect();
-                return $this->redis->get($session_id);
+                return $this->redis->get($sessionId);
             }
             throw $e;
         }
@@ -114,9 +114,9 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function write($session_id, $session_data)
+    public function write($sessionId, $sessionData)
     {
-        return true === $this->redis->setex($session_id, Session::$lifetime, $session_data);
+        return true === $this->redis->setex($sessionId, Session::$lifetime, $sessionData);
     }
 
     /**
@@ -130,9 +130,9 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function destroy($session_id)
+    public function destroy($sessionId)
     {
-        $this->redis->del($session_id);
+        $this->redis->del($sessionId);
         return true;
     }
 

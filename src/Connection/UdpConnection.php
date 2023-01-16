@@ -52,31 +52,31 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      * Construct.
      *
      * @param resource $socket
-     * @param string $remote_address
+     * @param string $remoteAddress
      */
-    public function __construct($socket, $remote_address)
+    public function __construct($socket, $remoteAddress)
     {
         $this->socket = $socket;
-        $this->remoteAddress = $remote_address;
+        $this->remoteAddress = $remoteAddress;
     }
 
     /**
      * Sends data on the connection.
      *
-     * @param string $send_buffer
+     * @param string $sendBuffer
      * @param bool $raw
      * @return void|boolean
      */
-    public function send($send_buffer, $raw = false)
+    public function send($sendBuffer, $raw = false)
     {
         if (false === $raw && $this->protocol) {
             $parser = $this->protocol;
-            $send_buffer = $parser::encode($send_buffer, $this);
-            if ($send_buffer === '') {
+            $sendBuffer = $parser::encode($sendBuffer, $this);
+            if ($sendBuffer === '') {
                 return;
             }
         }
-        return \strlen($send_buffer) === \stream_socket_sendto($this->socket, $send_buffer, 0, $this->isIpV6() ? '[' . $this->getRemoteIp() . ']:' . $this->getRemotePort() : $this->remoteAddress);
+        return \strlen($sendBuffer) === \stream_socket_sendto($this->socket, $sendBuffer, 0, $this->isIpV6() ? '[' . $this->getRemoteIp() . ']:' . $this->getRemotePort() : $this->remoteAddress);
     }
 
     /**

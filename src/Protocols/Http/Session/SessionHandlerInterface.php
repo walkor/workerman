@@ -30,14 +30,14 @@ interface SessionHandlerInterface
     /**
      * Destroy a session
      * @link http://php.net/manual/en/sessionhandlerinterface.destroy.php
-     * @param string $session_id The session ID being destroyed.
+     * @param string $sessionId The session ID being destroyed.
      * @return bool <p>
      * The return value (usually TRUE on success, FALSE on failure).
      * Note this value is returned internally to PHP for processing.
      * </p>
      * @since 5.4.0
      */
-    public function destroy($session_id);
+    public function destroy($sessionId);
 
     /**
      * Cleanup old sessions
@@ -57,7 +57,7 @@ interface SessionHandlerInterface
     /**
      * Initialize session
      * @link http://php.net/manual/en/sessionhandlerinterface.open.php
-     * @param string $save_path The path where to store/retrieve the session.
+     * @param string $savePath The path where to store/retrieve the session.
      * @param string $name The session name.
      * @return bool <p>
      * The return value (usually TRUE on success, FALSE on failure).
@@ -65,13 +65,13 @@ interface SessionHandlerInterface
      * </p>
      * @since 5.4.0
      */
-    public function open($save_path, $name);
+    public function open($savePath, $name);
 
 
     /**
      * Read session data
      * @link http://php.net/manual/en/sessionhandlerinterface.read.php
-     * @param string $session_id The session id to read data for.
+     * @param string $sessionId The session id to read data for.
      * @return string <p>
      * Returns an encoded string of the read data.
      * If nothing was read, it must return an empty string.
@@ -79,13 +79,13 @@ interface SessionHandlerInterface
      * </p>
      * @since 5.4.0
      */
-    public function read($session_id);
+    public function read($sessionId);
 
     /**
      * Write session data
      * @link http://php.net/manual/en/sessionhandlerinterface.write.php
-     * @param string $session_id The session id.
-     * @param string $session_data <p>
+     * @param string $sessionId The session id.
+     * @param string $sessionData <p>
      * The encoded session data. This data is the
      * result of the PHP internally encoding
      * the $SESSION superglobal to a serialized
@@ -98,7 +98,7 @@ interface SessionHandlerInterface
      * </p>
      * @since 5.4.0
      */
-    public function write($session_id, $session_data);
+    public function write($sessionId, $sessionData);
 
     /**
      * Update sesstion modify time.

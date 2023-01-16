@@ -71,17 +71,17 @@ class Event implements EventInterface
     public function __construct()
     {
         if (\class_exists('\\\\Event', false)) {
-            $class_name = '\\\\Event';
+            $className = '\\\\Event';
         } else {
-            $class_name = '\Event';
+            $className = '\Event';
         }
-        $this->eventClassName = $class_name;
+        $this->eventClassName = $className;
         if (\class_exists('\\\\EventBase', false)) {
-            $class_name = '\\\\EventBase';
+            $className = '\\\\EventBase';
         } else {
-            $class_name = '\EventBase';
+            $className = '\EventBase';
         }
-        $this->eventBase = new $class_name();
+        $this->eventBase = new $className();
     }
 
     /**
@@ -89,11 +89,11 @@ class Event implements EventInterface
      */
     public function delay(float $delay, $func, $args)
     {
-        $class_name = $this->eventClassName;
-        $timer_id = $this->timerId++;
-        $event = new $class_name($this->eventBase, -1, $class_name::TIMEOUT, function () use ($func, $args, $timer_id) {
+        $className = $this->eventClassName;
+        $timerId = $this->timerId++;
+        $event = new $className($this->eventBase, -1, $className::TIMEOUT, function () use ($func, $args, $timerId) {
             try {
-                $this->deleteTimer($timer_id);
+                $this->deleteTimer($timerId);
                 $func(...$args);
             } catch (\Throwable $e) {
                 Worker::stopAll(250, $e);
@@ -102,18 +102,18 @@ class Event implements EventInterface
         if (!$event || !$event->addTimer($delay)) {
             return false;
         }
-        $this->eventTimer[$timer_id] = $event;
-        return $timer_id;
+        $this->eventTimer[$timerId] = $event;
+        return $timerId;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timer_id)
+    public function deleteTimer($timerId)
     {
-        if (isset($this->eventTimer[$timer_id])) {
-            $this->eventTimer[$timer_id]->del();
-            unset($this->eventTimer[$timer_id]);
+        if (isset($this->eventTimer[$timerId])) {
+            $this->eventTimer[$timerId]->del();
+            unset($this->eventTimer[$timerId]);
             return true;
         }
         return false;
@@ -124,9 +124,9 @@ class Event implements EventInterface
      */
     public function repeat(float $interval, $func, $args)
     {
-        $class_name = $this->eventClassName;
-        $timer_id = $this->timerId++;
-        $event = new $class_name($this->eventBase, -1, $class_name::TIMEOUT | $class_name::PERSIST, function () use ($func, $args) {
+        $className = $this->eventClassName;
+        $timerId = $this->timerId++;
+        $event = new $className($this->eventBase, -1, $className::TIMEOUT | $className::PERSIST, function () use ($func, $args) {
             try {
                 $func(...$args);
             } catch (\Throwable $e) {
@@ -136,8 +136,8 @@ class Event implements EventInterface
         if (!$event || !$event->addTimer($interval)) {
             return false;
         }
-        $this->eventTimer[$timer_id] = $event;
-        return $timer_id;
+        $this->eventTimer[$timerId] = $event;
+        return $timerId;
     }
 
     /**
@@ -145,13 +145,13 @@ class Event implements EventInterface
      */
     public function onReadable($stream, $func)
     {
-        $class_name = $this->eventClassName;
-        $fd_key = (int)$stream;
-        $event = new $this->eventClassName($this->eventBase, $stream, $class_name::READ | $class_name::PERSIST, $func, $stream);
+        $className = $this->eventClassName;
+        $fdKey = (int)$stream;
+        $event = new $this->eventClassName($this->eventBase, $stream, $className::READ | $className::PERSIST, $func, $stream);
         if (!$event || !$event->add()) {
             return false;
         }
-        $this->writeEvents[$fd_key] = $event;
+        $this->writeEvents[$fdKey] = $event;
         return true;
     }
 
@@ -160,10 +160,10 @@ class Event implements EventInterface
      */
     public function offReadable($stream)
     {
-        $fd_key = (int)$stream;
-        if (isset($this->readEvents[$fd_key])) {
-            $this->readEvents[$fd_key]->del();
-            unset($this->readEvents[$fd_key]);
+        $fdKey = (int)$stream;
+        if (isset($this->readEvents[$fdKey])) {
+            $this->readEvents[$fdKey]->del();
+            unset($this->readEvents[$fdKey]);
         }
     }
 
@@ -172,13 +172,13 @@ class Event implements EventInterface
      */
     public function onWritable($stream, $func)
     {
-        $class_name = $this->eventClassName;
-        $fd_key = (int)$stream;
-        $event = new $this->eventClassName($this->eventBase, $stream, $class_name::WRITE | $class_name::PERSIST, $func, $stream);
+        $className = $this->eventClassName;
+        $fdKey = (int)$stream;
+        $event = new $this->eventClassName($this->eventBase, $stream, $className::WRITE | $className::PERSIST, $func, $stream);
         if (!$event || !$event->add()) {
             return false;
         }
-        $this->writeEvents[$fd_key] = $event;
+        $this->writeEvents[$fdKey] = $event;
         return true;
     }
 
@@ -187,10 +187,10 @@ class Event implements EventInterface
      */
     public function offWritable($stream)
     {
-        $fd_key = (int)$stream;
-        if (isset($this->writeEvents[$fd_key])) {
-            $this->writeEvents[$fd_key]->del();
-            unset($this->writeEvents[$fd_key]);
+        $fdKey = (int)$stream;
+        if (isset($this->writeEvents[$fdKey])) {
+            $this->writeEvents[$fdKey]->del();
+            unset($this->writeEvents[$fdKey]);
         }
     }
 
@@ -199,13 +199,13 @@ class Event implements EventInterface
      */
     public function onSignal($signal, $func)
     {
-        $class_name = $this->eventClassName;
-        $fd_key = (int)$signal;
-        $event = $class_name::signal($this->eventBase, $signal, $func);
+        $className = $this->eventClassName;
+        $fdKey = (int)$signal;
+        $event = $className::signal($this->eventBase, $signal, $func);
         if (!$event || !$event->add()) {
             return false;
         }
-        $this->eventSignal[$fd_key] = $event;
+        $this->eventSignal[$fdKey] = $event;
         return true;
     }
 
@@ -214,10 +214,10 @@ class Event implements EventInterface
      */
     public function offSignal($signal)
     {
-        $fd_key = (int)$signal;
-        if (isset($this->eventSignal[$fd_key])) {
-            $this->eventSignal[$fd_key]->del();
-            unset($this->eventSignal[$fd_key]);
+        $fdKey = (int)$signal;
+        if (isset($this->eventSignal[$fdKey])) {
+            $this->eventSignal[$fdKey]->del();
+            unset($this->eventSignal[$fdKey]);
         }
     }
 

@@ -77,10 +77,10 @@ abstract class ConnectionInterface
     /**
      * Sends data on the connection.
      *
-     * @param mixed $send_buffer
+     * @param mixed $sendBuffer
      * @return void|boolean
      */
-    abstract public function send($send_buffer);
+    abstract public function send($sendBuffer);
 
     /**
      * Get remote IP.

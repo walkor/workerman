@@ -35,10 +35,10 @@ interface EventInterface
 
     /**
      * Delete a timer.
-     * @param $timer_id
+     * @param $timerId
      * @return bool
      */
-    public function deleteTimer($timer_id);
+    public function deleteTimer($timerId);
 
     /**
      * Execute a callback when a stream resource becomes readable or is closed for reading.

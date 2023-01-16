@@ -45,26 +45,26 @@ class Swoole implements EventInterface
     {
         $t = (int)($delay * 1000);
         $t = $t < 1 ? 1 : $t;
-        $timer_id = Timer::after($t, function () use ($func, $args, &$timer_id) {
-            unset($this->eventTimer[$timer_id]);
+        $timerId = Timer::after($t, function () use ($func, $args, &$timerId) {
+            unset($this->eventTimer[$timerId]);
             try {
                 $func(...(array)$args);
             } catch (\Throwable $e) {
                 Worker::stopAll(250, $e);
             }
         });
-        $this->eventTimer[$timer_id] = $timer_id;
-        return $timer_id;
+        $this->eventTimer[$timerId] = $timerId;
+        return $timerId;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timer_id)
+    public function deleteTimer($timerId)
     {
-        if (isset($this->eventTimer[$timer_id])) {
-            $res = Timer::clear($timer_id);
-            unset($this->eventTimer[$timer_id]);
+        if (isset($this->eventTimer[$timerId])) {
+            $res = Timer::clear($timerId);
+            unset($this->eventTimer[$timerId]);
             return $res;
         }
         return false;
@@ -80,15 +80,15 @@ class Swoole implements EventInterface
         }
         $t = (int)($interval * 1000);
         $t = $t < 1 ? 1 : $t;
-        $timer_id = Timer::tick($t, function () use ($func, $args) {
+        $timerId = Timer::tick($t, function () use ($func, $args) {
             try {
                 $func(...(array)$args);
             } catch (\Throwable $e) {
                 Worker::stopAll(250, $e);
             }
         });
-        $this->eventTimer[$timer_id] = $timer_id;
-        return $timer_id;
+        $this->eventTimer[$timerId] = $timerId;
+        return $timerId;
     }
 
     /**
@@ -163,8 +163,8 @@ class Swoole implements EventInterface
      */
     public function deleteAllTimer()
     {
-        foreach ($this->eventTimer as $timer_id) {
-            Timer::clear($timer_id);
+        foreach ($this->eventTimer as $timerId) {
+            Timer::clear($timerId);
         }
     }
 

@@ -21,10 +21,10 @@ class RedisClusterSessionHandler extends RedisSessionHandler
     public function __construct($config)
     {
         $timeout = $config['timeout'] ?? 2;
-        $read_timeout = $config['read_timeout'] ?? $timeout;
+        $readTimeout = $config['read_timeout'] ?? $timeout;
         $persistent = $config['persistent'] ?? false;
         $auth = $config['auth'] ?? '';
-        $args = [null, $config['host'], $timeout, $read_timeout, $persistent];
+        $args = [null, $config['host'], $timeout, $readTimeout, $persistent];
         if ($auth) {
             $args[] = $auth;
         }
@@ -38,9 +38,9 @@ class RedisClusterSessionHandler extends RedisSessionHandler
     /**
      * {@inheritdoc}
      */
-    public function read($session_id)
+    public function read($sessionId)
     {
-        return $this->redis->get($session_id);
+        return $this->redis->get($sessionId);
     }
 
 }

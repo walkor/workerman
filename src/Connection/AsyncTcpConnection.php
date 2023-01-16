@@ -120,39 +120,39 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Construct.
      *
-     * @param string $remote_address
-     * @param array $context_option
+     * @param string $remoteAddress
+     * @param array $contextOption
      * @throws Exception
      */
-    public function __construct($remote_address, array $context_option = [])
+    public function __construct($remoteAddress, array $contextOption = [])
     {
-        $address_info = \parse_url($remote_address);
-        if (!$address_info) {
-            list($scheme, $this->remoteAddress) = \explode(':', $remote_address, 2);
+        $addressInfo = \parse_url($remoteAddress);
+        if (!$addressInfo) {
+            list($scheme, $this->remoteAddress) = \explode(':', $remoteAddress, 2);
             if ('unix' === strtolower($scheme)) {
-                $this->remoteAddress = substr($remote_address, strpos($remote_address, '/') + 2);
+                $this->remoteAddress = substr($remoteAddress, strpos($remoteAddress, '/') + 2);
             }
             if (!$this->remoteAddress) {
                 Worker::safeEcho(new \Exception('bad remote_address'));
             }
         } else {
-            if (!isset($address_info['port'])) {
-                $address_info['port'] = 0;
+            if (!isset($addressInfo['port'])) {
+                $addressInfo['port'] = 0;
             }
-            if (!isset($address_info['path'])) {
-                $address_info['path'] = '/';
+            if (!isset($addressInfo['path'])) {
+                $addressInfo['path'] = '/';
             }
-            if (!isset($address_info['query'])) {
-                $address_info['query'] = '';
+            if (!isset($addressInfo['query'])) {
+                $addressInfo['query'] = '';
             } else {
-                $address_info['query'] = '?' . $address_info['query'];
+                $addressInfo['query'] = '?' . $addressInfo['query'];
             }
-            $this->remoteHost = $address_info['host'];
-            $this->remotePort = $address_info['port'];
-            $this->remoteURI = "{$address_info['path']}{$address_info['query']}";
-            $scheme = $address_info['scheme'] ?? 'tcp';
+            $this->remoteHost = $addressInfo['host'];
+            $this->remotePort = $addressInfo['port'];
+            $this->remoteURI = "{$addressInfo['path']}{$addressInfo['query']}";
+            $scheme = $addressInfo['scheme'] ?? 'tcp';
             $this->remoteAddress = 'unix' === strtolower($scheme)
-                ? substr($remote_address, strpos($remote_address, '/') + 2)
+                ? substr($remoteAddress, strpos($remoteAddress, '/') + 2)
                 : $this->remoteHost . ':' . $this->remotePort;
         }
 
@@ -178,7 +178,7 @@ class AsyncTcpConnection extends TcpConnection
         ++self::$statistics['connection_count'];
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
         $this->maxPackageSize = self::$defaultMaxPackageSize;
-        $this->contextOption = $context_option;
+        $this->contextOption = $contextOption;
         static::$connections[$this->realId] = $this;
     }
 
@@ -348,9 +348,9 @@ class AsyncTcpConnection extends TcpConnection
             }
             // Try to open keepalive for tcp and disable Nagle algorithm.
             if (\function_exists('socket_import_stream') && $this->transport === 'tcp') {
-                $raw_socket = \socket_import_stream($this->socket);
-                \socket_set_option($raw_socket, \SOL_SOCKET, \SO_KEEPALIVE, 1);
-                \socket_set_option($raw_socket, \SOL_TCP, \TCP_NODELAY, 1);
+                $rawSocket = \socket_import_stream($this->socket);
+                \socket_set_option($rawSocket, \SOL_SOCKET, \SO_KEEPALIVE, 1);
+                \socket_set_option($rawSocket, \SOL_TCP, \TCP_NODELAY, 1);
             }
             // SSL handshake.
             if ($this->transport === 'ssl') {

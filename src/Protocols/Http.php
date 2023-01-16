@@ -48,13 +48,13 @@ class Http
     /**
      * Get or set the request class name.
      *
-     * @param string|null $class_name
+     * @param string|null $className
      * @return string
      */
-    public static function requestClass($class_name = null)
+    public static function requestClass($className = null)
     {
-        if ($class_name) {
-            static::$requestClass = $class_name;
+        if ($className) {
+            static::$requestClass = $className;
         }
         return static::$requestClass;
     }
@@ -72,35 +72,35 @@ class Http
     /**
      * Check the integrity of the package.
      *
-     * @param string $recv_buffer
+     * @param string $recvBuffer
      * @param TcpConnection $connection
      * @return int
      */
-    public static function input(string $recv_buffer, TcpConnection $connection)
+    public static function input(string $recvBuffer, TcpConnection $connection)
     {
         static $input = [];
-        if (!isset($recv_buffer[512]) && isset($input[$recv_buffer])) {
-            return $input[$recv_buffer];
+        if (!isset($recvBuffer[512]) && isset($input[$recvBuffer])) {
+            return $input[$recvBuffer];
         }
-        $crlf_pos = \strpos($recv_buffer, "\r\n\r\n");
-        if (false === $crlf_pos) {
+        $crlfPos = \strpos($recvBuffer, "\r\n\r\n");
+        if (false === $crlfPos) {
             // Judge whether the package length exceeds the limit.
-            if (\strlen($recv_buffer) >= 16384) {
+            if (\strlen($recvBuffer) >= 16384) {
                 $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
                 return 0;
             }
             return 0;
         }
 
-        $length = $crlf_pos + 4;
-        $firstLine = \explode(" ", \strstr($recv_buffer, "\r\n", true), 3);
+        $length = $crlfPos + 4;
+        $firstLine = \explode(" ", \strstr($recvBuffer, "\r\n", true), 3);
 
         if (!\in_array($firstLine[0], ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
 
-        $header = \substr($recv_buffer, 0, $crlf_pos);
+        $header = \substr($recvBuffer, 0, $crlfPos);
         $hostHeaderPosition = \strpos($header, "\r\nHost: ");
 
         if (false === $hostHeaderPosition && $firstLine[2] === "HTTP/1.1") {
@@ -110,27 +110,27 @@ class Http
 
         if ($pos = \strpos($header, "\r\nContent-Length: ")) {
             $length = $length + (int)\substr($header, $pos + 18, 10);
-            $has_content_length = true;
+            $hasContentLength = true;
         } else if (\preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
             $length = $length + $match[1];
-            $has_content_length = true;
+            $hasContentLength = true;
         } else {
-            $has_content_length = false;
+            $hasContentLength = false;
             if (false !== stripos($header, "\r\nTransfer-Encoding:")) {
                 $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
                 return 0;
             }
         }
 
-        if ($has_content_length) {
+        if ($hasContentLength) {
             if ($length > $connection->maxPackageSize) {
                 $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
                 return 0;
             }
         }
 
-        if (!isset($recv_buffer[512])) {
-            $input[$recv_buffer] = $length;
+        if (!isset($recvBuffer[512])) {
+            $input[$recvBuffer] = $length;
             if (\count($input) > 512) {
                 unset($input[key($input)]);
             }
@@ -142,26 +142,26 @@ class Http
     /**
      * Http decode.
      *
-     * @param string $recv_buffer
+     * @param string $recvBuffer
      * @param TcpConnection $connection
      * @return \Workerman\Protocols\Http\Request
      */
-    public static function decode($recv_buffer, TcpConnection $connection)
+    public static function decode($recvBuffer, TcpConnection $connection)
     {
         static $requests = [];
-        $cacheable = static::$enableCache && !isset($recv_buffer[512]);
-        if (true === $cacheable && isset($requests[$recv_buffer])) {
-            $request = clone $requests[$recv_buffer];
+        $cacheable = static::$enableCache && !isset($recvBuffer[512]);
+        if (true === $cacheable && isset($requests[$recvBuffer])) {
+            $request = clone $requests[$recvBuffer];
             $request->connection = $connection;
             $connection->request = $request;
             $request->properties = [];
             return $request;
         }
-        $request = new static::$requestClass($recv_buffer);
+        $request = new static::$requestClass($recvBuffer);
         $request->connection = $connection;
         $connection->request = $request;
         if (true === $cacheable) {
-            $requests[$recv_buffer] = $request;
+            $requests[$recvBuffer] = $request;
             if (\count($requests) > 512) {
                 unset($requests[\key($requests)]);
             }
@@ -184,21 +184,21 @@ class Http
             $connection->request = null;
         }
         if (!\is_object($response)) {
-            $ext_header = '';
+            $extHeader = '';
             if (isset($connection->header)) {
                 foreach ($connection->header as $name => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $item) {
-                            $ext_header = "$name: $item\r\n";
+                            $extHeader = "$name: $item\r\n";
                         }
                     } else {
-                        $ext_header = "$name: $value\r\n";
+                        $extHeader = "$name: $value\r\n";
                     }
                 }
                 unset($connection->header);
             }
-            $body_len = \strlen((string)$response);
-            return "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$ext_header}Connection: keep-alive\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $body_len\r\n\r\n$response";
+            $bodyLen = \strlen((string)$response);
+            return "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$extHeader}Connection: keep-alive\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $bodyLen\r\n\r\n$response";
         }
 
         if (isset($connection->header)) {
@@ -211,18 +211,18 @@ class Http
             $offset = $response->file['offset'];
             $length = $response->file['length'];
             \clearstatcache();
-            $file_size = (int)\filesize($file);
-            $body_len = $length > 0 ? $length : $file_size - $offset;
+            $fileSize = (int)\filesize($file);
+            $bodyLen = $length > 0 ? $length : $fileSize - $offset;
             $response->withHeaders([
-                'Content-Length' => $body_len,
+                'Content-Length' => $bodyLen,
                 'Accept-Ranges' => 'bytes',
             ]);
             if ($offset || $length) {
-                $offset_end = $offset + $body_len - 1;
-                $response->header('Content-Range', "bytes $offset-$offset_end/$file_size");
+                $offsetEnd = $offset + $bodyLen - 1;
+                $response->header('Content-Range', "bytes $offset-$offsetEnd/$fileSize");
             }
-            if ($body_len < 2 * 1024 * 1024) {
-                $connection->send((string)$response . file_get_contents($file, false, null, $offset, $body_len), true);
+            if ($bodyLen < 2 * 1024 * 1024) {
+                $connection->send((string)$response . file_get_contents($file, false, null, $offset, $bodyLen), true);
                 return '';
             }
             $handler = \fopen($file, 'r');
@@ -253,22 +253,22 @@ class Http
         if ($offset !== 0) {
             \fseek($handler, $offset);
         }
-        $offset_end = $offset + $length;
+        $offsetEnd = $offset + $length;
         // Read file content from disk piece by piece and send to client.
-        $do_write = function () use ($connection, $handler, $length, $offset_end) {
+        $doWrite = function () use ($connection, $handler, $length, $offsetEnd) {
             // Send buffer not full.
             while ($connection->bufferFull === false) {
                 // Read from disk.
                 $size = 1024 * 1024;
                 if ($length !== 0) {
                     $tell = \ftell($handler);
-                    $remain_size = $offset_end - $tell;
-                    if ($remain_size <= 0) {
+                    $remainSize = $offsetEnd - $tell;
+                    if ($remainSize <= 0) {
                         fclose($handler);
                         $connection->onBufferDrain = null;
                         return;
                     }
-                    $size = $remain_size > $size ? $size : $remain_size;
+                    $size = $remainSize > $size ? $size : $remainSize;
                 }
 
                 $buffer = \fread($handler, $size);
@@ -287,11 +287,11 @@ class Http
             $connection->bufferFull = true;
         };
         // Send buffer drain.
-        $connection->onBufferDrain = function ($connection) use ($do_write) {
+        $connection->onBufferDrain = function ($connection) use ($doWrite) {
             $connection->bufferFull = false;
-            $do_write();
+            $doWrite();
         };
-        $do_write();
+        $doWrite();
     }
 
     /**
@@ -305,10 +305,10 @@ class Http
             static::$uploadTmpDir = $dir;
         }
         if (static::$uploadTmpDir === '') {
-            if ($upload_tmp_dir = \ini_get('upload_tmp_dir')) {
-                static::$uploadTmpDir = $upload_tmp_dir;
-            } else if ($upload_tmp_dir = \sys_get_temp_dir()) {
-                static::$uploadTmpDir = $upload_tmp_dir;
+            if ($uploadTmpDir = \ini_get('upload_tmp_dir')) {
+                static::$uploadTmpDir = $uploadTmpDir;
+            } else if ($uploadTmpDir = \sys_get_temp_dir()) {
+                static::$uploadTmpDir = $uploadTmpDir;
             }
         }
         return static::$uploadTmpDir;

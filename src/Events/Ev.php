@@ -61,9 +61,9 @@ class Ev implements EventInterface
      */
     public function delay(float $delay, $func, $args)
     {
-        $timer_id = self::$timerId;
-        $event = new \EvTimer($delay, 0, function () use ($func, $args, $timer_id) {
-            unset($this->eventTimer[$timer_id]);
+        $timerId = self::$timerId;
+        $event = new \EvTimer($delay, 0, function () use ($func, $args, $timerId) {
+            unset($this->eventTimer[$timerId]);
             $func(...(array)$args);
         });
         $this->eventTimer[self::$timerId] = $event;
@@ -73,11 +73,11 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timer_id)
+    public function deleteTimer($timerId)
     {
-        if (isset($this->eventTimer[$timer_id])) {
-            $this->eventTimer[$timer_id]->stop();
-            unset($this->eventTimer[$timer_id]);
+        if (isset($this->eventTimer[$timerId])) {
+            $this->eventTimer[$timerId]->stop();
+            unset($this->eventTimer[$timerId]);
             return true;
         }
         return false;
@@ -100,11 +100,11 @@ class Ev implements EventInterface
      */
     public function onReadable($stream, $func)
     {
-        $fd_key = (int)$stream;
+        $fdKey = (int)$stream;
         $event = new \EvIo($stream, \Ev::READ, function () use ($func, $stream) {
             $func($stream);
         });
-        $this->readEvents[$fd_key] = $event;
+        $this->readEvents[$fdKey] = $event;
     }
 
     /**
@@ -112,10 +112,10 @@ class Ev implements EventInterface
      */
     public function offReadable($stream)
     {
-        $fd_key = (int)$stream;
-        if (isset($this->readEvents[$fd_key])) {
-            $this->readEvents[$fd_key]->stop();
-            unset($this->readEvents[$fd_key]);
+        $fdKey = (int)$stream;
+        if (isset($this->readEvents[$fdKey])) {
+            $this->readEvents[$fdKey]->stop();
+            unset($this->readEvents[$fdKey]);
         }
     }
 
@@ -124,11 +124,11 @@ class Ev implements EventInterface
      */
     public function onWritable($stream, $func)
     {
-        $fd_key = (int)$stream;
+        $fdKey = (int)$stream;
         $event = new \EvIo($stream, \Ev::WRITE, function () use ($func, $stream) {
             $func($stream);
         });
-        $this->readEvents[$fd_key] = $event;
+        $this->readEvents[$fdKey] = $event;
     }
 
     /**
@@ -136,10 +136,10 @@ class Ev implements EventInterface
      */
     public function offWritable($stream)
     {
-        $fd_key = (int)$stream;
-        if (isset($this->writeEvents[$fd_key])) {
-            $this->writeEvents[$fd_key]->stop();
-            unset($this->writeEvents[$fd_key]);
+        $fdKey = (int)$stream;
+        if (isset($this->writeEvents[$fdKey])) {
+            $this->writeEvents[$fdKey]->stop();
+            unset($this->writeEvents[$fdKey]);
         }
     }
 

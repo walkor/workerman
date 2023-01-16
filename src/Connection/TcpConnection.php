@@ -280,9 +280,9 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
      * Construct.
      *
      * @param resource $socket
-     * @param string $remote_address
+     * @param string $remoteAddress
      */
-    public function __construct($socket, $remote_address = '')
+    public function __construct($socket, $remoteAddress = '')
     {
         ++self::$statistics['connection_count'];
         $this->id = $this->realId = self::$idRecorder++;
@@ -298,7 +298,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
         Worker::$globalEvent->onReadable($this->socket, [$this, 'baseRead']);
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
         $this->maxPackageSize = self::$defaultMaxPackageSize;
-        $this->remoteAddress = $remote_address;
+        $this->remoteAddress = $remoteAddress;
         static::$connections[$this->id] = $this;
         $this->context = new \stdClass;
     }
@@ -306,13 +306,13 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
     /**
      * Get status.
      *
-     * @param bool $raw_output
+     * @param bool $rawOutput
      *
      * @return int|string
      */
-    public function getStatus($raw_output = true)
+    public function getStatus($rawOutput = true)
     {
-        if ($raw_output) {
+        if ($rawOutput) {
             return $this->status;
         }
         return self::$statusToString[$this->status];
@@ -321,20 +321,20 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
     /**
      * Sends data on the connection.
      *
-     * @param mixed $send_buffer
+     * @param mixed $sendBuffer
      * @param bool $raw
      * @return bool|null
      */
-    public function send($send_buffer, $raw = false)
+    public function send($sendBuffer, $raw = false)
     {
         if ($this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
             return false;
         }
 
-        // Try to call protocol::encode($send_buffer) before sending.
+        // Try to call protocol::encode($sendBuffer) before sending.
         if (false === $raw && $this->protocol !== null) {
-            $send_buffer = $this->protocol::encode($send_buffer, $this);
-            if ($send_buffer === '') {
+            $sendBuffer = $this->protocol::encode($sendBuffer, $this);
+            if ($sendBuffer === '') {
                 return;
             }
         }
@@ -346,7 +346,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                 ++self::$statistics['send_fail'];
                 return false;
             }
-            $this->sendBuffer .= $send_buffer;
+            $this->sendBuffer .= $sendBuffer;
             $this->checkBufferWillFull();
             return;
         }
@@ -355,24 +355,24 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
         if ($this->sendBuffer === '') {
             if ($this->transport === 'ssl') {
                 Worker::$globalEvent->onWritable($this->socket, [$this, 'baseWrite']);
-                $this->sendBuffer = $send_buffer;
+                $this->sendBuffer = $sendBuffer;
                 $this->checkBufferWillFull();
                 return;
             }
             $len = 0;
             try {
-                $len = @\fwrite($this->socket, $send_buffer);
+                $len = @\fwrite($this->socket, $sendBuffer);
             } catch (\Throwable $e) {
                 Worker::log($e);
             }
             // send successful.
-            if ($len === \strlen($send_buffer)) {
+            if ($len === \strlen($sendBuffer)) {
                 $this->bytesWritten += $len;
                 return true;
             }
             // Send only part of the data.
             if ($len > 0) {
-                $this->sendBuffer = \substr($send_buffer, $len);
+                $this->sendBuffer = \substr($sendBuffer, $len);
                 $this->bytesWritten += $len;
             } else {
                 // Connection closed?
@@ -388,7 +388,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                     $this->destroy();
                     return false;
                 }
-                $this->sendBuffer = $send_buffer;
+                $this->sendBuffer = $sendBuffer;
             }
             Worker::$globalEvent->onWritable($this->socket, [$this, 'baseWrite']);
             // Check if the send buffer will be full.
@@ -401,7 +401,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
             return false;
         }
 
-        $this->sendBuffer .= $send_buffer;
+        $this->sendBuffer .= $sendBuffer;
         // Check if the send buffer is full.
         $this->checkBufferWillFull();
     }
@@ -562,10 +562,10 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
      * Base read handler.
      *
      * @param resource $socket
-     * @param bool $check_eof
+     * @param bool $checkEof
      * @return void
      */
-    public function baseRead($socket, $check_eof = true)
+    public function baseRead($socket, $checkEof = true)
     {
         static $requests = [];
         // SSL handshake.
@@ -588,7 +588,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
 
         // Check connection closed.
         if ($buffer === '' || $buffer === false) {
-            if ($check_eof && (\feof($socket) || !\is_resource($socket) || $buffer === false)) {
+            if ($checkEof && (\feof($socket) || !\is_resource($socket) || $buffer === false)) {
                 $this->destroy();
                 return;
             }
@@ -653,11 +653,11 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                 ++self::$statistics['total_request'];
                 // The current packet length is equal to the length of the buffer.
                 if ($one = \strlen($this->recvBuffer) === $this->currentPackageLength) {
-                    $one_request_buffer = $this->recvBuffer;
+                    $oneRequestBuffer = $this->recvBuffer;
                     $this->recvBuffer = '';
                 } else {
                     // Get a full package from the buffer.
-                    $one_request_buffer = \substr($this->recvBuffer, 0, $this->currentPackageLength);
+                    $oneRequestBuffer = \substr($this->recvBuffer, 0, $this->currentPackageLength);
                     // Remove the current package from the receive buffer.
                     $this->recvBuffer = \substr($this->recvBuffer, $this->currentPackageLength);
                 }
@@ -665,9 +665,9 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                 $this->currentPackageLength = 0;
                 try {
                     // Decode request buffer before Emitting onMessage callback.
-                    $request = $this->protocol::decode($one_request_buffer, $this);
-                    if (static::$enableCache && (!\is_object($request) || $request instanceof Request) && $one && !isset($one_request_buffer[512])) {
-                        $requests[$one_request_buffer] = $request;
+                    $request = $this->protocol::decode($oneRequestBuffer, $this);
+                    if (static::$enableCache && (!\is_object($request) || $request instanceof Request) && $one && !isset($oneRequestBuffer[512])) {
+                        $requests[$oneRequestBuffer] = $request;
                         if (\count($requests) > 512) {
                             unset($requests[\key($requests)]);
                         }

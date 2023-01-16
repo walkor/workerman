@@ -114,16 +114,16 @@ class Select implements EventInterface
      */
     public function delay(float $delay, $func, $args)
     {
-        $timer_id = $this->timerId++;
-        $run_time = \microtime(true) + $delay;
-        $this->scheduler->insert($timer_id, -$run_time);
-        $this->eventTimer[$timer_id] = [$func, (array)$args];
-        $select_timeout = ($run_time - \microtime(true)) * 1000000;
-        $select_timeout = $select_timeout <= 0 ? 1 : (int)$select_timeout;
-        if ($this->selectTimeout > $select_timeout) {
-            $this->selectTimeout = $select_timeout;
+        $timerId = $this->timerId++;
+        $runTime = \microtime(true) + $delay;
+        $this->scheduler->insert($timerId, -$runTime);
+        $this->eventTimer[$timerId] = [$func, (array)$args];
+        $selectTimeout = ($runTime - \microtime(true)) * 1000000;
+        $selectTimeout = $selectTimeout <= 0 ? 1 : (int)$selectTimeout;
+        if ($this->selectTimeout > $selectTimeout) {
+            $this->selectTimeout = $selectTimeout;
         }
-        return $timer_id;
+        return $timerId;
     }
 
     /**
@@ -131,25 +131,25 @@ class Select implements EventInterface
      */
     public function repeat(float $delay, $func, $args)
     {
-        $timer_id = $this->timerId++;
-        $run_time = \microtime(true) + $delay;
-        $this->scheduler->insert($timer_id, -$run_time);
-        $this->eventTimer[$timer_id] = [$func, (array)$args, $delay];
-        $select_timeout = ($run_time - \microtime(true)) * 1000000;
-        $select_timeout = $select_timeout <= 0 ? 1 : (int)$select_timeout;
-        if ($this->selectTimeout > $select_timeout) {
-            $this->selectTimeout = $select_timeout;
+        $timerId = $this->timerId++;
+        $runTime = \microtime(true) + $delay;
+        $this->scheduler->insert($timerId, -$runTime);
+        $this->eventTimer[$timerId] = [$func, (array)$args, $delay];
+        $selectTimeout = ($runTime - \microtime(true)) * 1000000;
+        $selectTimeout = $selectTimeout <= 0 ? 1 : (int)$selectTimeout;
+        if ($this->selectTimeout > $selectTimeout) {
+            $this->selectTimeout = $selectTimeout;
         }
-        return $timer_id;
+        return $timerId;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timer_id)
+    public function deleteTimer($timerId)
     {
-        if (isset($this->eventTimer[$timer_id])) {
-            unset($this->eventTimer[$timer_id]);
+        if (isset($this->eventTimer[$timerId])) {
+            unset($this->eventTimer[$timerId]);
             return true;
         }
         return false;
@@ -166,9 +166,9 @@ class Select implements EventInterface
         } else if (\DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
             echo "Warning: system call select exceeded the maximum number of connections 256.\n";
         }
-        $fd_key = (int)$stream;
-        $this->readEvents[$fd_key] = $func;
-        $this->readFds[$fd_key] = $stream;
+        $fdKey = (int)$stream;
+        $this->readEvents[$fdKey] = $func;
+        $this->readFds[$fdKey] = $stream;
     }
 
     /**
@@ -176,8 +176,8 @@ class Select implements EventInterface
      */
     public function offReadable($stream)
     {
-        $fd_key = (int)$stream;
-        unset($this->readEvents[$fd_key], $this->readFds[$fd_key]);
+        $fdKey = (int)$stream;
+        unset($this->readEvents[$fdKey], $this->readFds[$fdKey]);
     }
 
     /**
@@ -191,9 +191,9 @@ class Select implements EventInterface
         } else if (\DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
             echo "Warning: system call select exceeded the maximum number of connections 256.\n";
         }
-        $fd_key = (int)$stream;
-        $this->writeEvents[$fd_key] = $func;
-        $this->writeFds[$fd_key] = $stream;
+        $fdKey = (int)$stream;
+        $this->writeEvents[$fdKey] = $func;
+        $this->writeFds[$fdKey] = $stream;
     }
 
     /**
@@ -201,8 +201,8 @@ class Select implements EventInterface
      */
     public function offWritable($stream)
     {
-        $fd_key = (int)$stream;
-        unset($this->writeEvents[$fd_key], $this->writeFds[$fd_key]);
+        $fdKey = (int)$stream;
+        unset($this->writeEvents[$fdKey], $this->writeFds[$fdKey]);
     }
 
     /**
@@ -210,9 +210,9 @@ class Select implements EventInterface
      */
     public function onExcept($stream, $func)
     {
-        $fd_key = (int)$stream;
-        $this->exceptEvents[$fd_key] = $func;
-        $this->exceptFds[$fd_key] = $stream;
+        $fdKey = (int)$stream;
+        $this->exceptEvents[$fdKey] = $func;
+        $this->exceptFds[$fdKey] = $stream;
     }
 
     /**
@@ -220,8 +220,8 @@ class Select implements EventInterface
      */
     public function offExcept($stream)
     {
-        $fd_key = (int)$stream;
-        unset($this->exceptEvents[$fd_key], $this->exceptFds[$fd_key]);
+        $fdKey = (int)$stream;
+        unset($this->exceptEvents[$fdKey], $this->exceptFds[$fdKey]);
     }
 
     /**
@@ -262,30 +262,30 @@ class Select implements EventInterface
      */
     protected function tick()
     {
-        $tasks_to_insert = [];
+        $tasksToInsert = [];
         while (!$this->scheduler->isEmpty()) {
-            $scheduler_data = $this->scheduler->top();
-            $timer_id = $scheduler_data['data'];
-            $next_run_time = -$scheduler_data['priority'];
-            $time_now = \microtime(true);
-            $this->selectTimeout = (int)(($next_run_time - $time_now) * 1000000);
+            $schedulerData = $this->scheduler->top();
+            $timerId = $schedulerData['data'];
+            $nextRunTime = -$schedulerData['priority'];
+            $timeNow = \microtime(true);
+            $this->selectTimeout = (int)(($nextRunTime - $timeNow) * 1000000);
             if ($this->selectTimeout <= 0) {
                 $this->scheduler->extract();
 
-                if (!isset($this->eventTimer[$timer_id])) {
+                if (!isset($this->eventTimer[$timerId])) {
                     continue;
                 }
 
                 // [func, args, timer_interval]
-                $task_data = $this->eventTimer[$timer_id];
-                if (isset($task_data[2])) {
-                    $next_run_time = $time_now + $task_data[2];
-                    $tasks_to_insert[] = [$timer_id, -$next_run_time];
+                $taskData = $this->eventTimer[$timerId];
+                if (isset($taskData[2])) {
+                    $nextRunTime = $timeNow + $taskData[2];
+                    $tasksToInsert[] = [$timerId, -$nextRunTime];
                 } else {
-                    unset($this->eventTimer[$timer_id]);
+                    unset($this->eventTimer[$timerId]);
                 }
                 try {
-                    $task_data[0]($task_data[1]);
+                    $taskData[0]($taskData[1]);
                 } catch (Throwable $e) {
                     Worker::stopAll(250, $e);
                 }
@@ -293,14 +293,14 @@ class Select implements EventInterface
                 break;
             }
         }
-        foreach ($tasks_to_insert as $item) {
+        foreach ($tasksToInsert as $item) {
             $this->scheduler->insert($item[0], $item[1]);
         }
         if (!$this->scheduler->isEmpty()) {
-            $scheduler_data = $this->scheduler->top();
-            $next_run_time = -$scheduler_data['priority'];
-            $time_now = \microtime(true);
-            $this->selectTimeout = \max((int)(($next_run_time - $time_now) * 1000000), 0);
+            $schedulerData = $this->scheduler->top();
+            $nextRunTime = -$schedulerData['priority'];
+            $timeNow = \microtime(true);
+            $this->selectTimeout = \max((int)(($nextRunTime - $timeNow) * 1000000), 0);
             return;
         }
         $this->selectTimeout = 100000000;
@@ -347,23 +347,23 @@ class Select implements EventInterface
             }
 
             foreach ($read as $fd) {
-                $fd_key = (int)$fd;
-                if (isset($this->readEvents[$fd_key])) {
-                    $this->readEvents[$fd_key]($fd);
+                $fdKey = (int)$fd;
+                if (isset($this->readEvents[$fdKey])) {
+                    $this->readEvents[$fdKey]($fd);
                 }
             }
 
             foreach ($write as $fd) {
-                $fd_key = (int)$fd;
-                if (isset($this->writeEvents[$fd_key])) {
-                    $this->writeEvents[$fd_key]($fd);
+                $fdKey = (int)$fd;
+                if (isset($this->writeEvents[$fdKey])) {
+                    $this->writeEvents[$fdKey]($fd);
                 }
             }
 
             foreach ($except as $fd) {
-                $fd_key = (int)$fd;
-                if (isset($this->exceptEvents[$fd_key])) {
-                    $this->exceptEvents[$fd_key]($fd);
+                $fdKey = (int)$fd;
+                if (isset($this->exceptEvents[$fdKey])) {
+                    $this->exceptEvents[$fdKey]($fd);
                 }
             }
         }

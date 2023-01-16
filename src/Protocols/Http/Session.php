@@ -138,16 +138,16 @@ class Session
     /**
      * Session constructor.
      *
-     * @param string $session_id
+     * @param string $sessionId
      */
-    public function __construct($session_id)
+    public function __construct($sessionId)
     {
-        static::checkSessionId($session_id);
+        static::checkSessionId($sessionId);
         if (static::$handler === null) {
             static::initHandler();
         }
-        $this->sessionId = $session_id;
-        if ($data = static::$handler->read($session_id)) {
+        $this->sessionId = $sessionId;
+        if ($data = static::$handler->read($sessionId)) {
             $this->data = \unserialize($data);
         }
     }
@@ -328,33 +328,33 @@ class Session
      */
     public static function init()
     {
-        if (($gc_probability = (int)\ini_get('session.gc_probability')) && ($gc_divisor = (int)\ini_get('session.gc_divisor'))) {
-            static::$gcProbability = [$gc_probability, $gc_divisor];
+        if (($gcProbability = (int)\ini_get('session.gc_probability')) && ($gcDivisor = (int)\ini_get('session.gc_divisor'))) {
+            static::$gcProbability = [$gcProbability, $gcDivisor];
         }
 
-        if ($gc_max_life_time = \ini_get('session.gc_maxlifetime')) {
-            self::$lifetime = (int)$gc_max_life_time;
+        if ($gcMaxLifeTime = \ini_get('session.gc_maxlifetime')) {
+            self::$lifetime = (int)$gcMaxLifeTime;
         }
 
-        $session_cookie_params = \session_get_cookie_params();
-        static::$cookieLifetime = $session_cookie_params['lifetime'];
-        static::$cookiePath = $session_cookie_params['path'];
-        static::$domain = $session_cookie_params['domain'];
-        static::$secure = $session_cookie_params['secure'];
-        static::$httpOnly = $session_cookie_params['httponly'];
+        $sessionCookieParams = \session_get_cookie_params();
+        static::$cookieLifetime = $sessionCookieParams['lifetime'];
+        static::$cookiePath = $sessionCookieParams['path'];
+        static::$domain = $sessionCookieParams['domain'];
+        static::$secure = $sessionCookieParams['secure'];
+        static::$httpOnly = $sessionCookieParams['httponly'];
     }
 
     /**
      * Set session handler class.
      *
-     * @param mixed|null $class_name
+     * @param mixed|null $className
      * @param mixed|null $config
      * @return string
      */
-    public static function handlerClass($class_name = null, $config = null)
+    public static function handlerClass($className = null, $config = null)
     {
-        if ($class_name) {
-            static::$handlerClass = $class_name;
+        if ($className) {
+            static::$handlerClass = $className;
         }
         if ($config) {
             static::$handlerConfig = $config;
@@ -419,12 +419,12 @@ class Session
     /**
      * Check session id.
      *
-     * @param string $session_id
+     * @param string $sessionId
      */
-    protected static function checkSessionId($session_id)
+    protected static function checkSessionId($sessionId)
     {
-        if (!\preg_match('/^[a-zA-Z0-9]+$/', $session_id)) {
-            throw new SessionException("session_id $session_id is invalid");
+        if (!\preg_match('/^[a-zA-Z0-9]+$/', $sessionId)) {
+            throw new SessionException("session_id $sessionId is invalid");
         }
     }
 }

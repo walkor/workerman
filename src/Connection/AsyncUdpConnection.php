@@ -54,13 +54,13 @@ class AsyncUdpConnection extends UdpConnection
     /**
      * Construct.
      *
-     * @param string $remote_address
+     * @param string $remoteAddress
      * @throws Exception
      */
-    public function __construct($remote_address, $context_option = null)
+    public function __construct($remoteAddress, $contextOption = null)
     {
         // Get the application layer communication protocol and listening address.
-        list($scheme, $address) = \explode(':', $remote_address, 2);
+        list($scheme, $address) = \explode(':', $remoteAddress, 2);
         // Check application layer protocol class.
         if ($scheme !== 'udp') {
             $scheme = \ucfirst($scheme);
@@ -74,7 +74,7 @@ class AsyncUdpConnection extends UdpConnection
         }
 
         $this->remoteAddress = \substr($address, 2);
-        $this->contextOption = $context_option;
+        $this->contextOption = $contextOption;
     }
 
     /**
@@ -85,18 +85,18 @@ class AsyncUdpConnection extends UdpConnection
      */
     public function baseRead($socket)
     {
-        $recv_buffer = \stream_socket_recvfrom($socket, Worker::MAX_UDP_PACKAGE_SIZE, 0, $remote_address);
-        if (false === $recv_buffer || empty($remote_address)) {
+        $recvBuffer = \stream_socket_recvfrom($socket, Worker::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
+        if (false === $recvBuffer || empty($remoteAddress)) {
             return false;
         }
 
         if ($this->onMessage) {
             if ($this->protocol) {
-                $recv_buffer = $this->protocol::decode($recv_buffer, $this);
+                $recvBuffer = $this->protocol::decode($recvBuffer, $this);
             }
             ++ConnectionInterface::$statistics['total_request'];
             try {
-                ($this->onMessage)($this, $recv_buffer);
+                ($this->onMessage)($this, $recvBuffer);
             } catch (\Throwable $e) {
                 Worker::stopAll(250, $e);
             }
@@ -107,23 +107,23 @@ class AsyncUdpConnection extends UdpConnection
     /**
      * Sends data on the connection.
      *
-     * @param string $send_buffer
+     * @param string $sendBuffer
      * @param bool $raw
      * @return void|boolean
      */
-    public function send($send_buffer, $raw = false)
+    public function send($sendBuffer, $raw = false)
     {
         if (false === $raw && $this->protocol) {
             $parser = $this->protocol;
-            $send_buffer = $parser::encode($send_buffer, $this);
-            if ($send_buffer === '') {
+            $sendBuffer = $parser::encode($sendBuffer, $this);
+            if ($sendBuffer === '') {
                 return;
             }
         }
         if ($this->connected === false) {
             $this->connect();
         }
-        return \strlen($send_buffer) === \stream_socket_sendto($this->socket, $send_buffer, 0);
+        return \strlen($sendBuffer) === \stream_socket_sendto($this->socket, $sendBuffer, 0);
     }
 
 
