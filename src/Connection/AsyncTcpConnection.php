@@ -180,6 +180,7 @@ class AsyncTcpConnection extends TcpConnection
         $this->maxPackageSize = self::$defaultMaxPackageSize;
         $this->contextOption = $contextOption;
         static::$connections[$this->realId] = $this;
+        $this->context = new \stdClass;
     }
 
     /**

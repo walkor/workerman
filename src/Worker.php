@@ -342,7 +342,7 @@ class Worker
     protected $socketName = '';
 
     /**
-     * parse from _socketName avoid parse again in master or worker
+     * parse from socketName avoid parse again in master or worker
      * LocalSocket The format is like tcp://0.0.0.0:8080
      * @var string
      */
@@ -545,6 +545,7 @@ class Worker
      * Run all worker instances.
      *
      * @return void
+     * @throws Exception
      */
     public static function runAll()
     {
@@ -843,12 +844,12 @@ class Worker
     public static function getUiColumns()
     {
         return [
-            'proto'     =>  'transport',
-            'user'      =>  'user',
-            'worker'    =>  'name',
-            'socket'    =>  'socket',
-            'processes' =>  'count',
-            'state'    =>  'state',
+            'proto'     => 'transport',
+            'user'      => 'user',
+            'worker'    => 'name',
+            'socket'    => 'socket',
+            'processes' => 'count',
+            'state'     => 'state',
         ];
     }
 
@@ -866,7 +867,7 @@ class Worker
             $totalLength += static::$$key + static::UI_SAFE_LENGTH;
         }
 
-        //keep beauty when show less colums
+        //Keep beauty when show less columns
         !\defined('LINE_VERSIOIN_LENGTH') && \define('LINE_VERSIOIN_LENGTH', 0);
         $totalLength <= LINE_VERSIOIN_LENGTH && $totalLength = LINE_VERSIOIN_LENGTH;
 
@@ -965,7 +966,6 @@ class Worker
                     }
                     static::safeEcho("\nPress Ctrl+C to quit.\n\n");
                 }
-                exit(0);
             case 'connections':
                 if (\is_file($statisticsFile) && \is_writable($statisticsFile)) {
                     \unlink($statisticsFile);
@@ -1300,10 +1300,6 @@ class Worker
     {
         if (static::$eventLoopClass) {
             return static::$eventLoopClass;
-        }
-
-        if (!class_exists(\Swoole\Event::class, false)) {
-            unset(static::$availableEventLoops['swoole']);
         }
 
         $loopName = '';
@@ -1658,7 +1654,7 @@ class Worker
                         unset(static::$pidMap[$workerId][$pid]);
 
                         // Mark id is available.
-                        $id                              = static::getId($workerId, $pid);
+                        $id = static::getId($workerId, $pid);
                         static::$idMap[$workerId][$id] = 0;
 
                         break;
@@ -1721,6 +1717,7 @@ class Worker
      * Execute reload.
      *
      * @return void
+     * @throws Exception
      */
     protected static function reload()
     {
@@ -2082,7 +2079,6 @@ class Worker
      */
     protected static function getErrorType($type)
     {
-
         return self::ERROR_TYPE[$type] ?? '';
     }
 
@@ -2289,7 +2285,7 @@ class Worker
      */
     protected function parseSocketAddress() {
         if (!$this->socketName) {
-            return;
+            return null;
         }
         // Get the application layer communication protocol and listening address.
         list($scheme, $address) = \explode(':', $this->socketName, 2);

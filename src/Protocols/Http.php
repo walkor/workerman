@@ -248,7 +248,7 @@ class Http
      */
     protected static function sendStream(TcpConnection $connection, $handler, $offset = 0, $length = 0)
     {
-        $connection->bufferFull = false;
+        $connection->context->bufferFull = false;
         $connection->context->streamSending = true;
         if ($offset !== 0) {
             \fseek($handler, $offset);
@@ -257,7 +257,7 @@ class Http
         // Read file content from disk piece by piece and send to client.
         $doWrite = function () use ($connection, $handler, $length, $offsetEnd) {
             // Send buffer not full.
-            while ($connection->bufferFull === false) {
+            while ($connection->context->bufferFull === false) {
                 // Read from disk.
                 $size = 1024 * 1024;
                 if ($length !== 0) {
@@ -284,11 +284,11 @@ class Http
         };
         // Send buffer full.
         $connection->onBufferFull = function ($connection) {
-            $connection->bufferFull = true;
+            $connection->context->bufferFull = true;
         };
         // Send buffer drain.
         $connection->onBufferDrain = function ($connection) use ($doWrite) {
-            $connection->bufferFull = false;
+            $connection->context->bufferFull = false;
             $doWrite();
         };
         $doWrite();

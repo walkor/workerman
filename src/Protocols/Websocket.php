@@ -82,12 +82,14 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $opcode = $firstbyte & 0xf;
             switch ($opcode) {
                 case 0x0:
-                    break;
                 // Blob type.
                 case 0x1:
-                    break;
                 // Arraybuffer type.
                 case 0x2:
+                // Ping package.
+                case 0x9:
+                // Pong package.
+                case 0xa:
                     break;
                 // Close package.
                 case 0x8:
@@ -104,12 +106,6 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         $connection->close("\x88\x02\x03\xe8", true);
                     }
                     return 0;
-                // Ping package.
-                case 0x9:
-                    break;
-                // Pong package.
-                case 0xa:
-                    break;
                 // Wrong opcode.
                 default :
                     Worker::safeEcho("error opcode $opcode and close websocket connection. Buffer:" . bin2hex($buffer) . "\n");
@@ -326,7 +322,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      * @param TcpConnection $connection
      * @return int
      */
-    public static function dealHandshake($buffer, TcpConnection $connection)
+    public static function dealHandshake($buffer, ConnectionInterface $connection)
     {
         // HTTP protocol.
         if (0 === \strpos($buffer, 'GET')) {
