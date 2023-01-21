@@ -24,7 +24,7 @@ interface ProtocolInterface
     /**
      * Check the integrity of the package.
      * Please return the length of package.
-     * If length is unknow please return 0 that mean wating more data.
+     * If length is unknown please return 0 that means waiting for more data.
      * If the package has something wrong please return false the connection will be closed.
      *
      * @param string $recvBuffer
@@ -43,7 +43,7 @@ interface ProtocolInterface
     public static function decode($recvBuffer, ConnectionInterface $connection);
 
     /**
-     * Encode package brefore sending to client.
+     * Encode package before sending to client.
      *
      * @param mixed $data
      * @param ConnectionInterface $connection
