@@ -321,9 +321,9 @@ class Ws
         $connection->context->websocketCurrentFrameLength = 0;
         $connection->context->tmpWebsocketData = '';
         $connection->context->websocketDataBuffer = '';
-        if (!empty($connection->websocketPingTimer)) {
-            Timer::del($connection->websocketPingTimer);
-            $connection->websocketPingTimer = null;
+        if (!empty($connection->context->websocketPingTimer)) {
+            Timer::del($connection->context->websocketPingTimer);
+            $connection->context->websocketPingTimer = null;
         }
     }
 
@@ -342,8 +342,8 @@ class Ws
         $port = $connection->getRemotePort();
         $host = $port === 80 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
         // Handshake header.
-        $connection->websocketSecKey = \base64_encode(random_bytes(16));
-        $userHeader = $connection->headers ?? $connection->wsHttpHeader ?? null;
+        $connection->context->websocketSecKey = \base64_encode(random_bytes(16));
+        $userHeader = $connection->headers ?? null;
         $userHeaderStr = '';
         if (!empty($userHeader)) {
             if (\is_array($userHeader)) {
@@ -362,7 +362,7 @@ class Ws
             (isset($connection->websocketOrigin) ? "Origin: " . $connection->websocketOrigin . "\r\n" : '') .
             (isset($connection->websocketClientProtocol) ? "Sec-WebSocket-Protocol: " . $connection->websocketClientProtocol . "\r\n" : '') .
             "Sec-WebSocket-Version: 13\r\n" .
-            "Sec-WebSocket-Key: " . $connection->websocketSecKey . $userHeaderStr . "\r\n\r\n";
+            "Sec-WebSocket-Key: " . $connection->context->websocketSecKey . $userHeaderStr . "\r\n\r\n";
         $connection->send($header, true);
         $connection->context->handshakeStep = 1;
         $connection->context->websocketCurrentFrameLength = 0;
@@ -383,7 +383,7 @@ class Ws
         if ($pos) {
             //checking Sec-WebSocket-Accept
             if (\preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $buffer, $match)) {
-                if ($match[1] !== \base64_encode(\sha1($connection->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
+                if ($match[1] !== \base64_encode(\sha1($connection->context->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
                     Worker::safeEcho("Sec-WebSocket-Accept not match. Header:\n" . \substr($buffer, 0, $pos) . "\n");
                     $connection->close();
                     return 0;
@@ -413,10 +413,10 @@ class Ws
             }
             // Headbeat.
             if (!empty($connection->websocketPingInterval)) {
-                $connection->websocketPingTimer = Timer::add($connection->websocketPingInterval, function () use ($connection) {
+                $connection->context->websocketPingTimer = Timer::add($connection->websocketPingInterval, function () use ($connection) {
                     if (false === $connection->send(\pack('H*', '898000000000'), true)) {
-                        Timer::del($connection->websocketPingTimer);
-                        $connection->websocketPingTimer = null;
+                        Timer::del($connection->context->websocketPingTimer);
+                        $connection->context->websocketPingTimer = null;
                     }
                 });
             }

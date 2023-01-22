@@ -623,7 +623,7 @@ class Request
      */
     protected function setSidCookie(string $sessionName, string $sid, array $cookieParams)
     {
-        $this->connection->header['Set-Cookie'] = [$sessionName . '=' . $sid
+        $this->connection->headers['Set-Cookie'] = [$sessionName . '=' . $sid
             . (empty($cookieParams['domain']) ? '' : '; Domain=' . $cookieParams['domain'])
             . (empty($cookieParams['lifetime']) ? '' : '; Max-Age=' . $cookieParams['lifetime'])
             . (empty($cookieParams['path']) ? '' : '; Path=' . $cookieParams['path'])

@@ -185,8 +185,8 @@ class Http
         }
         if (!\is_object($response)) {
             $extHeader = '';
-            if (isset($connection->header)) {
-                foreach ($connection->header as $name => $value) {
+            if (isset($connection->headers)) {
+                foreach ($connection->headers as $name => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $item) {
                             $extHeader = "$name: $item\r\n";
@@ -195,15 +195,15 @@ class Http
                         $extHeader = "$name: $value\r\n";
                     }
                 }
-                unset($connection->header);
+                $connection->headers = [];
             }
             $bodyLen = \strlen((string)$response);
             return "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$extHeader}Connection: keep-alive\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $bodyLen\r\n\r\n$response";
         }
 
-        if (isset($connection->header)) {
-            $response->withHeaders($connection->header);
-            unset($connection->header);
+        if (isset($connection->headers)) {
+            $response->withHeaders($connection->headers);
+            $connection->headers = [];
         }
 
         if (isset($response->file)) {

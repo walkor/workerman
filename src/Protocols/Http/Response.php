@@ -25,7 +25,7 @@ class Response
      *
      * @var array
      */
-    protected $header = null;
+    protected $headers = null;
 
     /**
      * Http status.
@@ -169,7 +169,7 @@ class Response
     )
     {
         $this->status = $status;
-        $this->header = $headers;
+        $this->headers = $headers;
         $this->body = (string)$body;
     }
 
@@ -182,7 +182,7 @@ class Response
      */
     public function header($name, $value)
     {
-        $this->header[$name] = $value;
+        $this->headers[$name] = $value;
         return $this;
     }
 
@@ -206,7 +206,7 @@ class Response
      */
     public function withHeaders($headers)
     {
-        $this->header = \array_merge_recursive($this->header, $headers);
+        $this->headers = \array_merge_recursive($this->headers, $headers);
         return $this;
     }
 
@@ -218,7 +218,7 @@ class Response
      */
     public function withoutHeader($name)
     {
-        unset($this->header[$name]);
+        unset($this->headers[$name]);
         return $this;
     }
 
@@ -231,7 +231,7 @@ class Response
     public function getHeader($name)
     {
 
-        return $this->header[$name] ?? null;
+        return $this->headers[$name] ?? null;
     }
 
     /**
@@ -241,7 +241,7 @@ class Response
      */
     public function getHeaders()
     {
-        return $this->header;
+        return $this->headers;
     }
 
     /**
@@ -344,7 +344,7 @@ class Response
      */
     public function cookie($name, $value = '', $maxAge = null, $path = '', $domain = '', $secure = false, $httpOnly = false, $sameSite  = false)
     {
-        $this->header['Set-Cookie'][] = $name . '=' . \rawurlencode($value)
+        $this->headers['Set-Cookie'][] = $name . '=' . \rawurlencode($value)
             . (empty($domain) ? '' : '; Domain=' . $domain)
             . ($maxAge === null ? '' : '; Max-Age=' . $maxAge)
             . (empty($path) ? '' : '; Path=' . $path)
@@ -365,7 +365,7 @@ class Response
         $file = $fileInfo['file'];
         $reason = $this->reason ?: self::PHRASES[$this->status];
         $head = "HTTP/{$this->version} {$this->status} $reason\r\n";
-        $headers = $this->header;
+        $headers = $this->headers;
         if (!isset($headers['Server'])) {
             $head .= "Server: workerman\r\n";
         }
@@ -420,12 +420,12 @@ class Response
 
         $reason = $this->reason ?: self::PHRASES[$this->status] ?? '';
         $bodyLen = \strlen($this->body);
-        if (empty($this->header)) {
+        if (empty($this->headers)) {
             return "HTTP/{$this->version} {$this->status} $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $bodyLen\r\nConnection: keep-alive\r\n\r\n{$this->body}";
         }
 
         $head = "HTTP/{$this->version} {$this->status} $reason\r\n";
-        $headers = $this->header;
+        $headers = $this->headers;
         if (!isset($headers['Server'])) {
             $head .= "Server: workerman\r\n";
         }
