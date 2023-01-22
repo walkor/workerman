@@ -15,8 +15,6 @@
 namespace Workerman\Protocols\Http;
 
 use Workerman\Connection\TcpConnection;
-use Workerman\Properties;
-use Workerman\Protocols\Http\Session;
 use Workerman\Protocols\Http;
 use Workerman\Worker;
 
@@ -46,6 +44,13 @@ class Request
     public static $maxFileUploads = 1024;
 
     /**
+     * Properties.
+     *
+     * @var array
+     */
+    public $properties = [];
+
+    /**
      * Http buffer.
      *
      * @var string
@@ -65,11 +70,6 @@ class Request
      * @var bool
      */
     protected static $enableCache = true;
-
-    /**
-     * Dynamic Properties。
-     */
-    use Properties;
 
     /**
      * Request constructor.
@@ -255,7 +255,7 @@ class Request
     /**
      * Get session.
      *
-     * @return bool|\Workerman\Protocols\Http\Session
+     * @return bool|Session
      */
     public function session()
     {
@@ -616,11 +616,73 @@ class Request
     }
 
     /**
+     * @param string $sessionName
+     * @param string $sid
+     * @param array $cookieParams
+     * @return void
+     */
+    protected function setSidCookie(string $sessionName, string $sid, array $cookieParams)
+    {
+        $this->connection->header['Set-Cookie'] = [$sessionName . '=' . $sid
+            . (empty($cookieParams['domain']) ? '' : '; Domain=' . $cookieParams['domain'])
+            . (empty($cookieParams['lifetime']) ? '' : '; Max-Age=' . $cookieParams['lifetime'])
+            . (empty($cookieParams['path']) ? '' : '; Path=' . $cookieParams['path'])
+            . (empty($cookieParams['samesite']) ? '' : '; SameSite=' . $cookieParams['samesite'])
+            . (!$cookieParams['secure'] ? '' : '; Secure')
+            . (!$cookieParams['httponly'] ? '' : '; HttpOnly')];
+    }
+
+    /**
      * __toString.
      */
     public function __toString()
     {
         return $this->buffer;
+    }
+
+    /**
+     * Setter.
+     *
+     * @param string $name
+     * @param mixed $value
+     * @return void
+     */
+    public function __set($name, $value)
+    {
+        $this->properties[$name] = $value;
+    }
+
+    /**
+     * Getter.
+     *
+     * @param string $name
+     * @return mixed|null
+     */
+    public function __get($name)
+    {
+        return $this->properties[$name] ?? null;
+    }
+
+    /**
+     * Isset.
+     *
+     * @param string $name
+     * @return bool
+     */
+    public function __isset($name)
+    {
+        return isset($this->properties[$name]);
+    }
+
+    /**
+     * Unset.
+     *
+     * @param string $name
+     * @return void
+     */
+    public function __unset($name)
+    {
+        unset($this->properties[$name]);
     }
 
     /**
@@ -640,22 +702,5 @@ class Request
                 }
             });
         }
-    }
-
-    /**
-     * @param string $sessionName
-     * @param string $sid
-     * @param array $cookieParams
-     * @return void
-     */
-    protected function setSidCookie(string $sessionName, string $sid, array $cookieParams)
-    {
-        $this->connection->header['Set-Cookie'] = [$sessionName . '=' . $sid
-            . (empty($cookieParams['domain']) ? '' : '; Domain=' . $cookieParams['domain'])
-            . (empty($cookieParams['lifetime']) ? '' : '; Max-Age=' . $cookieParams['lifetime'])
-            . (empty($cookieParams['path']) ? '' : '; Path=' . $cookieParams['path'])
-            . (empty($cookieParams['samesite']) ? '' : '; SameSite=' . $cookieParams['samesite'])
-            . (!$cookieParams['secure'] ? '' : '; Secure')
-            . (!$cookieParams['httponly'] ? '' : '; HttpOnly')];
     }
 }

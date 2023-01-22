@@ -26,6 +26,7 @@ use Workerman\Events\Select;
  * Worker class
  * A container for listening ports
  */
+#[\AllowDynamicProperties]
 class Worker
 {
     /**
@@ -537,11 +538,6 @@ class Worker
     protected $workerId = null;
 
     /**
-     * Dynamic Properties。
-     */
-    use Properties;
-
-    /**
      * Run all worker instances.
      *
      * @return void
@@ -700,19 +696,6 @@ class Worker
                 $worker->listen();
             }
         }
-    }
-
-    /**
-     * Reload all worker instances.
-     *
-     * @return void
-     */
-    public static function reloadAllWorkers()
-    {
-        static::init();
-        static::initWorkers();
-        static::displayUI();
-        static::$status = static::STATUS_RELOADING;
     }
 
     /**

@@ -14,11 +14,10 @@
 
 namespace Workerman\Connection;
 
-use Workerman\Properties;
-
 /**
  * ConnectionInterface.
  */
+#[\AllowDynamicProperties]
 abstract class ConnectionInterface
 {
     /**
@@ -67,18 +66,6 @@ abstract class ConnectionInterface
      * @var callable
      */
     public $onError = null;
-
-    /**
-     * Protocol context
-     *
-     * @var array
-     */
-    public $protocolContext = [];
-
-    /**
-     * Dynamic Properties。
-     */
-    use Properties;
 
     /**
      * Sends data on the connection.
