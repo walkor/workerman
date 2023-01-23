@@ -13,6 +13,7 @@
  */
 namespace Workerman;
 
+use Revolt\EventLoop;
 use Workerman\Events\EventInterface;
 use Workerman\Events\Select;
 use Workerman\Worker;
@@ -97,10 +98,10 @@ class Timer
      * @param float    $timeInterval
      * @param callable $func
      * @param mixed    $args
-     * @param bool     $persistent
+     * @param bool $persistent
      * @return int|bool
      */
-    public static function add(float $timeInterval, $func, $args = [], $persistent = true)
+    public static function add(float $timeInterval, callable $func, $args = [], bool $persistent = true)
     {
         if ($timeInterval < 0) {
             Worker::safeEcho(new Exception("bad time_interval"));
@@ -117,7 +118,7 @@ class Timer
         
         // If not workerman runtime just return.
         if (!Worker::getAllWorkers()) {
-            return;
+            return false;
         }
 
         if (!\is_callable($func)) {
@@ -145,13 +146,21 @@ class Timer
      * @param float $delay
      * @param $func
      * @param array $args
-     * @return bool|int
+     * @return bool|int|null
      */
-    public static function delay(float $delay, $func, $args = [])
+    public static function delay(float $delay, $func = null, array $args = [])
     {
+        if (!$func) {
+            $eventLoop = EventLoop::getDriver();
+            $suspension = $eventLoop->getSuspension();
+            static::add($delay, function () use ($suspension) {
+                $suspension->resume();
+            }, $args, false);
+            $suspension->suspend();
+            return null;
+        }
         return static::add($delay, $func, $args, false);
     }
-
 
     /**
      * Tick.
@@ -170,7 +179,7 @@ class Timer
                 foreach ($taskData as $index => $oneTask) {
                     $taskFunc     = $oneTask[0];
                     $taskArgs     = $oneTask[1];
-                    $persistent    = $oneTask[2];
+                    $persistent   = $oneTask[2];
                     $timeInterval = $oneTask[3];
                     try {
                         $taskFunc(...$taskArgs);

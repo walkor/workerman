@@ -19,7 +19,9 @@ use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
 use Workerman\Events\Event;
+use Workerman\Events\Revolt;
 use Workerman\Events\Select;
+use Revolt\EventLoop;
 
 
 /**
@@ -473,7 +475,7 @@ class Worker
      * @var array<string, string>
      */
     protected static $availableEventLoops = [
-        "event" => Event::class,
+        'event' => Event::class,
     ];
 
     /**
@@ -1282,6 +1284,11 @@ class Worker
     protected static function getEventLoopName(): string
     {
         if (static::$eventLoopClass) {
+            return static::$eventLoopClass;
+        }
+
+        if (\class_exists(EventLoop::class)) {
+            static::$eventLoopClass = Revolt::class;
             return static::$eventLoopClass;
         }
 

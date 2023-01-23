@@ -21,6 +21,7 @@ use Workerman\Worker;
 
 /**
  * TcpConnection.
+ * @property string websocketType
  */
 class TcpConnection extends ConnectionInterface implements \JsonSerializable
 {
