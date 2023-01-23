@@ -151,8 +151,7 @@ class Timer
     public static function delay(float $delay, $func = null, array $args = [])
     {
         if (!$func) {
-            $eventLoop = EventLoop::getDriver();
-            $suspension = $eventLoop->getSuspension();
+            $suspension = EventLoop::getSuspension();
             static::add($delay, function () use ($suspension) {
                 $suspension->resume();
             }, $args, false);
