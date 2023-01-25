@@ -714,14 +714,14 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
      */
     public function baseWrite()
     {
-        \set_error_handler(function () {
-        });
-        if ($this->transport === 'ssl') {
-            $len = @\fwrite($this->socket, $this->sendBuffer, 8192);
-        } else {
-            $len = @\fwrite($this->socket, $this->sendBuffer);
-        }
-        \restore_error_handler();
+        $len = 0;
+        try {
+            if ($this->transport === 'ssl') {
+                $len = @\fwrite($this->socket, $this->sendBuffer, 8192);
+            } else {
+                $len = @\fwrite($this->socket, $this->sendBuffer);
+            }
+        } catch (\Throwable $e) {}
         if ($len === \strlen($this->sendBuffer)) {
             $this->bytesWritten += $len;
             Worker::$globalEvent->offWritable($this->socket);

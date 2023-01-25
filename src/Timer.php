@@ -15,9 +15,11 @@ namespace Workerman;
 
 use Revolt\EventLoop;
 use Workerman\Events\EventInterface;
+use Workerman\Events\Revolt;
 use Workerman\Events\Select;
-use Workerman\Worker;
-use \Exception;
+use Workerman\Events\Swoole;
+use Swoole\Coroutine\System;
+use Exception;
 
 /**
  * Timer.
@@ -143,22 +145,30 @@ class Timer
     }
 
     /**
+     * Coroutine sleep.
+     *
      * @param float $delay
-     * @param $func
-     * @param array $args
-     * @return bool|int|null
+     * @return null
      */
-    public static function delay(float $delay, $func = null, array $args = [])
+    public static function sleep(float $delay)
     {
-        if (!$func) {
-            $suspension = EventLoop::getSuspension();
-            static::add($delay, function () use ($suspension) {
-                $suspension->resume();
-            }, $args, false);
-            $suspension->suspend();
-            return null;
+        switch (Worker::$eventLoopClass) {
+            // Fiber
+            case Revolt::class:
+                $suspension = EventLoop::getSuspension();
+                static::add($delay, function () use ($suspension) {
+                    $suspension->resume();
+                }, null, false);
+                $suspension->suspend();
+                return null;
+            // Swoole
+            case Swoole::class:
+                System::sleep($delay);
+                return null;
         }
-        return static::add($delay, $func, $args, false);
+        // Swow or non coroutine environment
+        msleep($delay * 1000);
+        return null;
     }
 
     /**

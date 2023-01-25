@@ -39,6 +39,11 @@ class Swoole implements EventInterface
     protected $writeEvents = [];
 
     /**
+     * @var int
+     */
+    protected $mapId = 0;
+
+    /**
      * {@inheritdoc}
      */
     public function delay(float $delay, $func, $args)
