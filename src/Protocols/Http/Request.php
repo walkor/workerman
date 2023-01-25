@@ -400,7 +400,7 @@ class Request
             return;
         }
         $headBuffer = \substr($rawHead, $endLinePosition + 2);
-        $cacheable = static::$enableCache && !isset($headBuffer[2048]);
+        $cacheable = static::$enableCache && !isset($headBuffer[4096]);
         if ($cacheable && isset($cache[$headBuffer])) {
             $this->data['headers'] = $cache[$headBuffer];
             return;
