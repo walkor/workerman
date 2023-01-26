@@ -99,7 +99,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timerId)
+    public function offDelay($timerId)
     {
         if (isset($this->eventTimer[$timerId])) {
             try {
@@ -115,10 +115,18 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
+    public function offRepeat($timerId)
+    {
+        return $this->offDelay($timerId);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function deleteAllTimer()
     {
         foreach ($this->eventTimer as $timerId) {
-            $this->deleteTimer($timerId);
+            $this->offDelay($timerId);
         }
     }
 
@@ -254,16 +262,25 @@ class Swow implements EventInterface
         Coroutine::getMain()->kill();
     }
 
+    /**
+     * @return void
+     */
     public function destroy()
     {
         $this->stop();
     }
 
+    /**
+     * @return void
+     */
     public function clearAllTimer()
     {
         $this->deleteAllTimer();
     }
 
+    /**
+     * @return void
+     */
     public function loop()
     {
         waitAll();

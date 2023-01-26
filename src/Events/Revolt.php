@@ -211,7 +211,7 @@ class Revolt implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timerId)
+    public function offDelay($timerId)
     {
         if (isset($this->eventTimer[$timerId])) {
             $this->driver->cancel($this->eventTimer[$timerId]);
@@ -219,6 +219,14 @@ class Revolt implements EventInterface
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offRepeat($timerId)
+    {
+        return $this->offDelay($timerId);
     }
 
     /**

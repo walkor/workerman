@@ -106,8 +106,7 @@ class Timer
     public static function add(float $timeInterval, callable $func, $args = [], bool $persistent = true)
     {
         if ($timeInterval < 0) {
-            Worker::safeEcho(new Exception("bad time_interval"));
-            return false;
+            throw new \RuntimeException('$timeInterval can not less than 0');
         }
 
         if ($args === null) {
@@ -165,10 +164,12 @@ class Timer
             case Swoole::class:
                 System::sleep($delay);
                 return null;
+            // Swow
+            case Swow::class:
+                usleep($delay * 1000 * 1000);
+                return null;
         }
-        // Swow or non coroutine environment
-        usleep($delay * 1000 * 1000);
-        return null;
+        throw new \RuntimeException('Timer::sleep() require revolt/event-loop. Please run command "composer install revolt/event-loop" and restart workerman');
     }
 
     /**
@@ -215,16 +216,17 @@ class Timer
     public static function del($timerId)
     {
         if (self::$event) {
-            return self::$event->deleteTimer($timerId);
+            return self::$event->offDelay($timerId);
         }
-
         foreach(self::$tasks as $runTime => $taskData) 
         {
-            if(array_key_exists($timerId, $taskData)) unset(self::$tasks[$runTime][$timerId]);
+            if(array_key_exists($timerId, $taskData)) {
+                unset(self::$tasks[$runTime][$timerId]);
+            }
         }
-
-        if(array_key_exists($timerId, self::$status)) unset(self::$status[$timerId]);
-
+        if(array_key_exists($timerId, self::$status)) {
+            unset(self::$status[$timerId]);
+        }
         return true;
     }
 

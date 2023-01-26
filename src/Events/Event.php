@@ -93,7 +93,7 @@ class Event implements EventInterface
         $timerId = $this->timerId++;
         $event = new $className($this->eventBase, -1, $className::TIMEOUT, function () use ($func, $args, $timerId) {
             try {
-                $this->deleteTimer($timerId);
+                $this->offDelay($timerId);
                 $func(...$args);
             } catch (\Throwable $e) {
                 Worker::stopAll(250, $e);
@@ -109,7 +109,7 @@ class Event implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timerId)
+    public function offDelay($timerId)
     {
         if (isset($this->eventTimer[$timerId])) {
             $this->eventTimer[$timerId]->del();
@@ -117,6 +117,14 @@ class Event implements EventInterface
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offRepeat($timerId)
+    {
+        return $this->offDelay($timerId);
     }
 
     /**

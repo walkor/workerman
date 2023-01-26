@@ -34,11 +34,18 @@ interface EventInterface
     public function repeat(float $interval, $func, $args);
 
     /**
-     * Delete a timer.
+     * Delete a delay timer.
      * @param $timerId
      * @return bool
      */
-    public function deleteTimer($timerId);
+    public function offDelay($timerId);
+
+    /**
+     * Delete a repeat timer.
+     * @param $timerId
+     * @return bool
+     */
+    public function offRepeat($timerId);
 
     /**
      * Execute a callback when a stream resource becomes readable or is closed for reading.
@@ -66,7 +73,7 @@ interface EventInterface
     /**
      * Cancel a callback of stream writable.
      * @param $stream
-     * @return mixed
+     * @return void
      */
     public function offWritable($stream);
 

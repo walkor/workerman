@@ -65,7 +65,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timerId)
+    public function offDelay($timerId)
     {
         if (isset($this->eventTimer[$timerId])) {
             $res = Timer::clear($timerId);
@@ -73,6 +73,14 @@ class Swoole implements EventInterface
             return $res;
         }
         return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offRepeat($timerId)
+    {
+        return $this->offDelay($timerId);
     }
 
     /**

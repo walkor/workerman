@@ -73,7 +73,7 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timerId)
+    public function offDelay($timerId)
     {
         if (isset($this->eventTimer[$timerId])) {
             $this->eventTimer[$timerId]->stop();
@@ -81,6 +81,14 @@ class Ev implements EventInterface
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offRepeat($timerId)
+    {
+        return $this->offDelay($timerId);
     }
 
     /**

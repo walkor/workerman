@@ -146,13 +146,21 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteTimer($timerId)
+    public function offDelay($timerId)
     {
         if (isset($this->eventTimer[$timerId])) {
             unset($this->eventTimer[$timerId]);
             return true;
         }
         return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offRepeat($timerId)
+    {
+        return $this->offDelay($timerId);
     }
 
     /**
