@@ -101,8 +101,17 @@ class Swoole implements EventInterface
      */
     public function onReadable($stream, $func)
     {
-        $this->readEvents[(int)$stream] = $stream;
-        return Event::add($stream, $func, null, \SWOOLE_EVENT_READ);
+        $fd = (int)$stream;
+        if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
+            Event::add($stream, $func, null, \SWOOLE_EVENT_READ);
+        } else {
+            if (isset($this->writeEvents[$fd])) {
+                Event::set($stream, $func, null, \SWOOLE_EVENT_READ | \SWOOLE_EVENT_WRITE);
+            } else {
+                Event::set($stream, $func, null, \SWOOLE_EVENT_READ);
+            }
+        }
+        $this->readEvents[$fd] = $stream;
     }
 
     /**
@@ -116,9 +125,10 @@ class Swoole implements EventInterface
         }
         unset($this->readEvents[$fd]);
         if (!isset($this->writeEvents[$fd])) {
-            return Event::del($stream);
+            Event::del($stream);
+            return;
         }
-        return Event::set($stream, null, null, \SWOOLE_EVENT_READ);
+        Event::set($stream, null, null, \SWOOLE_EVENT_WRITE);
     }
 
     /**
@@ -126,8 +136,17 @@ class Swoole implements EventInterface
      */
     public function onWritable($stream, $func)
     {
-        $this->writeEvents[(int)$stream] = $stream;
-        return Event::add($stream, null, $func, \SWOOLE_EVENT_WRITE);
+        $fd = (int)$stream;
+        if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
+            Event::add($stream, null, $func, \SWOOLE_EVENT_WRITE);
+        } else {
+            if (isset($this->readEvents[$fd])) {
+                Event::set($stream, null, $func, \SWOOLE_EVENT_WRITE | \SWOOLE_EVENT_READ);
+            } else {
+                Event::set($stream, null, $func, \SWOOLE_EVENT_WRITE);
+            }
+        }
+        $this->writeEvents[$fd] = $stream;
     }
 
     /**
@@ -141,9 +160,10 @@ class Swoole implements EventInterface
         }
         unset($this->writeEvents[$fd]);
         if (!isset($this->readEvents[$fd])) {
-            return Event::del($stream);
+            Event::del($stream);
+            return;
         }
-        return Event::set($stream, null, null, \SWOOLE_EVENT_WRITE);
+        Event::set($stream, null, null, \SWOOLE_EVENT_READ);
     }
 
     /**
@@ -159,8 +179,7 @@ class Swoole implements EventInterface
      */
     public function offSignal($signal)
     {
-        return Process::signal($signal, function () {
-        });
+        return Process::signal($signal, function () {});
     }
 
     /**
