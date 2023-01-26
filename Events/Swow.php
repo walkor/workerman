@@ -223,10 +223,11 @@ class Swow implements EventInterface
             return false;
         }
         $coroutine = Coroutine::run(static function () use ($signal, $func): void {
-            try {
-                Signal::wait($signal);
-                $func($signal);
-            } catch (SignalException) {
+            while (1) {
+                try {
+                    Signal::wait($signal);
+                    $func($signal);
+                } catch (SignalException) {}
             }
         });
         $this->_signalListener[$signal] = $coroutine;
