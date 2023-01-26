@@ -1690,6 +1690,10 @@ class Worker
                 foreach (static::$_pidMap as $worker_id => $worker_pid_array) {
                     if (isset($worker_pid_array[$pid])) {
                         $worker = static::$_workers[$worker_id];
+                        // Fix exit with status 2 for php8.2
+                        if ($status === \SIGINT && static::$status === static::STATUS_SHUTDOWN) {
+                            $status = 0;
+                        }
                         // Exit status.
                         if ($status !== 0) {
                             static::log("worker[{$worker->name}:$pid] exit with status $status");
