@@ -285,7 +285,7 @@ class Select implements EventInterface
                     unset($this->eventTimer[$timerId]);
                 }
                 try {
-                    $taskData[0]($taskData[1]);
+                    $taskData[0](...$taskData[1]);
                 } catch (Throwable $e) {
                     Worker::stopAll(250, $e);
                 }
