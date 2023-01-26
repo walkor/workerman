@@ -167,7 +167,7 @@ class Timer
                 return null;
         }
         // Swow or non coroutine environment
-        msleep($delay * 1000);
+        usleep($delay * 1000 * 1000);
         return null;
     }
 

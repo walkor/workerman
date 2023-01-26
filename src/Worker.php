@@ -1620,6 +1620,10 @@ class Worker
                 foreach (static::$pidMap as $workerId => $workerPidArray) {
                     if (isset($workerPidArray[$pid])) {
                         $worker = static::$workers[$workerId];
+                        // Fix exit with status 2 for php8.2
+                        if ($status === \SIGINT && static::$status === static::STATUS_SHUTDOWN) {
+                            $status = 0;
+                        }
                         // Exit status.
                         if ($status !== 0) {
                             static::log("worker[{$worker->name}:$pid] exit with status $status");
@@ -1806,12 +1810,15 @@ class Worker
             $workerPidArray = static::getAllWorkerPids();
             // Send stop signal to all child processes.
             $sig = static::$gracefulStop ? \SIGQUIT : \SIGINT;
-            // Fix exit with status 2
-            usleep(50000);
             foreach ($workerPidArray as $workerPid) {
-                \posix_kill($workerPid, $sig);
+                // Fix exit with status 2 for php8.2
+                if ($sig === \SIGINT && !Worker::$daemonize) {
+                    Timer::add(1, '\posix_kill', [$workerPid, \SIGINT], false);
+                } else {
+                    \posix_kill($workerPid, $sig);
+                }
                 if(!static::$gracefulStop){
-                    Timer::add(static::$stopTimeout, '\posix_kill', [$workerPid, \SIGKILL], false);
+                    Timer::add(ceil(static::$stopTimeout), '\posix_kill', [$workerPid, \SIGKILL], false);
                 }
             }
             Timer::add(1, "\\Workerman\\Worker::checkIfChildRunning");
