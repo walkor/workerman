@@ -223,10 +223,11 @@ class Swow implements EventInterface
             return false;
         }
         $coroutine = Coroutine::run(static function () use ($signal, $func): void {
-            try {
-                Signal::wait($signal);
-                $func($signal);
-            } catch (SignalException) {
+            while (1) {
+                try {
+                    Signal::wait($signal);
+                    $func($signal);
+                } catch (SignalException) {}
             }
         });
         $this->signalListener[$signal] = $coroutine;
@@ -268,44 +269,6 @@ class Swow implements EventInterface
     public function destroy()
     {
         $this->stop();
-    }
-
-    public function add($fd, $flag, $func, $args = [])
-    {
-        switch ($flag) {
-            case self::EV_SIGNAL:
-                return $this->onSignal($fd, $func);
-            case self::EV_TIMER:
-            case self::EV_TIMER_ONCE:
-                $method = self::EV_TIMER === $flag ? 'tick' : 'after';
-                if ($method === 'tick') {
-                    return $this->repeat($fd, $func, $args);
-                } else {
-                    return $this->delay($fd, $func, $args);
-                }
-            case self::EV_READ:
-                return $this->onReadable($fd, $func);
-            case self::EV_WRITE:
-                return $this->onWritable($fd, $func);
-        }
-    }
-
-    public function del($fd, $flag)
-    {
-        switch ($flag) {
-            case self::EV_SIGNAL:
-                return $this->offSignal($fd);
-            case self::EV_TIMER:
-            case self::EV_TIMER_ONCE:
-                return $this->deleteTimer($fd);
-            case self::EV_READ:
-            case self::EV_WRITE:
-                if ($flag === self::EV_READ) {
-                    $this->offReadable($fd);
-                } else {
-                    $this->offWritable($fd);
-                }
-        }
     }
 
     public function clearAllTimer()
