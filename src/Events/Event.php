@@ -91,9 +91,8 @@ class Event implements EventInterface
     {
         $className = $this->eventClassName;
         $timerId = $this->timerId++;
-        $event = new $className($this->eventBase, -1, $className::TIMEOUT, function () use ($func, $args, $timerId) {
+        $event = new $className($this->eventBase, -1, $className::TIMEOUT, function () use ($func, $args) {
             try {
-                $this->offDelay($timerId);
                 $func(...$args);
             } catch (\Throwable $e) {
                 Worker::stopAll(250, $e);
@@ -159,7 +158,7 @@ class Event implements EventInterface
         if (!$event || !$event->add()) {
             return false;
         }
-        $this->writeEvents[$fdKey] = $event;
+        $this->readEvents[$fdKey] = $event;
         return true;
     }
 
