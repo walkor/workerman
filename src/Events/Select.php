@@ -15,7 +15,6 @@
 namespace Workerman\Events;
 
 use Throwable;
-use Workerman\Worker;
 
 /**
  * select eventloop
@@ -104,6 +103,11 @@ class Select implements EventInterface
      * @var int
      */
     protected $selectTimeout = 100000000;
+
+    /**
+     * @var Closure || null
+     */
+    protected $errorHandler;
 
     /**
      * Construct.
@@ -301,7 +305,8 @@ class Select implements EventInterface
                 try {
                     $taskData[0](...$taskData[1]);
                 } catch (Throwable $e) {
-                    Worker::stopAll(250, $e);
+                    $this->error($e);
+                    continue;
                 }
             } else {
                 break;
@@ -403,6 +408,35 @@ class Select implements EventInterface
     public function getTimerCount()
     {
         return \count($this->eventTimer);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setErrorHandler($errorHandler)
+    {
+        $this->errorHandler = $errorHandler;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getErrorHandler()
+    {
+        return $this->errorHandler;
+    }
+
+    /**
+     * @param Throwable $e
+     * @return void
+     * @throws Throwable
+     */
+    public function error(Throwable $e)
+    {
+        if (!$this->errorHandler) {
+            throw new $e;
+        }
+        ($this->errorHandler)($e);
     }
 
 }

@@ -14,7 +14,7 @@
 
 namespace Workerman\Events;
 
-use Workerman\Worker;
+use Throwable;
 
 /**
  * libevent eventloop
@@ -65,6 +65,11 @@ class Event implements EventInterface
     protected $eventClassName = '';
 
     /**
+     * @var Closure || null
+     */
+    protected $errorHandler;
+
+    /**
      * Construct.
      * @return void
      */
@@ -95,7 +100,7 @@ class Event implements EventInterface
             try {
                 $func(...$args);
             } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+                $this->error($e);
             }
         });
         if (!$event || !$event->addTimer($delay)) {
@@ -137,7 +142,7 @@ class Event implements EventInterface
             try {
                 $func(...$args);
             } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+                $this->error($e);
             }
         });
         if (!$event || !$event->addTimer($interval)) {
@@ -261,5 +266,39 @@ class Event implements EventInterface
     public function getTimerCount()
     {
         return \count($this->eventTimer);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setErrorHandler($errorHandler)
+    {
+        $this->errorHandler = $errorHandler;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getErrorHandler()
+    {
+        return $this->errorHandler;
+    }
+
+    /**
+     * @param Throwable $e
+     * @return void
+     * @throws Throwable
+     */
+    public function error(Throwable $e)
+    {
+        try {
+            if (!$this->errorHandler) {
+                throw new $e;
+            }
+            ($this->errorHandler)($e);
+        } catch (\Throwable $e) {
+            // Cannot trigger an exception in the Event callback, otherwise it will cause an infinite loop
+            echo $e;
+        }
     }
 }

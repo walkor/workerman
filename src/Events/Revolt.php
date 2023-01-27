@@ -247,4 +247,20 @@ class Revolt implements EventInterface
     {
         return \count($this->eventTimer);
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setErrorHandler($errorHandler)
+    {
+        $this->driver->setErrorHandler($errorHandler);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getErrorHandler()
+    {
+        return $this->driver->getErrorHandler();
+    }
 }

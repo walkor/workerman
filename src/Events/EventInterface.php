@@ -25,6 +25,13 @@ interface EventInterface
     public function delay(float $delay, $func, $args = []);
 
     /**
+     * Delete a delay timer.
+     * @param $timerId
+     * @return bool
+     */
+    public function offDelay($timerId);
+
+    /**
      * Repeatedly execute a callback.
      * @param float $interval
      * @param $func
@@ -32,13 +39,6 @@ interface EventInterface
      * @return int|bool
      */
     public function repeat(float $interval, $func, $args = []);
-
-    /**
-     * Delete a delay timer.
-     * @param $timerId
-     * @return bool
-     */
-    public function offDelay($timerId);
 
     /**
      * Delete a repeat timer.
@@ -111,8 +111,21 @@ interface EventInterface
     public function stop();
 
     /**
-     * 
+     * Get Timer count.
      * @return int
      */
     public function getTimerCount();
+
+    /**
+     * Set error handler
+     * @param $errorHandler
+     * @return void
+     */
+    public function setErrorHandler($errorHandler);
+
+    /**
+     * Get error handler
+     * @return null|\Closure(\Throwable)
+     */
+    public function getErrorHandler();
 }

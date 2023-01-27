@@ -13,7 +13,7 @@
 
 namespace Workerman\Events;
 
-use Workerman\Worker;
+use Throwable;
 use Swoole\Event;
 use Swoole\Timer;
 use Swoole\Process;
@@ -44,6 +44,11 @@ class Swoole implements EventInterface
     protected $mapId = 0;
 
     /**
+     * @var Closure || null
+     */
+    protected $errorHandler;
+
+    /**
      * {@inheritdoc}
      */
     public function delay(float $delay, $func, $args = [])
@@ -54,8 +59,8 @@ class Swoole implements EventInterface
             unset($this->eventTimer[$timerId]);
             try {
                 $func(...(array)$args);
-            } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+            } catch (Throwable $e) {
+                $this->error($e);
             }
         });
         $this->eventTimer[$timerId] = $timerId;
@@ -96,8 +101,8 @@ class Swoole implements EventInterface
         $timerId = Timer::tick($t, function () use ($func, $args) {
             try {
                 $func(...(array)$args);
-            } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+            } catch (Throwable $e) {
+                $this->error($e);
             }
         });
         $this->eventTimer[$timerId] = $timerId;
@@ -227,6 +232,35 @@ class Swoole implements EventInterface
     public function getTimerCount()
     {
         return \count($this->eventTimer);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setErrorHandler($errorHandler)
+    {
+        $this->errorHandler = $errorHandler;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getErrorHandler()
+    {
+        return $this->errorHandler;
+    }
+
+    /**
+     * @param Throwable $e
+     * @return void
+     * @throws Throwable
+     */
+    public function error(Throwable $e)
+    {
+        if (!$this->errorHandler) {
+            throw new $e;
+        }
+        ($this->errorHandler)($e);
     }
 
 }

@@ -6,7 +6,7 @@ use RuntimeException;
 use Swow\Coroutine;
 use Swow\Signal;
 use Swow\SignalException;
-use Workerman\Worker;
+use Throwable;
 use function getmypid;
 use function max;
 use function msleep;
@@ -44,6 +44,11 @@ class Swow implements EventInterface
     protected $signalListener = [];
 
     /**
+     * @var Closure || null
+     */
+    protected $errorHandler;
+
+    /**
      * Get timer count.
      *
      * @return integer
@@ -66,7 +71,7 @@ class Swow implements EventInterface
             try {
                 $func(...(array) $args);
             } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+                $this->error($e);
             }
         });
         $timerId = $coroutine->getId();
@@ -87,7 +92,7 @@ class Swow implements EventInterface
                 try {
                     $func(...(array) $args);
                 } catch (\Throwable $e) {
-                    Worker::stopAll(250, $e);
+                    $this->error($e);
                 }
             }
         });
@@ -284,5 +289,34 @@ class Swow implements EventInterface
     public function loop()
     {
         waitAll();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setErrorHandler($errorHandler)
+    {
+        $this->errorHandler = $errorHandler;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getErrorHandler()
+    {
+        return $this->errorHandler;
+    }
+
+    /**
+     * @param Throwable $e
+     * @return void
+     * @throws Throwable
+     */
+    public function error(Throwable $e)
+    {
+        if (!$this->errorHandler) {
+            throw new $e;
+        }
+        ($this->errorHandler)($e);
     }
 }

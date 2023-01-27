@@ -1396,6 +1396,9 @@ class Worker
         else
         {
             static::$globalEvent = new Select();
+            static::$globalEvent->setErrorHandler(function ($exception) {
+                static::stopAll(250, $exception);
+            });
             Timer::init(static::$globalEvent);
             foreach($files as $startFile)
             {
@@ -1439,6 +1442,9 @@ class Worker
 
         if (empty(static::$globalEvent)) {
             static::$globalEvent = new Select();
+            static::$globalEvent->setErrorHandler(function ($exception) {
+                static::stopAll(250, $exception);
+            });
             Timer::init(static::$globalEvent);
         }
 
@@ -2367,6 +2373,9 @@ class Worker
         if (!static::$globalEvent) {
             $eventLoopClass = static::getEventLoopName();
             static::$globalEvent = new $eventLoopClass;
+            static::$globalEvent->setErrorHandler(function ($exception) {
+                static::stopAll(250, $exception);
+            });
             $this->resumeAccept();
         }
 

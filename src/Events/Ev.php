@@ -13,8 +13,8 @@
 
 namespace Workerman\Events;
 
-use Workerman\Worker;
-use \EvWatcher;
+use Closure;
+use EvWatcher;
 
 /**
  * Ev eventloop
@@ -48,6 +48,11 @@ class Ev implements EventInterface
      * @var array
      */
     protected $eventTimer = [];
+
+    /**
+     * @var Closure || null
+     */
+    protected $errorHandler;
 
     /**
      * Timer id.
@@ -208,4 +213,19 @@ class Ev implements EventInterface
         return \count($this->eventTimer);
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function setErrorHandler($errorHandler)
+    {
+        $this->errorHandler = $errorHandler;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getErrorHandler()
+    {
+        return $this->errorHandler;
+    }
 }
