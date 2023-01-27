@@ -56,7 +56,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args)
+    public function delay(float $delay, $func, $args = [])
     {
         $t = (int) ($delay * 1000);
         $t = max($t, 1);
@@ -77,7 +77,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $interval, $func, $args)
+    public function repeat(float $interval, $func, $args = [])
     {
         $t = (int) ($interval * 1000);
         $t = max($t, 1);

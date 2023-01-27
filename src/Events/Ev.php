@@ -59,7 +59,7 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args)
+    public function delay(float $delay, $func, $args = [])
     {
         $timerId = self::$timerId;
         $event = new \EvTimer($delay, 0, function () use ($func, $args, $timerId) {
@@ -94,7 +94,7 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $interval, $func, $args)
+    public function repeat(float $interval, $func, $args = [])
     {
         $event = new \EvTimer($interval, $interval, function () use ($func, $args) {
             $func(...(array)$args);

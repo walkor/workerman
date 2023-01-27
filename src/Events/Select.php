@@ -23,6 +23,12 @@ use Workerman\Worker;
 class Select implements EventInterface
 {
     /**
+     * Running.
+     * @var bool
+     */
+    protected $running = true;
+
+    /**
      * All listeners for read/write event.
      *
      * @var array
@@ -112,7 +118,7 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args)
+    public function delay(float $delay, $func, $args = [])
     {
         $timerId = $this->timerId++;
         $runTime = \microtime(true) + $delay;
@@ -129,7 +135,7 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $delay, $func, $args)
+    public function repeat(float $delay, $func, $args = [])
     {
         $timerId = $this->timerId++;
         $runTime = \microtime(true) + $delay;
@@ -329,7 +335,7 @@ class Select implements EventInterface
      */
     public function run()
     {
-        while (1) {
+        while ($this->running) {
             if (\DIRECTORY_SEPARATOR === '/') {
                 // Calls signal handlers for pending signals
                 \pcntl_signal_dispatch();
@@ -382,6 +388,7 @@ class Select implements EventInterface
      */
     public function stop()
     {
+        $this->running = false;
         $this->deleteAllTimer();
         foreach ($this->signalEvents as $signal => $item) {
             $this->offsignal($signal);

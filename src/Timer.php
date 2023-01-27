@@ -218,8 +218,7 @@ class Timer
         if (self::$event) {
             return self::$event->offDelay($timerId);
         }
-        foreach(self::$tasks as $runTime => $taskData) 
-        {
+        foreach(self::$tasks as $runTime => $taskData) {
             if(array_key_exists($timerId, $taskData)) {
                 unset(self::$tasks[$runTime][$timerId]);
             }

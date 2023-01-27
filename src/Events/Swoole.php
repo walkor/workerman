@@ -46,7 +46,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args)
+    public function delay(float $delay, $func, $args = [])
     {
         $t = (int)($delay * 1000);
         $t = $t < 1 ? 1 : $t;
@@ -86,7 +86,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $interval, $func, $args)
+    public function repeat(float $interval, $func, $args = [])
     {
         if ($this->mapId > \PHP_INT_MAX) {
             $this->mapId = 0;

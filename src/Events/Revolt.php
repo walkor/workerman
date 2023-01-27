@@ -98,7 +98,7 @@ class Revolt implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args)
+    public function delay(float $delay, $func, $args = [])
     {
         $args = (array)$args;
         $timerId = $this->timerId++;
@@ -114,7 +114,7 @@ class Revolt implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $interval, $func, $args)
+    public function repeat(float $interval, $func, $args = [])
     {
         $args = (array)$args;
         $timerId = $this->timerId++;

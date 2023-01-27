@@ -22,7 +22,7 @@ interface EventInterface
      * @param $args
      * @return int|bool
      */
-    public function delay(float $delay, $func, $args);
+    public function delay(float $delay, $func, $args = []);
 
     /**
      * Repeatedly execute a callback.
@@ -31,7 +31,7 @@ interface EventInterface
      * @param $args
      * @return int|bool
      */
-    public function repeat(float $interval, $func, $args);
+    public function repeat(float $interval, $func, $args = []);
 
     /**
      * Delete a delay timer.

@@ -87,7 +87,7 @@ class Event implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args)
+    public function delay(float $delay, $func, $args = [])
     {
         $className = $this->eventClassName;
         $timerId = $this->timerId++;
@@ -130,7 +130,7 @@ class Event implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $interval, $func, $args)
+    public function repeat(float $interval, $func, $args = [])
     {
         $className = $this->eventClassName;
         $timerId = $this->timerId++;
