@@ -222,23 +222,19 @@ class Ws
         if (empty($connection->context->handshakeStep)) {
             static::sendHandshake($connection);
         }
-        $mask = 1;
-        $maskKey = "\x00\x00\x00\x00";
 
-        $pack = '';
-        $length = $lengthFlag = \strlen($payload);
-        if (65535 < $length) {
-            $pack = \pack('NN', ($length & 0xFFFFFFFF00000000) >> 32, $length & 0x00000000FFFFFFFF);
-            $lengthFlag = 127;
-        } else if (125 < $length) {
-            $pack = \pack('n*', $length);
-            $lengthFlag = 126;
+        $maskKey = "\x00\x00\x00\x00";
+        $length = \strlen($payload);
+
+        if (strlen($payload) < 126) {
+            $head = chr(0x80 | $length);
+        } elseif ($length < 0xFFFF) {
+            $head = chr(0x80 | 126) . pack("n", $length);
+        } else {
+            $head = chr(0x80 | 127) . pack("N", 0) . pack("N", $length);
         }
 
-        $head = ($mask << 7) | $lengthFlag;
-        $head = $connection->websocketType . \chr($head) . $pack;
-
-        $frame = $head . $maskKey;
+        $frame = $connection->websocketType . $head . $maskKey;
         // append payload to frame:
         $maskKey = \str_repeat($maskKey, \floor($length / 4)) . \substr($maskKey, 0, $length % 4);
         $frame .= $payload ^ $maskKey;
