@@ -118,7 +118,7 @@ class Revolt implements EventInterface
     {
         $args = (array)$args;
         $timerId = $this->timerId++;
-        $closure = function () use ($func, $args, $timerId) {
+        $closure = function () use ($func, $args) {
             $func(...$args);
         };
         $cbId = $this->driver->repeat($interval, $closure);

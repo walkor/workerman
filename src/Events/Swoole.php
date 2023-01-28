@@ -49,6 +49,15 @@ class Swoole implements EventInterface
     protected $errorHandler;
 
     /**
+     * Construct
+     */
+    public function __construct()
+    {
+        // Avoid process exit due to no listening
+        Timer::tick(100000000, function () {});
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function delay(float $delay, $func, $args = [])

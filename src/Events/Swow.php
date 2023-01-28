@@ -148,6 +148,10 @@ class Swow implements EventInterface
             try {
                 $this->readEvents[$fd] = Coroutine::getCurrent();
                 while (true) {
+                    if (!\is_resource($stream)) {
+                        $this->offReadable($stream);
+                        break;
+                    }
                     $rEvent = stream_poll_one($stream, STREAM_POLLIN | STREAM_POLLHUP);
                     if (!isset($this->readEvents[$fd]) || $this->readEvents[$fd] !== Coroutine::getCurrent()) {
                         break;
