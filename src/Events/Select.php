@@ -344,7 +344,6 @@ class Select implements EventInterface
             $read = $this->readFds;
             $write = $this->writeFds;
             $except = $this->exceptFds;
-
             if ($read || $write || $except) {
                 // Waiting read/write/signal/timeout events.
                 try {

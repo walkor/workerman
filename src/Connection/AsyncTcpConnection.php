@@ -196,6 +196,10 @@ class AsyncTcpConnection extends TcpConnection
             return;
         }
 
+        if (!$this->eventLoop) {
+            $this->eventLoop = Worker::$globalEvent;
+        }
+
         $this->status = self::STATUS_CONNECTING;
         $this->connectStartTime = \microtime(true);
         if ($this->transport !== 'unix') {
@@ -245,10 +249,10 @@ class AsyncTcpConnection extends TcpConnection
             return;
         }
         // Add socket to global event loop waiting connection is successfully established or faild.
-        Worker::$globalEvent->onWritable($this->socket, [$this, 'checkConnection']);
+        $this->eventLoop->onWritable($this->socket, [$this, 'checkConnection']);
         // For windows.
-        if (\DIRECTORY_SEPARATOR === '\\' && Worker::$eventLoopClass === Select::class) {
-            Worker::$globalEvent->onExcept($this->socket, [$this, 'checkConnection']);
+        if (\DIRECTORY_SEPARATOR === '\\' && \method_exists($this->eventLoop, 'onExcept')) {
+            $this->eventLoop->onExcept($this->socket, [$this, 'checkConnection']);
         }
     }
 
@@ -316,7 +320,7 @@ class AsyncTcpConnection extends TcpConnection
             try {
                 ($this->onError)($this, $code, $msg);
             } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+                $this->error($e);
             }
         }
     }
@@ -330,11 +334,11 @@ class AsyncTcpConnection extends TcpConnection
     public function checkConnection()
     {
         // Remove EV_EXPECT for windows.
-        if (\DIRECTORY_SEPARATOR === '\\' && Worker::$eventLoopClass === Select::class) {
-            Worker::$globalEvent->offExcept($this->socket);
+        if (\DIRECTORY_SEPARATOR === '\\' && \method_exists($this->eventLoop, 'offExcept')) {
+            $this->eventLoop->offExcept($this->socket);
         }
         // Remove write listener.
-        Worker::$globalEvent->offWritable($this->socket);
+        $this->eventLoop->offWritable($this->socket);
 
         if ($this->status !== self::STATUS_CONNECTING) {
             return;
@@ -363,11 +367,11 @@ class AsyncTcpConnection extends TcpConnection
             } else {
                 // There are some data waiting to send.
                 if ($this->sendBuffer) {
-                    Worker::$globalEvent->onWritable($this->socket, [$this, 'baseWrite']);
+                    $this->eventLoop->onWritable($this->socket, [$this, 'baseWrite']);
                 }
             }
             // Register a listener waiting read event.
-            Worker::$globalEvent->onReadable($this->socket, [$this, 'baseRead']);
+            $this->eventLoop->onReadable($this->socket, [$this, 'baseRead']);
 
             $this->status = self::STATUS_ESTABLISHED;
             $this->remoteAddress = $address;
@@ -377,7 +381,7 @@ class AsyncTcpConnection extends TcpConnection
                 try {
                     ($this->onConnect)($this);
                 } catch (\Throwable $e) {
-                    Worker::stopAll(250, $e);
+                    $this->error($e);
                 }
             }
             // Try to emit protocol::onConnect
@@ -385,10 +389,11 @@ class AsyncTcpConnection extends TcpConnection
                 try {
                     [$this->protocol, 'onConnect']($this);
                 } catch (\Throwable $e) {
-                    Worker::stopAll(250, $e);
+                    $this->error($e);
                 }
             }
         } else {
+
             // Connection failed.
             $this->emitError(static::CONNECT_FAIL, 'connect ' . $this->remoteAddress . ' fail after ' . round(\microtime(true) - $this->connectStartTime, 4) . ' seconds');
             if ($this->status === self::STATUS_CLOSING) {

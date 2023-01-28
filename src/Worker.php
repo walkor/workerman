@@ -2453,7 +2453,7 @@ class Worker
         }
 
         // TcpConnection.
-        $connection                         = new TcpConnection($newSocket, $remoteAddress);
+        $connection                         = new TcpConnection(Worker::$globalEvent, $newSocket, $remoteAddress);
         $this->connections[$connection->id] = $connection;
         $connection->worker                 = $this;
         $connection->protocol               = $this->protocol;

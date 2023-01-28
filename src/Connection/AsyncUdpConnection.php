@@ -14,6 +14,7 @@
 
 namespace Workerman\Connection;
 
+use Throwable;
 use Workerman\Events\EventInterface;
 use Workerman\Worker;
 use \Exception;
@@ -97,8 +98,8 @@ class AsyncUdpConnection extends UdpConnection
             ++ConnectionInterface::$statistics['total_request'];
             try {
                 ($this->onMessage)($this, $recvBuffer);
-            } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+            } catch (Throwable $e) {
+                $this->error($e);
             }
         }
         return true;
@@ -134,24 +135,25 @@ class AsyncUdpConnection extends UdpConnection
      * @param bool $raw
      *
      * @return bool
+     * @throws Throwable
      */
     public function close($data = null, $raw = false)
     {
         if ($data !== null) {
             $this->send($data, $raw);
         }
-        Worker::$globalEvent->offReadable($this->socket);
+        $this->eventLoop->offReadable($this->socket);
         \fclose($this->socket);
         $this->connected = false;
         // Try to emit onClose callback.
         if ($this->onClose) {
             try {
                 ($this->onClose)($this);
-            } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+            } catch (Throwable $e) {
+                $this->error($e);
             }
         }
-        $this->onConnect = $this->onMessage = $this->onClose = null;
+        $this->onConnect = $this->onMessage = $this->onClose = $this->eventLoop = $this->errorHandler = null;
         return true;
     }
 
@@ -164,6 +166,9 @@ class AsyncUdpConnection extends UdpConnection
     {
         if ($this->connected === true) {
             return;
+        }
+        if (!$this->eventLoop) {
+            $this->eventLoop = Worker::$globalEvent;
         }
         if ($this->contextOption) {
             $context = \stream_context_create($this->contextOption);
@@ -181,15 +186,15 @@ class AsyncUdpConnection extends UdpConnection
         \stream_set_blocking($this->socket, false);
 
         if ($this->onMessage) {
-            Worker::$globalEvent->onWritable($this->socket, [$this, 'baseRead']);
+            $this->eventLoop->onWritable($this->socket, [$this, 'baseRead']);
         }
         $this->connected = true;
         // Try to emit onConnect callback.
         if ($this->onConnect) {
             try {
                 ($this->onConnect)($this);
-            } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+            } catch (Throwable $e) {
+                $this->error($e);
             }
         }
     }

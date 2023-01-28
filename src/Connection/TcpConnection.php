@@ -294,7 +294,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
      * @param resource $socket
      * @param string $remoteAddress
      */
-    public function __construct($socket, $remoteAddress = '')
+    public function __construct($eventLoop, $socket, $remoteAddress = '')
     {
         ++self::$statistics['connection_count'];
         $this->id = $this->realId = self::$idRecorder++;
@@ -307,7 +307,8 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
         if (\function_exists('stream_set_read_buffer')) {
             \stream_set_read_buffer($this->socket, 0);
         }
-        Worker::$globalEvent->onReadable($this->socket, [$this, 'baseRead']);
+        $this->eventLoop = $eventLoop;
+        $this->eventLoop->onReadable($this->socket, [$this, 'baseRead']);
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
         $this->maxPackageSize = self::$defaultMaxPackageSize;
         $this->remoteAddress = $remoteAddress;
@@ -366,7 +367,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
         // Attempt to send data directly.
         if ($this->sendBuffer === '') {
             if ($this->transport === 'ssl') {
-                Worker::$globalEvent->onWritable($this->socket, [$this, 'baseWrite']);
+                $this->eventLoop->onWritable($this->socket, [$this, 'baseWrite']);
                 $this->sendBuffer = $sendBuffer;
                 $this->checkBufferWillFull();
                 return;
@@ -394,7 +395,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                         try {
                             ($this->onError)($this, static::SEND_FAIL, 'client closed');
                         } catch (\Throwable $e) {
-                            Worker::stopAll(250, $e);
+                            $this->error($e);
                         }
                     }
                     $this->destroy();
@@ -402,7 +403,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                 }
                 $this->sendBuffer = $sendBuffer;
             }
-            Worker::$globalEvent->onWritable($this->socket, [$this, 'baseWrite']);
+            $this->eventLoop->onWritable($this->socket, [$this, 'baseWrite']);
             // Check if the send buffer will be full.
             $this->checkBufferWillFull();
             return;
@@ -551,7 +552,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
      */
     public function pauseRecv()
     {
-        Worker::$globalEvent->offReadable($this->socket);
+        $this->eventLoop->offReadable($this->socket);
         $this->isPaused = true;
     }
 
@@ -563,7 +564,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
     public function resumeRecv()
     {
         if ($this->isPaused === true) {
-            Worker::$globalEvent->onReadable($this->socket, [$this, 'baseRead']);
+            $this->eventLoop->onReadable($this->socket, [$this, 'baseRead']);
             $this->isPaused = false;
             $this->baseRead($this->socket, false);
         }
@@ -585,7 +586,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
             if ($this->doSslHandshake($socket)) {
                 $this->sslHandshakeCompleted = true;
                 if ($this->sendBuffer) {
-                    Worker::$globalEvent->onWritable($socket, [$this, 'baseWrite']);
+                    $this->eventLoop->onWritable($socket, [$this, 'baseWrite']);
                 }
             } else {
                 return;
@@ -620,7 +621,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                     try {
                         ($this->onMessage)($this, $request);
                     } catch (\Throwable $e) {
-                        Worker::stopAll(250, $e);
+                        $this->error($e);
                     }
                     return;
                 }
@@ -686,7 +687,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                     }
                     ($this->onMessage)($this, $request);
                 } catch (\Throwable $e) {
-                    Worker::stopAll(250, $e);
+                    $this->error($e);
                 }
             }
             return;
@@ -701,7 +702,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
         try {
             ($this->onMessage)($this, $this->recvBuffer);
         } catch (\Throwable $e) {
-            Worker::stopAll(250, $e);
+            $this->error($e);
         }
         // Clean receive buffer.
         $this->recvBuffer = '';
@@ -724,14 +725,14 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
         } catch (\Throwable $e) {}
         if ($len === \strlen($this->sendBuffer)) {
             $this->bytesWritten += $len;
-            Worker::$globalEvent->offWritable($this->socket);
+            $this->eventLoop->offWritable($this->socket);
             $this->sendBuffer = '';
             // Try to emit onBufferDrain callback when the send buffer becomes empty.
             if ($this->onBufferDrain) {
                 try {
                     ($this->onBufferDrain)($this);
                 } catch (\Throwable $e) {
-                    Worker::stopAll(250, $e);
+                    $this->error($e);
                 }
             }
             if ($this->status === self::STATUS_CLOSING) {
@@ -801,7 +802,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
             try {
                 ($this->onSslHandshake)($this);
             } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+                $this->error($e);
             }
         }
         return true;
@@ -894,7 +895,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                 try {
                     ($this->onBufferFull)($this);
                 } catch (\Throwable $e) {
-                    Worker::stopAll(250, $e);
+                    $this->error($e);
                 }
             }
         }
@@ -913,7 +914,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                 try {
                     ($this->onError)($this, static::SEND_FAIL, 'send buffer full and drop package');
                 } catch (\Throwable $e) {
-                    Worker::stopAll(250, $e);
+                    $this->error($e);
                 }
             }
             return true;
@@ -935,6 +936,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
      * Destroy connection.
      *
      * @return void
+     * @throws \Throwable
      */
     public function destroy()
     {
@@ -943,8 +945,8 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
             return;
         }
         // Remove event listener.
-        Worker::$globalEvent->offReadable($this->socket);
-        Worker::$globalEvent->offWritable($this->socket);
+        $this->eventLoop->offReadable($this->socket);
+        $this->eventLoop->offWritable($this->socket);
 
         // Close socket.
         try {
@@ -958,7 +960,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
             try {
                 ($this->onClose)($this);
             } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+                $this->error($e);
             }
         }
         // Try to emit protocol::onClose
@@ -966,7 +968,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
             try {
                 ([$this->protocol, 'onClose'])($this);
             } catch (\Throwable $e) {
-                Worker::stopAll(250, $e);
+                $this->error($e);
             }
         }
         $this->sendBuffer = $this->recvBuffer = '';
@@ -974,7 +976,7 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
         $this->isPaused = $this->sslHandshakeCompleted = false;
         if ($this->status === self::STATUS_CLOSED) {
             // Cleaning up the callback to avoid memory leaks.
-            $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = null;
+            $this->onMessage = $this->onClose = $this->onError = $this->onBufferFull = $this->onBufferDrain = $this->eventLoop = $this->errorHandler = null;
             // Remove from worker->connections.
             if ($this->worker) {
                 unset($this->worker->connections[$this->realId]);

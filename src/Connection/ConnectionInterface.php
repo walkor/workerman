@@ -14,6 +14,12 @@
 
 namespace Workerman\Connection;
 
+use Throwable;
+use Workerman\Events\Event;
+use Workerman\Events\EventInterface;
+use Workerman\Events\Revolt;
+use Workerman\Worker;
+
 /**
  * ConnectionInterface.
  */
@@ -66,6 +72,16 @@ abstract class ConnectionInterface
      * @var callable
      */
     public $onError = null;
+
+    /**
+     * @var EventInterface
+     */
+    public $eventLoop;
+
+    /**
+     * @var \Closure
+     */
+    public $errorHandler;
 
     /**
      * Sends data on the connection.
@@ -138,5 +154,27 @@ abstract class ConnectionInterface
      * @return void
      */
     abstract public function close($data = null);
+
+    /**
+     * @param Throwable $exception
+     * @return mixed
+     * @throws Throwable
+     */
+    public function error(Throwable $exception)
+    {
+        if (!$this->errorHandler) {
+            Worker::stopAll(250, $exception);
+            return;
+        }
+        try {
+            ($this->errorHandler)($exception);
+        } catch (Throwable $exception) {
+            if ($this->eventLoop instanceof Event) {
+                echo $exception;
+                return;
+            }
+            throw $exception;
+        }
+    }
 
 }

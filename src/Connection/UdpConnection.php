@@ -196,6 +196,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
         if ($data !== null) {
             $this->send($data, $raw);
         }
+        $this->eventLoop = $this->errorHandler = null;
         return true;
     }
 
