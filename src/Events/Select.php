@@ -257,7 +257,7 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offsignal($signal)
+    public function offSignal($signal)
     {
         unset($this->signalEvents[$signal]);
         \pcntl_signal($signal, SIG_IGN);
@@ -341,11 +341,6 @@ class Select implements EventInterface
     public function run()
     {
         while ($this->running) {
-            if (\DIRECTORY_SEPARATOR === '/') {
-                // Calls signal handlers for pending signals
-                \pcntl_signal_dispatch();
-            }
-
             $read = $this->readFds;
             $write = $this->writeFds;
             $except = $this->exceptFds;
@@ -356,7 +351,6 @@ class Select implements EventInterface
                     @stream_select($read, $write, $except, 0, $this->selectTimeout);
                 } catch (Throwable $e) {
                 }
-
             } else {
                 $this->selectTimeout >= 1 && usleep($this->selectTimeout);
             }
@@ -384,6 +378,11 @@ class Select implements EventInterface
                 if (isset($this->exceptEvents[$fdKey])) {
                     $this->exceptEvents[$fdKey]($fd);
                 }
+            }
+
+            if (!empty($this->signalEvents)) {
+                // Calls signal handlers for pending signals
+                \pcntl_signal_dispatch();
             }
         }
     }
