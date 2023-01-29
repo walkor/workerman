@@ -272,31 +272,7 @@ class Swow implements EventInterface
     {
         Coroutine::killAll();
     }
-
-    /**
-     * @return void
-     */
-    public function destroy()
-    {
-        $this->stop();
-    }
-
-    /**
-     * @return void
-     */
-    public function clearAllTimer()
-    {
-        $this->deleteAllTimer();
-    }
-
-    /**
-     * @return void
-     */
-    public function loop()
-    {
-        waitAll();
-    }
-
+    
     /**
      * {@inheritdoc}
      */
