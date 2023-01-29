@@ -13,10 +13,11 @@
  */
 namespace Workerman\Connection;
 
+use StdClass;
 use Workerman\Events\EventInterface;
 use Workerman\Lib\Timer;
 use Workerman\Worker;
-use \Exception;
+use Exception;
 
 /**
  * AsyncTcpConnection.
@@ -164,6 +165,7 @@ class AsyncTcpConnection extends TcpConnection
         $this->maxSendBufferSize         = self::$defaultMaxSendBufferSize;
         $this->maxPackageSize            = self::$defaultMaxPackageSize;
         $this->_contextOption            = $context_option;
+        $this->context                   = new StdClass;
         static::$connections[$this->_id] = $this;
     }
 
