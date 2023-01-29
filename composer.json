@@ -24,7 +24,7 @@
         "source": "https://github.com/walkor/workerman"
     },
     "require": {
-        "php": ">=7.0",
+        "php": ">=8.1",
         "ext-json": "*"
     },
     "suggest": {
