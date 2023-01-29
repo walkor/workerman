@@ -150,6 +150,13 @@ class Worker
     public $onConnect = null;
 
     /**
+     * Emitted when websocket handshake completed (Only work when protocol is ws).
+     *
+     * @var callable|null
+     */
+    public $onWebSocketConnect = null;
+
+    /**
      * Emitted when data is received.
      *
      * @var callable

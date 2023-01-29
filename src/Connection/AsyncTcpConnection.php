@@ -33,6 +33,13 @@ class AsyncTcpConnection extends TcpConnection
     public $onConnect = null;
 
     /**
+     * Emitted when websocket handshake completed (Only work when protocol is ws).
+     *
+     * @var callable|null
+     */
+    public $onWebSocketConnect = null;
+
+    /**
      * Transport layer protocol.
      *
      * @var string

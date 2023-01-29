@@ -68,6 +68,20 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
     const STATUS_CLOSED = 8;
 
     /**
+     * Emitted when socket connection is successfully established.
+     *
+     * @var callable|null
+     */
+    public $onConnect = null;
+
+    /**
+     * Emitted when websocket handshake completed (Only work when protocol is ws).
+     *
+     * @var callable|null
+     */
+    public $onWebSocketConnect = null;
+
+    /**
      * Emitted when data is received.
      *
      * @var callable
