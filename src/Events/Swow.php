@@ -65,13 +65,14 @@ class Swow implements EventInterface
     {
         $t = (int) ($delay * 1000);
         $t = max($t, 1);
-        $coroutine = Coroutine::run(function () use ($t, $func, $args): void {
+        $that = $this;
+        $coroutine = Coroutine::run(function () use ($t, $func, $args, $that): void {
             msleep($t);
             unset($this->eventTimer[Coroutine::getCurrent()->getId()]);
             try {
                 $func(...(array) $args);
             } catch (\Throwable $e) {
-                $this->error($e);
+                $that->error($e);
             }
         });
         $timerId = $coroutine->getId();
@@ -86,13 +87,14 @@ class Swow implements EventInterface
     {
         $t = (int) ($interval * 1000);
         $t = max($t, 1);
-        $coroutine = Coroutine::run(static function () use ($t, $func, $args): void {
+        $that = $this;
+        $coroutine = Coroutine::run(static function () use ($t, $func, $args, $that): void {
             while (true) {
                 msleep($t);
                 try {
                     $func(...(array) $args);
                 } catch (\Throwable $e) {
-                    $this->error($e);
+                    $that->error($e);
                 }
             }
         });
@@ -268,7 +270,7 @@ class Swow implements EventInterface
      */
     public function stop()
     {
-        Coroutine::getMain()->kill();
+        Coroutine::killAll();
     }
 
     /**

@@ -1526,12 +1526,12 @@ class Worker
             $worker->setUserAndGroup();
             $worker->id = $id;
             $worker->run();
-            if (strpos(static::$eventLoopClass, 'Workerman\Events\Swoole') !== false) {
-                exit(0);
+            if (static::$status !== self::STATUS_SHUTDOWN) {
+                $err = new Exception('event-loop exited');
+                static::log($err);
+                exit(250);
             }
-            $err = new Exception('event-loop exited');
-            static::log($err);
-            exit(250);
+            exit(0);
         } else {
             throw new Exception("forkOneWorker fail");
         }
