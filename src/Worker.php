@@ -317,6 +317,13 @@ class Worker
     public static $processTitle = 'WorkerMan';
 
     /**
+     * Custom Protocols Root Namespace
+     *
+     * @var string
+     */
+    public static $protocolRoot = 'Protocols\\';
+
+    /**
      * After sending the stop command to the child process stopTimeout seconds,
      * if the process is still living then forced to kill.
      *
@@ -2302,11 +2309,11 @@ class Worker
         // Check application layer protocol class.
         if (!isset(self::BUILD_IN_TRANSPORTS[$scheme])) {
             $scheme         = \ucfirst($scheme);
-            $this->protocol = \substr($scheme,0,1)==='\\' ? $scheme : 'Protocols\\' . $scheme;
+            $this->protocol = \substr($scheme,0,1)==='\\' ? $scheme : self::$protocolRoot . $scheme;
             if (!\class_exists($this->protocol)) {
                 $this->protocol = "Workerman\\Protocols\\$scheme";
                 if (!\class_exists($this->protocol)) {
-                    throw new Exception("class \\Protocols\\$scheme not exist");
+                    throw new Exception("protocol $scheme not exist");
                 }
             }
 
