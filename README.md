@@ -12,7 +12,7 @@ Workerman supports HTTP, Websocket, SSL and other custom protocols.
 Workerman supports event extension.
 
 ## Requires
-PHP 5.4 or Higher  
+PHP 7.0 or Higher  
 A POSIX compatible operating system (Linux, OSX, BSD)  
 POSIX and PCNTL extensions required   
 Event extension recommended for better performance  
