@@ -14,12 +14,21 @@
 
 namespace Workerman\Connection;
 
+use JetBrains\PhpStorm\ArrayShape;
+use JsonSerializable;
 use Workerman\Protocols\ProtocolInterface;
+use function stream_socket_get_name;
+use function stream_socket_sendto;
+use function strlen;
+use function strrchr;
+use function strrpos;
+use function substr;
+use function trim;
 
 /**
  * UdpConnection.
  */
-class UdpConnection extends ConnectionInterface implements \JsonSerializable
+class UdpConnection extends ConnectionInterface implements JsonSerializable
 {
     /**
      * Transport layer protocol.
@@ -71,7 +80,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
                 return;
             }
         }
-        return \strlen($sendBuffer) === \stream_socket_sendto($this->socket, $sendBuffer, 0, $this->isIpV6() ? '[' . $this->getRemoteIp() . ']:' . $this->getRemotePort() : $this->remoteAddress);
+        return strlen($sendBuffer) === stream_socket_sendto($this->socket, $sendBuffer, 0, $this->isIpV6() ? '[' . $this->getRemoteIp() . ']:' . $this->getRemotePort() : $this->remoteAddress);
     }
 
     /**
@@ -81,9 +90,9 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      */
     public function getRemoteIp(): string
     {
-        $pos = \strrpos($this->remoteAddress, ':');
+        $pos = strrpos($this->remoteAddress, ':');
         if ($pos) {
-            return \trim(\substr($this->remoteAddress, 0, $pos), '[]');
+            return trim(substr($this->remoteAddress, 0, $pos), '[]');
         }
         return '';
     }
@@ -96,7 +105,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
     public function getRemotePort(): int
     {
         if ($this->remoteAddress) {
-            return (int)\substr(\strrchr($this->remoteAddress, ':'), 1);
+            return (int)substr(strrchr($this->remoteAddress, ':'), 1);
         }
         return 0;
     }
@@ -119,11 +128,11 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
     public function getLocalIp(): string
     {
         $address = $this->getLocalAddress();
-        $pos = \strrpos($address, ':');
+        $pos = strrpos($address, ':');
         if (!$pos) {
             return '';
         }
-        return \substr($address, 0, $pos);
+        return substr($address, 0, $pos);
     }
 
     /**
@@ -134,11 +143,11 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
     public function getLocalPort(): int
     {
         $address = $this->getLocalAddress();
-        $pos = \strrpos($address, ':');
+        $pos = strrpos($address, ':');
         if (!$pos) {
             return 0;
         }
-        return (int)\substr(\strrchr($address, ':'), 1);
+        return (int)substr(strrchr($address, ':'), 1);
     }
 
     /**
@@ -148,7 +157,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      */
     public function getLocalAddress(): string
     {
-        return (string)@\stream_socket_get_name($this->socket, false);
+        return (string)@stream_socket_get_name($this->socket, false);
     }
 
 
@@ -175,13 +184,13 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
     {
         return $this->socket;
     }
-    
+
     /**
      * Get the json_encode information.
      *
      * @return array
      */
-    public function jsonSerialize(): array
+    #[ArrayShape(['transport' => "string", 'getRemoteIp' => "string", 'remotePort' => "int", 'getRemoteAddress' => "string", 'getLocalIp' => "string", 'getLocalPort' => "int", 'getLocalAddress' => "string", 'isIpV4' => "bool", 'isIpV6' => "bool"])] public function jsonSerialize(): array
     {
         return [
             'transport' => $this->transport,

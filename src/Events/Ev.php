@@ -13,8 +13,10 @@
 
 namespace Workerman\Events;
 
-use Closure;
-use EvWatcher;
+use EvIo;
+use EvSignal;
+use EvTimer;
+use function count;
 
 /**
  * Ev eventloop
@@ -67,7 +69,7 @@ class Ev implements EventInterface
     public function delay(float $delay, callable $func, array $args = []): int
     {
         $timerId = self::$timerId;
-        $event = new \EvTimer($delay, 0, function () use ($func, $args, $timerId) {
+        $event = new EvTimer($delay, 0, function () use ($func, $args, $timerId) {
             unset($this->eventTimer[$timerId]);
             $func(...$args);
         });
@@ -101,7 +103,7 @@ class Ev implements EventInterface
      */
     public function repeat(float $interval, callable $func, array $args = []): int
     {
-        $event = new \EvTimer($interval, $interval, function () use ($func, $args) {
+        $event = new EvTimer($interval, $interval, function () use ($func, $args) {
             $func(...$args);
         });
         $this->eventTimer[self::$timerId] = $event;
@@ -114,7 +116,7 @@ class Ev implements EventInterface
     public function onReadable($stream, callable $func)
     {
         $fdKey = (int)$stream;
-        $event = new \EvIo($stream, \Ev::READ, function () use ($func, $stream) {
+        $event = new EvIo($stream, \Ev::READ, function () use ($func, $stream) {
             $func($stream);
         });
         $this->readEvents[$fdKey] = $event;
@@ -140,7 +142,7 @@ class Ev implements EventInterface
     public function onWritable($stream, callable $func)
     {
         $fdKey = (int)$stream;
-        $event = new \EvIo($stream, \Ev::WRITE, function () use ($func, $stream) {
+        $event = new EvIo($stream, \Ev::WRITE, function () use ($func, $stream) {
             $func($stream);
         });
         $this->readEvents[$fdKey] = $event;
@@ -165,7 +167,7 @@ class Ev implements EventInterface
      */
     public function onSignal(int $signal, callable $func)
     {
-        $event = new \EvSignal($signal, function () use ($func, $signal) {
+        $event = new EvSignal($signal, function () use ($func, $signal) {
             $func($signal);
         });
         $this->eventSignal[$signal] = $event;
@@ -216,7 +218,7 @@ class Ev implements EventInterface
      */
     public function getTimerCount(): int
     {
-        return \count($this->eventTimer);
+        return count($this->eventTimer);
     }
 
     /**
