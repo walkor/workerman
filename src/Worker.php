@@ -952,6 +952,7 @@ class Worker
                     // Echo status data.
                     static::safeEcho(static::formatStatusData($statisticsFile));
                     if ($mode !== '-d') {
+                        @\unlink($statisticsFile);
                         exit(0);
                     }
                     static::safeEcho("\nPress Ctrl+C to quit.\n\n");
