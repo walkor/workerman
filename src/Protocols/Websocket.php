@@ -19,6 +19,19 @@ use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Worker;
+use function base64_encode;
+use function chr;
+use function floor;
+use function ord;
+use function pack;
+use function preg_match;
+use function sha1;
+use function str_repeat;
+use function stripos;
+use function strlen;
+use function strpos;
+use function substr;
+use function unpack;
 
 /**
  * WebSocket protocol.
@@ -50,7 +63,7 @@ class Websocket
     public static function input(string $buffer, TcpConnection $connection): int
     {
         // Receive length.
-        $recvLen = \strlen($buffer);
+        $recvLen = strlen($buffer);
         // We need more data.
         if ($recvLen < 6) {
             return 0;
@@ -69,8 +82,8 @@ class Websocket
                 return 0;
             }
         } else {
-            $firstbyte = \ord($buffer[0]);
-            $secondbyte = \ord($buffer[1]);
+            $firstbyte = ord($buffer[0]);
+            $secondbyte = ord($buffer[1]);
             $dataLen = $secondbyte & 127;
             $isFinFrame = $firstbyte >> 7;
             $masked = $secondbyte >> 7;
@@ -84,13 +97,13 @@ class Websocket
             $opcode = $firstbyte & 0xf;
             switch ($opcode) {
                 case 0x0:
-                // Blob type.
+                    // Blob type.
                 case 0x1:
-                // Arraybuffer type.
+                    // Arraybuffer type.
                 case 0x2:
-                // Ping package.
+                    // Ping package.
                 case 0x9:
-                // Pong package.
+                    // Pong package.
                 case 0xa:
                     break;
                 // Close package.
@@ -122,7 +135,7 @@ class Websocket
                 if ($headLen > $recvLen) {
                     return 0;
                 }
-                $pack = \unpack('nn/ntotal_len', $buffer);
+                $pack = unpack('nn/ntotal_len', $buffer);
                 $dataLen = $pack['total_len'];
             } else {
                 if ($dataLen === 127) {
@@ -130,13 +143,13 @@ class Websocket
                     if ($headLen > $recvLen) {
                         return 0;
                     }
-                    $arr = \unpack('n/N2c', $buffer);
+                    $arr = unpack('n/N2c', $buffer);
                     $dataLen = $arr['c1'] * 4294967296 + $arr['c2'];
                 }
             }
             $currentFrameLength = $headLen + $dataLen;
 
-            $totalPackageSize = \strlen($connection->context->websocketDataBuffer) + $currentFrameLength;
+            $totalPackageSize = strlen($connection->context->websocketDataBuffer) + $currentFrameLength;
             if ($totalPackageSize > $connection->maxPackageSize) {
                 Worker::safeEcho("error package. package_length=$totalPackageSize\n");
                 $connection->close();
@@ -146,7 +159,7 @@ class Websocket
             if ($isFinFrame) {
                 if ($opcode === 0x9) {
                     if ($recvLen >= $currentFrameLength) {
-                        $pingData = static::decode(\substr($buffer, 0, $currentFrameLength), $connection);
+                        $pingData = static::decode(substr($buffer, 0, $currentFrameLength), $connection);
                         $connection->consumeRecvBuffer($currentFrameLength);
                         $tmpConnectionType = $connection->websocketType ?? static::BINARY_TYPE_BLOB;
                         $connection->websocketType = "\x8a";
@@ -162,13 +175,13 @@ class Websocket
                         }
                         $connection->websocketType = $tmpConnectionType;
                         if ($recvLen > $currentFrameLength) {
-                            return static::input(\substr($buffer, $currentFrameLength), $connection);
+                            return static::input(substr($buffer, $currentFrameLength), $connection);
                         }
                     }
                     return 0;
                 } else if ($opcode === 0xa) {
                     if ($recvLen >= $currentFrameLength) {
-                        $pongData = static::decode(\substr($buffer, 0, $currentFrameLength), $connection);
+                        $pongData = static::decode(substr($buffer, 0, $currentFrameLength), $connection);
                         $connection->consumeRecvBuffer($currentFrameLength);
                         $tmpConnectionType = $connection->websocketType ?? static::BINARY_TYPE_BLOB;
                         $connection->websocketType = "\x8a";
@@ -183,7 +196,7 @@ class Websocket
                         }
                         $connection->websocketType = $tmpConnectionType;
                         if ($recvLen > $currentFrameLength) {
-                            return static::input(\substr($buffer, $currentFrameLength), $connection);
+                            return static::input(substr($buffer, $currentFrameLength), $connection);
                         }
                     }
                     return 0;
@@ -202,12 +215,12 @@ class Websocket
             return 0;
         } // The length of the received data is greater than the length of a frame.
         elseif ($connection->context->websocketCurrentFrameLength < $recvLen) {
-            static::decode(\substr($buffer, 0, $connection->context->websocketCurrentFrameLength), $connection);
+            static::decode(substr($buffer, 0, $connection->context->websocketCurrentFrameLength), $connection);
             $connection->consumeRecvBuffer($connection->context->websocketCurrentFrameLength);
             $currentFrameLength = $connection->context->websocketCurrentFrameLength;
             $connection->context->websocketCurrentFrameLength = 0;
             // Continue to read next frame.
-            return static::input(\substr($buffer, $currentFrameLength), $connection);
+            return static::input(substr($buffer, $currentFrameLength), $connection);
         } // The length of the received data is less than the length of a frame.
         else {
             return 0;
@@ -223,7 +236,7 @@ class Websocket
      */
     public static function encode(string $buffer, TcpConnection $connection): string
     {
-        $len = \strlen($buffer);
+        $len = strlen($buffer);
         if (empty($connection->websocketType)) {
             $connection->websocketType = static::BINARY_TYPE_BLOB;
         }
@@ -231,12 +244,12 @@ class Websocket
         $firstByte = $connection->websocketType;
 
         if ($len <= 125) {
-            $encodeBuffer = $firstByte . \chr($len) . $buffer;
+            $encodeBuffer = $firstByte . chr($len) . $buffer;
         } else {
             if ($len <= 65535) {
-                $encodeBuffer = $firstByte . \chr(126) . \pack("n", $len) . $buffer;
+                $encodeBuffer = $firstByte . chr(126) . pack("n", $len) . $buffer;
             } else {
-                $encodeBuffer = $firstByte . \chr(127) . \pack("xxxxN", $len) . $buffer;
+                $encodeBuffer = $firstByte . chr(127) . pack("xxxxN", $len) . $buffer;
             }
         }
 
@@ -246,7 +259,7 @@ class Websocket
                 $connection->context->tmpWebsocketData = '';
             }
             // If buffer has already full then discard the current package.
-            if (\strlen($connection->context->tmpWebsocketData) > $connection->maxSendBufferSize) {
+            if (strlen($connection->context->tmpWebsocketData) > $connection->maxSendBufferSize) {
                 if ($connection->onError) {
                     try {
                         ($connection->onError)($connection, ConnectionInterface::SEND_FAIL, 'send buffer full and drop package');
@@ -258,7 +271,7 @@ class Websocket
             }
             $connection->context->tmpWebsocketData .= $encodeBuffer;
             // Check buffer is full.
-            if ($connection->maxSendBufferSize <= \strlen($connection->context->tmpWebsocketData)) {
+            if ($connection->maxSendBufferSize <= strlen($connection->context->tmpWebsocketData)) {
                 if ($connection->onBufferFull) {
                     try {
                         ($connection->onBufferFull)($connection);
@@ -283,24 +296,23 @@ class Websocket
      */
     public static function decode(string $buffer, TcpConnection $connection): string
     {
-        $firstByte = \ord($buffer[1]);
+        $firstByte = ord($buffer[1]);
         $len = $firstByte & 127;
-        $rsv1 = $firstByte & 64;
 
         if ($len === 126) {
-            $masks = \substr($buffer, 4, 4);
-            $data = \substr($buffer, 8);
+            $masks = substr($buffer, 4, 4);
+            $data = substr($buffer, 8);
         } else {
             if ($len === 127) {
-                $masks = \substr($buffer, 10, 4);
-                $data = \substr($buffer, 14);
+                $masks = substr($buffer, 10, 4);
+                $data = substr($buffer, 14);
             } else {
-                $masks = \substr($buffer, 2, 4);
-                $data = \substr($buffer, 6);
+                $masks = substr($buffer, 2, 4);
+                $data = substr($buffer, 6);
             }
         }
-        $dataLength = \strlen($data);
-        $masks = \str_repeat($masks, \floor($dataLength / 4)) . \substr($masks, 0, $dataLength % 4);
+        $dataLength = strlen($data);
+        $masks = str_repeat($masks, floor($dataLength / 4)) . substr($masks, 0, $dataLength % 4);
         $decoded = $data ^ $masks;
         if ($connection->context->websocketCurrentFrameLength) {
             $connection->context->websocketDataBuffer .= $decoded;
@@ -325,17 +337,16 @@ class Websocket
     public static function dealHandshake(string $buffer, TcpConnection $connection): int
     {
         // HTTP protocol.
-        if (0 === \strpos($buffer, 'GET')) {
+        if (str_starts_with($buffer, 'GET')) {
             // Find \r\n\r\n.
-            $headerEndPos = \strpos($buffer, "\r\n\r\n");
+            $headerEndPos = strpos($buffer, "\r\n\r\n");
             if (!$headerEndPos) {
                 return 0;
             }
             $headerLength = $headerEndPos + 4;
 
             // Get Sec-WebSocket-Key.
-            $SecWebSocketKey = '';
-            if (\preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
+            if (preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
                 $SecWebSocketKey = $match[1];
             } else {
                 $connection->close("HTTP/1.1 200 WebSocket\r\nServer: workerman/" . Worker::VERSION . "\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman/" . Worker::VERSION . "</div>",
@@ -343,7 +354,7 @@ class Websocket
                 return 0;
             }
             // Calculation websocket key.
-            $newKey = \base64_encode(\sha1($SecWebSocketKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true));
+            $newKey = base64_encode(sha1($SecWebSocketKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true));
             // Handshake response data.
             $handshakeMessage = "HTTP/1.1 101 Switching Protocols\r\n"
                 . "Upgrade: websocket\r\n"
@@ -379,7 +390,7 @@ class Websocket
 
             if ($connection->headers) {
                 foreach ($connection->headers as $header) {
-                    if (\stripos($header, 'Server:') === 0) {
+                    if (stripos($header, 'Server:') === 0) {
                         $hasServerHeader = true;
                     }
                     $handshakeMessage .= "$header\r\n";
@@ -399,8 +410,8 @@ class Websocket
                 $connection->send($connection->context->tmpWebsocketData, true);
                 $connection->context->tmpWebsocketData = '';
             }
-            if (\strlen($buffer) > $headerLength) {
-                return static::input(\substr($buffer, $headerLength), $connection);
+            if (strlen($buffer) > $headerLength) {
+                return static::input(substr($buffer, $headerLength), $connection);
             }
             return 0;
         }

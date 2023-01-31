@@ -18,6 +18,25 @@ use Throwable;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
+use function clearstatcache;
+use function count;
+use function explode;
+use function filesize;
+use function fopen;
+use function fread;
+use function fseek;
+use function ftell;
+use function in_array;
+use function ini_get;
+use function is_array;
+use function is_object;
+use function key;
+use function preg_match;
+use function strlen;
+use function strpos;
+use function strstr;
+use function substr;
+use function sys_get_temp_dir;
 
 /**
  * Class Http.
@@ -84,10 +103,10 @@ class Http
         if (!isset($buffer[512]) && isset($input[$buffer])) {
             return $input[$buffer];
         }
-        $crlfPos = \strpos($buffer, "\r\n\r\n");
+        $crlfPos = strpos($buffer, "\r\n\r\n");
         if (false === $crlfPos) {
             // Judge whether the package length exceeds the limit.
-            if (\strlen($buffer) >= 16384) {
+            if (strlen($buffer) >= 16384) {
                 $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
                 return 0;
             }
@@ -95,25 +114,25 @@ class Http
         }
 
         $length = $crlfPos + 4;
-        $firstLine = \explode(" ", \strstr($buffer, "\r\n", true), 3);
+        $firstLine = explode(" ", strstr($buffer, "\r\n", true), 3);
 
-        if (!\in_array($firstLine[0], ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
+        if (!in_array($firstLine[0], ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
 
-        $header = \substr($buffer, 0, $crlfPos);
-        $hostHeaderPosition = \strpos($header, "\r\nHost: ");
+        $header = substr($buffer, 0, $crlfPos);
+        $hostHeaderPosition = strpos($header, "\r\nHost: ");
 
         if (false === $hostHeaderPosition && $firstLine[2] === "HTTP/1.1") {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
 
-        if ($pos = \strpos($header, "\r\nContent-Length: ")) {
-            $length = $length + (int)\substr($header, $pos + 18, 10);
+        if ($pos = strpos($header, "\r\nContent-Length: ")) {
+            $length = $length + (int)substr($header, $pos + 18, 10);
             $hasContentLength = true;
-        } else if (\preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
+        } else if (preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
             $length = $length + $match[1];
             $hasContentLength = true;
         } else {
@@ -133,7 +152,7 @@ class Http
 
         if (!isset($buffer[512])) {
             $input[$buffer] = $length;
-            if (\count($input) > 512) {
+            if (count($input) > 512) {
                 unset($input[key($input)]);
             }
         }
@@ -164,8 +183,8 @@ class Http
         $connection->request = $request;
         if (true === $cacheable) {
             $requests[$buffer] = $request;
-            if (\count($requests) > 512) {
-                unset($requests[\key($requests)]);
+            if (count($requests) > 512) {
+                unset($requests[key($requests)]);
             }
         }
         return $request;
@@ -185,11 +204,11 @@ class Http
             $request = $connection->request;
             $request->session = $request->connection = $connection->request = null;
         }
-        if (!\is_object($response)) {
+        if (!is_object($response)) {
             $extHeader = '';
             if (isset($connection->headers)) {
                 foreach ($connection->headers as $name => $value) {
-                    if (\is_array($value)) {
+                    if (is_array($value)) {
                         foreach ($value as $item) {
                             $extHeader = "$name: $item\r\n";
                         }
@@ -199,7 +218,7 @@ class Http
                 }
                 $connection->headers = [];
             }
-            $bodyLen = \strlen((string)$response);
+            $bodyLen = strlen((string)$response);
             return "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$extHeader}Connection: keep-alive\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $bodyLen\r\n\r\n$response";
         }
 
@@ -212,8 +231,8 @@ class Http
             $file = $response->file['file'];
             $offset = $response->file['offset'];
             $length = $response->file['length'];
-            \clearstatcache();
-            $fileSize = (int)\filesize($file);
+            clearstatcache();
+            $fileSize = (int)filesize($file);
             $bodyLen = $length > 0 ? $length : $fileSize - $offset;
             $response->withHeaders([
                 'Content-Length' => $bodyLen,
@@ -224,10 +243,10 @@ class Http
                 $response->header('Content-Range', "bytes $offset-$offsetEnd/$fileSize");
             }
             if ($bodyLen < 2 * 1024 * 1024) {
-                $connection->send((string)$response . file_get_contents($file, false, null, $offset, $bodyLen), true);
+                $connection->send($response . file_get_contents($file, false, null, $offset, $bodyLen), true);
                 return '';
             }
-            $handler = \fopen($file, 'r');
+            $handler = fopen($file, 'r');
             if (false === $handler) {
                 $connection->close(new Response(403, null, '403 Forbidden'));
                 return '';
@@ -247,13 +266,14 @@ class Http
      * @param resource $handler
      * @param int $offset
      * @param int $length
+     * @throws Throwable
      */
     protected static function sendStream(TcpConnection $connection, $handler, int $offset = 0, int $length = 0)
     {
         $connection->context->bufferFull = false;
         $connection->context->streamSending = true;
         if ($offset !== 0) {
-            \fseek($handler, $offset);
+            fseek($handler, $offset);
         }
         $offsetEnd = $offset + $length;
         // Read file content from disk piece by piece and send to client.
@@ -263,7 +283,7 @@ class Http
                 // Read from disk.
                 $size = 1024 * 1024;
                 if ($length !== 0) {
-                    $tell = \ftell($handler);
+                    $tell = ftell($handler);
                     $remainSize = $offsetEnd - $tell;
                     if ($remainSize <= 0) {
                         fclose($handler);
@@ -273,7 +293,7 @@ class Http
                     $size = $remainSize > $size ? $size : $remainSize;
                 }
 
-                $buffer = \fread($handler, $size);
+                $buffer = fread($handler, $size);
                 // Read eof.
                 if ($buffer === '' || $buffer === false) {
                     fclose($handler);
@@ -308,9 +328,9 @@ class Http
             static::$uploadTmpDir = $dir;
         }
         if (static::$uploadTmpDir === '') {
-            if ($uploadTmpDir = \ini_get('upload_tmp_dir')) {
+            if ($uploadTmpDir = ini_get('upload_tmp_dir')) {
                 static::$uploadTmpDir = $uploadTmpDir;
-            } else if ($uploadTmpDir = \sys_get_temp_dir()) {
+            } else if ($uploadTmpDir = sys_get_temp_dir()) {
                 static::$uploadTmpDir = $uploadTmpDir;
             }
         }

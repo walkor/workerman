@@ -14,6 +14,11 @@
 
 namespace Workerman\Protocols;
 
+use function pack;
+use function strlen;
+use function substr;
+use function unpack;
+
 /**
  * Frame Protocol.
  */
@@ -27,10 +32,10 @@ class Frame
      */
     public static function input(string $buffer): int
     {
-        if (\strlen($buffer) < 4) {
+        if (strlen($buffer) < 4) {
             return 0;
         }
-        $unpackData = \unpack('Ntotal_length', $buffer);
+        $unpackData = unpack('Ntotal_length', $buffer);
         return $unpackData['total_length'];
     }
 
@@ -42,7 +47,7 @@ class Frame
      */
     public static function decode(string $buffer): string
     {
-        return \substr($buffer, 4);
+        return substr($buffer, 4);
     }
 
     /**
@@ -53,7 +58,7 @@ class Frame
      */
     public static function encode(string $data): string
     {
-        $totalLength = 4 + \strlen($data);
-        return \pack('N', $totalLength) . $data;
+        $totalLength = 4 + strlen($data);
+        return pack('N', $totalLength) . $data;
     }
 }
