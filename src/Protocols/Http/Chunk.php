@@ -15,6 +15,9 @@
 namespace Workerman\Protocols\Http;
 
 
+use function dechex;
+use function strlen;
+
 /**
  * Class Chunk
  * @package Workerman\Protocols\Http
@@ -45,6 +48,6 @@ class Chunk
      */
     public function __toString()
     {
-        return \dechex(\strlen($this->buffer)) . "\r\n$this->buffer\r\n";
+        return dechex(strlen($this->buffer)) . "\r\n$this->buffer\r\n";
     }
 }

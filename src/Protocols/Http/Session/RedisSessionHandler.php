@@ -15,10 +15,11 @@
 namespace Workerman\Protocols\Http\Session;
 
 use Redis;
+use RedisException;
+use RuntimeException;
 use Throwable;
 use Workerman\Protocols\Http\Session;
 use Workerman\Timer;
-use RedisException;
 
 /**
  * Class RedisSessionHandler
@@ -52,7 +53,7 @@ class RedisSessionHandler implements SessionHandlerInterface
     public function __construct(array $config)
     {
         if (false === extension_loaded('redis')) {
-            throw new \RuntimeException('Please install redis extension.');
+            throw new RuntimeException('Please install redis extension.');
         }
 
         if (!isset($config['timeout'])) {
@@ -74,7 +75,7 @@ class RedisSessionHandler implements SessionHandlerInterface
 
         $this->redis = new Redis();
         if (false === $this->redis->connect($config['host'], $config['port'], $config['timeout'])) {
-            throw new \RuntimeException("Redis connect {$config['host']}:{$config['port']} fail.");
+            throw new RuntimeException("Redis connect {$config['host']}:{$config['port']} fail.");
         }
         if (!empty($config['auth'])) {
             $this->redis->auth($config['auth']);
@@ -125,9 +126,9 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function updateTimestamp(string $id, string $data = ""): bool
+    public function updateTimestamp(string $sessionId, string $data = ""): bool
     {
-        return true === $this->redis->expire($id, Session::$lifetime);
+        return true === $this->redis->expire($sessionId, Session::$lifetime);
     }
 
     /**

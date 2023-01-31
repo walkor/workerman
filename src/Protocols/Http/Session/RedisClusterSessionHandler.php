@@ -14,7 +14,8 @@
 
 namespace Workerman\Protocols\Http\Session;
 
-use Workerman\Protocols\Http\Session;
+use Redis;
+use RedisCluster;
 use RedisClusterException;
 
 class RedisClusterSessionHandler extends RedisSessionHandler
@@ -33,11 +34,11 @@ class RedisClusterSessionHandler extends RedisSessionHandler
         if ($auth) {
             $args[] = $auth;
         }
-        $this->redis = new \RedisCluster(...$args);
+        $this->redis = new RedisCluster(...$args);
         if (empty($config['prefix'])) {
             $config['prefix'] = 'redis_session_';
         }
-        $this->redis->setOption(\Redis::OPT_PREFIX, $config['prefix']);
+        $this->redis->setOption(Redis::OPT_PREFIX, $config['prefix']);
     }
 
     /**
