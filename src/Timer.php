@@ -11,15 +11,24 @@
  * @link      http://www.workerman.net/
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
+
 namespace Workerman;
 
+use Exception;
 use Revolt\EventLoop;
+use RuntimeException;
+use Swoole\Coroutine\System;
+use Throwable;
 use Workerman\Events\EventInterface;
 use Workerman\Events\Revolt;
-use Workerman\Events\Select;
 use Workerman\Events\Swoole;
-use Swoole\Coroutine\System;
-use Exception;
+use function function_exists;
+use function is_callable;
+use function pcntl_alarm;
+use function pcntl_signal;
+use function time;
+use const PHP_INT_MAX;
+use const SIGALRM;
 
 /**
  * Timer.
@@ -76,8 +85,8 @@ class Timer
             self::$event = $event;
             return;
         }
-        if (\function_exists('pcntl_signal')) {
-            \pcntl_signal(\SIGALRM, ['\Workerman\Timer', 'signalHandle'], false);
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGALRM, ['\Workerman\Timer', 'signalHandle'], false);
         }
     }
 
@@ -89,7 +98,7 @@ class Timer
     public static function signalHandle()
     {
         if (!self::$event) {
-            \pcntl_alarm(1);
+            pcntl_alarm(1);
             self::tick();
         }
     }
@@ -97,7 +106,7 @@ class Timer
     /**
      * Add a timer.
      *
-     * @param float    $timeInterval
+     * @param float $timeInterval
      * @param callable $func
      * @param mixed|array $args
      * @param bool $persistent
@@ -106,7 +115,7 @@ class Timer
     public static function add(float $timeInterval, callable $func, null|array $args = [], bool $persistent = true): int
     {
         if ($timeInterval < 0) {
-            throw new \RuntimeException('$timeInterval can not less than 0');
+            throw new RuntimeException('$timeInterval can not less than 0');
         }
 
         if ($args === null) {
@@ -116,27 +125,27 @@ class Timer
         if (self::$event) {
             return $persistent ? self::$event->repeat($timeInterval, $func, $args) : self::$event->delay($timeInterval, $func, $args);
         }
-        
+
         // If not workerman runtime just return.
         if (!Worker::getAllWorkers()) {
             return false;
         }
 
-        if (!\is_callable($func)) {
+        if (!is_callable($func)) {
             Worker::safeEcho(new Exception("not callable"));
             return false;
         }
 
         if (empty(self::$tasks)) {
-            \pcntl_alarm(1);
+            pcntl_alarm(1);
         }
 
-        $runTime = \time() + $timeInterval;
+        $runTime = time() + $timeInterval;
         if (!isset(self::$tasks[$runTime])) {
             self::$tasks[$runTime] = [];
         }
 
-        self::$timerId = self::$timerId == \PHP_INT_MAX ? 1 : ++self::$timerId;
+        self::$timerId = self::$timerId == PHP_INT_MAX ? 1 : ++self::$timerId;
         self::$status[self::$timerId] = true;
         self::$tasks[$runTime][self::$timerId] = [$func, (array)$args, $persistent, $timeInterval];
 
@@ -169,7 +178,7 @@ class Timer
                 usleep($delay * 1000 * 1000);
                 return;
         }
-        throw new \RuntimeException('Timer::sleep() require revolt/event-loop. Please run command "composer install revolt/event-loop" and restart workerman');
+        throw new RuntimeException('Timer::sleep() require revolt/event-loop. Please run command "composer install revolt/event-loop" and restart workerman');
     }
 
     /**
@@ -180,25 +189,25 @@ class Timer
     public static function tick()
     {
         if (empty(self::$tasks)) {
-            \pcntl_alarm(0);
+            pcntl_alarm(0);
             return;
         }
-        $timeNow = \time();
+        $timeNow = time();
         foreach (self::$tasks as $runTime => $taskData) {
             if ($timeNow >= $runTime) {
                 foreach ($taskData as $index => $oneTask) {
-                    $taskFunc     = $oneTask[0];
-                    $taskArgs     = $oneTask[1];
-                    $persistent   = $oneTask[2];
+                    $taskFunc = $oneTask[0];
+                    $taskArgs = $oneTask[1];
+                    $persistent = $oneTask[2];
                     $timeInterval = $oneTask[3];
                     try {
                         $taskFunc(...$taskArgs);
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         Worker::safeEcho($e);
                     }
-                    if($persistent && !empty(self::$status[$index])) {
-                        $newRunTime = \time() + $timeInterval;
-                        if(!isset(self::$tasks[$newRunTime])) self::$tasks[$newRunTime] = [];
+                    if ($persistent && !empty(self::$status[$index])) {
+                        $newRunTime = time() + $timeInterval;
+                        if (!isset(self::$tasks[$newRunTime])) self::$tasks[$newRunTime] = [];
                         self::$tasks[$newRunTime][$index] = [$taskFunc, (array)$taskArgs, $persistent, $timeInterval];
                     }
                 }
@@ -218,12 +227,12 @@ class Timer
         if (self::$event) {
             return self::$event->offDelay($timerId);
         }
-        foreach(self::$tasks as $runTime => $taskData) {
-            if(array_key_exists($timerId, $taskData)) {
+        foreach (self::$tasks as $runTime => $taskData) {
+            if (array_key_exists($timerId, $taskData)) {
                 unset(self::$tasks[$runTime][$timerId]);
             }
         }
-        if(array_key_exists($timerId, self::$status)) {
+        if (array_key_exists($timerId, self::$status)) {
             unset(self::$status[$timerId]);
         }
         return true;
@@ -237,8 +246,8 @@ class Timer
     public static function delAll()
     {
         self::$tasks = self::$status = [];
-        if (\function_exists('pcntl_alarm')) {
-            \pcntl_alarm(0);
+        if (function_exists('pcntl_alarm')) {
+            pcntl_alarm(0);
         }
         if (self::$event) {
             self::$event->deleteAllTimer();
