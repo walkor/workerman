@@ -83,7 +83,7 @@ abstract class ConnectionInterface
     /**
      * @var ?EventInterface
      */
-    public ?EventInterface $eventLoop;
+    public ?EventInterface $eventLoop = null;
 
     /**
      * @var ?callable
@@ -154,26 +154,14 @@ abstract class ConnectionInterface
      *
      * return bool.
      */
-    public function isIpV4(): bool
-    {
-        if ($this->transport === 'unix') {
-            return false;
-        }
-        return !str_contains($this->getRemoteIp(), ':');
-    }
+    abstract public function isIpV4(): bool;
 
     /**
      * Is ipv6.
      *
      * return bool.
      */
-    public function isIpV6(): bool
-    {
-        if ($this->transport === 'unix') {
-            return false;
-        }
-        return str_contains($this->getRemoteIp(), ':');
-    }
+    abstract public function isIpV6(): bool;
 
     /**
      * @param Throwable $exception

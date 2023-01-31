@@ -15,6 +15,7 @@
 namespace Workerman\Connection;
 
 use JetBrains\PhpStorm\ArrayShape;
+use JetBrains\PhpStorm\Pure;
 use JsonSerializable;
 use Workerman\Protocols\ProtocolInterface;
 use function stream_socket_get_name;
@@ -173,6 +174,34 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
             $this->send($data, $raw);
         }
         $this->eventLoop = $this->errorHandler = null;
+    }
+
+    /**
+     * Is ipv4.
+     *
+     * return bool.
+     */
+    #[Pure]
+    public function isIpV4(): bool
+    {
+        if ($this->transport === 'unix') {
+            return false;
+        }
+        return !str_contains($this->getRemoteIp(), ':');
+    }
+
+    /**
+     * Is ipv6.
+     *
+     * return bool.
+     */
+    #[Pure]
+    public function isIpV6(): bool
+    {
+        if ($this->transport === 'unix') {
+            return false;
+        }
+        return str_contains($this->getRemoteIp(), ':');
     }
 
     /**

@@ -14,6 +14,7 @@
 
 namespace Workerman\Connection;
 
+use JetBrains\PhpStorm\Pure;
 use JsonSerializable;
 use stdClass;
 use Throwable;
@@ -889,6 +890,34 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         } else {
             $this->pauseRecv();
         }
+    }
+
+    /**
+     * Is ipv4.
+     *
+     * return bool.
+     */
+    #[Pure]
+    public function isIpV4(): bool
+    {
+        if ($this->transport === 'unix') {
+            return false;
+        }
+        return !str_contains($this->getRemoteIp(), ':');
+    }
+
+    /**
+     * Is ipv6.
+     *
+     * return bool.
+     */
+    #[Pure]
+    public function isIpV6(): bool
+    {
+        if ($this->transport === 'unix') {
+            return false;
+        }
+        return str_contains($this->getRemoteIp(), ':');
     }
 
     /**
