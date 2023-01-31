@@ -14,6 +14,8 @@
 
 namespace Workerman\Connection;
 
+use Workerman\Protocols\ProtocolInterface;
+
 /**
  * UdpConnection.
  */
@@ -62,6 +64,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
     public function send(mixed $sendBuffer, bool $raw = false)
     {
         if (false === $raw && $this->protocol) {
+            /** @var ProtocolInterface $parser */
             $parser = $this->protocol;
             $sendBuffer = $parser::encode($sendBuffer, $this);
             if ($sendBuffer === '') {

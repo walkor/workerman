@@ -14,12 +14,9 @@
 
 namespace Workerman\Connection;
 
-use Closure;
-use JetBrains\PhpStorm\Pure;
 use Throwable;
 use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
-use Workerman\Events\Revolt;
 use Workerman\Worker;
 
 /**
@@ -58,7 +55,7 @@ abstract class ConnectionInterface
      * Application layer protocol.
      * The format is like this Workerman\\Protocols\\Http.
      *
-     * @var ?class-string
+     * @var ?string
      */
     public ?string $protocol = null;
 

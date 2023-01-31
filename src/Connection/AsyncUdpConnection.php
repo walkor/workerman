@@ -14,9 +14,22 @@
 
 namespace Workerman\Connection;
 
-use Throwable;
-use Workerman\Worker;
 use Exception;
+use Throwable;
+use Workerman\Protocols\ProtocolInterface;
+use Workerman\Worker;
+use function class_exists;
+use function explode;
+use function fclose;
+use function stream_context_create;
+use function stream_set_blocking;
+use function stream_socket_client;
+use function stream_socket_recvfrom;
+use function stream_socket_sendto;
+use function strlen;
+use function substr;
+use function ucfirst;
+use const STREAM_CLIENT_CONNECT;
 
 /**
  * AsyncUdpConnection.
@@ -60,20 +73,20 @@ class AsyncUdpConnection extends UdpConnection
     public function __construct($remoteAddress, $contextOption = [])
     {
         // Get the application layer communication protocol and listening address.
-        list($scheme, $address) = \explode(':', $remoteAddress, 2);
+        list($scheme, $address) = explode(':', $remoteAddress, 2);
         // Check application layer protocol class.
         if ($scheme !== 'udp') {
-            $scheme = \ucfirst($scheme);
+            $scheme = ucfirst($scheme);
             $this->protocol = '\\Protocols\\' . $scheme;
-            if (!\class_exists($this->protocol)) {
+            if (!class_exists($this->protocol)) {
                 $this->protocol = "\\Workerman\\Protocols\\$scheme";
-                if (!\class_exists($this->protocol)) {
+                if (!class_exists($this->protocol)) {
                     throw new Exception("class \\Protocols\\$scheme not exist");
                 }
             }
         }
 
-        $this->remoteAddress = \substr($address, 2);
+        $this->remoteAddress = substr($address, 2);
         $this->contextOption = $contextOption;
     }
 
@@ -86,14 +99,16 @@ class AsyncUdpConnection extends UdpConnection
      */
     public function baseRead($socket)
     {
-        $recvBuffer = \stream_socket_recvfrom($socket, Worker::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
+        $recvBuffer = stream_socket_recvfrom($socket, Worker::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
         if (false === $recvBuffer || empty($remoteAddress)) {
             return;
         }
 
         if ($this->onMessage) {
             if ($this->protocol) {
-                $recvBuffer = $this->protocol::decode($recvBuffer, $this);
+                /** @var ProtocolInterface $parser */
+                $parser = $this->protocol;
+                $recvBuffer = $parser::decode($recvBuffer, $this);
             }
             ++ConnectionInterface::$statistics['total_request'];
             try {
@@ -102,29 +117,6 @@ class AsyncUdpConnection extends UdpConnection
                 $this->error($e);
             }
         }
-    }
-
-    /**
-     * Sends data on the connection.
-     *
-     * @param mixed $sendBuffer
-     * @param bool $raw
-     * @return void|boolean
-     * @throws Throwable
-     */
-    public function send(mixed $sendBuffer, bool $raw = false)
-    {
-        if (false === $raw && $this->protocol) {
-            $parser = $this->protocol;
-            $sendBuffer = $parser::encode($sendBuffer, $this);
-            if ($sendBuffer === '') {
-                return;
-            }
-        }
-        if ($this->connected === false) {
-            $this->connect();
-        }
-        return \strlen($sendBuffer) === \stream_socket_sendto($this->socket, $sendBuffer, 0);
     }
 
     /**
@@ -141,7 +133,7 @@ class AsyncUdpConnection extends UdpConnection
             $this->send($data, $raw);
         }
         $this->eventLoop->offReadable($this->socket);
-        \fclose($this->socket);
+        fclose($this->socket);
         $this->connected = false;
         // Try to emit onClose callback.
         if ($this->onClose) {
@@ -152,6 +144,30 @@ class AsyncUdpConnection extends UdpConnection
             }
         }
         $this->onConnect = $this->onMessage = $this->onClose = $this->eventLoop = $this->errorHandler = null;
+    }
+
+    /**
+     * Sends data on the connection.
+     *
+     * @param mixed $sendBuffer
+     * @param bool $raw
+     * @return void|boolean
+     * @throws Throwable
+     */
+    public function send(mixed $sendBuffer, bool $raw = false)
+    {
+        if (false === $raw && $this->protocol) {
+            /** @var ProtocolInterface $parser */
+            $parser = $this->protocol;
+            $sendBuffer = $parser::encode($sendBuffer, $this);
+            if ($sendBuffer === '') {
+                return;
+            }
+        }
+        if ($this->connected === false) {
+            $this->connect();
+        }
+        return strlen($sendBuffer) === stream_socket_sendto($this->socket, $sendBuffer, 0);
     }
 
     /**
@@ -169,19 +185,19 @@ class AsyncUdpConnection extends UdpConnection
             $this->eventLoop = Worker::$globalEvent;
         }
         if ($this->contextOption) {
-            $context = \stream_context_create($this->contextOption);
-            $this->socket = \stream_socket_client("udp://{$this->remoteAddress}", $errno, $errmsg,
-                30, \STREAM_CLIENT_CONNECT, $context);
+            $context = stream_context_create($this->contextOption);
+            $this->socket = stream_socket_client("udp://$this->remoteAddress", $errno, $errmsg,
+                30, STREAM_CLIENT_CONNECT, $context);
         } else {
-            $this->socket = \stream_socket_client("udp://{$this->remoteAddress}", $errno, $errmsg);
+            $this->socket = stream_socket_client("udp://$this->remoteAddress", $errno, $errmsg);
         }
 
         if (!$this->socket) {
-            Worker::safeEcho(new \Exception($errmsg));
+            Worker::safeEcho(new Exception($errmsg));
             return;
         }
 
-        \stream_set_blocking($this->socket, false);
+        stream_set_blocking($this->socket, false);
 
         if ($this->onMessage) {
             $this->eventLoop->onWritable($this->socket, [$this, 'baseRead']);

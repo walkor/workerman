@@ -18,6 +18,7 @@ use stdClass;
 use Throwable;
 use Workerman\Events\EventInterface;
 use Workerman\Protocols\Http\Request;
+use Workerman\Protocols\ProtocolInterface;
 use Workerman\Worker;
 
 /**
@@ -355,7 +356,9 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
 
         // Try to call protocol::encode($sendBuffer) before sending.
         if (false === $raw && $this->protocol !== null) {
-            $sendBuffer = $this->protocol::encode($sendBuffer, $this);
+            /** @var ProtocolInterface $parser */
+            $parser = $this->protocol;
+            $sendBuffer = $parser::encode($sendBuffer, $this);
             if ($sendBuffer === '') {
                 return;
             }
@@ -628,7 +631,9 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                 } else {
                     // Get current package length.
                     try {
-                        $this->currentPackageLength = $this->protocol::input($this->recvBuffer, $this);
+                        /** @var ProtocolInterface $parser */
+                        $parser = $this->protocol;
+                        $this->currentPackageLength = $parser::input($this->recvBuffer, $this);
                     } catch (Throwable $e) {
                     }
                     // The packet length is unknown.
@@ -663,7 +668,9 @@ class TcpConnection extends ConnectionInterface implements \JsonSerializable
                 $this->currentPackageLength = 0;
                 try {
                     // Decode request buffer before Emitting onMessage callback.
-                    $request = $this->protocol::decode($oneRequestBuffer, $this);
+                    /** @var ProtocolInterface $parser */
+                    $parser = $this->protocol;
+                    $request = $parser::decode($oneRequestBuffer, $this);
                     if (static::$enableCache && (!\is_object($request) || $request instanceof Request) && $one && !isset($oneRequestBuffer[512])) {
                         $requests[$oneRequestBuffer] = $request;
                         if (\count($requests) > 512) {
