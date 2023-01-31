@@ -26,50 +26,50 @@ class Ev implements EventInterface
      *
      * @var array
      */
-    protected $readEvents = [];
+    protected array $readEvents = [];
 
     /**
      * All listeners for write event.
      *
      * @var array
      */
-    protected $writeEvents = [];
+    protected array $writeEvents = [];
 
     /**
      * Event listeners of signal.
      *
      * @var array
      */
-    protected $eventSignal = [];
+    protected array $eventSignal = [];
 
     /**
      * All timer event listeners.
      *
      * @var array
      */
-    protected $eventTimer = [];
+    protected array $eventTimer = [];
 
     /**
-     * @var Closure || null
+     * @var ?callable
      */
-    protected $errorHandler;
+    protected $errorHandler = null;
 
     /**
      * Timer id.
      *
      * @var int
      */
-    protected static $timerId = 1;
+    protected static int $timerId = 1;
 
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args = [])
+    public function delay(float $delay, callable $func, array $args = []): int
     {
         $timerId = self::$timerId;
         $event = new \EvTimer($delay, 0, function () use ($func, $args, $timerId) {
             unset($this->eventTimer[$timerId]);
-            $func(...(array)$args);
+            $func(...$args);
         });
         $this->eventTimer[self::$timerId] = $event;
         return self::$timerId++;
@@ -78,7 +78,7 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offDelay($timerId)
+    public function offDelay(int $timerId): bool
     {
         if (isset($this->eventTimer[$timerId])) {
             $this->eventTimer[$timerId]->stop();
@@ -91,7 +91,7 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offRepeat($timerId)
+    public function offRepeat(int $timerId): bool
     {
         return $this->offDelay($timerId);
     }
@@ -99,10 +99,10 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $interval, $func, $args = [])
+    public function repeat(float $interval, callable $func, array $args = []): int
     {
         $event = new \EvTimer($interval, $interval, function () use ($func, $args) {
-            $func(...(array)$args);
+            $func(...$args);
         });
         $this->eventTimer[self::$timerId] = $event;
         return self::$timerId++;
@@ -111,7 +111,7 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onReadable($stream, $func)
+    public function onReadable($stream, callable $func)
     {
         $fdKey = (int)$stream;
         $event = new \EvIo($stream, \Ev::READ, function () use ($func, $stream) {
@@ -123,19 +123,21 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offReadable($stream)
+    public function offReadable($stream): bool
     {
         $fdKey = (int)$stream;
         if (isset($this->readEvents[$fdKey])) {
             $this->readEvents[$fdKey]->stop();
             unset($this->readEvents[$fdKey]);
+            return true;
         }
+        return false;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onWritable($stream, $func)
+    public function onWritable($stream, callable $func)
     {
         $fdKey = (int)$stream;
         $event = new \EvIo($stream, \Ev::WRITE, function () use ($func, $stream) {
@@ -147,19 +149,21 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offWritable($stream)
+    public function offWritable($stream): bool
     {
         $fdKey = (int)$stream;
         if (isset($this->writeEvents[$fdKey])) {
             $this->writeEvents[$fdKey]->stop();
             unset($this->writeEvents[$fdKey]);
+            return true;
         }
+        return false;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onSignal($signal, $func)
+    public function onSignal(int $signal, callable $func)
     {
         $event = new \EvSignal($signal, function () use ($func, $signal) {
             $func($signal);
@@ -170,12 +174,14 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offSignal($signal)
+    public function offSignal(int $signal): bool
     {
         if (isset($this->eventSignal[$signal])) {
             $this->eventSignal[$signal]->stop();
             unset($this->eventSignal[$signal]);
+            return true;
         }
+        return false;
     }
 
     /**
@@ -208,7 +214,7 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function getTimerCount()
+    public function getTimerCount(): int
     {
         return \count($this->eventTimer);
     }
@@ -216,7 +222,7 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function setErrorHandler($errorHandler)
+    public function setErrorHandler(callable $errorHandler)
     {
         $this->errorHandler = $errorHandler;
     }
@@ -224,7 +230,7 @@ class Ev implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function getErrorHandler()
+    public function getErrorHandler(): ?callable
     {
         return $this->errorHandler;
     }

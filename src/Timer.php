@@ -36,24 +36,24 @@ class Timer
      *
      * @var array
      */
-    protected static $tasks = [];
+    protected static array $tasks = [];
 
     /**
-     * event
+     * Event
      *
-     * @var Select
+     * @var ?EventInterface
      */
-    protected static $event = null;
+    protected static ?EventInterface $event = null;
 
     /**
-     * timer id
+     * Timer id
      *
      * @var int
      */
-    protected static $timerId = 0;
+    protected static int $timerId = 0;
 
     /**
-     * timer status
+     * Timer status
      * [
      *   timer_id1 => bool,
      *   timer_id2 => bool,
@@ -62,15 +62,15 @@ class Timer
      *
      * @var array
      */
-    protected static $status = [];
+    protected static array $status = [];
 
     /**
      * Init.
      *
-     * @param EventInterface $event
+     * @param EventInterface|null $event
      * @return void
      */
-    public static function init($event = null)
+    public static function init(EventInterface $event = null)
     {
         if ($event) {
             self::$event = $event;
@@ -99,11 +99,11 @@ class Timer
      *
      * @param float    $timeInterval
      * @param callable $func
-     * @param mixed    $args
+     * @param mixed|array $args
      * @param bool $persistent
-     * @return int|bool
+     * @return int
      */
-    public static function add(float $timeInterval, callable $func, $args = [], bool $persistent = true)
+    public static function add(float $timeInterval, callable $func, null|array $args = [], bool $persistent = true): int
     {
         if ($timeInterval < 0) {
             throw new \RuntimeException('$timeInterval can not less than 0');
@@ -147,7 +147,7 @@ class Timer
      * Coroutine sleep.
      *
      * @param float $delay
-     * @return null
+     * @return void
      */
     public static function sleep(float $delay)
     {
@@ -159,15 +159,15 @@ class Timer
                     $suspension->resume();
                 }, null, false);
                 $suspension->suspend();
-                return null;
+                return;
             // Swoole
             case Swoole::class:
                 System::sleep($delay);
-                return null;
+                return;
             // Swow
             case Swow::class:
                 usleep($delay * 1000 * 1000);
-                return null;
+                return;
         }
         throw new \RuntimeException('Timer::sleep() require revolt/event-loop. Please run command "composer install revolt/event-loop" and restart workerman');
     }
@@ -210,10 +210,10 @@ class Timer
     /**
      * Remove a timer.
      *
-     * @param mixed $timerId
+     * @param int $timerId
      * @return bool
      */
-    public static function del($timerId)
+    public static function del(int $timerId): bool
     {
         if (self::$event) {
             return self::$event->offDelay($timerId);

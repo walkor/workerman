@@ -15,6 +15,7 @@
 namespace Workerman\Events;
 
 use Throwable;
+use EventBase;
 
 /**
  * libevent eventloop
@@ -23,51 +24,51 @@ class Event implements EventInterface
 {
     /**
      * Event base.
-     * @var object
+     * @var EventBase
      */
-    protected $eventBase = null;
+    protected $eventBase;
 
     /**
      * All listeners for read event.
      * @var array
      */
-    protected $readEvents = [];
+    protected array $readEvents = [];
 
     /**
      * All listeners for write event.
      * @var array
      */
-    protected $writeEvents = [];
+    protected array $writeEvents = [];
 
     /**
      * Event listeners of signal.
      * @var array
      */
-    protected $eventSignal = [];
+    protected array $eventSignal = [];
 
     /**
      * All timer event listeners.
      * [func, args, event, flag, time_interval]
      * @var array
      */
-    protected $eventTimer = [];
+    protected array $eventTimer = [];
 
     /**
      * Timer id.
      * @var int
      */
-    protected $timerId = 0;
+    protected int $timerId = 0;
 
     /**
      * Event class name.
      * @var string
      */
-    protected $eventClassName = '';
+    protected string $eventClassName = '';
 
     /**
-     * @var Closure || null
+     * @var ?callable
      */
-    protected $errorHandler;
+    protected $errorHandler = null;
 
     /**
      * Construct.
@@ -92,7 +93,7 @@ class Event implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args = [])
+    public function delay(float $delay, callable $func, array $args = []): int
     {
         $className = $this->eventClassName;
         $timerId = $this->timerId++;
@@ -113,7 +114,7 @@ class Event implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offDelay($timerId)
+    public function offDelay(int $timerId): bool
     {
         if (isset($this->eventTimer[$timerId])) {
             $this->eventTimer[$timerId]->del();
@@ -126,7 +127,7 @@ class Event implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offRepeat($timerId)
+    public function offRepeat(int $timerId): bool
     {
         return $this->offDelay($timerId);
     }
@@ -134,7 +135,7 @@ class Event implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $interval, $func, $args = [])
+    public function repeat(float $interval, callable $func, array $args = []): int
     {
         $className = $this->eventClassName;
         $timerId = $this->timerId++;
@@ -155,82 +156,85 @@ class Event implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onReadable($stream, $func)
+    public function onReadable($stream, callable $func)
     {
         $className = $this->eventClassName;
         $fdKey = (int)$stream;
         $event = new $this->eventClassName($this->eventBase, $stream, $className::READ | $className::PERSIST, $func, $stream);
         if (!$event || !$event->add()) {
-            return false;
+            return;
         }
         $this->readEvents[$fdKey] = $event;
-        return true;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function offReadable($stream)
+    public function offReadable($stream): bool
     {
         $fdKey = (int)$stream;
         if (isset($this->readEvents[$fdKey])) {
             $this->readEvents[$fdKey]->del();
             unset($this->readEvents[$fdKey]);
+            return true;
         }
+        return false;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onWritable($stream, $func)
+    public function onWritable($stream, callable $func)
     {
         $className = $this->eventClassName;
         $fdKey = (int)$stream;
         $event = new $this->eventClassName($this->eventBase, $stream, $className::WRITE | $className::PERSIST, $func, $stream);
         if (!$event || !$event->add()) {
-            return false;
+            return;
         }
         $this->writeEvents[$fdKey] = $event;
-        return true;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function offWritable($stream)
+    public function offWritable($stream): bool
     {
         $fdKey = (int)$stream;
         if (isset($this->writeEvents[$fdKey])) {
             $this->writeEvents[$fdKey]->del();
             unset($this->writeEvents[$fdKey]);
+            return true;
         }
+        return false;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onSignal($signal, $func)
+    public function onSignal(int $signal, callable $func)
     {
         $className = $this->eventClassName;
-        $fdKey = (int)$signal;
+        $fdKey = $signal;
         $event = $className::signal($this->eventBase, $signal, $func);
         if (!$event || !$event->add()) {
-            return false;
+            return;
         }
         $this->eventSignal[$fdKey] = $event;
-        return true;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function offSignal($signal)
+    public function offSignal(int $signal): bool
     {
-        $fdKey = (int)$signal;
+        $fdKey = $signal;
         if (isset($this->eventSignal[$fdKey])) {
             $this->eventSignal[$fdKey]->del();
             unset($this->eventSignal[$fdKey]);
+            return true;
         }
+        return false;
     }
 
     /**
@@ -263,7 +267,7 @@ class Event implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function getTimerCount()
+    public function getTimerCount(): int
     {
         return \count($this->eventTimer);
     }
@@ -279,7 +283,7 @@ class Event implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function getErrorHandler()
+    public function getErrorHandler(): ?callable
     {
         return $this->errorHandler;
     }

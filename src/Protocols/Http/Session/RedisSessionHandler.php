@@ -14,6 +14,8 @@
 
 namespace Workerman\Protocols\Http\Session;
 
+use Redis;
+use Throwable;
 use Workerman\Protocols\Http\Session;
 use Workerman\Timer;
 use RedisException;
@@ -26,14 +28,14 @@ class RedisSessionHandler implements SessionHandlerInterface
 {
 
     /**
-     * @var \Redis
+     * @var Redis
      */
-    protected $redis;
+    protected Redis $redis;
 
     /**
      * @var array
      */
-    protected $config;
+    protected array $config;
 
     /**
      * RedisSessionHandler constructor.
@@ -47,7 +49,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      *  'ping'     => 55,
      * ]
      */
-    public function __construct($config)
+    public function __construct(array $config)
     {
         if (false === extension_loaded('redis')) {
             throw new \RuntimeException('Please install redis extension.');
@@ -70,7 +72,7 @@ class RedisSessionHandler implements SessionHandlerInterface
     {
         $config = $this->config;
 
-        $this->redis = new \Redis();
+        $this->redis = new Redis();
         if (false === $this->redis->connect($config['host'], $config['port'], $config['timeout'])) {
             throw new \RuntimeException("Redis connect {$config['host']}:{$config['port']} fail.");
         }
@@ -83,25 +85,26 @@ class RedisSessionHandler implements SessionHandlerInterface
         if (empty($config['prefix'])) {
             $config['prefix'] = 'redis_session_';
         }
-        $this->redis->setOption(\Redis::OPT_PREFIX, $config['prefix']);
+        $this->redis->setOption(Redis::OPT_PREFIX, $config['prefix']);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function open($savePath, $name)
+    public function open(string $savePath, string $name): bool
     {
         return true;
     }
 
     /**
      * {@inheritdoc}
+     * @throws RedisException
      */
-    public function read($sessionId)
+    public function read(string $sessionId): string
     {
         try {
             return $this->redis->get($sessionId);
-        } catch (RedisException $e) {
+        } catch (Throwable $e) {
             $msg = strtolower($e->getMessage());
             if ($msg === 'connection lost' || strpos($msg, 'went away')) {
                 $this->connect();
@@ -114,7 +117,7 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function write($sessionId, $sessionData)
+    public function write(string $sessionId, string $sessionData): bool
     {
         return true === $this->redis->setex($sessionId, Session::$lifetime, $sessionData);
     }
@@ -122,7 +125,7 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function updateTimestamp($id, $data = "")
+    public function updateTimestamp(string $id, string $data = ""): bool
     {
         return true === $this->redis->expire($id, Session::$lifetime);
     }
@@ -130,7 +133,7 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function destroy($sessionId)
+    public function destroy(string $sessionId): bool
     {
         $this->redis->del($sessionId);
         return true;
@@ -139,7 +142,7 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function close()
+    public function close(): bool
     {
         return true;
     }
@@ -147,7 +150,7 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function gc($maxlifetime)
+    public function gc(int $maxLifetime): bool
     {
         return true;
     }

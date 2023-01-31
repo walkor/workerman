@@ -14,6 +14,8 @@
 
 namespace Workerman\Protocols\Http;
 
+use Exception;
+use RuntimeException;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
 use Workerman\Worker;
@@ -27,68 +29,68 @@ class Request
     /**
      * Connection.
      *
-     * @var TcpConnection
+     * @var ?TcpConnection
      */
-    public $connection = null;
+    public ?TcpConnection $connection = null;
 
     /**
      * Session instance.
      *
-     * @var Session
+     * @var ?Session
      */
-    public $session = null;
+    public ?Session $session = null;
 
     /**
      * @var int
      */
-    public static $maxFileUploads = 1024;
+    public static int $maxFileUploads = 1024;
 
     /**
      * Properties.
      *
      * @var array
      */
-    public $properties = [];
+    public array $properties = [];
 
     /**
      * Http buffer.
      *
      * @var string
      */
-    protected $buffer = null;
+    protected string $buffer;
 
     /**
      * Request data.
      *
      * @var array
      */
-    protected $data = null;
+    protected array $data = [];
 
     /**
      * Enable cache.
      *
      * @var bool
      */
-    protected static $enableCache = true;
+    protected static bool $enableCache = true;
 
     /**
      * Request constructor.
      *
      * @param string $buffer
      */
-    public function __construct($buffer)
+    public function __construct(string $buffer)
     {
         $this->buffer = $buffer;
     }
 
     /**
-     * $GET.
+     * Get query.
      *
      * @param string|null $name
      * @param mixed|null $default
-     * @return mixed|null
+     * @return string|null|array
      */
-    public function get($name = null, $default = null)
+    public function get(string $name = null, mixed $default = null): array|string|null
     {
         if (!isset($this->data['get'])) {
             $this->parseGet();
@@ -100,13 +102,13 @@ class Request
     }
 
     /**
-     * $POST.
+     * Get post.
      *
      * @param string|null $name
      * @param mixed|null $default
-     * @return mixed|null
+     * @return string|null|array
      */
-    public function post($name = null, $default = null)
+    public function post(string $name = null, mixed $default = null): string|null|array
     {
         if (!isset($this->data['post'])) {
             $this->parsePost();
@@ -122,9 +124,9 @@ class Request
      *
      * @param string|null $name
      * @param mixed|null $default
-     * @return array|string|null
+     * @return string|null
      */
-    public function header($name = null, $default = null)
+    public function header(string $name = null, mixed $default = null): ?string
     {
         if (!isset($this->data['headers'])) {
             $this->parseHeaders();
@@ -141,9 +143,9 @@ class Request
      *
      * @param string|null $name
      * @param mixed|null $default
-     * @return array|string|null
+     * @return string|null|array
      */
-    public function cookie($name = null, $default = null)
+    public function cookie(string $name = null, mixed $default = null): array|string|null
     {
         if (!isset($this->data['cookie'])) {
             $this->data['cookie'] = [];
@@ -161,7 +163,7 @@ class Request
      * @param string|null $name
      * @return array|null
      */
-    public function file($name = null)
+    public function file(string $name = null)
     {
         if (!isset($this->data['files'])) {
             $this->parsePost();
@@ -177,7 +179,7 @@ class Request
      *
      * @return string
      */
-    public function method()
+    public function method(): string
     {
         if (!isset($this->data['method'])) {
             $this->parseHeadFirstLine();
@@ -190,7 +192,7 @@ class Request
      *
      * @return string
      */
-    public function protocolVersion()
+    public function protocolVersion(): string
     {
         if (!isset($this->data['protocolVersion'])) {
             $this->parseProtocolVersion();
@@ -202,9 +204,9 @@ class Request
      * Get host.
      *
      * @param bool $withoutPort
-     * @return string
+     * @return string|null
      */
-    public function host($withoutPort = false)
+    public function host(bool $withoutPort = false): ?string
     {
         $host = $this->header('host');
         if ($host && $withoutPort && $pos = \strpos($host, ':')) {
@@ -216,9 +218,9 @@ class Request
     /**
      * Get uri.
      *
-     * @return mixed
+     * @return string
      */
-    public function uri()
+    public function uri(): string
     {
         if (!isset($this->data['uri'])) {
             $this->parseHeadFirstLine();
@@ -229,9 +231,9 @@ class Request
     /**
      * Get path.
      *
-     * @return mixed
+     * @return string
      */
-    public function path()
+    public function path(): string
     {
         if (!isset($this->data['path'])) {
             $this->data['path'] = (string)\parse_url($this->uri(), PHP_URL_PATH);
@@ -242,9 +244,9 @@ class Request
     /**
      * Get query string.
      *
-     * @return mixed
+     * @return string
      */
-    public function queryString()
+    public function queryString(): string
     {
         if (!isset($this->data['query_string'])) {
             $this->data['query_string'] = (string)\parse_url($this->uri(), PHP_URL_QUERY);
@@ -255,16 +257,12 @@ class Request
     /**
      * Get session.
      *
-     * @return bool|Session
+     * @return Session
      */
-    public function session()
+    public function session(): Session
     {
         if ($this->session === null) {
-            $sessionId = $this->sessionId();
-            if ($sessionId === false) {
-                return false;
-            }
-            $this->session = new Session($sessionId);
+            $this->session = new Session($this->sessionId());
         }
         return $this->session;
     }
@@ -272,10 +270,11 @@ class Request
     /**
      * Get/Set session id.
      *
-     * @param $sessionId
+     * @param null $sessionId
      * @return string
+     * @throws Exception
      */
-    public function sessionId($sessionId = null)
+    public function sessionId($sessionId = null): string
     {
         if ($sessionId) {
             unset($this->sid);
@@ -284,9 +283,8 @@ class Request
             $sessionName = Session::$name;
             $sid = $sessionId ? '' : $this->cookie($sessionName);
             if ($sid === '' || $sid === null) {
-                if ($this->connection === null) {
-                    Worker::safeEcho('Request->session() fail, header already send');
-                    return false;
+                if (!$this->connection) {
+                    throw new RuntimeException('Request->session() fail, header already send');
                 }
                 $sid = $sessionId ?: static::createSessionId();
                 $cookieParams = Session::getCookieParams();
@@ -298,11 +296,13 @@ class Request
     }
 
     /**
-     * Session regenerate id
+     * Session regenerate id.
+     *
      * @param bool $deleteOldSession
-     * @return void
+     * @return string
+     * @throws Exception
      */
-    public function sessionRegenerateId($deleteOldSession = false)
+    public function sessionRegenerateId(bool $deleteOldSession = false): string
     {
         $session = $this->session();
         $sessionData = $session->all();
@@ -315,6 +315,7 @@ class Request
         $cookieParams = Session::getCookieParams();
         $sessionName = Session::$name;
         $this->setSidCookie($sessionName, $newSid, $cookieParams);
+        return $newSid;
     }
 
     /**
@@ -322,7 +323,7 @@ class Request
      *
      * @return string
      */
-    public function rawHead()
+    public function rawHead(): string
     {
         if (!isset($this->data['head'])) {
             $this->data['head'] = \strstr($this->buffer, "\r\n\r\n", true);
@@ -335,7 +336,7 @@ class Request
      *
      * @return string
      */
-    public function rawBody()
+    public function rawBody(): string
     {
         return \substr($this->buffer, \strpos($this->buffer, "\r\n\r\n") + 4);
     }
@@ -345,7 +346,7 @@ class Request
      *
      * @return string
      */
-    public function rawBuffer()
+    public function rawBuffer(): string
     {
         return $this->buffer;
     }
@@ -353,11 +354,11 @@ class Request
     /**
      * Enable or disable cache.
      *
-     * @param mixed $value
+     * @param bool $value
      */
-    public static function enableCache($value)
+    public static function enableCache(bool $value)
     {
-        static::$enableCache = (bool)$value;
+        static::$enableCache = $value;
     }
 
     /**
@@ -382,7 +383,7 @@ class Request
     {
         $firstLine = \strstr($this->buffer, "\r\n", true);
         $protocoVersion = substr(\strstr($firstLine, 'HTTP/'), 5);
-        $this->data['protocolVersion'] = $protocoVersion ? $protocoVersion : '1.0';
+        $this->data['protocolVersion'] = $protocoVersion ?: '1.0';
     }
 
     /**
@@ -407,7 +408,7 @@ class Request
         }
         $headData = \explode("\r\n", $headBuffer);
         foreach ($headData as $content) {
-            if (false !== \strpos($content, ':')) {
+            if (str_contains($content, ':')) {
                 list($key, $value) = \explode(':', $content, 2);
                 $key = \strtolower($key);
                 $value = \ltrim($value);
@@ -525,11 +526,16 @@ class Request
     }
 
     /**
+     * Parse upload file.
+     *
      * @param $boundary
      * @param $sectionStartOffset
+     * @param $postEncodeString
+     * @param $filesEncodeStr
+     * @param $files
      * @return int
      */
-    protected function parseUploadFile($boundary, $sectionStartOffset, &$postEncodeString, &$filesEncodeStr, &$files)
+    protected function parseUploadFile($boundary, $sectionStartOffset, &$postEncodeString, &$filesEncodeStr, &$files): int
     {
         $file = [];
         $boundary = "\r\n$boundary";
@@ -590,7 +596,6 @@ class Request
                         }
                         return $sectionEndOffset + \strlen($boundary) + 2;
                     }
-                    break;
                 case "content-type":
                     $file['type'] = \trim($value);
                     break;
@@ -609,8 +614,9 @@ class Request
      * Create session id.
      *
      * @return string
+     * @throws Exception
      */
-    public static function createSessionId()
+    public static function createSessionId(): string
     {
         return \bin2hex(\pack('d', \microtime(true)) . random_bytes(8));
     }

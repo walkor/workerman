@@ -14,11 +14,10 @@
 
 namespace Workerman\Connection;
 
-use Workerman\Events\EventInterface;
-use Workerman\Events\Select;
+use Throwable;
 use Workerman\Timer;
 use Workerman\Worker;
-use \Exception;
+use Exception;
 
 /**
  * AsyncTcpConnection.
@@ -28,14 +27,14 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Emitted when socket connection is successfully established.
      *
-     * @var callable|null
+     * @var ?callable
      */
     public $onConnect = null;
 
     /**
      * Emitted when websocket handshake completed (Only work when protocol is ws).
      *
-     * @var callable|null
+     * @var ?callable
      */
     public $onWebSocketConnect = null;
 
@@ -44,70 +43,70 @@ class AsyncTcpConnection extends TcpConnection
      *
      * @var string
      */
-    public $transport = 'tcp';
+    public string $transport = 'tcp';
 
     /**
      * Socks5 proxy.
      *
      * @var string
      */
-    public $proxySocks5 = '';
+    public string $proxySocks5 = '';
 
     /**
      * Http proxy.
      *
      * @var string
      */
-    public $proxyHttp = '';
+    public string $proxyHttp = '';
 
     /**
      * Status.
      *
      * @var int
      */
-    protected $status = self::STATUS_INITIAL;
+    protected int $status = self::STATUS_INITIAL;
 
     /**
      * Remote host.
      *
      * @var string
      */
-    protected $remoteHost = '';
+    protected string $remoteHost = '';
 
     /**
      * Remote port.
      *
      * @var int
      */
-    protected $remotePort = 80;
+    protected int $remotePort = 80;
 
     /**
      * Connect start time.
      *
      * @var float
      */
-    protected $connectStartTime = 0;
+    protected float $connectStartTime = 0;
 
     /**
      * Remote URI.
      *
      * @var string
      */
-    protected $remoteURI = '';
+    protected string $remoteURI = '';
 
     /**
      * Context option.
      *
      * @var array
      */
-    protected $contextOption = null;
+    protected array $contextOption = [];
 
     /**
      * Reconnect timer.
      *
      * @var int
      */
-    protected $reconnectTimer = null;
+    protected int $reconnectTimer = 0;
 
 
     /**
@@ -132,7 +131,7 @@ class AsyncTcpConnection extends TcpConnection
      * @param array $contextOption
      * @throws Exception
      */
-    public function __construct($remoteAddress, array $contextOption = [])
+    public function __construct(string $remoteAddress, array $contextOption = [])
     {
         $addressInfo = \parse_url($remoteAddress);
         if (!$addressInfo) {
@@ -195,6 +194,7 @@ class AsyncTcpConnection extends TcpConnection
      * Do connect.
      *
      * @return void
+     * @throws Throwable
      */
     public function connect()
     {
@@ -268,8 +268,9 @@ class AsyncTcpConnection extends TcpConnection
      *
      * @param int $after
      * @return void
+     * @throws Throwable
      */
-    public function reconnect($after = 0)
+    public function reconnect(int $after = 0)
     {
         $this->status = self::STATUS_INITIAL;
         static::$connections[$this->realId] = $this;
@@ -290,6 +291,7 @@ class AsyncTcpConnection extends TcpConnection
     {
         if ($this->reconnectTimer) {
             Timer::del($this->reconnectTimer);
+            $this->reconnectTimer = 0;
         }
     }
 
@@ -298,7 +300,7 @@ class AsyncTcpConnection extends TcpConnection
      *
      * @return string
      */
-    public function getRemoteHost()
+    public function getRemoteHost(): string
     {
         return $this->remoteHost;
     }
@@ -308,7 +310,7 @@ class AsyncTcpConnection extends TcpConnection
      *
      * @return string
      */
-    public function getRemoteURI()
+    public function getRemoteURI(): string
     {
         return $this->remoteURI;
     }
@@ -317,16 +319,17 @@ class AsyncTcpConnection extends TcpConnection
      * Try to emit onError callback.
      *
      * @param int $code
-     * @param string $msg
+     * @param mixed $msg
      * @return void
+     * @throws Throwable
      */
-    protected function emitError($code, $msg)
+    protected function emitError(int $code, mixed $msg)
     {
         $this->status = self::STATUS_CLOSING;
         if ($this->onError) {
             try {
                 ($this->onError)($this, $code, $msg);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $this->error($e);
             }
         }
@@ -335,8 +338,8 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * Check connection is successfully established or faild.
      *
-     * @param resource $socket
      * @return void
+     * @throws Throwable
      */
     public function checkConnection()
     {
@@ -387,7 +390,7 @@ class AsyncTcpConnection extends TcpConnection
             if ($this->onConnect) {
                 try {
                     ($this->onConnect)($this);
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $this->error($e);
                 }
             }
@@ -395,7 +398,7 @@ class AsyncTcpConnection extends TcpConnection
             if ($this->protocol && \method_exists($this->protocol, 'onConnect')) {
                 try {
                     [$this->protocol, 'onConnect']($this);
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $this->error($e);
                 }
             }

@@ -27,20 +27,20 @@ interface ProtocolInterface
      * If length is unknown please return 0 that means waiting for more data.
      * If the package has something wrong please return false the connection will be closed.
      *
-     * @param string $recvBuffer
+     * @param string $buffer
      * @param ConnectionInterface $connection
      * @return int|false
      */
-    public static function input($recvBuffer, ConnectionInterface $connection);
+    public static function input(string $buffer, ConnectionInterface $connection): bool|int;
 
     /**
      * Decode package and emit onMessage($message) callback, $message is the result that decode returned.
      *
-     * @param string $recvBuffer
+     * @param string $buffer
      * @param ConnectionInterface $connection
      * @return mixed
      */
-    public static function decode($recvBuffer, ConnectionInterface $connection);
+    public static function decode(string $buffer, ConnectionInterface $connection): mixed;
 
     /**
      * Encode package before sending to client.
@@ -49,5 +49,5 @@ interface ProtocolInterface
      * @param ConnectionInterface $connection
      * @return string
      */
-    public static function encode($data, ConnectionInterface $connection);
+    public static function encode(mixed $data, ConnectionInterface $connection): string;
 }

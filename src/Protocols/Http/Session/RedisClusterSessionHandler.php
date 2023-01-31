@@ -15,9 +15,14 @@
 namespace Workerman\Protocols\Http\Session;
 
 use Workerman\Protocols\Http\Session;
+use RedisClusterException;
 
 class RedisClusterSessionHandler extends RedisSessionHandler
 {
+    /**
+     * @param $config
+     * @throws RedisClusterException
+     */
     public function __construct($config)
     {
         $timeout = $config['timeout'] ?? 2;
@@ -38,7 +43,7 @@ class RedisClusterSessionHandler extends RedisSessionHandler
     /**
      * {@inheritdoc}
      */
-    public function read($sessionId)
+    public function read(string $sessionId): string
     {
         return $this->redis->get($sessionId);
     }

@@ -19,6 +19,7 @@ use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
 use Workerman\Events\Event;
+use Workerman\Events\EventInterface;
 use Workerman\Events\Revolt;
 use Workerman\Events\Select;
 use Revolt\EventLoop;
@@ -91,68 +92,68 @@ class Worker
      *
      * @var int
      */
-    public $id = 0;
+    public int $id = 0;
 
     /**
      * Name of the worker processes.
      *
      * @var string
      */
-    public $name = 'none';
+    public string $name = 'none';
 
     /**
      * Number of worker processes.
      *
      * @var int
      */
-    public $count = 1;
+    public int $count = 1;
 
     /**
      * Unix user of processes, needs appropriate privileges (usually root).
      *
      * @var string
      */
-    public $user = '';
+    public string $user = '';
 
     /**
      * Unix group of processes, needs appropriate privileges (usually root).
      *
      * @var string
      */
-    public $group = '';
+    public string $group = '';
 
     /**
      * reloadable.
      *
      * @var bool
      */
-    public $reloadable = true;
+    public bool $reloadable = true;
 
     /**
      * reuse port.
      *
      * @var bool
      */
-    public $reusePort = false;
+    public bool $reusePort = false;
 
     /**
      * Emitted when worker processes start.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onWorkerStart = null;
 
     /**
      * Emitted when a socket connection is successfully established.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onConnect = null;
 
     /**
      * Emitted when websocket handshake completed (Only work when protocol is ws).
      *
-     * @var callable|null
+     * @var ?callable
      */
     public $onWebSocketConnect = null;
 
@@ -166,49 +167,49 @@ class Worker
     /**
      * Emitted when the other end of the socket sends a FIN packet.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onClose = null;
 
     /**
      * Emitted when an error occurs with connection.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onError = null;
 
     /**
      * Emitted when the send buffer becomes full.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onBufferFull = null;
 
     /**
      * Emitted when the send buffer becomes empty.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onBufferDrain = null;
 
     /**
      * Emitted when worker processes stopped.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onWorkerStop = null;
 
     /**
      * Emitted when worker processes get reload signal.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onWorkerReload = null;
 
     /**
      * Emitted when worker processes exited.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onWorkerExit = null;
 
@@ -217,104 +218,104 @@ class Worker
      *
      * @var string
      */
-    public $transport = 'tcp';
+    public string $transport = 'tcp';
 
     /**
      * Store all connections of clients.
      *
      * @var array
      */
-    public $connections = [];
+    public array $connections = [];
 
     /**
      * Application layer protocol.
      *
-     * @var string
+     * @var ?string
      */
-    public $protocol = null;
+    public ?string $protocol = null;
 
     /**
      * Pause accept new connections or not.
      *
      * @var bool
      */
-    protected $pauseAccept = true;
+    protected bool $pauseAccept = true;
 
     /**
      * Is worker stopping ?
      * @var bool
      */
-    public $stopping = false;
+    public bool $stopping = false;
 
     /**
      * Daemonize.
      *
      * @var bool
      */
-    public static $daemonize = false;
+    public static bool $daemonize = false;
 
     /**
      * Stdout file.
      *
      * @var string
      */
-    public static $stdoutFile = '/dev/null';
+    public static string $stdoutFile = '/dev/null';
 
     /**
      * The file to store master process PID.
      *
      * @var string
      */
-    public static $pidFile = '';
+    public static string $pidFile = '';
 
     /**
      * The file used to store the master process status file.
      *
      * @var string
      */
-    public static $statusFile = '';
+    public static string $statusFile = '';
 
     /**
      * Log file.
      *
-     * @var string
+     * @var mixed
      */
-    public static $logFile = '';
+    public static mixed $logFile = '';
 
     /**
      * Global event loop.
      *
-     * @var Select
+     * @var ?EventInterface
      */
-    public static $globalEvent = null;
+    public static ?EventInterface $globalEvent = null;
 
     /**
      * Emitted when the master process get reload signal.
      *
-     * @var callable
+     * @var ?callable
      */
     public static $onMasterReload = null;
 
     /**
      * Emitted when the master process terminated.
      *
-     * @var callable
+     * @var ?callable
      */
     public static $onMasterStop = null;
 
     /**
      * EventLoopClass
      *
-     * @var string
+     * @var class-string
      */
-    public static $eventLoopClass = '';
+    public static string $eventLoopClass = '';
 
     /**
      * Process title
      *
      * @var string
      */
-    public static $processTitle = 'WorkerMan';
+    public static string $processTitle = 'WorkerMan';
 
     /**
      * After sending the stop command to the child process stopTimeout seconds,
@@ -322,20 +323,20 @@ class Worker
      *
      * @var int
      */
-    public static $stopTimeout = 2;
+    public static int $stopTimeout = 2;
 
     /**
      * Command
      * @var string
      */
-    public static $command = '';
+    public static string $command = '';
 
     /**
      * The PID of master process.
      *
      * @var int
      */
-    protected static $masterPid = 0;
+    protected static int $masterPid = 0;
 
     /**
      * Listening socket.
@@ -349,14 +350,14 @@ class Worker
      *
      * @var string
      */
-    protected $socketName = '';
+    protected string $socketName = '';
 
     /**
      * parse from socketName avoid parse again in master or worker
      * LocalSocket The format is like tcp://0.0.0.0:8080
-     * @var string
+     * @var ?string
      */
-    protected $localSocket = null;
+    protected ?string $localSocket = null;
 
     /**
      * Context of socket.
@@ -370,7 +371,7 @@ class Worker
      *
      * @var Worker[]
      */
-    protected static $workers = [];
+    protected static array $workers = [];
 
     /**
      * All worker processes pid.
@@ -378,7 +379,7 @@ class Worker
      *
      * @var array
      */
-    protected static $pidMap = [];
+    protected static array $pidMap = [];
 
     /**
      * All worker processes waiting for restart.
@@ -386,7 +387,7 @@ class Worker
      *
      * @var array
      */
-    protected static $pidsToRestart = [];
+    protected static array $pidsToRestart = [];
 
     /**
      * Mapping from PID to worker process ID.
@@ -394,84 +395,84 @@ class Worker
      *
      * @var array
      */
-    protected static $idMap = [];
+    protected static array $idMap = [];
 
     /**
      * Current status.
      *
      * @var int
      */
-    protected static $status = self::STATUS_STARTING;
+    protected static int $status = self::STATUS_STARTING;
 
     /**
      * Maximum length of the worker names.
      *
      * @var int
      */
-    protected static $maxWorkerNameLength = 12;
+    protected static int $maxWorkerNameLength = 12;
 
     /**
      * Maximum length of the socket names.
      *
      * @var int
      */
-    protected static $maxSocketNameLength = 12;
+    protected static int $maxSocketNameLength = 12;
 
     /**
      * Maximum length of the process user names.
      *
      * @var int
      */
-    protected static $maxUserNameLength = 12;
+    protected static int $maxUserNameLength = 12;
 
     /**
      * Maximum length of the Proto names.
      *
      * @var int
      */
-    protected static $maxProtoNameLength = 4;
+    protected static int $maxProtoNameLength = 4;
 
     /**
      * Maximum length of the Processes names.
      *
      * @var int
      */
-    protected static $maxProcessesNameLength = 9;
+    protected static int $maxProcessesNameLength = 9;
 
     /**
      * Maximum length of the state names.
      *
      * @var int
      */
-    protected static $maxStateNameLength = 1;
+    protected static int $maxStateNameLength = 1;
 
     /**
      * The file to store status info of current worker process.
      *
      * @var string
      */
-    protected static $statisticsFile = '';
+    protected static string $statisticsFile = '';
 
     /**
      * Start file.
      *
      * @var string
      */
-    protected static $startFile = '';
+    protected static string $startFile = '';
 
     /**
      * Processes for windows.
      *
      * @var array
      */
-    protected static $processForWindows = [];
+    protected static array $processForWindows = [];
 
     /**
      * Status info of current worker process.
      *
      * @var array
      */
-    protected static $globalStatistics = [
+    protected static array $globalStatistics = [
         'start_timestamp'  => 0,
         'worker_exit_info' => []
     ];
@@ -481,7 +482,7 @@ class Worker
      *
      * @var array<string, string>
      */
-    protected static $availableEventLoops = [
+    protected static array $availableEventLoops = [
         'event' => Event::class,
     ];
 
@@ -525,7 +526,7 @@ class Worker
      *
      * @var bool
      */
-    protected static $gracefulStop = false;
+    protected static bool $gracefulStop = false;
 
     /**
      * Standard output stream
@@ -537,14 +538,14 @@ class Worker
      * If $outputStream support decorated
      * @var bool
      */
-    protected static $outputDecorated = null;
+    protected static ?bool $outputDecorated = null;
 
     /**
      * Worker object's hash id(unique identifier).
      *
-     * @var string
+     * @var ?string
      */
-    protected $workerId = null;
+    protected ?string $workerId = null;
 
     /**
      * Run all worker instances.
@@ -664,6 +665,7 @@ class Worker
      * Init All worker instances.
      *
      * @return void
+     * @throws Exception
      */
     protected static function initWorkers()
     {
@@ -712,7 +714,7 @@ class Worker
      *
      * @return Worker[]
      */
-    public static function getAllWorkers()
+    public static function getAllWorkers(): array
     {
         return static::$workers;
     }
@@ -720,9 +722,9 @@ class Worker
     /**
      * Get global event-loop instance.
      *
-     * @return Select
+     * @return EventInterface
      */
-    public static function getEventLoop()
+    public static function getEventLoop(): EventInterface
     {
         return static::$globalEvent;
     }
@@ -757,7 +759,7 @@ class Worker
      *
      * @return string
      */
-    protected static function getCurrentUser()
+    protected static function getCurrentUser(): string
     {
         $userInfo = \posix_getpwuid(\posix_getuid());
         return $userInfo['name'];
@@ -833,7 +835,7 @@ class Worker
      *
      * @return array
      */
-    public static function getUiColumns()
+    public static function getUiColumns(): array
     {
         return [
             'proto'     => 'transport',
@@ -850,7 +852,7 @@ class Worker
      *
      * @return int
      */
-    public static function getSingleLineTotalLength()
+    public static function getSingleLineTotalLength(): int
     {
         $totalLength = 0;
 
@@ -1025,7 +1027,12 @@ class Worker
         }
     }
 
-    public static function getArgv()
+    /**
+     * Get argv.
+     *
+     * @return mixed
+     */
+    public static function getArgv(): mixed
     {
         global $argv;
         return isset($argv[1]) ? $argv : (static::$command ? \explode(' ', static::$command) : $argv);
@@ -1037,7 +1044,7 @@ class Worker
      * @param $statisticsFile
      * @return string
      */
-    protected static function formatStatusData($statisticsFile)
+    protected static function formatStatusData($statisticsFile): string
     {
         static $totalRequestCache = [];
         if (!\is_readable($statisticsFile)) {
@@ -1154,8 +1161,9 @@ class Worker
      * Signal handler.
      *
      * @param int $signal
+     * @throws Exception
      */
-    public static function signalHandler($signal)
+    public static function signalHandler(int $signal)
     {
         switch ($signal) {
             // Stop.
@@ -1320,7 +1328,7 @@ class Worker
      *
      * @return array
      */
-    protected static function getAllWorkerPids()
+    protected static function getAllWorkerPids(): array
     {
         $pidArray = [];
         foreach (static::$pidMap as $workerPidArray) {
@@ -1349,6 +1357,7 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
+     * @throws Exception
      */
     protected static function forkWorkersForLinux()
     {
@@ -1374,6 +1383,7 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
+     * @throws Exception
      */
     protected static function forkWorkersForWindows()
     {
@@ -1419,7 +1429,8 @@ class Worker
      *
      * @return array
      */
-    public static function getStartFilesForWindows() {
+    public static function getStartFilesForWindows(): array
+    {
         $files = [];
         foreach(static::getArgv() as $file)
         {
@@ -1436,7 +1447,7 @@ class Worker
      *
      * @param string $startFile
      */
-    public static function forkOneWorkerForWindows($startFile)
+    public static function forkOneWorkerForWindows(string $startFile)
     {
         $startFile = \realpath($startFile);
 
@@ -1485,7 +1496,6 @@ class Worker
             }
         }
     }
-
 
     /**
      * Fork one worker process.
@@ -1543,9 +1553,9 @@ class Worker
      * @param string $workerId
      * @param int $pid
      *
-     * @return integer
+     * @return false|int|string
      */
-    protected static function getId($workerId, $pid)
+    protected static function getId(string $workerId, int $pid): bool|int|string
     {
         return \array_search($pid, static::$idMap[$workerId]);
     }
@@ -1615,6 +1625,7 @@ class Worker
      * Monitor all child processes.
      *
      * @return void
+     * @throws Exception
      */
     protected static function monitorWorkersForLinux()
     {
@@ -1699,8 +1710,6 @@ class Worker
 
     /**
      * Exit current process.
-     *
-     * @return void
      */
     protected static function exitAndClearAll()
     {
@@ -1808,9 +1817,9 @@ class Worker
      * Stop all.
      *
      * @param int $code
-     * @param string $log
+     * @param mixed $log
      */
-    public static function stopAll($code = 0, $log = '')
+    public static function stopAll(int $code = 0, mixed $log = '')
     {
         if ($log) {
             static::log($log);
@@ -1880,9 +1889,9 @@ class Worker
     /**
      * Get process status.
      *
-     * @return number
+     * @return int
      */
-    public static function getStatus()
+    public static function getStatus(): int
     {
         return static::$status;
     }
@@ -1892,7 +1901,7 @@ class Worker
      *
      * @return bool
      */
-    public static function getGracefulStop()
+    public static function getGracefulStop(): bool
     {
         return static::$gracefulStop;
     }
@@ -2084,10 +2093,10 @@ class Worker
     /**
      * Get error message by error code.
      *
-     * @param integer $type
+     * @param int $type
      * @return string
      */
-    protected static function getErrorType($type)
+    protected static function getErrorType(int $type): string
     {
         return self::ERROR_TYPE[$type] ?? '';
     }
@@ -2095,10 +2104,10 @@ class Worker
     /**
      * Log.
      *
-     * @param string $msg
+     * @param mixed $msg
      * @return void
      */
-    public static function log($msg)
+    public static function log(mixed $msg)
     {
         $msg = $msg . "\n";
         if (!static::$daemonize) {
@@ -2171,7 +2180,7 @@ class Worker
     /**
      * Constructor.
      *
-     * @param string $socketName
+     * @param string|null $socketName
      * @param array $contextOption
      */
     public function __construct(string $socketName = null, array $contextOption = [])
@@ -2293,7 +2302,8 @@ class Worker
      *
      * @throws Exception
      */
-    protected function parseSocketAddress() {
+    protected function parseSocketAddress(): ?string
+    {
         if (!$this->socketName) {
             return null;
         }
@@ -2358,7 +2368,7 @@ class Worker
      *
      * @return string
      */
-    public function getSocketName()
+    public function getSocketName(): string
     {
         return $this->socketName ? \lcfirst($this->socketName) : 'none';
     }
@@ -2487,7 +2497,7 @@ class Worker
      * @param resource $socket
      * @return bool
      */
-    public function acceptUdpConnection($socket)
+    public function acceptUdpConnection($socket): bool
     {
         \set_error_handler(function(){});
         $recvBuffer = \stream_socket_recvfrom($socket, static::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
@@ -2542,13 +2552,13 @@ class Worker
      * @param int $masterPid
      * @return bool
      */
-    protected static function checkMasterIsAlive($masterPid)
+    protected static function checkMasterIsAlive(int $masterPid): bool
     {
         if (empty($masterPid)) {
             return false;
         }
 
-        $masterIsAlive = $masterPid && \posix_kill((int) $masterPid, 0) && \posix_getpid() !== $masterPid;
+        $masterIsAlive = $masterPid && \posix_kill($masterPid, 0) && \posix_getpid() !== $masterPid;
         if (!$masterIsAlive) {
             return false;
         }

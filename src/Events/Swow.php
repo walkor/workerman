@@ -7,7 +7,6 @@ use Swow\Coroutine;
 use Swow\Signal;
 use Swow\SignalException;
 use Throwable;
-use function getmypid;
 use function max;
 use function msleep;
 use function stream_poll_one;
@@ -23,37 +22,37 @@ class Swow implements EventInterface
      * All listeners for read timer
      * @var array
      */
-    protected $eventTimer = [];
+    protected array $eventTimer = [];
 
     /**
      * All listeners for read event.
      * @var array<Coroutine>
      */
-    protected $readEvents = [];
+    protected array $readEvents = [];
 
     /**
      * All listeners for write event.
      * @var array<Coroutine>
      */
-    protected $writeEvents = [];
+    protected array $writeEvents = [];
 
     /**
      * All listeners for signal.
      * @var array<Coroutine>
      */
-    protected $signalListener = [];
+    protected array $signalListener = [];
 
     /**
-     * @var Closure || null
+     * @var ?callable
      */
-    protected $errorHandler;
+    protected $errorHandler = null;
 
     /**
      * Get timer count.
      *
      * @return integer
      */
-    public function getTimerCount()
+    public function getTimerCount(): int
     {
         return \count($this->eventTimer);
     }
@@ -61,7 +60,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args = [])
+    public function delay(float $delay, callable $func, array $args = []): int
     {
         $t = (int) ($delay * 1000);
         $t = max($t, 1);
@@ -83,7 +82,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $interval, $func, $args = [])
+    public function repeat(float $interval, callable $func, array $args = []): int
     {
         $t = (int) ($interval * 1000);
         $t = max($t, 1);
@@ -106,7 +105,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offDelay($timerId)
+    public function offDelay(int $timerId): bool
     {
         if (isset($this->eventTimer[$timerId])) {
             try {
@@ -122,7 +121,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offRepeat($timerId)
+    public function offRepeat(int $timerId): bool
     {
         return $this->offDelay($timerId);
     }
@@ -140,7 +139,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onReadable($stream, $func)
+    public function onReadable($stream, callable $func)
     {
         $fd = (int) $stream;
         if (isset($this->readEvents[$fd])) {
@@ -170,22 +169,26 @@ class Swow implements EventInterface
                 $this->offReadable($stream);
             }
         });
-        return true;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function offReadable($stream)
+    public function offReadable($stream): bool
     {
         // 在当前协程执行 $coroutine->kill() 会导致不可预知问题，所以没有使用$coroutine->kill()
-        unset($this->readEvents[(int) $stream]);
+        $fd = (int) $stream;
+        if (isset($this->readEvents[$fd])) {
+            unset($this->readEvents[$fd]);
+            return true;
+        }
+        return false;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onWritable($stream, $func)
+    public function onWritable($stream, callable $func)
     {
         $fd = (int) $stream;
         if (isset($this->writeEvents[$fd])) {
@@ -211,21 +214,25 @@ class Swow implements EventInterface
                 $this->offWritable($stream);
             }
         });
-        return true;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function offWritable($stream)
+    public function offWritable($stream): bool
     {
-        unset($this->writeEvents[(int) $stream]);
+        $fd = (int) $stream;
+        if (isset($this->writeEvents[$fd])) {
+            unset($this->writeEvents[$fd]);
+            return true;
+        }
+        return false;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onSignal($signal, $func)
+    public function onSignal(int $signal, callable $func)
     {
         Coroutine::run(function () use ($signal, $func): void {
             $this->signalListener[$signal] = Coroutine::getCurrent();
@@ -240,13 +247,12 @@ class Swow implements EventInterface
                 } catch (SignalException) {}
             }
         });
-        return true;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function offSignal($signal)
+    public function offSignal(int $signal): bool
     {
         if (!isset($this->signalListener[$signal])) {
             return false;
@@ -276,7 +282,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function setErrorHandler($errorHandler)
+    public function setErrorHandler(callable $errorHandler)
     {
         $this->errorHandler = $errorHandler;
     }
@@ -284,7 +290,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function getErrorHandler()
+    public function getErrorHandler(): ?callable
     {
         return $this->errorHandler;
     }

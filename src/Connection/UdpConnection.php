@@ -14,41 +14,31 @@
 
 namespace Workerman\Connection;
 
-use Workerman\Protocols\ProtocolInterface;
-
 /**
  * UdpConnection.
  */
 class UdpConnection extends ConnectionInterface implements \JsonSerializable
 {
     /**
-     * Application layer protocol.
-     * The format is like this Workerman\\Protocols\\Http.
-     *
-     * @var ProtocolInterface
-     */
-    public $protocol = null;
-
-    /**
      * Transport layer protocol.
      *
      * @var string
      */
-    public $transport = 'udp';
+    public string $transport = 'udp';
 
     /**
      * Udp socket.
      *
      * @var resource
      */
-    protected $socket = null;
+    protected $socket;
 
     /**
      * Remote address.
      *
      * @var string
      */
-    protected $remoteAddress = '';
+    protected string $remoteAddress = '';
 
     /**
      * Construct.
@@ -56,7 +46,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      * @param resource $socket
      * @param string $remoteAddress
      */
-    public function __construct($socket, $remoteAddress)
+    public function __construct($socket, string $remoteAddress)
     {
         $this->socket = $socket;
         $this->remoteAddress = $remoteAddress;
@@ -65,11 +55,11 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
     /**
      * Sends data on the connection.
      *
-     * @param string $sendBuffer
+     * @param mixed $sendBuffer
      * @param bool $raw
      * @return void|boolean
      */
-    public function send($sendBuffer, $raw = false)
+    public function send(mixed $sendBuffer, bool $raw = false)
     {
         if (false === $raw && $this->protocol) {
             $parser = $this->protocol;
@@ -86,7 +76,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      *
      * @return string
      */
-    public function getRemoteIp()
+    public function getRemoteIp(): string
     {
         $pos = \strrpos($this->remoteAddress, ':');
         if ($pos) {
@@ -100,7 +90,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      *
      * @return int
      */
-    public function getRemotePort()
+    public function getRemotePort(): int
     {
         if ($this->remoteAddress) {
             return (int)\substr(\strrchr($this->remoteAddress, ':'), 1);
@@ -113,7 +103,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      *
      * @return string
      */
-    public function getRemoteAddress()
+    public function getRemoteAddress(): string
     {
         return $this->remoteAddress;
     }
@@ -123,7 +113,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      *
      * @return string
      */
-    public function getLocalIp()
+    public function getLocalIp(): string
     {
         $address = $this->getLocalAddress();
         $pos = \strrpos($address, ':');
@@ -138,7 +128,7 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      *
      * @return int
      */
-    public function getLocalPort()
+    public function getLocalPort(): int
     {
         $address = $this->getLocalAddress();
         $pos = \strrpos($address, ':');
@@ -153,51 +143,24 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
      *
      * @return string
      */
-    public function getLocalAddress()
+    public function getLocalAddress(): string
     {
         return (string)@\stream_socket_get_name($this->socket, false);
     }
 
-    /**
-     * Is ipv4.
-     *
-     * @return bool.
-     */
-    public function isIpV4()
-    {
-        if ($this->transport === 'unix') {
-            return false;
-        }
-        return \strpos($this->getRemoteIp(), ':') === false;
-    }
-
-    /**
-     * Is ipv6.
-     *
-     * @return bool.
-     */
-    public function isIpV6()
-    {
-        if ($this->transport === 'unix') {
-            return false;
-        }
-        return \strpos($this->getRemoteIp(), ':') !== false;
-    }
 
     /**
      * Close connection.
      *
-     * @param mixed $data
-     * @param bool $raw
-     * @return bool
+     * @param mixed|null $data
+     * @return void
      */
-    public function close($data = null, $raw = false)
+    public function close(mixed $data = null, bool $raw = false)
     {
         if ($data !== null) {
             $this->send($data, $raw);
         }
         $this->eventLoop = $this->errorHandler = null;
-        return true;
     }
 
     /**
@@ -211,11 +174,11 @@ class UdpConnection extends ConnectionInterface implements \JsonSerializable
     }
     
     /**
-     * Get the json_encode informattion.
+     * Get the json_encode information.
      *
      * @return array
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return [
             'transport' => $this->transport,

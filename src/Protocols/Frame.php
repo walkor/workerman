@@ -14,8 +14,6 @@
 
 namespace Workerman\Protocols;
 
-use Workerman\Connection\TcpConnection;
-
 /**
  * Frame Protocol.
  */
@@ -25,10 +23,9 @@ class Frame
      * Check the integrity of the package.
      *
      * @param string $buffer
-     * @param TcpConnection $connection
      * @return int
      */
-    public static function input($buffer, TcpConnection $connection)
+    public static function input(string $buffer): int
     {
         if (\strlen($buffer) < 4) {
             return 0;
@@ -43,7 +40,7 @@ class Frame
      * @param string $buffer
      * @return string
      */
-    public static function decode($buffer)
+    public static function decode(string $buffer): string
     {
         return \substr($buffer, 4);
     }
@@ -51,12 +48,12 @@ class Frame
     /**
      * Encode.
      *
-     * @param string $buffer
+     * @param string $data
      * @return string
      */
-    public static function encode($buffer)
+    public static function encode(string $data): string
     {
-        $totalLength = 4 + \strlen($buffer);
-        return \pack('N', $totalLength) . $buffer;
+        $totalLength = 4 + \strlen($data);
+        return \pack('N', $totalLength) . $data;
     }
 }

@@ -24,29 +24,24 @@ class Swoole implements EventInterface
      * All listeners for read timer
      * @var array
      */
-    protected $eventTimer = [];
+    protected array $eventTimer = [];
 
     /**
      * All listeners for read event.
      * @var array
      */
-    protected $readEvents = [];
+    protected array $readEvents = [];
 
     /**
      * All listeners for write event.
      * @var array
      */
-    protected $writeEvents = [];
+    protected array $writeEvents = [];
 
     /**
-     * @var int
+     * @var ?callable
      */
-    protected $mapId = 0;
-
-    /**
-     * @var Closure || null
-     */
-    protected $errorHandler;
+    protected $errorHandler = null;
 
     /**
      * Construct
@@ -60,14 +55,14 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args = [])
+    public function delay(float $delay, callable $func, array $args = []): int
     {
         $t = (int)($delay * 1000);
-        $t = $t < 1 ? 1 : $t;
+        $t = max($t, 1);
         $timerId = Timer::after($t, function () use ($func, $args, &$timerId) {
             unset($this->eventTimer[$timerId]);
             try {
-                $func(...(array)$args);
+                $func(...$args);
             } catch (Throwable $e) {
                 $this->error($e);
             }
@@ -79,7 +74,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offDelay($timerId)
+    public function offDelay(int $timerId): bool
     {
         if (isset($this->eventTimer[$timerId])) {
             $res = Timer::clear($timerId);
@@ -92,7 +87,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offRepeat($timerId)
+    public function offRepeat(int $timerId): bool
     {
         return $this->offDelay($timerId);
     }
@@ -100,16 +95,13 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $interval, $func, $args = [])
+    public function repeat(float $interval, callable $func, array $args = []): int
     {
-        if ($this->mapId > \PHP_INT_MAX) {
-            $this->mapId = 0;
-        }
         $t = (int)($interval * 1000);
-        $t = $t < 1 ? 1 : $t;
+        $t = max($t, 1);
         $timerId = Timer::tick($t, function () use ($func, $args) {
             try {
-                $func(...(array)$args);
+                $func(...$args);
             } catch (Throwable $e) {
                 $this->error($e);
             }
@@ -121,7 +113,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onReadable($stream, $func)
+    public function onReadable($stream, callable $func)
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
@@ -139,24 +131,25 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offReadable($stream)
+    public function offReadable($stream): bool
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd])) {
-            return;
+            return false;
         }
         unset($this->readEvents[$fd]);
         if (!isset($this->writeEvents[$fd])) {
             Event::del($stream);
-            return;
+            return true;
         }
         Event::set($stream, null, null, \SWOOLE_EVENT_WRITE);
+        return true;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onWritable($stream, $func)
+    public function onWritable($stream, callable $func)
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
@@ -174,24 +167,25 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offWritable($stream)
+    public function offWritable($stream): bool
     {
         $fd = (int)$stream;
         if (!isset($this->writeEvents[$fd])) {
-            return;
+            return false;
         }
         unset($this->writeEvents[$fd]);
         if (!isset($this->readEvents[$fd])) {
             Event::del($stream);
-            return;
+            return true;
         }
         Event::set($stream, null, null, \SWOOLE_EVENT_READ);
+        return true;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onSignal($signal, $func)
+    public function onSignal(int $signal, callable $func)
     {
         return Process::signal($signal, $func);
     }
@@ -199,7 +193,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offSignal($signal)
+    public function offSignal(int $signal): bool
     {
         return Process::signal($signal, function () {});
     }
@@ -238,7 +232,7 @@ class Swoole implements EventInterface
      *
      * @return integer
      */
-    public function getTimerCount()
+    public function getTimerCount(): int
     {
         return \count($this->eventTimer);
     }
@@ -246,7 +240,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function setErrorHandler($errorHandler)
+    public function setErrorHandler(callable $errorHandler)
     {
         $this->errorHandler = $errorHandler;
     }
@@ -254,7 +248,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function getErrorHandler()
+    public function getErrorHandler(): ?callable
     {
         return $this->errorHandler;
     }

@@ -14,6 +14,8 @@
 
 namespace Workerman\Protocols\Http;
 
+use Exception;
+use RuntimeException;
 use Workerman\Protocols\Http\Session\FileSessionHandler;
 use Workerman\Protocols\Http\Session\SessionHandlerInterface;
 
@@ -28,119 +30,119 @@ class Session
      *
      * @var string
      */
-    protected static $handlerClass = FileSessionHandler::class;
+    protected static string $handlerClass = FileSessionHandler::class;
 
     /**
      * Parameters of __constructor for session handler class.
      *
-     * @var null
+     * @var mixed
      */
-    protected static $handlerConfig = null;
+    protected static mixed $handlerConfig = null;
 
     /**
      * Session name.
      *
      * @var string
      */
-    public static $name = 'PHPSID';
+    public static string $name = 'PHPSID';
 
     /**
      * Auto update timestamp.
      *
      * @var bool
      */
-    public static $autoUpdateTimestamp = false;
+    public static bool $autoUpdateTimestamp = false;
 
     /**
      * Session lifetime.
      *
      * @var int
      */
-    public static $lifetime = 1440;
+    public static int $lifetime = 1440;
 
     /**
      * Cookie lifetime.
      *
      * @var int
      */
-    public static $cookieLifetime = 1440;
+    public static int $cookieLifetime = 1440;
 
     /**
      * Session cookie path.
      *
      * @var string
      */
-    public static $cookiePath = '/';
+    public static string $cookiePath = '/';
 
     /**
      * Session cookie domain.
      *
      * @var string
      */
-    public static $domain = '';
+    public static string $domain = '';
 
     /**
      * HTTPS only cookies.
      *
      * @var bool
      */
-    public static $secure = false;
+    public static bool $secure = false;
 
     /**
      * HTTP access only.
      *
      * @var bool
      */
-    public static $httpOnly = true;
+    public static bool $httpOnly = true;
 
     /**
      * Same-site cookies.
      *
      * @var string
      */
-    public static $sameSite = '';
+    public static string $sameSite = '';
 
     /**
      * Gc probability.
      *
      * @var int[]
      */
-    public static $gcProbability = [1, 1000];
+    public static array $gcProbability = [1, 20000];
 
     /**
      * Session handler instance.
      *
-     * @var SessionHandlerInterface
+     * @var ?SessionHandlerInterface
      */
-    protected static $handler = null;
+    protected static ?SessionHandlerInterface $handler = null;
 
     /**
      * Session data.
      *
      * @var array
      */
-    protected $data = [];
+    protected mixed $data = [];
 
     /**
      * Session changed and need to save.
      *
      * @var bool
      */
-    protected $needSave = false;
+    protected bool $needSave = false;
 
     /**
      * Session id.
      *
-     * @var null
+     * @var string
      */
-    protected $sessionId = null;
+    protected string $sessionId;
 
     /**
      * Session constructor.
      *
      * @param string $sessionId
      */
-    public function __construct($sessionId)
+    public function __construct(string $sessionId)
     {
         static::checkSessionId($sessionId);
         if (static::$handler === null) {
@@ -157,7 +159,7 @@ class Session
      *
      * @return string
      */
-    public function getId()
+    public function getId(): string
     {
         return $this->sessionId;
     }
@@ -167,9 +169,9 @@ class Session
      *
      * @param string $name
      * @param mixed|null $default
-     * @return mixed|null
+     * @return mixed
      */
-    public function get($name, $default = null)
+    public function get(string $name, mixed $default = null): mixed
     {
         return $this->data[$name] ?? $default;
     }
@@ -180,7 +182,7 @@ class Session
      * @param string $name
      * @param mixed $value
      */
-    public function set($name, $value)
+    public function set(string $name, mixed $value)
     {
         $this->data[$name] = $value;
         $this->needSave = true;
@@ -191,7 +193,7 @@ class Session
      *
      * @param string $name
      */
-    public function delete($name)
+    public function delete(string $name)
     {
         unset($this->data[$name]);
         $this->needSave = true;
@@ -202,9 +204,9 @@ class Session
      *
      * @param string $name
      * @param mixed|null $default
-     * @return mixed|null
+     * @return mixed
      */
-    public function pull($name, $default = null)
+    public function pull(string $name, mixed $default = null): mixed
     {
         $value = $this->get($name, $default);
         $this->delete($name);
@@ -214,10 +216,10 @@ class Session
     /**
      * Store data in the session.
      *
-     * @param string|array $key
+     * @param array|string $key
      * @param mixed|null $value
      */
-    public function put($key, $value = null)
+    public function put(array|string $key, mixed $value = null)
     {
         if (!\is_array($key)) {
             $this->set($key, $value);
@@ -233,9 +235,9 @@ class Session
     /**
      * Remove a piece of data from the session.
      *
-     * @param string $name
+     * @param array|string $name
      */
-    public function forget($name)
+    public function forget(array|string $name)
     {
         if (\is_scalar($name)) {
             $this->delete($name);
@@ -254,7 +256,7 @@ class Session
      *
      * @return array
      */
-    public function all()
+    public function all(): array
     {
         return $this->data;
     }
@@ -276,7 +278,7 @@ class Session
      * @param string $name
      * @return bool
      */
-    public function has($name)
+    public function has(string $name): bool
     {
         return isset($this->data[$name]);
     }
@@ -287,7 +289,7 @@ class Session
      * @param string $name
      * @return bool
      */
-    public function exists($name)
+    public function exists(string $name): bool
     {
         return \array_key_exists($name, $this->data);
     }
@@ -316,7 +318,7 @@ class Session
      *
      * @return bool
      */
-    public function refresh()
+    public function refresh(): bool
     {
         return static::$handler->updateTimestamp($this->getId());
     }
@@ -351,7 +353,7 @@ class Session
      * @param mixed|null $config
      * @return string
      */
-    public static function handlerClass($className = null, $config = null)
+    public static function handlerClass(mixed $className = null, mixed $config = null): string
     {
         if ($className) {
             static::$handlerClass = $className;
@@ -367,7 +369,7 @@ class Session
      *
      * @return array
      */
-    public static function getCookieParams()
+    public static function getCookieParams(): array
     {
         return [
             'lifetime' => static::$cookieLifetime,
@@ -407,6 +409,7 @@ class Session
      * __destruct.
      *
      * @return void
+     * @throws Exception
      */
     public function __destruct()
     {
@@ -424,18 +427,9 @@ class Session
     protected static function checkSessionId($sessionId)
     {
         if (!\preg_match('/^[a-zA-Z0-9]+$/', $sessionId)) {
-            throw new SessionException("session_id $sessionId is invalid");
+            throw new RuntimeException("session_id $sessionId is invalid");
         }
     }
-}
-
-/**
- * Class SessionException
- * @package Workerman\Protocols\Http
- */
-class SessionException extends \RuntimeException
-{
-
 }
 
 // Init session.

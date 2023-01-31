@@ -14,6 +14,7 @@
 
 namespace Workerman\Events;
 
+use SplPriorityQueue;
 use Throwable;
 
 /**
@@ -25,62 +26,62 @@ class Select implements EventInterface
      * Running.
      * @var bool
      */
-    protected $running = true;
+    protected bool $running = true;
 
     /**
      * All listeners for read/write event.
      *
      * @var array
      */
-    protected $readEvents = [];
+    protected array $readEvents = [];
 
     /**
      * All listeners for read/write event.
      *
      * @var array
      */
-    protected $writeEvents = [];
+    protected array $writeEvents = [];
 
     /**
      * @var array
      */
-    protected $exceptEvents = [];
+    protected array $exceptEvents = [];
 
     /**
      * Event listeners of signal.
      *
      * @var array
      */
-    protected $signalEvents = [];
+    protected array $signalEvents = [];
 
     /**
      * Fds waiting for read event.
      *
      * @var array
      */
-    protected $readFds = [];
+    protected array $readFds = [];
 
     /**
      * Fds waiting for write event.
      *
      * @var array
      */
-    protected $writeFds = [];
+    protected array $writeFds = [];
 
     /**
      * Fds waiting for except event.
      *
      * @var array
      */
-    protected $exceptFds = [];
+    protected array $exceptFds = [];
 
     /**
      * Timer scheduler.
      * {['data':timer_id, 'priority':run_timestamp], ..}
      *
-     * @var \SplPriorityQueue
+     * @var SplPriorityQueue
      */
-    protected $scheduler = null;
+    protected SplPriorityQueue $scheduler;
 
     /**
      * All timer event listeners.
@@ -88,26 +89,26 @@ class Select implements EventInterface
      *
      * @var array
      */
-    protected $eventTimer = [];
+    protected array $eventTimer = [];
 
     /**
      * Timer id.
      *
      * @var int
      */
-    protected $timerId = 1;
+    protected int $timerId = 1;
 
     /**
      * Select timeout.
      *
      * @var int
      */
-    protected $selectTimeout = 100000000;
+    protected int $selectTimeout = 100000000;
 
     /**
-     * @var Closure || null
+     * @var ?callable
      */
-    protected $errorHandler;
+    protected $errorHandler = null;
 
     /**
      * Construct.
@@ -115,19 +116,19 @@ class Select implements EventInterface
     public function __construct()
     {
         // Init SplPriorityQueue.
-        $this->scheduler = new \SplPriorityQueue();
-        $this->scheduler->setExtractFlags(\SplPriorityQueue::EXTR_BOTH);
+        $this->scheduler = new SplPriorityQueue();
+        $this->scheduler->setExtractFlags(SplPriorityQueue::EXTR_BOTH);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function delay(float $delay, $func, $args = [])
+    public function delay(float $delay, callable $func, array $args = []): int
     {
         $timerId = $this->timerId++;
         $runTime = \microtime(true) + $delay;
         $this->scheduler->insert($timerId, -$runTime);
-        $this->eventTimer[$timerId] = [$func, (array)$args];
+        $this->eventTimer[$timerId] = [$func, $args];
         $selectTimeout = ($runTime - \microtime(true)) * 1000000;
         $selectTimeout = $selectTimeout <= 0 ? 1 : (int)$selectTimeout;
         if ($this->selectTimeout > $selectTimeout) {
@@ -139,12 +140,12 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function repeat(float $delay, $func, $args = [])
+    public function repeat(float $interval, callable $func, array $args = []): int
     {
         $timerId = $this->timerId++;
-        $runTime = \microtime(true) + $delay;
+        $runTime = \microtime(true) + $interval;
         $this->scheduler->insert($timerId, -$runTime);
-        $this->eventTimer[$timerId] = [$func, (array)$args, $delay];
+        $this->eventTimer[$timerId] = [$func, $args, $interval];
         $selectTimeout = ($runTime - \microtime(true)) * 1000000;
         $selectTimeout = $selectTimeout <= 0 ? 1 : (int)$selectTimeout;
         if ($this->selectTimeout > $selectTimeout) {
@@ -156,7 +157,7 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offDelay($timerId)
+    public function offDelay(int $timerId): bool
     {
         if (isset($this->eventTimer[$timerId])) {
             unset($this->eventTimer[$timerId]);
@@ -168,7 +169,7 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offRepeat($timerId)
+    public function offRepeat(int $timerId): bool
     {
         return $this->offDelay($timerId);
     }
@@ -176,7 +177,7 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onReadable($stream, $func)
+    public function onReadable($stream, callable $func)
     {
         $count = \count($this->readFds);
         if ($count >= 1024) {
@@ -192,16 +193,20 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offReadable($stream)
+    public function offReadable($stream): bool
     {
         $fdKey = (int)$stream;
-        unset($this->readEvents[$fdKey], $this->readFds[$fdKey]);
+        if (isset($this->readEvents[$fdKey])) {
+            unset($this->readEvents[$fdKey], $this->readFds[$fdKey]);
+            return true;
+        }
+        return false;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onWritable($stream, $func)
+    public function onWritable($stream, callable $func)
     {
         $count = \count($this->writeFds);
         if ($count >= 1024) {
@@ -217,10 +222,14 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offWritable($stream)
+    public function offWritable($stream): bool
     {
         $fdKey = (int)$stream;
-        unset($this->writeEvents[$fdKey], $this->writeFds[$fdKey]);
+        if (isset($this->writeEvents[$fdKey])) {
+            unset($this->writeEvents[$fdKey], $this->writeFds[$fdKey]);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -236,19 +245,23 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offExcept($stream)
+    public function offExcept($stream): bool
     {
         $fdKey = (int)$stream;
-        unset($this->exceptEvents[$fdKey], $this->exceptFds[$fdKey]);
+        if (isset($this->exceptEvents[$fdKey])) {
+            unset($this->exceptEvents[$fdKey], $this->exceptFds[$fdKey]);
+            return true;
+        }
+        return false;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function onSignal($signal, $func)
+    public function onSignal(int $signal, callable $func)
     {
         if (\DIRECTORY_SEPARATOR !== '/') {
-            return null;
+            return;
         }
         $this->signalEvents[$signal] = $func;
         \pcntl_signal($signal, [$this, 'signalHandler']);
@@ -257,10 +270,17 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function offSignal($signal)
+    public function offSignal(int $signal): bool
     {
-        unset($this->signalEvents[$signal]);
+        if (\DIRECTORY_SEPARATOR !== '/') {
+            return false;
+        }
         \pcntl_signal($signal, SIG_IGN);
+        if (isset($this->signalEvents[$signal])) {
+            unset($this->signalEvents[$signal]);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -268,7 +288,7 @@ class Select implements EventInterface
      *
      * @param int $signal
      */
-    public function signalHandler($signal)
+    public function signalHandler(int $signal)
     {
         $this->signalEvents[$signal]($signal);
     }
@@ -277,6 +297,7 @@ class Select implements EventInterface
      * Tick for timer.
      *
      * @return void
+     * @throws Throwable
      */
     protected function tick()
     {
@@ -330,8 +351,8 @@ class Select implements EventInterface
      */
     public function deleteAllTimer()
     {
-        $this->scheduler = new \SplPriorityQueue();
-        $this->scheduler->setExtractFlags(\SplPriorityQueue::EXTR_BOTH);
+        $this->scheduler = new SplPriorityQueue();
+        $this->scheduler->setExtractFlags(SplPriorityQueue::EXTR_BOTH);
         $this->eventTimer = [];
     }
 
@@ -403,7 +424,7 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function getTimerCount()
+    public function getTimerCount(): int
     {
         return \count($this->eventTimer);
     }
@@ -411,7 +432,7 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function setErrorHandler($errorHandler)
+    public function setErrorHandler(callable $errorHandler)
     {
         $this->errorHandler = $errorHandler;
     }
@@ -419,7 +440,7 @@ class Select implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function getErrorHandler()
+    public function getErrorHandler(): ?callable
     {
         return $this->errorHandler;
     }

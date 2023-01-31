@@ -25,7 +25,7 @@ interface SessionHandlerInterface
      * </p>
      * @since 5.4.0
      */
-    public function close();
+    public function close(): bool;
 
     /**
      * Destroy a session
@@ -37,12 +37,12 @@ interface SessionHandlerInterface
      * </p>
      * @since 5.4.0
      */
-    public function destroy($sessionId);
+    public function destroy(string $sessionId): bool;
 
     /**
      * Cleanup old sessions
      * @link http://php.net/manual/en/sessionhandlerinterface.gc.php
-     * @param int $maxlifetime <p>
+     * @param int $maxLifetime <p>
      * Sessions that have not updated for
      * the last maxlifetime seconds will be removed.
      * </p>
@@ -52,7 +52,7 @@ interface SessionHandlerInterface
      * </p>
      * @since 5.4.0
      */
-    public function gc($maxlifetime);
+    public function gc(int $maxLifetime): bool;
 
     /**
      * Initialize session
@@ -65,7 +65,7 @@ interface SessionHandlerInterface
      * </p>
      * @since 5.4.0
      */
-    public function open($savePath, $name);
+    public function open(string $savePath, string $name): bool;
 
 
     /**
@@ -79,7 +79,7 @@ interface SessionHandlerInterface
      * </p>
      * @since 5.4.0
      */
-    public function read($sessionId);
+    public function read(string $sessionId): string;
 
     /**
      * Write session data
@@ -98,18 +98,18 @@ interface SessionHandlerInterface
      * </p>
      * @since 5.4.0
      */
-    public function write($sessionId, $sessionData);
+    public function write(string $sessionId, string $sessionData): bool;
 
     /**
      * Update sesstion modify time.
      *
      * @see https://www.php.net/manual/en/class.sessionupdatetimestamphandlerinterface.php
      *
-     * @param string $id Session id.
+     * @param string $sessionId
      * @param string $data Session Data.
      *
      * @return bool
      */
-    public function updateTimestamp($id, $data = "");
+    public function updateTimestamp(string $sessionId, string $data = ""): bool;
 
 }

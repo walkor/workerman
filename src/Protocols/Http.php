@@ -14,6 +14,7 @@
 
 namespace Workerman\Protocols;
 
+use Throwable;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
@@ -29,21 +30,21 @@ class Http
      *
      * @var string
      */
-    protected static $requestClass = Request::class;
+    protected static string $requestClass = Request::class;
 
     /**
      * Upload tmp dir.
      *
      * @var string
      */
-    protected static $uploadTmpDir = '';
+    protected static string $uploadTmpDir = '';
 
     /**
      * Cache.
      *
      * @var bool.
      */
-    protected static $enableCache = true;
+    protected static bool $enableCache = true;
 
     /**
      * Get or set the request class name.
@@ -51,7 +52,7 @@ class Http
      * @param string|null $className
      * @return string
      */
-    public static function requestClass($className = null)
+    public static function requestClass(string $className = null): string
     {
         if ($className) {
             static::$requestClass = $className;
@@ -62,30 +63,31 @@ class Http
     /**
      * Enable or disable Cache.
      *
-     * @param mixed $value
+     * @param bool $value
      */
-    public static function enableCache($value)
+    public static function enableCache(bool $value)
     {
-        static::$enableCache = (bool)$value;
+        static::$enableCache = $value;
     }
 
     /**
      * Check the integrity of the package.
      *
-     * @param string $recvBuffer
+     * @param string $buffer
      * @param TcpConnection $connection
      * @return int
+     * @throws Throwable
      */
-    public static function input(string $recvBuffer, TcpConnection $connection)
+    public static function input(string $buffer, TcpConnection $connection): int
     {
         static $input = [];
-        if (!isset($recvBuffer[512]) && isset($input[$recvBuffer])) {
-            return $input[$recvBuffer];
+        if (!isset($buffer[512]) && isset($input[$buffer])) {
+            return $input[$buffer];
         }
-        $crlfPos = \strpos($recvBuffer, "\r\n\r\n");
+        $crlfPos = \strpos($buffer, "\r\n\r\n");
         if (false === $crlfPos) {
             // Judge whether the package length exceeds the limit.
-            if (\strlen($recvBuffer) >= 16384) {
+            if (\strlen($buffer) >= 16384) {
                 $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
                 return 0;
             }
@@ -93,14 +95,14 @@ class Http
         }
 
         $length = $crlfPos + 4;
-        $firstLine = \explode(" ", \strstr($recvBuffer, "\r\n", true), 3);
+        $firstLine = \explode(" ", \strstr($buffer, "\r\n", true), 3);
 
         if (!\in_array($firstLine[0], ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
 
-        $header = \substr($recvBuffer, 0, $crlfPos);
+        $header = \substr($buffer, 0, $crlfPos);
         $hostHeaderPosition = \strpos($header, "\r\nHost: ");
 
         if (false === $hostHeaderPosition && $firstLine[2] === "HTTP/1.1") {
@@ -129,8 +131,8 @@ class Http
             }
         }
 
-        if (!isset($recvBuffer[512])) {
-            $input[$recvBuffer] = $length;
+        if (!isset($buffer[512])) {
+            $input[$buffer] = $length;
             if (\count($input) > 512) {
                 unset($input[key($input)]);
             }
@@ -142,26 +144,26 @@ class Http
     /**
      * Http decode.
      *
-     * @param string $recvBuffer
+     * @param string $buffer
      * @param TcpConnection $connection
-     * @return \Workerman\Protocols\Http\Request
+     * @return Request
      */
-    public static function decode($recvBuffer, TcpConnection $connection)
+    public static function decode(string $buffer, TcpConnection $connection): Request
     {
         static $requests = [];
-        $cacheable = static::$enableCache && !isset($recvBuffer[512]);
-        if (true === $cacheable && isset($requests[$recvBuffer])) {
-            $request = clone $requests[$recvBuffer];
+        $cacheable = static::$enableCache && !isset($buffer[512]);
+        if (true === $cacheable && isset($requests[$buffer])) {
+            $request = clone $requests[$buffer];
             $request->connection = $connection;
             $connection->request = $request;
             $request->properties = [];
             return $request;
         }
-        $request = new static::$requestClass($recvBuffer);
+        $request = new static::$requestClass($buffer);
         $request->connection = $connection;
         $connection->request = $request;
         if (true === $cacheable) {
-            $requests[$recvBuffer] = $request;
+            $requests[$buffer] = $request;
             if (\count($requests) > 512) {
                 unset($requests[\key($requests)]);
             }
@@ -175,13 +177,13 @@ class Http
      * @param string|Response $response
      * @param TcpConnection $connection
      * @return string
+     * @throws Throwable
      */
-    public static function encode($response, TcpConnection $connection)
+    public static function encode(mixed $response, TcpConnection $connection): string
     {
         if (isset($connection->request)) {
-            $connection->request->session = null;
-            $connection->request->connection = null;
-            $connection->request = null;
+            $request = $connection->request;
+            $request->session = $request->connection = $connection->request = null;
         }
         if (!\is_object($response)) {
             $extHeader = '';
@@ -246,7 +248,7 @@ class Http
      * @param int $offset
      * @param int $length
      */
-    protected static function sendStream(TcpConnection $connection, $handler, $offset = 0, $length = 0)
+    protected static function sendStream(TcpConnection $connection, $handler, int $offset = 0, int $length = 0)
     {
         $connection->context->bufferFull = false;
         $connection->context->streamSending = true;
@@ -297,9 +299,10 @@ class Http
     /**
      * Set or get uploadTmpDir.
      *
-     * @return bool|string
+     * @param string|null $dir
+     * @return string
      */
-    public static function uploadTmpDir($dir = null)
+    public static function uploadTmpDir(string|null $dir = null): string
     {
         if (null !== $dir) {
             static::$uploadTmpDir = $dir;

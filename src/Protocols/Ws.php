@@ -14,6 +14,7 @@
 
 namespace Workerman\Protocols;
 
+use Throwable;
 use Workerman\Worker;
 use Workerman\Timer;
 use Workerman\Connection\TcpConnection;
@@ -42,10 +43,11 @@ class Ws
      * Check the integrity of the package.
      *
      * @param string $buffer
-     * @param ConnectionInterface $connection
-     * @return int
+     * @param TcpConnection $connection
+     * @return int|false
+     * @throws Throwable
      */
-    public static function input($buffer, ConnectionInterface $connection)
+    public static function input(string $buffer, TcpConnection $connection): bool|int
     {
         if (empty($connection->context->handshakeStep)) {
             Worker::safeEcho("recv data before handshake. Buffer:" . \bin2hex($buffer) . "\n");
@@ -99,7 +101,7 @@ class Ws
                     if (isset($connection->onWebSocketClose)) {
                         try {
                             ($connection->onWebSocketClose)($connection);
-                        } catch (\Throwable $e) {
+                        } catch (Throwable $e) {
                             Worker::stopAll(250, $e);
                         }
                     } // Close connection.
@@ -147,7 +149,7 @@ class Ws
                         if (isset($connection->onWebSocketPing)) {
                             try {
                                 ($connection->onWebSocketPing)($connection, $pingData);
-                            } catch (\Throwable $e) {
+                            } catch (Throwable $e) {
                                 Worker::stopAll(250, $e);
                             }
                         } else {
@@ -170,7 +172,7 @@ class Ws
                         if (isset($connection->onWebSocketPong)) {
                             try {
                                 ($connection->onWebSocketPong)($connection, $pongData);
-                            } catch (\Throwable $e) {
+                            } catch (Throwable $e) {
                                 Worker::stopAll(250, $e);
                             }
                         }
@@ -209,16 +211,16 @@ class Ws
     /**
      * Websocket encode.
      *
-     * @param string $buffer
-     * @param ConnectionInterface $connection
+     * @param string $payload
+     * @param TcpConnection $connection
      * @return string
      */
-    public static function encode($payload, ConnectionInterface $connection)
+    public static function encode(string $payload, TcpConnection $connection): string
     {
         if (empty($connection->websocketType)) {
             $connection->websocketType = self::BINARY_TYPE_BLOB;
         }
-        $payload = (string)$payload;
+        $payload = $payload;
         if (empty($connection->context->handshakeStep)) {
             static::sendHandshake($connection);
         }
@@ -244,7 +246,7 @@ class Ws
                 if ($connection->onError) {
                     try {
                         ($connection->onError)($connection, ConnectionInterface::SEND_FAIL, 'send buffer full and drop package');
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         Worker::stopAll(250, $e);
                     }
                 }
@@ -256,7 +258,7 @@ class Ws
                 if ($connection->onBufferFull) {
                     try {
                         ($connection->onBufferFull)($connection);
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         Worker::stopAll(250, $e);
                     }
                 }
@@ -269,11 +271,11 @@ class Ws
     /**
      * Websocket decode.
      *
-     * @param string $buffer
-     * @param ConnectionInterface $connection
+     * @param string $bytes
+     * @param TcpConnection $connection
      * @return string
      */
-    public static function decode($bytes, ConnectionInterface $connection)
+    public static function decode(string $bytes, TcpConnection $connection): string
     {
         $dataLength = \ord($bytes[1]);
 
@@ -311,7 +313,7 @@ class Ws
      *
      * @param TcpConnection $connection
      */
-    public static function onClose($connection)
+    public static function onClose(TcpConnection $connection)
     {
         $connection->context->handshakeStep = null;
         $connection->context->websocketCurrentFrameLength = 0;
@@ -328,8 +330,9 @@ class Ws
      *
      * @param TcpConnection $connection
      * @return void
+     * @throws Throwable
      */
-    public static function sendHandshake(ConnectionInterface $connection)
+    public static function sendHandshake(TcpConnection $connection)
     {
         if (!empty($connection->context->handshakeStep)) {
             return;
@@ -372,8 +375,9 @@ class Ws
      * @param string $buffer
      * @param TcpConnection $connection
      * @return int
+     * @throws Throwable
      */
-    public static function dealHandshake($buffer, ConnectionInterface $connection)
+    public static function dealHandshake(string $buffer, TcpConnection $connection): bool|int
     {
         $pos = \strpos($buffer, "\r\n\r\n");
         if ($pos) {
@@ -403,7 +407,7 @@ class Ws
             if (isset($connection->onWebSocketConnect)) {
                 try {
                     ($connection->onWebSocketConnect)($connection, \substr($buffer, 0, $handshakeResponseLength));
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     Worker::stopAll(250, $e);
                 }
             }

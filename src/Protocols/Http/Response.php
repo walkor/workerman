@@ -25,48 +25,48 @@ class Response
      *
      * @var array
      */
-    protected $headers = null;
+    protected array $headers = [];
 
     /**
      * Http status.
      *
      * @var int
      */
-    protected $status = null;
+    protected int $status;
 
     /**
      * Http reason.
      *
-     * @var string
+     * @var ?string
      */
-    protected $reason = null;
+    protected ?string $reason = null;
 
     /**
      * Http version.
      *
      * @var string
      */
-    protected $version = '1.1';
+    protected string $version = '1.1';
 
     /**
      * Http body.
      *
      * @var string
      */
-    protected $body = null;
+    protected string $body = '';
 
     /**
      * Send file info
      *
-     * @var array
+     * @var ?array
      */
-    public $file = null;
+    public ?array $file = null;
 
     /**
      * Mine type map.
      * @var array
      */
-    protected static $mimeTypeMap = null;
+    protected static array $mimeTypeMap = [];
 
     /**
      * Phrases.
@@ -163,14 +163,14 @@ class Response
      * @param string $body
      */
     public function __construct(
-        $status = 200,
-        $headers = [],
-        $body = ''
+        int   $status = 200,
+        array $headers = [],
+        string $body = ''
     )
     {
         $this->status = $status;
         $this->headers = $headers;
-        $this->body = (string)$body;
+        $this->body = $body;
     }
 
     /**
@@ -180,7 +180,7 @@ class Response
      * @param string $value
      * @return $this
      */
-    public function header($name, $value)
+    public function header(string $name, string $value): static
     {
         $this->headers[$name] = $value;
         return $this;
@@ -193,7 +193,7 @@ class Response
      * @param string $value
      * @return Response
      */
-    public function withHeader($name, $value)
+    public function withHeader(string $name, string $value): static
     {
         return $this->header($name, $value);
     }
@@ -204,7 +204,7 @@ class Response
      * @param array $headers
      * @return $this
      */
-    public function withHeaders($headers)
+    public function withHeaders(array $headers): static
     {
         $this->headers = \array_merge_recursive($this->headers, $headers);
         return $this;
@@ -216,7 +216,7 @@ class Response
      * @param string $name
      * @return $this
      */
-    public function withoutHeader($name)
+    public function withoutHeader(string $name): static
     {
         unset($this->headers[$name]);
         return $this;
@@ -228,9 +228,8 @@ class Response
      * @param string $name
      * @return null|array|string
      */
-    public function getHeader($name)
+    public function getHeader(string $name): array|string|null
     {
-
         return $this->headers[$name] ?? null;
     }
 
@@ -239,7 +238,7 @@ class Response
      *
      * @return array
      */
-    public function getHeaders()
+    public function getHeaders(): array
     {
         return $this->headers;
     }
@@ -251,7 +250,7 @@ class Response
      * @param string|null $reasonPhrase
      * @return $this
      */
-    public function withStatus($code, $reasonPhrase = null)
+    public function withStatus(int $code, string $reasonPhrase = null): static
     {
         $this->status = $code;
         $this->reason = $reasonPhrase;
@@ -263,7 +262,7 @@ class Response
      *
      * @return int
      */
-    public function getStatusCode()
+    public function getStatusCode(): int
     {
         return $this->status;
     }
@@ -271,9 +270,9 @@ class Response
     /**
      * Get reason phrase.
      *
-     * @return string
+     * @return ?string
      */
-    public function getReasonPhrase()
+    public function getReasonPhrase(): ?string
     {
         return $this->reason;
     }
@@ -281,10 +280,10 @@ class Response
     /**
      * Set protocol version.
      *
-     * @param int $version
+     * @param string $version
      * @return $this
      */
-    public function withProtocolVersion($version)
+    public function withProtocolVersion(string $version): static
     {
         $this->version = $version;
         return $this;
@@ -296,9 +295,9 @@ class Response
      * @param string $body
      * @return $this
      */
-    public function withBody($body)
+    public function withBody(string $body): static
     {
-        $this->body = (string)$body;
+        $this->body = $body;
         return $this;
     }
 
@@ -307,7 +306,7 @@ class Response
      *
      * @return string
      */
-    public function rawBody()
+    public function rawBody(): string
     {
         return $this->body;
     }
@@ -320,7 +319,7 @@ class Response
      * @param int $length
      * @return $this
      */
-    public function withFile($file, $offset = 0, $length = 0)
+    public function withFile(string $file, int $offset = 0, int $length = 0): static
     {
         if (!\is_file($file)) {
             return $this->withStatus(404)->withBody('<h3>404 Not Found</h3>');
@@ -332,9 +331,9 @@ class Response
     /**
      * Set cookie.
      *
-     * @param $name
+     * @param string $name
      * @param string $value
-     * @param int $maxAge
+     * @param int|null $maxAge
      * @param string $path
      * @param string $domain
      * @param bool $secure
@@ -342,7 +341,7 @@ class Response
      * @param bool $sameSite
      * @return $this
      */
-    public function cookie($name, $value = '', $maxAge = null, $path = '', $domain = '', $secure = false, $httpOnly = false, $sameSite  = false)
+    public function cookie(string $name, string $value = '', int $maxAge = null, string $path = '', string $domain = '', bool $secure = false, bool $httpOnly = false, bool $sameSite  = false): static
     {
         $this->headers['Set-Cookie'][] = $name . '=' . \rawurlencode($value)
             . (empty($domain) ? '' : '; Domain=' . $domain)
@@ -360,7 +359,7 @@ class Response
      * @param array $fileInfo
      * @return string
      */
-    protected function createHeadForFile($fileInfo)
+    protected function createHeadForFile(array $fileInfo): string
     {
         $file = $fileInfo['file'];
         $reason = $this->reason ?: self::PHRASES[$this->status];
@@ -414,7 +413,7 @@ class Response
      */
     public function __toString()
     {
-        if (isset($this->file)) {
+        if ($this->file) {
             return $this->createHeadForFile($this->file);
         }
 

@@ -14,6 +14,7 @@
 
 namespace Workerman\Protocols;
 
+use Throwable;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
@@ -22,7 +23,7 @@ use Workerman\Worker;
 /**
  * WebSocket protocol.
  */
-class Websocket implements \Workerman\Protocols\ProtocolInterface
+class Websocket
 {
     /**
      * Websocket blob type.
@@ -42,10 +43,11 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      * Check the integrity of the package.
      *
      * @param string $buffer
-     * @param ConnectionInterface $connection
+     * @param TcpConnection $connection
      * @return int
+     * @throws Throwable
      */
-    public static function input($buffer, ConnectionInterface $connection)
+    public static function input(string $buffer, TcpConnection $connection): int
     {
         // Receive length.
         $recvLen = \strlen($buffer);
@@ -98,7 +100,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                     if ($closeCb) {
                         try {
                             $closeCb($connection);
-                        } catch (\Throwable $e) {
+                        } catch (Throwable $e) {
                             Worker::stopAll(250, $e);
                         }
                     } // Close connection.
@@ -152,7 +154,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         if ($pingCb) {
                             try {
                                 $pingCb($connection, $pingData);
-                            } catch (\Throwable $e) {
+                            } catch (Throwable $e) {
                                 Worker::stopAll(250, $e);
                             }
                         } else {
@@ -175,7 +177,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                         if ($pongCb) {
                             try {
                                 $pongCb($connection, $pongData);
-                            } catch (\Throwable $e) {
+                            } catch (Throwable $e) {
                                 Worker::stopAll(250, $e);
                             }
                         }
@@ -216,14 +218,11 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      * Websocket encode.
      *
      * @param string $buffer
-     * @param ConnectionInterface $connection
+     * @param TcpConnection $connection
      * @return string
      */
-    public static function encode($buffer, ConnectionInterface $connection)
+    public static function encode(string $buffer, TcpConnection $connection): string
     {
-        if (!is_scalar($buffer)) {
-            throw new \Exception("You can't send(" . \gettype($buffer) . ") to client, you need to convert it to a string. ");
-        }
         $len = \strlen($buffer);
         if (empty($connection->websocketType)) {
             $connection->websocketType = static::BINARY_TYPE_BLOB;
@@ -251,7 +250,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 if ($connection->onError) {
                     try {
                         ($connection->onError)($connection, ConnectionInterface::SEND_FAIL, 'send buffer full and drop package');
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         Worker::stopAll(250, $e);
                     }
                 }
@@ -263,7 +262,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 if ($connection->onBufferFull) {
                     try {
                         ($connection->onBufferFull)($connection);
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         Worker::stopAll(250, $e);
                     }
                 }
@@ -279,10 +278,10 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      * Websocket decode.
      *
      * @param string $buffer
-     * @param ConnectionInterface $connection
+     * @param TcpConnection $connection
      * @return string
      */
-    public static function decode($buffer, ConnectionInterface $connection)
+    public static function decode(string $buffer, TcpConnection $connection): string
     {
         $firstByte = \ord($buffer[1]);
         $len = $firstByte & 127;
@@ -321,8 +320,9 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      * @param string $buffer
      * @param TcpConnection $connection
      * @return int
+     * @throws Throwable
      */
-    public static function dealHandshake($buffer, ConnectionInterface $connection)
+    public static function dealHandshake(string $buffer, TcpConnection $connection): int
     {
         // HTTP protocol.
         if (0 === \strpos($buffer, 'GET')) {
@@ -365,7 +365,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             if ($onWebsocketConnect) {
                 try {
                     $onWebsocketConnect($connection, new Request($buffer));
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     Worker::stopAll(250, $e);
                 }
             }
@@ -377,19 +377,12 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
 
             $hasServerHeader = false;
 
-            if (isset($connection->headers)) {
-                if (\is_array($connection->headers)) {
-                    foreach ($connection->headers as $header) {
-                        if (\stripos($header, 'Server:') === 0) {
-                            $hasServerHeader = true;
-                        }
-                        $handshakeMessage .= "$header\r\n";
-                    }
-                } else {
-                    if (\stripos($connection->headers, 'Server:') !== false) {
+            if ($connection->headers) {
+                foreach ($connection->headers as $header) {
+                    if (\stripos($header, 'Server:') === 0) {
                         $hasServerHeader = true;
                     }
-                    $handshakeMessage .= "$connection->headers\r\n";
+                    $handshakeMessage .= "$header\r\n";
                 }
             }
             if (!$hasServerHeader) {

@@ -27,14 +27,14 @@ class FileSessionHandler implements SessionHandlerInterface
      *
      * @var string
      */
-    protected static $sessionSavePath = null;
+    protected static string $sessionSavePath;
 
     /**
      * Session file prefix.
      *
      * @var string
      */
-    protected static $sessionFilePrefix = 'session_';
+    protected static string $sessionFilePrefix = 'session_';
 
     /**
      * Init.
@@ -42,7 +42,7 @@ class FileSessionHandler implements SessionHandlerInterface
     public static function init()
     {
         $savePath = @\session_save_path();
-        if (!$savePath || \strpos($savePath, 'tcp://') === 0) {
+        if (!$savePath || str_starts_with($savePath, 'tcp://')) {
             $savePath = \sys_get_temp_dir();
         }
         static::sessionSavePath($savePath);
@@ -52,7 +52,7 @@ class FileSessionHandler implements SessionHandlerInterface
      * FileSessionHandler constructor.
      * @param array $config
      */
-    public function __construct($config = [])
+    public function __construct(array $config = [])
     {
         if (isset($config['save_path'])) {
             static::sessionSavePath($config['save_path']);
@@ -62,7 +62,7 @@ class FileSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function open($savePath, $name)
+    public function open(string $savePath, string $name): bool
     {
         return true;
     }
@@ -70,7 +70,7 @@ class FileSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function read($sessionId)
+    public function read(string $sessionId): string
     {
         $sessionFile = static::sessionFile($sessionId);
         \clearstatcache();
@@ -88,7 +88,7 @@ class FileSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function write($sessionId, $sessionData)
+    public function write(string $sessionId, string $sessionData): bool
     {
         $tempFile = static::$sessionSavePath . uniqid(bin2hex(random_bytes(8)), true);
         if (!\file_put_contents($tempFile, $sessionData)) {
@@ -108,7 +108,7 @@ class FileSessionHandler implements SessionHandlerInterface
      *
      * @return bool
      */
-    public function updateTimestamp($id, $data = "")
+    public function updateTimestamp(string $id, string $data = ""): bool
     {
         $sessionFile = static::sessionFile($id);
         if (!file_exists($sessionFile)) {
@@ -124,7 +124,7 @@ class FileSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function close()
+    public function close(): bool
     {
         return true;
     }
@@ -132,7 +132,7 @@ class FileSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function destroy($sessionId)
+    public function destroy(string $sessionId): bool
     {
         $sessionFile = static::sessionFile($sessionId);
         if (\is_file($sessionFile)) {
@@ -144,14 +144,15 @@ class FileSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function gc($maxlifetime)
+    public function gc(int $maxLifetime): bool
     {
         $timeNow = \time();
         foreach (\glob(static::$sessionSavePath . static::$sessionFilePrefix . '*') as $file) {
-            if (\is_file($file) && $timeNow - \filemtime($file) > $maxlifetime) {
+            if (\is_file($file) && $timeNow - \filemtime($file) > $maxLifetime) {
                 \unlink($file);
             }
         }
+        return true;
     }
 
     /**
@@ -160,7 +161,7 @@ class FileSessionHandler implements SessionHandlerInterface
      * @param string $sessionId
      * @return string
      */
-    protected static function sessionFile($sessionId)
+    protected static function sessionFile(string $sessionId): string
     {
         return static::$sessionSavePath . static::$sessionFilePrefix . $sessionId;
     }
@@ -171,7 +172,7 @@ class FileSessionHandler implements SessionHandlerInterface
      * @param string $path
      * @return string
      */
-    public static function sessionSavePath($path)
+    public static function sessionSavePath(string $path): string
     {
         if ($path) {
             if ($path[\strlen($path) - 1] !== DIRECTORY_SEPARATOR) {

@@ -26,13 +26,14 @@ class Chunk
      *
      * @var string
      */
-    protected $buffer = null;
+    protected string $buffer;
 
     /**
      * Chunk constructor.
+     *
      * @param string $buffer
      */
-    public function __construct($buffer)
+    public function __construct(string $buffer)
     {
         $this->buffer = $buffer;
     }

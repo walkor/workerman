@@ -14,6 +14,8 @@
 
 namespace Workerman\Connection;
 
+use Closure;
+use JetBrains\PhpStorm\Pure;
 use Throwable;
 use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
@@ -45,7 +47,7 @@ abstract class ConnectionInterface
      *
      * @var array
      */
-    public static $statistics = [
+    public static array $statistics = [
         'connection_count' => 0,
         'total_request' => 0,
         'throw_exception' => 0,
@@ -53,111 +55,132 @@ abstract class ConnectionInterface
     ];
 
     /**
+     * Application layer protocol.
+     * The format is like this Workerman\\Protocols\\Http.
+     *
+     * @var ?class-string
+     */
+    public ?string $protocol = null;
+
+    /**
      * Emitted when data is received.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onMessage = null;
 
     /**
      * Emitted when the other end of the socket sends a FIN packet.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onClose = null;
 
     /**
      * Emitted when an error occurs with connection.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onError = null;
 
     /**
-     * @var EventInterface
+     * @var ?EventInterface
      */
-    public $eventLoop;
+    public ?EventInterface $eventLoop;
 
     /**
-     * @var \Closure
+     * @var ?callable
      */
-    public $errorHandler;
+    public $errorHandler = null;
 
     /**
      * Sends data on the connection.
      *
      * @param mixed $sendBuffer
+     * @param bool $raw
      * @return void|boolean
      */
-    abstract public function send($sendBuffer);
+    abstract public function send(mixed $sendBuffer, bool $raw = false);
 
     /**
      * Get remote IP.
      *
      * @return string
      */
-    abstract public function getRemoteIp();
+    abstract public function getRemoteIp(): string;
 
     /**
      * Get remote port.
      *
      * @return int
      */
-    abstract public function getRemotePort();
+    abstract public function getRemotePort(): int;
 
     /**
      * Get remote address.
      *
      * @return string
      */
-    abstract public function getRemoteAddress();
+    abstract public function getRemoteAddress(): string;
 
     /**
      * Get local IP.
      *
      * @return string
      */
-    abstract public function getLocalIp();
+    abstract public function getLocalIp(): string;
 
     /**
      * Get local port.
      *
      * @return int
      */
-    abstract public function getLocalPort();
+    abstract public function getLocalPort(): int;
 
     /**
      * Get local address.
      *
      * @return string
      */
-    abstract public function getLocalAddress();
-
-    /**
-     * Is ipv4.
-     *
-     * @return bool
-     */
-    abstract public function isIPv4();
-
-    /**
-     * Is ipv6.
-     *
-     * @return bool
-     */
-    abstract public function isIPv6();
+    abstract public function getLocalAddress(): string;
 
     /**
      * Close connection.
      *
-     * @param string|null $data
+     * @param mixed|null $data
      * @return void
      */
-    abstract public function close($data = null);
+    abstract public function close(mixed $data = null, bool $raw = false);
+
+    /**
+     * Is ipv4.
+     *
+     * return bool.
+     */
+    public function isIpV4(): bool
+    {
+        if ($this->transport === 'unix') {
+            return false;
+        }
+        return !str_contains($this->getRemoteIp(), ':');
+    }
+
+    /**
+     * Is ipv6.
+     *
+     * return bool.
+     */
+    public function isIpV6(): bool
+    {
+        if ($this->transport === 'unix') {
+            return false;
+        }
+        return str_contains($this->getRemoteIp(), ':');
+    }
 
     /**
      * @param Throwable $exception
-     * @return mixed
+     * @return void
      * @throws Throwable
      */
     public function error(Throwable $exception)
