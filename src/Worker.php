@@ -74,12 +74,6 @@ class Worker
      * @var int
      */
     const DEFAULT_BACKLOG = 102400;
-    /**
-     * Max udp package size.
-     *
-     * @var int
-     */
-    const MAX_UDP_PACKAGE_SIZE = 65535;
 
     /**
      * The safe distance for columns adjacent
@@ -2495,7 +2489,7 @@ class Worker
     {
         \set_error_handler(function () {
         });
-        $recvBuffer = \stream_socket_recvfrom($socket, static::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
+        $recvBuffer = \stream_socket_recvfrom($socket, UdpConnection::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
         \restore_error_handler();
         if (false === $recvBuffer || empty($remoteAddress)) {
             return false;

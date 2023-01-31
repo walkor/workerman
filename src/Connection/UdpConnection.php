@@ -32,6 +32,13 @@ use function trim;
 class UdpConnection extends ConnectionInterface implements JsonSerializable
 {
     /**
+     * Max udp package size.
+     *
+     * @var int
+     */
+    const MAX_UDP_PACKAGE_SIZE = 65535;
+
+    /**
      * Transport layer protocol.
      *
      * @var string

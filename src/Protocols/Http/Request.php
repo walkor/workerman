@@ -653,6 +653,9 @@ class Request
      */
     protected function setSidCookie(string $sessionName, string $sid, array $cookieParams)
     {
+        if (!$this->connection) {
+            throw new RuntimeException('Request->setSidCookie() fail, header already send');
+        }
         $this->connection->headers['Set-Cookie'] = [$sessionName . '=' . $sid
             . (empty($cookieParams['domain']) ? '' : '; Domain=' . $cookieParams['domain'])
             . (empty($cookieParams['lifetime']) ? '' : '; Max-Age=' . $cookieParams['lifetime'])

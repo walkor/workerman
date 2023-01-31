@@ -99,7 +99,7 @@ class AsyncUdpConnection extends UdpConnection
      */
     public function baseRead($socket)
     {
-        $recvBuffer = stream_socket_recvfrom($socket, Worker::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
+        $recvBuffer = stream_socket_recvfrom($socket, static::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
         if (false === $recvBuffer || empty($remoteAddress)) {
             return;
         }
@@ -194,13 +194,13 @@ class AsyncUdpConnection extends UdpConnection
 
         if (!$this->socket) {
             Worker::safeEcho(new Exception($errmsg));
+            $this->eventLoop = null;
             return;
         }
 
         stream_set_blocking($this->socket, false);
-
         if ($this->onMessage) {
-            $this->eventLoop->onWritable($this->socket, [$this, 'baseRead']);
+            $this->eventLoop->onReadable($this->socket, [$this, 'baseRead']);
         }
         $this->connected = true;
         // Try to emit onConnect callback.
