@@ -18,7 +18,30 @@ use Exception;
 use RuntimeException;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
-use Workerman\Worker;
+use function array_walk_recursive;
+use function bin2hex;
+use function clearstatcache;
+use function count;
+use function explode;
+use function file_put_contents;
+use function is_file;
+use function json_decode;
+use function ltrim;
+use function microtime;
+use function pack;
+use function parse_str;
+use function parse_url;
+use function preg_match;
+use function preg_replace;
+use function strlen;
+use function strpos;
+use function strstr;
+use function strtolower;
+use function substr;
+use function tempnam;
+use function trim;
+use function unlink;
+use function urlencode;
 
 /**
  * Class Request
@@ -134,7 +157,7 @@ class Request
         if (null === $name) {
             return $this->data['headers'];
         }
-        $name = \strtolower($name);
+        $name = strtolower($name);
         return $this->data['headers'][$name] ?? $default;
     }
 
@@ -149,7 +172,7 @@ class Request
     {
         if (!isset($this->data['cookie'])) {
             $this->data['cookie'] = [];
-            \parse_str(\preg_replace('/; ?/', '&', $this->header('cookie', '')), $this->data['cookie']);
+            parse_str(preg_replace('/; ?/', '&', $this->header('cookie', '')), $this->data['cookie']);
         }
         if ($name === null) {
             return $this->data['cookie'];
@@ -209,8 +232,8 @@ class Request
     public function host(bool $withoutPort = false): ?string
     {
         $host = $this->header('host');
-        if ($host && $withoutPort && $pos = \strpos($host, ':')) {
-            return \substr($host, 0, $pos);
+        if ($host && $withoutPort && $pos = strpos($host, ':')) {
+            return substr($host, 0, $pos);
         }
         return $host;
     }
@@ -236,7 +259,7 @@ class Request
     public function path(): string
     {
         if (!isset($this->data['path'])) {
-            $this->data['path'] = (string)\parse_url($this->uri(), PHP_URL_PATH);
+            $this->data['path'] = (string)parse_url($this->uri(), PHP_URL_PATH);
         }
         return $this->data['path'];
     }
@@ -249,7 +272,7 @@ class Request
     public function queryString(): string
     {
         if (!isset($this->data['query_string'])) {
-            $this->data['query_string'] = (string)\parse_url($this->uri(), PHP_URL_QUERY);
+            $this->data['query_string'] = (string)parse_url($this->uri(), PHP_URL_QUERY);
         }
         return $this->data['query_string'];
     }
@@ -258,6 +281,7 @@ class Request
      * Get session.
      *
      * @return Session
+     * @throws Exception
      */
     public function session(): Session
     {
@@ -326,7 +350,7 @@ class Request
     public function rawHead(): string
     {
         if (!isset($this->data['head'])) {
-            $this->data['head'] = \strstr($this->buffer, "\r\n\r\n", true);
+            $this->data['head'] = strstr($this->buffer, "\r\n\r\n", true);
         }
         return $this->data['head'];
     }
@@ -338,7 +362,7 @@ class Request
      */
     public function rawBody(): string
     {
-        return \substr($this->buffer, \strpos($this->buffer, "\r\n\r\n") + 4);
+        return substr($this->buffer, strpos($this->buffer, "\r\n\r\n") + 4);
     }
 
     /**
@@ -368,8 +392,8 @@ class Request
      */
     protected function parseHeadFirstLine()
     {
-        $firstLine = \strstr($this->buffer, "\r\n", true);
-        $tmp = \explode(' ', $firstLine, 3);
+        $firstLine = strstr($this->buffer, "\r\n", true);
+        $tmp = explode(' ', $firstLine, 3);
         $this->data['method'] = $tmp[0];
         $this->data['uri'] = $tmp[1] ?? '/';
     }
@@ -381,8 +405,8 @@ class Request
      */
     protected function parseProtocolVersion()
     {
-        $firstLine = \strstr($this->buffer, "\r\n", true);
-        $protocoVersion = substr(\strstr($firstLine, 'HTTP/'), 5);
+        $firstLine = strstr($this->buffer, "\r\n", true);
+        $protocoVersion = substr(strstr($firstLine, 'HTTP/'), 5);
         $this->data['protocolVersion'] = $protocoVersion ?: '1.0';
     }
 
@@ -396,24 +420,24 @@ class Request
         static $cache = [];
         $this->data['headers'] = [];
         $rawHead = $this->rawHead();
-        $endLinePosition = \strpos($rawHead, "\r\n");
+        $endLinePosition = strpos($rawHead, "\r\n");
         if ($endLinePosition === false) {
             return;
         }
-        $headBuffer = \substr($rawHead, $endLinePosition + 2);
+        $headBuffer = substr($rawHead, $endLinePosition + 2);
         $cacheable = static::$enableCache && !isset($headBuffer[4096]);
         if ($cacheable && isset($cache[$headBuffer])) {
             $this->data['headers'] = $cache[$headBuffer];
             return;
         }
-        $headData = \explode("\r\n", $headBuffer);
+        $headData = explode("\r\n", $headBuffer);
         foreach ($headData as $content) {
             if (str_contains($content, ':')) {
-                list($key, $value) = \explode(':', $content, 2);
-                $key = \strtolower($key);
-                $value = \ltrim($value);
+                list($key, $value) = explode(':', $content, 2);
+                $key = strtolower($key);
+                $value = ltrim($value);
             } else {
-                $key = \strtolower($content);
+                $key = strtolower($content);
                 $value = '';
             }
             if (isset($this->data['headers'][$key])) {
@@ -424,7 +448,7 @@ class Request
         }
         if ($cacheable) {
             $cache[$headBuffer] = $this->data['headers'];
-            if (\count($cache) > 128) {
+            if (count($cache) > 128) {
                 unset($cache[key($cache)]);
             }
         }
@@ -448,10 +472,10 @@ class Request
             $this->data['get'] = $cache[$queryString];
             return;
         }
-        \parse_str($queryString, $this->data['get']);
+        parse_str($queryString, $this->data['get']);
         if ($cacheable) {
             $cache[$queryString] = $this->data['get'];
-            if (\count($cache) > 256) {
+            if (count($cache) > 256) {
                 unset($cache[key($cache)]);
             }
         }
@@ -467,7 +491,7 @@ class Request
         static $cache = [];
         $this->data['post'] = $this->data['files'] = [];
         $contentType = $this->header('content-type', '');
-        if (\preg_match('/boundary="?(\S+)"?/', $contentType, $match)) {
+        if (preg_match('/boundary="?(\S+)"?/', $contentType, $match)) {
             $httpPostBoundary = '--' . $match[1];
             $this->parseUploadFiles($httpPostBoundary);
             return;
@@ -481,14 +505,14 @@ class Request
             $this->data['post'] = $cache[$bodyBuffer];
             return;
         }
-        if (\preg_match('/\bjson\b/i', $contentType)) {
-            $this->data['post'] = (array)\json_decode($bodyBuffer, true);
+        if (preg_match('/\bjson\b/i', $contentType)) {
+            $this->data['post'] = (array)json_decode($bodyBuffer, true);
         } else {
-            \parse_str($bodyBuffer, $this->data['post']);
+            parse_str($bodyBuffer, $this->data['post']);
         }
         if ($cacheable) {
             $cache[$bodyBuffer] = $this->data['post'];
-            if (\count($cache) > 256) {
+            if (count($cache) > 256) {
                 unset($cache[key($cache)]);
             }
         }
@@ -500,9 +524,9 @@ class Request
      * @param string $httpPostBoundary
      * @return void
      */
-    protected function parseUploadFiles($httpPostBoundary)
+    protected function parseUploadFiles(string $httpPostBoundary)
     {
-        $httpPostBoundary = \trim($httpPostBoundary, '"');
+        $httpPostBoundary = trim($httpPostBoundary, '"');
         $buffer = $this->buffer;
         $postEncodeString = '';
         $filesEncodeString = '';
@@ -519,7 +543,7 @@ class Request
 
         if ($filesEncodeString) {
             parse_str($filesEncodeString, $this->data['files']);
-            \array_walk_recursive($this->data['files'], function (&$value) use ($files) {
+            array_walk_recursive($this->data['files'], function (&$value) use ($files) {
                 $value = $files[$value];
             });
         }
@@ -539,41 +563,41 @@ class Request
     {
         $file = [];
         $boundary = "\r\n$boundary";
-        if (\strlen($this->buffer) < $sectionStartOffset) {
+        if (strlen($this->buffer) < $sectionStartOffset) {
             return 0;
         }
-        $sectionEndOffset = \strpos($this->buffer, $boundary, $sectionStartOffset);
+        $sectionEndOffset = strpos($this->buffer, $boundary, $sectionStartOffset);
         if (!$sectionEndOffset) {
             return 0;
         }
-        $contentLinesEndOffset = \strpos($this->buffer, "\r\n\r\n", $sectionStartOffset);
+        $contentLinesEndOffset = strpos($this->buffer, "\r\n\r\n", $sectionStartOffset);
         if (!$contentLinesEndOffset || $contentLinesEndOffset + 4 > $sectionEndOffset) {
             return 0;
         }
-        $contentLinesStr = \substr($this->buffer, $sectionStartOffset, $contentLinesEndOffset - $sectionStartOffset);
-        $contentLines = \explode("\r\n", trim($contentLinesStr . "\r\n"));
-        $boundaryValue = \substr($this->buffer, $contentLinesEndOffset + 4, $sectionEndOffset - $contentLinesEndOffset - 4);
+        $contentLinesStr = substr($this->buffer, $sectionStartOffset, $contentLinesEndOffset - $sectionStartOffset);
+        $contentLines = explode("\r\n", trim($contentLinesStr . "\r\n"));
+        $boundaryValue = substr($this->buffer, $contentLinesEndOffset + 4, $sectionEndOffset - $contentLinesEndOffset - 4);
         $uploadKey = false;
         foreach ($contentLines as $contentLine) {
-            if (!\strpos($contentLine, ': ')) {
+            if (!strpos($contentLine, ': ')) {
                 return 0;
             }
-            list($key, $value) = \explode(': ', $contentLine);
+            list($key, $value) = explode(': ', $contentLine);
             switch (strtolower($key)) {
                 case "content-disposition":
                     // Is file data.
-                    if (\preg_match('/name="(.*?)"; filename="(.*?)"/i', $value, $match)) {
+                    if (preg_match('/name="(.*?)"; filename="(.*?)"/i', $value, $match)) {
                         $error = 0;
                         $tmpFile = '';
-                        $size = \strlen($boundaryValue);
+                        $size = strlen($boundaryValue);
                         $tmpUploadDir = HTTP::uploadTmpDir();
                         if (!$tmpUploadDir) {
                             $error = UPLOAD_ERR_NO_TMP_DIR;
                         } else if ($boundaryValue === '') {
                             $error = UPLOAD_ERR_NO_FILE;
                         } else {
-                            $tmpFile = \tempnam($tmpUploadDir, 'workerman.upload.');
-                            if ($tmpFile === false || false == \file_put_contents($tmpFile, $boundaryValue)) {
+                            $tmpFile = tempnam($tmpUploadDir, 'workerman.upload.');
+                            if ($tmpFile === false || false == file_put_contents($tmpFile, $boundaryValue)) {
                                 $error = UPLOAD_ERR_CANT_WRITE;
                             }
                         }
@@ -590,24 +614,24 @@ class Request
                     } // Is post field.
                     else {
                         // Parse $POST.
-                        if (\preg_match('/name="(.*?)"$/', $value, $match)) {
+                        if (preg_match('/name="(.*?)"$/', $value, $match)) {
                             $k = $match[1];
-                            $postEncodeString .= \urlencode($k) . "=" . \urlencode($boundaryValue) . '&';
+                            $postEncodeString .= urlencode($k) . "=" . urlencode($boundaryValue) . '&';
                         }
-                        return $sectionEndOffset + \strlen($boundary) + 2;
+                        return $sectionEndOffset + strlen($boundary) + 2;
                     }
                 case "content-type":
-                    $file['type'] = \trim($value);
+                    $file['type'] = trim($value);
                     break;
             }
         }
         if ($uploadKey === false) {
             return 0;
         }
-        $filesEncodeStr .= \urlencode($uploadKey) . '=' . \count($files) . '&';
+        $filesEncodeStr .= urlencode($uploadKey) . '=' . count($files) . '&';
         $files[] = $file;
 
-        return $sectionEndOffset + \strlen($boundary) + 2;
+        return $sectionEndOffset + strlen($boundary) + 2;
     }
 
     /**
@@ -618,7 +642,7 @@ class Request
      */
     public static function createSessionId(): string
     {
-        return \bin2hex(\pack('d', \microtime(true)) . random_bytes(8));
+        return bin2hex(pack('d', microtime(true)) . random_bytes(8));
     }
 
     /**
@@ -653,7 +677,7 @@ class Request
      * @param mixed $value
      * @return void
      */
-    public function __set($name, $value)
+    public function __set(string $name, mixed $value)
     {
         $this->properties[$name] = $value;
     }
@@ -664,7 +688,7 @@ class Request
      * @param string $name
      * @return mixed|null
      */
-    public function __get($name)
+    public function __get(string $name)
     {
         return $this->properties[$name] ?? null;
     }
@@ -675,7 +699,7 @@ class Request
      * @param string $name
      * @return bool
      */
-    public function __isset($name)
+    public function __isset(string $name)
     {
         return isset($this->properties[$name]);
     }
@@ -686,7 +710,7 @@ class Request
      * @param string $name
      * @return void
      */
-    public function __unset($name)
+    public function __unset(string $name)
     {
         unset($this->properties[$name]);
     }
@@ -699,11 +723,11 @@ class Request
     public function __destruct()
     {
         if (isset($this->data['files'])) {
-            \clearstatcache();
-            \array_walk_recursive($this->data['files'], function ($value, $key) {
+            clearstatcache();
+            array_walk_recursive($this->data['files'], function ($value, $key) {
                 if ($key === 'tmp_name') {
-                    if (\is_file($value)) {
-                        \unlink($value);
+                    if (is_file($value)) {
+                        unlink($value);
                     }
                 }
             });

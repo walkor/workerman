@@ -14,6 +14,21 @@
 
 namespace Workerman\Protocols\Http;
 
+use function array_merge_recursive;
+use function explode;
+use function file;
+use function filemtime;
+use function gmdate;
+use function is_array;
+use function is_file;
+use function pathinfo;
+use function preg_match;
+use function rawurlencode;
+use function strlen;
+use function substr;
+use const FILE_IGNORE_NEW_LINES;
+use const FILE_SKIP_EMPTY_LINES;
+
 /**
  * Class Response
  * @package Workerman\Protocols\Http
@@ -72,7 +87,7 @@ class Response
      * Phrases.
      *
      * @var array<int,string>
-     * 
+     *
      * @link https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
      */
     const PHRASES = [
@@ -131,7 +146,7 @@ class Response
         429 => 'Too Many Requests', // RFC 6585
         431 => 'Request Header Fields Too Large', // RFC 6585
         451 => 'Unavailable For Legal Reasons', // RFC 7725
-        
+
         500 => 'Internal Server Error',
         501 => 'Not Implemented',
         502 => 'Bad Gateway',
@@ -163,8 +178,8 @@ class Response
      * @param string $body
      */
     public function __construct(
-        int   $status = 200,
-        array $headers = [],
+        int    $status = 200,
+        array  $headers = [],
         string $body = ''
     )
     {
@@ -206,7 +221,7 @@ class Response
      */
     public function withHeaders(array $headers): static
     {
-        $this->headers = \array_merge_recursive($this->headers, $headers);
+        $this->headers = array_merge_recursive($this->headers, $headers);
         return $this;
     }
 
@@ -321,7 +336,7 @@ class Response
      */
     public function withFile(string $file, int $offset = 0, int $length = 0): static
     {
-        if (!\is_file($file)) {
+        if (!is_file($file)) {
             return $this->withStatus(404)->withBody('<h3>404 Not Found</h3>');
         }
         $this->file = ['file' => $file, 'offset' => $offset, 'length' => $length];
@@ -341,9 +356,9 @@ class Response
      * @param bool $sameSite
      * @return $this
      */
-    public function cookie(string $name, string $value = '', int $maxAge = null, string $path = '', string $domain = '', bool $secure = false, bool $httpOnly = false, bool $sameSite  = false): static
+    public function cookie(string $name, string $value = '', int $maxAge = null, string $path = '', string $domain = '', bool $secure = false, bool $httpOnly = false, bool $sameSite = false): static
     {
-        $this->headers['Set-Cookie'][] = $name . '=' . \rawurlencode($value)
+        $this->headers['Set-Cookie'][] = $name . '=' . rawurlencode($value)
             . (empty($domain) ? '' : '; Domain=' . $domain)
             . ($maxAge === null ? '' : '; Max-Age=' . $maxAge)
             . (empty($path) ? '' : '; Path=' . $path)
@@ -363,13 +378,13 @@ class Response
     {
         $file = $fileInfo['file'];
         $reason = $this->reason ?: self::PHRASES[$this->status];
-        $head = "HTTP/{$this->version} {$this->status} $reason\r\n";
+        $head = "HTTP/$this->version $this->status $reason\r\n";
         $headers = $this->headers;
         if (!isset($headers['Server'])) {
             $head .= "Server: workerman\r\n";
         }
         foreach ($headers as $name => $value) {
-            if (\is_array($value)) {
+            if (is_array($value)) {
                 foreach ($value as $item) {
                     $head .= "$name: $item\r\n";
                 }
@@ -382,7 +397,7 @@ class Response
             $head .= "Connection: keep-alive\r\n";
         }
 
-        $fileInfo = \pathinfo($file);
+        $fileInfo = pathinfo($file);
         $extension = $fileInfo['extension'] ?? '';
         $baseName = $fileInfo['basename'] ?? 'unknown';
         if (!isset($headers['Content-Type'])) {
@@ -398,12 +413,12 @@ class Response
         }
 
         if (!isset($headers['Last-Modified'])) {
-            if ($mtime = \filemtime($file)) {
-                $head .= 'Last-Modified: ' . \gmdate('D, d M Y H:i:s', $mtime) . ' GMT' . "\r\n";
+            if ($mtime = filemtime($file)) {
+                $head .= 'Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT' . "\r\n";
             }
         }
 
-        return "{$head}\r\n";
+        return "$head\r\n";
     }
 
     /**
@@ -418,18 +433,18 @@ class Response
         }
 
         $reason = $this->reason ?: self::PHRASES[$this->status] ?? '';
-        $bodyLen = \strlen($this->body);
+        $bodyLen = strlen($this->body);
         if (empty($this->headers)) {
-            return "HTTP/{$this->version} {$this->status} $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $bodyLen\r\nConnection: keep-alive\r\n\r\n{$this->body}";
+            return "HTTP/$this->version $this->status $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $bodyLen\r\nConnection: keep-alive\r\n\r\n$this->body";
         }
 
-        $head = "HTTP/{$this->version} {$this->status} $reason\r\n";
+        $head = "HTTP/$this->version $this->status $reason\r\n";
         $headers = $this->headers;
         if (!isset($headers['Server'])) {
             $head .= "Server: workerman\r\n";
         }
         foreach ($headers as $name => $value) {
-            if (\is_array($value)) {
+            if (is_array($value)) {
                 foreach ($value as $item) {
                     $head .= "$name: $item\r\n";
                 }
@@ -451,7 +466,7 @@ class Response
         if (!isset($headers['Transfer-Encoding'])) {
             $head .= "Content-Length: $bodyLen\r\n\r\n";
         } else {
-            return "$head\r\n" . dechex($bodyLen) . "\r\n{$this->body}\r\n";
+            return "$head\r\n" . dechex($bodyLen) . "\r\n$this->body\r\n";
         }
 
         // The whole http package
@@ -466,12 +481,12 @@ class Response
     public static function initMimeTypeMap()
     {
         $mimeFile = __DIR__ . '/mime.types';
-        $items = \file($mimeFile, \FILE_IGNORE_NEW_LINES | \FILE_SKIP_EMPTY_LINES);
+        $items = file($mimeFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($items as $content) {
-            if (\preg_match("/\s*(\S+)\s+(\S.+)/", $content, $match)) {
+            if (preg_match("/\s*(\S+)\s+(\S.+)/", $content, $match)) {
                 $mimeType = $match[1];
                 $extensionVar = $match[2];
-                $extensionArray = \explode(' ', \substr($extensionVar, 0, -1));
+                $extensionArray = explode(' ', substr($extensionVar, 0, -1));
                 foreach ($extensionArray as $fileExtension) {
                     static::$mimeTypeMap[$fileExtension] = $mimeType;
                 }

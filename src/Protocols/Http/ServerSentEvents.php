@@ -14,6 +14,8 @@
 
 namespace Workerman\Protocols\Http;
 
+use function str_replace;
+
 /**
  * Class ServerSentEvents
  * @package Workerman\Protocols\Http
@@ -52,7 +54,7 @@ class ServerSentEvents
             $buffer .= "event: {$data['event']}\n";
         }
         if (isset($data['data'])) {
-            $buffer .= 'data: ' . \str_replace("\n", "\ndata: ", $data['data']) . "\n\n";
+            $buffer .= 'data: ' . str_replace("\n", "\ndata: ", $data['data']) . "\n\n";
         }
         if (isset($data['id'])) {
             $buffer .= "id: {$data['id']}\n";

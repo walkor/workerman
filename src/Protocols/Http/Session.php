@@ -15,9 +15,19 @@
 namespace Workerman\Protocols\Http;
 
 use Exception;
+use JetBrains\PhpStorm\ArrayShape;
 use RuntimeException;
 use Workerman\Protocols\Http\Session\FileSessionHandler;
 use Workerman\Protocols\Http\Session\SessionHandlerInterface;
+use function array_key_exists;
+use function ini_get;
+use function is_array;
+use function is_scalar;
+use function preg_match;
+use function random_int;
+use function serialize;
+use function session_get_cookie_params;
+use function unserialize;
 
 /**
  * Class Session
@@ -150,7 +160,7 @@ class Session
         }
         $this->sessionId = $sessionId;
         if ($data = static::$handler->read($sessionId)) {
-            $this->data = \unserialize($data);
+            $this->data = unserialize($data);
         }
     }
 
@@ -221,7 +231,7 @@ class Session
      */
     public function put(array|string $key, mixed $value = null)
     {
-        if (!\is_array($key)) {
+        if (!is_array($key)) {
             $this->set($key, $value);
             return;
         }
@@ -239,11 +249,11 @@ class Session
      */
     public function forget(array|string $name)
     {
-        if (\is_scalar($name)) {
+        if (is_scalar($name)) {
             $this->delete($name);
             return;
         }
-        if (\is_array($name)) {
+        if (is_array($name)) {
             foreach ($name as $key) {
                 unset($this->data[$key]);
             }
@@ -291,7 +301,7 @@ class Session
      */
     public function exists(string $name): bool
     {
-        return \array_key_exists($name, $this->data);
+        return array_key_exists($name, $this->data);
     }
 
     /**
@@ -305,7 +315,7 @@ class Session
             if (empty($this->data)) {
                 static::$handler->destroy($this->sessionId);
             } else {
-                static::$handler->write($this->sessionId, \serialize($this->data));
+                static::$handler->write($this->sessionId, serialize($this->data));
             }
         } elseif (static::$autoUpdateTimestamp) {
             static::refresh();
@@ -330,15 +340,15 @@ class Session
      */
     public static function init()
     {
-        if (($gcProbability = (int)\ini_get('session.gc_probability')) && ($gcDivisor = (int)\ini_get('session.gc_divisor'))) {
+        if (($gcProbability = (int)ini_get('session.gc_probability')) && ($gcDivisor = (int)ini_get('session.gc_divisor'))) {
             static::$gcProbability = [$gcProbability, $gcDivisor];
         }
 
-        if ($gcMaxLifeTime = \ini_get('session.gc_maxlifetime')) {
+        if ($gcMaxLifeTime = ini_get('session.gc_maxlifetime')) {
             self::$lifetime = (int)$gcMaxLifeTime;
         }
 
-        $sessionCookieParams = \session_get_cookie_params();
+        $sessionCookieParams = session_get_cookie_params();
         static::$cookieLifetime = $sessionCookieParams['lifetime'];
         static::$cookiePath = $sessionCookieParams['path'];
         static::$domain = $sessionCookieParams['domain'];
@@ -369,6 +379,7 @@ class Session
      *
      * @return array
      */
+    #[ArrayShape(['lifetime' => "int", 'path' => "string", 'domain' => "string", 'secure' => "bool", 'httponly' => "bool", 'samesite' => "string"])]
     public static function getCookieParams(): array
     {
         return [
@@ -414,7 +425,7 @@ class Session
     public function __destruct()
     {
         $this->save();
-        if (\random_int(1, static::$gcProbability[1]) <= static::$gcProbability[0]) {
+        if (random_int(1, static::$gcProbability[1]) <= static::$gcProbability[0]) {
             $this->gc();
         }
     }
@@ -424,9 +435,9 @@ class Session
      *
      * @param string $sessionId
      */
-    protected static function checkSessionId($sessionId)
+    protected static function checkSessionId(string $sessionId)
     {
-        if (!\preg_match('/^[a-zA-Z0-9]+$/', $sessionId)) {
+        if (!preg_match('/^[a-zA-Z0-9]+$/', $sessionId)) {
             throw new RuntimeException("session_id $sessionId is invalid");
         }
     }
