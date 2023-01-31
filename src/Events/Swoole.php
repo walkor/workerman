@@ -13,10 +13,14 @@
 
 namespace Workerman\Events;
 
-use Throwable;
 use Swoole\Event;
-use Swoole\Timer;
 use Swoole\Process;
+use Swoole\Timer;
+use Throwable;
+use function count;
+use function posix_kill;
+use const SWOOLE_EVENT_READ;
+use const SWOOLE_EVENT_WRITE;
 
 class Swoole implements EventInterface
 {
@@ -49,7 +53,8 @@ class Swoole implements EventInterface
     public function __construct()
     {
         // Avoid process exit due to no listening
-        Timer::tick(100000000, function () {});
+        Timer::tick(100000000, function () {
+        });
     }
 
     /**
@@ -117,12 +122,12 @@ class Swoole implements EventInterface
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
-            Event::add($stream, $func, null, \SWOOLE_EVENT_READ);
+            Event::add($stream, $func, null, SWOOLE_EVENT_READ);
         } else {
             if (isset($this->writeEvents[$fd])) {
-                Event::set($stream, $func, null, \SWOOLE_EVENT_READ | \SWOOLE_EVENT_WRITE);
+                Event::set($stream, $func, null, SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
             } else {
-                Event::set($stream, $func, null, \SWOOLE_EVENT_READ);
+                Event::set($stream, $func, null, SWOOLE_EVENT_READ);
             }
         }
         $this->readEvents[$fd] = $stream;
@@ -142,7 +147,7 @@ class Swoole implements EventInterface
             Event::del($stream);
             return true;
         }
-        Event::set($stream, null, null, \SWOOLE_EVENT_WRITE);
+        Event::set($stream, null, null, SWOOLE_EVENT_WRITE);
         return true;
     }
 
@@ -153,12 +158,12 @@ class Swoole implements EventInterface
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
-            Event::add($stream, null, $func, \SWOOLE_EVENT_WRITE);
+            Event::add($stream, null, $func, SWOOLE_EVENT_WRITE);
         } else {
             if (isset($this->readEvents[$fd])) {
-                Event::set($stream, null, $func, \SWOOLE_EVENT_WRITE | \SWOOLE_EVENT_READ);
+                Event::set($stream, null, $func, SWOOLE_EVENT_WRITE | SWOOLE_EVENT_READ);
             } else {
-                Event::set($stream, null, $func, \SWOOLE_EVENT_WRITE);
+                Event::set($stream, null, $func, SWOOLE_EVENT_WRITE);
             }
         }
         $this->writeEvents[$fd] = $stream;
@@ -178,7 +183,7 @@ class Swoole implements EventInterface
             Event::del($stream);
             return true;
         }
-        Event::set($stream, null, null, \SWOOLE_EVENT_READ);
+        Event::set($stream, null, null, SWOOLE_EVENT_READ);
         return true;
     }
 
@@ -195,7 +200,8 @@ class Swoole implements EventInterface
      */
     public function offSignal(int $signal): bool
     {
-        return Process::signal($signal, function () {});
+        return Process::signal($signal, function () {
+        });
     }
 
     /**
@@ -224,7 +230,7 @@ class Swoole implements EventInterface
     public function stop()
     {
         Event::exit();
-        \posix_kill(posix_getpid(), SIGINT);
+        posix_kill(posix_getpid(), SIGINT);
     }
 
     /**
@@ -234,7 +240,7 @@ class Swoole implements EventInterface
      */
     public function getTimerCount(): int
     {
-        return \count($this->eventTimer);
+        return count($this->eventTimer);
     }
 
     /**

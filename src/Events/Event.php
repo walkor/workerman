@@ -14,8 +14,10 @@
 
 namespace Workerman\Events;
 
-use Throwable;
 use EventBase;
+use Throwable;
+use function class_exists;
+use function count;
 
 /**
  * libevent eventloop
@@ -76,13 +78,13 @@ class Event implements EventInterface
      */
     public function __construct()
     {
-        if (\class_exists('\\\\Event', false)) {
+        if (class_exists('\\\\Event', false)) {
             $className = '\\\\Event';
         } else {
             $className = '\Event';
         }
         $this->eventClassName = $className;
-        if (\class_exists('\\\\EventBase', false)) {
+        if (class_exists('\\\\EventBase', false)) {
             $className = '\\\\EventBase';
         } else {
             $className = '\EventBase';
@@ -100,7 +102,7 @@ class Event implements EventInterface
         $event = new $className($this->eventBase, -1, $className::TIMEOUT, function () use ($func, $args) {
             try {
                 $func(...$args);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $this->error($e);
             }
         });
@@ -142,7 +144,7 @@ class Event implements EventInterface
         $event = new $className($this->eventBase, -1, $className::TIMEOUT | $className::PERSIST, function () use ($func, $args) {
             try {
                 $func(...$args);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $this->error($e);
             }
         });
@@ -269,7 +271,7 @@ class Event implements EventInterface
      */
     public function getTimerCount(): int
     {
-        return \count($this->eventTimer);
+        return count($this->eventTimer);
     }
 
     /**
@@ -300,7 +302,7 @@ class Event implements EventInterface
                 throw new $e;
             }
             ($this->errorHandler)($e);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Cannot trigger an exception in the Event callback, otherwise it will cause an infinite loop
             echo $e;
         }

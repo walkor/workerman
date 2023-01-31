@@ -16,6 +16,12 @@ namespace Workerman\Events;
 
 use SplPriorityQueue;
 use Throwable;
+use function count;
+use function max;
+use function microtime;
+use function pcntl_signal;
+use function pcntl_signal_dispatch;
+use const DIRECTORY_SEPARATOR;
 
 /**
  * select eventloop
@@ -126,10 +132,10 @@ class Select implements EventInterface
     public function delay(float $delay, callable $func, array $args = []): int
     {
         $timerId = $this->timerId++;
-        $runTime = \microtime(true) + $delay;
+        $runTime = microtime(true) + $delay;
         $this->scheduler->insert($timerId, -$runTime);
         $this->eventTimer[$timerId] = [$func, $args];
-        $selectTimeout = ($runTime - \microtime(true)) * 1000000;
+        $selectTimeout = ($runTime - microtime(true)) * 1000000;
         $selectTimeout = $selectTimeout <= 0 ? 1 : (int)$selectTimeout;
         if ($this->selectTimeout > $selectTimeout) {
             $this->selectTimeout = $selectTimeout;
@@ -143,10 +149,10 @@ class Select implements EventInterface
     public function repeat(float $interval, callable $func, array $args = []): int
     {
         $timerId = $this->timerId++;
-        $runTime = \microtime(true) + $interval;
+        $runTime = microtime(true) + $interval;
         $this->scheduler->insert($timerId, -$runTime);
         $this->eventTimer[$timerId] = [$func, $args, $interval];
-        $selectTimeout = ($runTime - \microtime(true)) * 1000000;
+        $selectTimeout = ($runTime - microtime(true)) * 1000000;
         $selectTimeout = $selectTimeout <= 0 ? 1 : (int)$selectTimeout;
         if ($this->selectTimeout > $selectTimeout) {
             $this->selectTimeout = $selectTimeout;
@@ -179,10 +185,10 @@ class Select implements EventInterface
      */
     public function onReadable($stream, callable $func)
     {
-        $count = \count($this->readFds);
+        $count = count($this->readFds);
         if ($count >= 1024) {
             echo "Warning: system call select exceeded the maximum number of connections 1024, please install event/libevent extension for more connections.\n";
-        } else if (\DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
+        } else if (DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
             echo "Warning: system call select exceeded the maximum number of connections 256.\n";
         }
         $fdKey = (int)$stream;
@@ -208,10 +214,10 @@ class Select implements EventInterface
      */
     public function onWritable($stream, callable $func)
     {
-        $count = \count($this->writeFds);
+        $count = count($this->writeFds);
         if ($count >= 1024) {
             echo "Warning: system call select exceeded the maximum number of connections 1024, please install event/libevent extension for more connections.\n";
-        } else if (\DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
+        } else if (DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
             echo "Warning: system call select exceeded the maximum number of connections 256.\n";
         }
         $fdKey = (int)$stream;
@@ -233,7 +239,7 @@ class Select implements EventInterface
     }
 
     /**
-     * {@inheritdoc}
+     * On except.
      */
     public function onExcept($stream, $func)
     {
@@ -243,7 +249,7 @@ class Select implements EventInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Off except.
      */
     public function offExcept($stream): bool
     {
@@ -260,11 +266,11 @@ class Select implements EventInterface
      */
     public function onSignal(int $signal, callable $func)
     {
-        if (\DIRECTORY_SEPARATOR !== '/') {
+        if (!function_exists('pcntl_signal')) {
             return;
         }
         $this->signalEvents[$signal] = $func;
-        \pcntl_signal($signal, [$this, 'signalHandler']);
+        pcntl_signal($signal, [$this, 'signalHandler']);
     }
 
     /**
@@ -272,10 +278,10 @@ class Select implements EventInterface
      */
     public function offSignal(int $signal): bool
     {
-        if (\DIRECTORY_SEPARATOR !== '/') {
+        if (!function_exists('pcntl_signal')) {
             return false;
         }
-        \pcntl_signal($signal, SIG_IGN);
+        pcntl_signal($signal, SIG_IGN);
         if (isset($this->signalEvents[$signal])) {
             unset($this->signalEvents[$signal]);
             return true;
@@ -306,7 +312,7 @@ class Select implements EventInterface
             $schedulerData = $this->scheduler->top();
             $timerId = $schedulerData['data'];
             $nextRunTime = -$schedulerData['priority'];
-            $timeNow = \microtime(true);
+            $timeNow = microtime(true);
             $this->selectTimeout = (int)(($nextRunTime - $timeNow) * 1000000);
             if ($this->selectTimeout <= 0) {
                 $this->scheduler->extract();
@@ -339,8 +345,8 @@ class Select implements EventInterface
         if (!$this->scheduler->isEmpty()) {
             $schedulerData = $this->scheduler->top();
             $nextRunTime = -$schedulerData['priority'];
-            $timeNow = \microtime(true);
-            $this->selectTimeout = \max((int)(($nextRunTime - $timeNow) * 1000000), 0);
+            $timeNow = microtime(true);
+            $this->selectTimeout = max((int)(($nextRunTime - $timeNow) * 1000000), 0);
             return;
         }
         $this->selectTimeout = 100000000;
@@ -369,7 +375,7 @@ class Select implements EventInterface
                 // Waiting read/write/signal/timeout events.
                 try {
                     @stream_select($read, $write, $except, 0, $this->selectTimeout);
-                } catch (Throwable $e) {
+                } catch (Throwable) {
                 }
             } else {
                 $this->selectTimeout >= 1 && usleep($this->selectTimeout);
@@ -402,7 +408,7 @@ class Select implements EventInterface
 
             if (!empty($this->signalEvents)) {
                 // Calls signal handlers for pending signals
-                \pcntl_signal_dispatch();
+                pcntl_signal_dispatch();
             }
         }
     }
@@ -426,7 +432,7 @@ class Select implements EventInterface
      */
     public function getTimerCount(): int
     {
-        return \count($this->eventTimer);
+        return count($this->eventTimer);
     }
 
     /**

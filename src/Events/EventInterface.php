@@ -13,6 +13,8 @@
  */
 namespace Workerman\Events;
 
+use Throwable;
+
 interface EventInterface
 {
     /**
@@ -82,6 +84,7 @@ interface EventInterface
      * @param int $signal
      * @param callable $func
      * @return void
+     * @throws Throwable
      */
     public function onSignal(int $signal, callable $func);
 
@@ -101,6 +104,7 @@ interface EventInterface
     /**
      * Run the event loop.
      * @return void
+     * @throws Throwable
      */
     public function run();
 

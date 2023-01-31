@@ -14,8 +14,11 @@
 
 namespace Workerman\Events;
 
-use Revolt\EventLoop\Driver;
 use Revolt\EventLoop;
+use Revolt\EventLoop\Driver;
+use function count;
+use function function_exists;
+use function pcntl_signal;
 
 /**
  * Revolt eventloop
@@ -66,7 +69,9 @@ class Revolt implements EventInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Get driver
+     *
+     * @return Driver
      */
     public function driver(): Driver
     {
@@ -90,8 +95,8 @@ class Revolt implements EventInterface
             $this->driver->cancel($cbId);
         }
         $this->driver->stop();
-        if (\function_exists('pcntl_signal')) {
-            \pcntl_signal(SIGINT, SIG_IGN);
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGINT, SIG_IGN);
         }
     }
 
@@ -249,7 +254,7 @@ class Revolt implements EventInterface
      */
     public function getTimerCount(): int
     {
-        return \count($this->eventTimer);
+        return count($this->eventTimer);
     }
 
     /**

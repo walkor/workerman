@@ -7,6 +7,8 @@ use Swow\Coroutine;
 use Swow\Signal;
 use Swow\SignalException;
 use Throwable;
+use function count;
+use function is_resource;
 use function max;
 use function msleep;
 use function stream_poll_one;
@@ -54,7 +56,7 @@ class Swow implements EventInterface
      */
     public function getTimerCount(): int
     {
-        return \count($this->eventTimer);
+        return count($this->eventTimer);
     }
 
     /**
@@ -62,15 +64,15 @@ class Swow implements EventInterface
      */
     public function delay(float $delay, callable $func, array $args = []): int
     {
-        $t = (int) ($delay * 1000);
+        $t = (int)($delay * 1000);
         $t = max($t, 1);
         $that = $this;
         $coroutine = Coroutine::run(function () use ($t, $func, $args, $that): void {
             msleep($t);
             unset($this->eventTimer[Coroutine::getCurrent()->getId()]);
             try {
-                $func(...(array) $args);
-            } catch (\Throwable $e) {
+                $func(...$args);
+            } catch (Throwable $e) {
                 $that->error($e);
             }
         });
@@ -84,15 +86,15 @@ class Swow implements EventInterface
      */
     public function repeat(float $interval, callable $func, array $args = []): int
     {
-        $t = (int) ($interval * 1000);
+        $t = (int)($interval * 1000);
         $t = max($t, 1);
         $that = $this;
         $coroutine = Coroutine::run(static function () use ($t, $func, $args, $that): void {
             while (true) {
                 msleep($t);
                 try {
-                    $func(...(array) $args);
-                } catch (\Throwable $e) {
+                    $func(...$args);
+                } catch (Throwable $e) {
                     $that->error($e);
                 }
             }
@@ -141,7 +143,7 @@ class Swow implements EventInterface
      */
     public function onReadable($stream, callable $func)
     {
-        $fd = (int) $stream;
+        $fd = (int)$stream;
         if (isset($this->readEvents[$fd])) {
             $this->offReadable($stream);
         }
@@ -149,7 +151,7 @@ class Swow implements EventInterface
             try {
                 $this->readEvents[$fd] = Coroutine::getCurrent();
                 while (true) {
-                    if (!\is_resource($stream)) {
+                    if (!is_resource($stream)) {
                         $this->offReadable($stream);
                         break;
                     }
@@ -177,7 +179,7 @@ class Swow implements EventInterface
     public function offReadable($stream): bool
     {
         // 在当前协程执行 $coroutine->kill() 会导致不可预知问题，所以没有使用$coroutine->kill()
-        $fd = (int) $stream;
+        $fd = (int)$stream;
         if (isset($this->readEvents[$fd])) {
             unset($this->readEvents[$fd]);
             return true;
@@ -190,7 +192,7 @@ class Swow implements EventInterface
      */
     public function onWritable($stream, callable $func)
     {
-        $fd = (int) $stream;
+        $fd = (int)$stream;
         if (isset($this->writeEvents[$fd])) {
             $this->offWritable($stream);
         }
@@ -221,7 +223,7 @@ class Swow implements EventInterface
      */
     public function offWritable($stream): bool
     {
-        $fd = (int) $stream;
+        $fd = (int)$stream;
         if (isset($this->writeEvents[$fd])) {
             unset($this->writeEvents[$fd]);
             return true;
@@ -244,7 +246,8 @@ class Swow implements EventInterface
                         break;
                     }
                     $func($signal);
-                } catch (SignalException) {}
+                } catch (SignalException) {
+                }
             }
         });
     }
@@ -278,7 +281,7 @@ class Swow implements EventInterface
     {
         Coroutine::killAll();
     }
-    
+
     /**
      * {@inheritdoc}
      */
