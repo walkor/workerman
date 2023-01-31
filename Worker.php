@@ -26,6 +26,7 @@ use \Exception;
  * Worker class
  * A container for listening ports
  */
+#[\AllowDynamicProperties]
 class Worker
 {
     /**
@@ -1226,6 +1227,9 @@ class Worker
             // Reload.
             case \SIGUSR2:
             case \SIGUSR1:
+                if (static::$_status === static::STATUS_SHUTDOWN || static::$_status === static::STATUS_RELOADING) {
+                    return;
+                }
                 static::$_gracefulStop = $signal === \SIGUSR2;
                 static::$_pidsToRestart = static::getAllWorkerPids();
                 static::reload();
@@ -1780,6 +1784,11 @@ class Worker
     {
         // For master process.
         if (static::$_masterPid === \posix_getpid()) {
+            if (static::$_gracefulStop) {
+                $sig = \SIGUSR2;
+            } else {
+                $sig = \SIGUSR1;
+            }
             // Set reloading state.
             if (static::$_status !== static::STATUS_RELOADING && static::$_status !== static::STATUS_SHUTDOWN) {
                 static::log("Workerman[" . \basename(static::$_startFile) . "] reloading");
@@ -1795,32 +1804,25 @@ class Worker
                     }
                     static::initId();
                 }
-            }
-
-            if (static::$_gracefulStop) {
-                $sig = \SIGUSR2;
-            } else {
-                $sig = \SIGUSR1;
-            }
-
-            // Send reload signal to all child processes.
-            $reloadable_pid_array = array();
-            foreach (static::$_pidMap as $worker_id => $worker_pid_array) {
-                $worker = static::$_workers[$worker_id];
-                if ($worker->reloadable) {
-                    foreach ($worker_pid_array as $pid) {
-                        $reloadable_pid_array[$pid] = $pid;
-                    }
-                } else {
-                    foreach ($worker_pid_array as $pid) {
-                        // Send reload signal to a worker process which reloadable is false.
-                        \posix_kill($pid, $sig);
+                // Send reload signal to all child processes.
+                $reloadable_pid_array = array();
+                foreach (static::$_pidMap as $worker_id => $worker_pid_array) {
+                    $worker = static::$_workers[$worker_id];
+                    if ($worker->reloadable) {
+                        foreach ($worker_pid_array as $pid) {
+                            $reloadable_pid_array[$pid] = $pid;
+                        }
+                    } else {
+                        foreach ($worker_pid_array as $pid) {
+                            // Send reload signal to a worker process which reloadable is false.
+                            \posix_kill($pid, $sig);
+                        }
                     }
                 }
-            }
 
-            // Get all pids that are waiting reload.
-            static::$_pidsToRestart = \array_intersect(static::$_pidsToRestart, $reloadable_pid_array);
+                // Get all pids that are waiting reload.
+                static::$_pidsToRestart = \array_intersect(static::$_pidsToRestart, $reloadable_pid_array);
+            }
 
             // Reload complete.
             if (empty(static::$_pidsToRestart)) {
@@ -1884,7 +1886,11 @@ class Worker
             // Fix exit with status 2
             usleep(50000);
             foreach ($worker_pid_array as $worker_pid) {
-                \posix_kill($worker_pid, $sig);
+                if (static::$daemonize) {
+                    \posix_kill($worker_pid, $sig);
+                } else {
+                    Timer::add(1, '\posix_kill', array($worker_pid, $sig), false);
+                }
                 if(!static::$_gracefulStop){
                     Timer::add(static::$stopTimeout, '\posix_kill', array($worker_pid, \SIGKILL), false);
                 }
