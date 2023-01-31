@@ -14,10 +14,10 @@
 
 namespace Workerman\Connection;
 
+use Exception;
 use Throwable;
 use Workerman\Timer;
 use Workerman\Worker;
-use Exception;
 
 /**
  * AsyncTcpConnection.
@@ -215,22 +215,22 @@ class AsyncTcpConnection extends TcpConnection
                 $this->remoteAddress = $this->remoteHost . ':' . $this->remotePort;
             }
             // Open socket connection asynchronously.
-            if ($this->proxySocks5){
+            if ($this->proxySocks5) {
                 $this->contextOption['ssl']['peer_name'] = $this->remoteHost;
                 $context = \stream_context_create($this->contextOption);
                 $this->socket = \stream_socket_client("tcp://{$this->proxySocks5}", $errno, $errstr, 0, \STREAM_CLIENT_ASYNC_CONNECT, $context);
-                fwrite($this->socket,chr(5) . chr(1) . chr(0));
+                fwrite($this->socket, chr(5) . chr(1) . chr(0));
                 fread($this->socket, 512);
-                fwrite($this->socket,chr(5) . chr(1) . chr(0) . chr(3) . chr(strlen($this->remoteHost)) . $this->remoteHost .  pack("n", $this->remotePort));
+                fwrite($this->socket, chr(5) . chr(1) . chr(0) . chr(3) . chr(strlen($this->remoteHost)) . $this->remoteHost . pack("n", $this->remotePort));
                 fread($this->socket, 512);
-            }else if($this->proxyHttp){
+            } else if ($this->proxyHttp) {
                 $this->contextOption['ssl']['peer_name'] = $this->remoteHost;
                 $context = \stream_context_create($this->contextOption);
                 $this->socket = \stream_socket_client("tcp://{$this->proxyHttp}", $errno, $errstr, 0, \STREAM_CLIENT_ASYNC_CONNECT, $context);
                 $str = "CONNECT {$this->remoteHost}:{$this->remotePort} HTTP/1.1\n";
                 $str .= "Host: {$this->remoteHost}:{$this->remotePort}\n";
                 $str .= "Proxy-Connection: keep-alive\n";
-                fwrite($this->socket,$str);
+                fwrite($this->socket, $str);
                 fread($this->socket, 512);
             } else if ($this->contextOption) {
                 $context = \stream_context_create($this->contextOption);
