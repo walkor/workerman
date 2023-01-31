@@ -586,7 +586,7 @@ class Worker
     protected static function init()
     {
         \set_error_handler(function ($code, $msg, $file, $line) {
-            Worker::safeEcho("$msg in file $file on line $line\n");
+            static::safeEcho("$msg in file $file on line $line\n");
         });
 
         // Start file.
@@ -1178,6 +1178,9 @@ class Worker
             // Reload.
             case \SIGUSR2:
             case \SIGUSR1:
+                if (static::$status === static::STATUS_RELOADING || static::$status === static::STATUS_SHUTDOWN) {
+                    return;
+                }
                 static::$gracefulStop = $signal === \SIGUSR2;
                 static::$pidsToRestart = static::getAllWorkerPids();
                 static::reload();
@@ -1723,6 +1726,7 @@ class Worker
     {
         // For master process.
         if (static::$masterPid === \posix_getpid()) {
+            $sig = static::$gracefulStop ? \SIGUSR2 : \SIGUSR1;
             // Set reloading state.
             if (static::$status !== static::STATUS_RELOADING && static::$status !== static::STATUS_SHUTDOWN) {
                 static::log("Workerman[" . \basename(static::$startFile) . "] reloading");
@@ -1738,28 +1742,25 @@ class Worker
                     }
                     static::initId();
                 }
-            }
 
-            $sig = static::$gracefulStop ? \SIGUSR2 : \SIGUSR1;
-
-            // Send reload signal to all child processes.
-            $reloadablePidArray = [];
-            foreach (static::$pidMap as $workerId => $workerPidArray) {
-                $worker = static::$workers[$workerId];
-                if ($worker->reloadable) {
-                    foreach ($workerPidArray as $pid) {
-                        $reloadablePidArray[$pid] = $pid;
-                    }
-                } else {
-                    foreach ($workerPidArray as $pid) {
-                        // Send reload signal to a worker process which reloadable is false.
-                        \posix_kill($pid, $sig);
+                // Send reload signal to all child processes.
+                $reloadablePidArray = [];
+                foreach (static::$pidMap as $workerId => $workerPidArray) {
+                    $worker = static::$workers[$workerId];
+                    if ($worker->reloadable) {
+                        foreach ($workerPidArray as $pid) {
+                            $reloadablePidArray[$pid] = $pid;
+                        }
+                    } else {
+                        foreach ($workerPidArray as $pid) {
+                            // Send reload signal to a worker process which reloadable is false.
+                            \posix_kill($pid, $sig);
+                        }
                     }
                 }
+                // Get all pids that are waiting reload.
+                static::$pidsToRestart = \array_intersect(static::$pidsToRestart, $reloadablePidArray);
             }
-
-            // Get all pids that are waiting reload.
-            static::$pidsToRestart = \array_intersect(static::$pidsToRestart, $reloadablePidArray);
 
             // Reload complete.
             if (empty(static::$pidsToRestart)) {
@@ -1818,7 +1819,7 @@ class Worker
             $sig = static::$gracefulStop ? \SIGQUIT : \SIGINT;
             foreach ($workerPidArray as $workerPid) {
                 // Fix exit with status 2 for php8.2
-                if ($sig === \SIGINT && !Worker::$daemonize) {
+                if ($sig === \SIGINT && !static::$daemonize) {
                     Timer::add(1, '\posix_kill', [$workerPid, \SIGINT], false);
                 } else {
                     \posix_kill($workerPid, $sig);
@@ -2423,7 +2424,7 @@ class Worker
             try {
                 ($this->onWorkerStop)($this);
             } catch (Throwable $e) {
-                Worker::log($e);
+                static::log($e);
             }
         }
         // Remove listener for server socket.
@@ -2458,7 +2459,7 @@ class Worker
         }
 
         // TcpConnection.
-        $connection = new TcpConnection(Worker::$globalEvent, $newSocket, $remoteAddress);
+        $connection = new TcpConnection(static::$globalEvent, $newSocket, $remoteAddress);
         $this->connections[$connection->id] = $connection;
         $connection->worker = $this;
         $connection->protocol = $this->protocol;
