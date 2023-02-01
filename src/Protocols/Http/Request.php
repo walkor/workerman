@@ -129,9 +129,9 @@ class Request
      *
      * @param string|null $name
      * @param mixed|null $default
-     * @return string|null|array
+     * @return array|string|null
      */
-    public function post(string $name = null, mixed $default = null): string|null|array
+    public function post(string $name = null, mixed $default = null): array|string|null
     {
         if (!isset($this->data['post'])) {
             $this->parsePost();
@@ -147,9 +147,9 @@ class Request
      *
      * @param string|null $name
      * @param mixed|null $default
-     * @return string|null
+     * @return array|string|null
      */
-    public function header(string $name = null, mixed $default = null): ?string
+    public function header(string $name = null, mixed $default = null): array|string|null
     {
         if (!isset($this->data['headers'])) {
             $this->parseHeaders();
