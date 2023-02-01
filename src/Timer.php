@@ -178,7 +178,7 @@ class Timer
                 usleep($delay * 1000 * 1000);
                 return;
         }
-        throw new RuntimeException('Timer::sleep() require revolt/event-loop. Please run command "composer install revolt/event-loop" and restart workerman');
+        throw new RuntimeException('Timer::sleep() require revolt/event-loop. Please run command "composer require revolt/event-loop" and restart workerman');
     }
 
     /**
