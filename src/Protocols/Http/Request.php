@@ -406,8 +406,8 @@ class Request
     protected function parseProtocolVersion()
     {
         $firstLine = strstr($this->buffer, "\r\n", true);
-        $protocoVersion = substr(strstr($firstLine, 'HTTP/'), 5);
-        $this->data['protocolVersion'] = $protocoVersion ?: '1.0';
+        $protocolVersion = substr(strstr($firstLine, 'HTTP/'), 5);
+        $this->data['protocolVersion'] = $protocolVersion ?: '1.0';
     }
 
     /**
