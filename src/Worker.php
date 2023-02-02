@@ -1511,9 +1511,6 @@ class Worker
             \srand();
             \mt_srand();
             static::$gracefulStop = false;
-            if ($worker->reusePort) {
-                $worker->listen();
-            }
             if (static::$status === static::STATUS_STARTING) {
                 static::resetStd();
             }
@@ -2439,6 +2436,12 @@ class Worker
         if (!static::$gracefulStop) {
             foreach ($this->connections as $connection) {
                 $connection->close();
+            }
+        }
+        // Remove worker.
+        foreach(static::$workers as $key => $one_worker) {
+            if ($one_worker->workerId === $this->workerId) {
+                unset(static::$workers[$key]);
             }
         }
         // Clear callback.
