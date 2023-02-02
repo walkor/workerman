@@ -1561,9 +1561,6 @@ class Worker
             \srand();
             \mt_srand();
             static::$_gracefulStop = false;
-            if ($worker->reusePort) {
-                $worker->listen();
-            }
             if (static::$_status === static::STATUS_STARTING) {
                 static::resetStd();
             }
@@ -1576,10 +1573,32 @@ class Worker
                 }
             }
             Timer::delAll();
+            //Update process state.
+            static::$_status = static::STATUS_RUNNING;
+
+            // Register shutdown function for checking errors.
+            \register_shutdown_function(array("\\Workerman\\Worker", 'checkErrors'));
+
+            // Create a global event loop.
+            if (!static::$globalEvent) {
+                $event_loop_class = static::getEventLoopName();
+                static::$globalEvent = new $event_loop_class;
+            }
+
+            // Reinstall signal.
+            static::reinstallSignal();
+
+            // Init Timer.
+            Timer::init(static::$globalEvent);
+
+            \restore_error_handler();
+
             static::setProcessTitle(self::$processTitle . ': worker process  ' . $worker->name . ' ' . $worker->getSocketName());
             $worker->setUserAndGroup();
             $worker->id = $id;
             $worker->run();
+            // Main loop.
+            static::$globalEvent->loop();
             if (strpos(static::$eventLoopClass, 'Workerman\Events\Swoole') !== false) {
                 exit(0);
             }
@@ -1908,7 +1927,8 @@ class Worker
         } // For child processes.
         else {
             // Execute exit.
-            foreach (static::$_workers as $worker) {
+            $workers = array_reverse(static::$_workers);
+            foreach ($workers as $worker) {
                 if(!$worker->stopping){
                     $worker->stop();
                     $worker->stopping = true;
@@ -2428,37 +2448,11 @@ class Worker
      * Run worker instance.
      *
      * @return void
+     * @throws Exception
      */
     public function run()
     {
-        //Update process state.
-        static::$_status = static::STATUS_RUNNING;
-
-        // Register shutdown function for checking errors.
-        \register_shutdown_function(array("\\Workerman\\Worker", 'checkErrors'));
-
-        // Set autoload root path.
-        Autoloader::setRootPath($this->_autoloadRootPath);
-
-        // Create a global event loop.
-        if (!static::$globalEvent) {
-            $event_loop_class = static::getEventLoopName();
-            static::$globalEvent = new $event_loop_class;
-            $this->resumeAccept();
-        }
-
-        // Reinstall signal.
-        static::reinstallSignal();
-
-        // Init Timer.
-        Timer::init(static::$globalEvent);
-
-        // Set an empty onMessage callback.
-        if (empty($this->onMessage)) {
-            $this->onMessage = function () {};
-        }
-
-        \restore_error_handler();
+        $this->listen();
 
         // Try to emit onWorkerStart callback.
         if ($this->onWorkerStart) {
@@ -2474,9 +2468,6 @@ class Worker
                 static::stopAll(250, $e);
             }
         }
-
-        // Main loop.
-        static::$globalEvent->loop();
     }
 
     /**
@@ -2504,6 +2495,13 @@ class Worker
                 $connection->close();
             }
         }
+        // Remove worker.
+        foreach(static::$_workers as $key => $one_worker) {
+            if ($one_worker->workerId === $this->workerId) {
+                unset(static::$_workers[$key]);
+            }
+        }
+
         // Clear callback.
         $this->onMessage = $this->onClose = $this->onError = $this->onBufferDrain = $this->onBufferFull = null;
     }
