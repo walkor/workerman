@@ -1408,11 +1408,42 @@ class Worker
             /** @var Worker $worker */
             $worker = current(static::$workers);
 
+            Timer::delAll();
+
+            //Update process state.
+            static::$status = static::STATUS_RUNNING;
+
+            // Register shutdown function for checking errors.
+            \register_shutdown_function(["\\Workerman\\Worker", 'checkErrors']);
+
+            // Create a global event loop.
+            if (!static::$globalEvent) {
+                $eventLoopClass = static::getEventLoopName();
+                static::$globalEvent = new $eventLoopClass;
+                static::$globalEvent->setErrorHandler(function ($exception) {
+                    static::stopAll(250, $exception);
+                });
+            }
+
+            // Reinstall signal.
+            static::reinstallSignal();
+
+            // Init Timer.
+            Timer::init(static::$globalEvent);
+
+            \restore_error_handler();
+
             // Display UI.
             static::safeEcho(\str_pad($worker->name, 21) . \str_pad($worker->getSocketName(), 36) . \str_pad($worker->count, 10) . "[ok]\n");
             $worker->listen();
             $worker->run();
-            exit("@@@child exit@@@\r\n");
+            static::$globalEvent->run();
+            if (static::$status !== self::STATUS_SHUTDOWN) {
+                $err = new Exception('event-loop exited');
+                static::log($err);
+                exit(250);
+            }
+            exit(0);
         } else {
             static::$globalEvent = new Select();
             static::$globalEvent->setErrorHandler(function ($exception) {
@@ -1455,7 +1486,7 @@ class Worker
         );
 
         $pipes = array();
-        $process = \proc_open("php \"$startFile\" -q", $descriptorspec, $pipes);
+        $process = \proc_open('"' . PHP_BINARY . '" '  . " \"$startFile\" -q", $descriptorspec, $pipes, null, null, ['bypass_shell' => true]);
 
         if (empty(static::$globalEvent)) {
             static::$globalEvent = new Select();
