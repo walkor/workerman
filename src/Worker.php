@@ -15,6 +15,7 @@
 namespace Workerman;
 
 use Exception;
+use stdClass;
 use Throwable;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
@@ -202,13 +203,6 @@ class Worker
     public $onWorkerReload = null;
 
     /**
-     * Emitted when worker processes exited.
-     *
-     * @var ?callable
-     */
-    public $onWorkerExit = null;
-
-    /**
      * Transport layer protocol.
      *
      * @var string
@@ -299,6 +293,13 @@ class Worker
     public static $onMasterStop = null;
 
     /**
+     * Emitted when worker processes exited.
+     *
+     * @var ?callable
+     */
+    public static $onWorkerExit = null;
+
+    /**
      * EventLoopClass
      *
      * @var class-string
@@ -359,7 +360,12 @@ class Worker
      *
      * @var resource
      */
-    protected $context = null;
+    protected $socketContext = null;
+
+    /**
+     * @var stdClass
+     */
+    protected stdClass $context;
 
     /**
      * All worker instances.
@@ -684,15 +690,15 @@ class Worker
             }
 
             // Socket name.
-            $worker->socket = $worker->getSocketName();
+            $worker->context->statusSocket = $worker->getSocketName();
 
             // Status name.
-            $worker->state = '<g> [OK] </g>';
+            $worker->context->statusState = '<g> [OK] </g>';
 
             // Get column mapping for UI
             foreach (static::getUiColumns() as $columnName => $prop) {
-                !isset($worker->{$prop}) && $worker->{$prop} = 'NNNN';
-                $propLength = \strlen($worker->{$prop});
+                !isset($worker->$prop) && !isset($worker->context->$prop) && $worker->context->$prop = 'NNNN';
+                $propLength = \strlen($worker->$prop ?? $worker->context->$prop);
                 $key = 'max' . \ucfirst(\strtolower($columnName)) . 'NameLength';
                 static::$$key = \max(static::$$key, $propLength);
             }
@@ -802,10 +808,11 @@ class Worker
         foreach (static::$workers as $worker) {
             $content = '';
             foreach (static::getUiColumns() as $columnName => $prop) {
+                $propValue = $worker->$prop ?? $worker->context->$prop;
                 $key = 'max' . \ucfirst(\strtolower($columnName)) . 'NameLength';
-                \preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", $worker->{$prop}, $matches);
+                \preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", $propValue, $matches);
                 $placeHolderLength = !empty($matches) ? \strlen(\implode('', $matches[0])) : 0;
-                $content .= \str_pad($worker->{$prop}, static::$$key + static::UI_SAFE_LENGTH + $placeHolderLength);
+                $content .= \str_pad($propValue, static::$$key + static::UI_SAFE_LENGTH + $placeHolderLength);
             }
             $content && static::safeEcho($content . \PHP_EOL);
         }
@@ -837,9 +844,9 @@ class Worker
             'proto' => 'transport',
             'user' => 'user',
             'worker' => 'name',
-            'socket' => 'socket',
+            'socket' => 'statusSocket',
             'processes' => 'count',
-            'state' => 'state',
+            'state' => 'statusState',
         ];
     }
 
@@ -1642,9 +1649,9 @@ class Worker
                         }
 
                         // onWorkerExit
-                        if ($worker->onWorkerExit) {
+                        if (static::$onWorkerExit) {
                             try {
-                                ($worker->onWorkerExit)($worker, $status, $pid);
+                                (static::$onWorkerExit)($worker, $status, $pid);
                             } catch (Throwable $exception) {
                                 static::log("worker[{$worker->name}] onWorkerExit $exception");
                             }
@@ -2166,22 +2173,23 @@ class Worker
      * Constructor.
      *
      * @param string|null $socketName
-     * @param array $contextOption
+     * @param array $socketContext
      */
-    public function __construct(string $socketName = null, array $contextOption = [])
+    public function __construct(string $socketName = null, array $socketContext = [])
     {
         // Save all worker instances.
         $this->workerId = \spl_object_hash($this);
+        $this->context = new stdClass();
         static::$workers[$this->workerId] = $this;
         static::$pidMap[$this->workerId] = [];
 
         // Context for socket.
         if ($socketName) {
             $this->socketName = $socketName;
-            if (!isset($contextOption['socket']['backlog'])) {
-                $contextOption['socket']['backlog'] = static::DEFAULT_BACKLOG;
+            if (!isset($socketContext['socket']['backlog'])) {
+                $socketContext['socket']['backlog'] = static::DEFAULT_BACKLOG;
             }
-            $this->context = \stream_context_create($contextOption);
+            $this->socketContext = \stream_context_create($socketContext);
         }
 
         // Try to turn reusePort on.
@@ -2230,11 +2238,11 @@ class Worker
             $errmsg = '';
             // SO_REUSEPORT.
             if ($this->reusePort) {
-                \stream_context_set_option($this->context, 'socket', 'so_reuseport', 1);
+                \stream_context_set_option($this->socketContext, 'socket', 'so_reuseport', 1);
             }
 
             // Create an Internet or Unix domain server socket.
-            $this->mainSocket = \stream_socket_server($localSocket, $errno, $errmsg, $flags, $this->context);
+            $this->mainSocket = \stream_socket_server($localSocket, $errno, $errmsg, $flags, $this->socketContext);
             if (!$this->mainSocket) {
                 throw new Exception($errmsg);
             }
