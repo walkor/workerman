@@ -39,49 +39,49 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '5.0.0-beta.2';
+    public const VERSION = '5.0.0-beta.2';
 
     /**
      * Status starting.
      *
      * @var int
      */
-    const STATUS_STARTING = 1;
+    public const STATUS_STARTING = 1;
 
     /**
      * Status running.
      *
      * @var int
      */
-    const STATUS_RUNNING = 2;
+    public const STATUS_RUNNING = 2;
 
     /**
      * Status shutdown.
      *
      * @var int
      */
-    const STATUS_SHUTDOWN = 4;
+    public const STATUS_SHUTDOWN = 4;
 
     /**
      * Status reloading.
      *
      * @var int
      */
-    const STATUS_RELOADING = 8;
+    public const STATUS_RELOADING = 8;
 
     /**
      * Default backlog. Backlog is the maximum length of the queue of pending connections.
      *
      * @var int
      */
-    const DEFAULT_BACKLOG = 102400;
+    public const DEFAULT_BACKLOG = 102400;
 
     /**
      * The safe distance for columns adjacent
      *
      * @var int
      */
-    const UI_SAFE_LENGTH = 4;
+    public const UI_SAFE_LENGTH = 4;
 
     /**
      * Worker id.
@@ -492,7 +492,7 @@ class Worker
      *
      * @var array<string,string>
      */
-    const BUILD_IN_TRANSPORTS = [
+    public const BUILD_IN_TRANSPORTS = [
         'tcp' => 'tcp',
         'udp' => 'udp',
         'unix' => 'unix',
@@ -504,7 +504,7 @@ class Worker
      *
      * @var array<int,string>
      */
-    const ERROR_TYPE = [
+    public const ERROR_TYPE = [
         \E_ERROR => 'E_ERROR',             // 1
         \E_WARNING => 'E_WARNING',           // 2
         \E_PARSE => 'E_PARSE',             // 4
@@ -554,7 +554,7 @@ class Worker
      * @return void
      * @throws Exception
      */
-    public static function runAll()
+    public static function runAll(): void
     {
         static::checkSapiEnv();
         static::init();
@@ -576,7 +576,7 @@ class Worker
      *
      * @return void
      */
-    protected static function checkSapiEnv()
+    protected static function checkSapiEnv(): void
     {
         // Only for cli.
         if (\PHP_SAPI !== 'cli') {
@@ -589,7 +589,7 @@ class Worker
      *
      * @return void
      */
-    protected static function init()
+    protected static function init(): void
     {
         \set_error_handler(function ($code, $msg, $file, $line) {
             static::safeEcho("$msg in file $file on line $line\n");
@@ -639,9 +639,10 @@ class Worker
     /**
      * Lock.
      *
+     * @param int $flag
      * @return void
      */
-    protected static function lock($flag = \LOCK_EX)
+    protected static function lock($flag = \LOCK_EX): void
     {
         static $fd;
         if (\DIRECTORY_SEPARATOR !== '/') {
@@ -668,7 +669,7 @@ class Worker
      * @return void
      * @throws Exception
      */
-    protected static function initWorkers()
+    protected static function initWorkers(): void
     {
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
@@ -744,7 +745,7 @@ class Worker
      *
      * @return void
      */
-    protected static function initId()
+    protected static function initId(): void
     {
         foreach (static::$workers as $workerId => $worker) {
             $newIdMap = [];
@@ -772,7 +773,7 @@ class Worker
      *
      * @return void
      */
-    protected static function displayUI()
+    protected static function displayUI(): void
     {
         $tmpArgv = static::getArgv();
         if (\in_array('-q', $tmpArgv)) {
@@ -876,7 +877,7 @@ class Worker
      *
      * @return void
      */
-    protected static function parseCommand()
+    protected static function parseCommand(): void
     {
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
@@ -1085,14 +1086,14 @@ class Worker
                 $pid = $pidMath[0];
                 $dataWaitingSort[$pid] = $value;
                 if (\preg_match('/^\S+?\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?/', $value, $match)) {
-                    $totalMemory += \intval(\str_ireplace('M', '', $match[1]));
+                    $totalMemory += (int)\str_ireplace('M', '', $match[1]);
                     $maxLen1 = \max($maxLen1, \strlen($match[2]));
                     $maxLen2 = \max($maxLen2, \strlen($match[3]));
-                    $totalConnections += \intval($match[4]);
-                    $totalFails += \intval($match[5]);
-                    $totalTimers += \intval($match[6]);
+                    $totalConnections += (int)$match[4];
+                    $totalFails += (int)$match[5];
+                    $totalTimers += (int)$match[6];
                     $currentTotalRequest[$pid] = $match[7];
-                    $totalRequests += \intval($match[7]);
+                    $totalRequests += (int)$match[7];
                 }
             }
         }
@@ -1131,7 +1132,7 @@ class Worker
      *
      * @return void
      */
-    protected static function installSignal()
+    protected static function installSignal(): void
     {
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
@@ -1149,7 +1150,7 @@ class Worker
      *
      * @return void
      */
-    protected static function reinstallSignal()
+    protected static function reinstallSignal(): void
     {
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
@@ -1167,7 +1168,7 @@ class Worker
      * @param int $signal
      * @throws Exception
      */
-    public static function signalHandler(int $signal)
+    public static function signalHandler(int $signal): void
     {
         switch ($signal) {
             // Stop.
@@ -1209,7 +1210,7 @@ class Worker
      *
      * @throws Exception
      */
-    protected static function daemonize()
+    protected static function daemonize(): void
     {
         if (!static::$daemonize || \DIRECTORY_SEPARATOR !== '/') {
             return;
@@ -1217,17 +1218,17 @@ class Worker
         \umask(0);
         $pid = \pcntl_fork();
         if (-1 === $pid) {
-            throw new Exception('Fork fail');
+            throw new \RuntimeException('Fork fail');
         } elseif ($pid > 0) {
             exit(0);
         }
         if (-1 === \posix_setsid()) {
-            throw new Exception("Setsid fail");
+            throw new \RuntimeException("Setsid fail");
         }
         // Fork again avoid SVR4 system regain the control of terminal.
         $pid = \pcntl_fork();
         if (-1 === $pid) {
-            throw new Exception("Fork fail");
+            throw new \RuntimeException("Fork fail");
         } elseif (0 !== $pid) {
             exit(0);
         }
@@ -1240,7 +1241,7 @@ class Worker
      * @return void
      * @throws Exception
      */
-    public static function resetStd(bool $throwException = true)
+    public static function resetStd(bool $throwException = true): void
     {
         if (!static::$daemonize || \DIRECTORY_SEPARATOR !== '/') {
             return;
@@ -1278,7 +1279,7 @@ class Worker
             return;
         }
         if ($throwException) {
-            throw new Exception('Can not open stdoutFile ' . static::$stdoutFile);
+            throw new \RuntimeException('Can not open stdoutFile ' . static::$stdoutFile);
         }
     }
 
@@ -1287,7 +1288,7 @@ class Worker
      *
      * @throws Exception
      */
-    protected static function saveMasterPid()
+    protected static function saveMasterPid(): void
     {
         if (\DIRECTORY_SEPARATOR !== '/') {
             return;
@@ -1295,7 +1296,7 @@ class Worker
 
         static::$masterPid = \posix_getpid();
         if (false === \file_put_contents(static::$pidFile, static::$masterPid)) {
-            throw new Exception('can not save pid to ' . static::$pidFile);
+            throw new \RuntimeException('can not save pid to ' . static::$pidFile);
         }
     }
 
@@ -1351,8 +1352,9 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
+     * @throws Exception
      */
-    protected static function forkWorkers()
+    protected static function forkWorkers(): void
     {
         if (\DIRECTORY_SEPARATOR === '/') {
             static::forkWorkersForLinux();
@@ -1367,7 +1369,7 @@ class Worker
      * @return void
      * @throws Exception
      */
-    protected static function forkWorkersForLinux()
+    protected static function forkWorkersForLinux(): void
     {
 
         foreach (static::$workers as $worker) {
@@ -1393,7 +1395,7 @@ class Worker
      * @return void
      * @throws Exception
      */
-    protected static function forkWorkersForWindows()
+    protected static function forkWorkersForWindows(): void
     {
         $files = static::getStartFilesForWindows();
         if (\in_array('-q', static::getArgv()) || \count($files) === 1) {
@@ -1414,7 +1416,7 @@ class Worker
             static::$status = static::STATUS_RUNNING;
 
             // Register shutdown function for checking errors.
-            \register_shutdown_function(["\\Workerman\\Worker", 'checkErrors']);
+            \register_shutdown_function([__CLASS__, 'checkErrors']);
 
             // Create a global event loop.
             if (!static::$globalEvent) {
@@ -1477,7 +1479,7 @@ class Worker
      *
      * @param string $startFile
      */
-    public static function forkOneWorkerForWindows(string $startFile)
+    public static function forkOneWorkerForWindows(string $startFile): void
     {
         $startFile = \realpath($startFile);
 
@@ -1504,7 +1506,7 @@ class Worker
      * check worker status for windows.
      * @return void
      */
-    public static function checkWorkerStatusForWindows()
+    public static function checkWorkerStatusForWindows(): void
     {
         foreach (static::$processForWindows as $processData) {
             $process = $processData[0];
@@ -1526,9 +1528,9 @@ class Worker
      * Fork one worker process.
      *
      * @param self $worker
-     * @throws Exception
+     * @throws Exception|Throwable
      */
-    protected static function forkOneWorkerForLinux(self $worker)
+    protected static function forkOneWorkerForLinux(self $worker): void
     {
         // Get available worker id.
         $id = static::getId($worker->workerId, 0);
@@ -1591,7 +1593,7 @@ class Worker
             }
             exit(0);
         } else {
-            throw new Exception("forkOneWorker fail");
+            throw new \RuntimeException("forkOneWorker fail");
         }
     }
 
@@ -1613,7 +1615,7 @@ class Worker
      *
      * @return void
      */
-    public function setUserAndGroup()
+    public function setUserAndGroup(): void
     {
         // Get uid.
         $userInfo = \posix_getpwnam($this->user);
@@ -1648,7 +1650,7 @@ class Worker
      * @param string $title
      * @return void
      */
-    protected static function setProcessTitle(string $title)
+    protected static function setProcessTitle(string $title): void
     {
         \set_error_handler(function () {
         });
@@ -1660,8 +1662,9 @@ class Worker
      * Monitor all child processes.
      *
      * @return void
+     * @throws Exception
      */
-    protected static function monitorWorkers()
+    protected static function monitorWorkers(): void
     {
         if (\DIRECTORY_SEPARATOR === '/') {
             static::monitorWorkersForLinux();
@@ -1676,7 +1679,7 @@ class Worker
      * @return void
      * @throws Exception
      */
-    protected static function monitorWorkersForLinux()
+    protected static function monitorWorkersForLinux(): void
     {
         static::$status = static::STATUS_RUNNING;
         while (1) {
@@ -1750,7 +1753,7 @@ class Worker
      *
      * @return void
      */
-    protected static function monitorWorkersForWindows()
+    protected static function monitorWorkersForWindows(): void
     {
         Timer::add(1, "\\Workerman\\Worker::checkWorkerStatusForWindows");
 
@@ -1784,7 +1787,7 @@ class Worker
      * @return void
      * @throws Exception
      */
-    protected static function reload()
+    protected static function reload(): void
     {
         // For master process.
         if (static::$masterPid === \posix_getpid()) {
@@ -1866,7 +1869,7 @@ class Worker
      * @param int $code
      * @param mixed $log
      */
-    public static function stopAll(int $code = 0, mixed $log = '')
+    public static function stopAll(int $code = 0, mixed $log = ''): void
     {
         if ($log) {
             static::log($log);
@@ -1923,7 +1926,7 @@ class Worker
     /**
      * check if child processes is really running
      */
-    public static function checkIfChildRunning()
+    public static function checkIfChildRunning(): void
     {
         foreach (static::$pidMap as $workerId => $workerPidArray) {
             foreach ($workerPidArray as $pid => $workerPid) {
@@ -1959,7 +1962,7 @@ class Worker
      *
      * @return void
      */
-    protected static function writeStatisticsToStatusFile()
+    protected static function writeStatisticsToStatusFile(): void
     {
         // For master process.
         if (static::$masterPid === \posix_getpid()) {
@@ -2043,7 +2046,7 @@ class Worker
      *
      * @return void
      */
-    protected static function writeConnectionsStatisticsToStatusFile()
+    protected static function writeConnectionsStatisticsToStatusFile(): void
     {
         // For master process.
         if (static::$masterPid === \posix_getpid()) {
@@ -2120,7 +2123,7 @@ class Worker
      *
      * @return void
      */
-    public static function checkErrors()
+    public static function checkErrors(): void
     {
         if (static::STATUS_SHUTDOWN !== static::$status) {
             $errorMsg = \DIRECTORY_SEPARATOR === '/' ? 'Worker[' . \posix_getpid() . '] process terminated' : 'Worker process terminated';
@@ -2154,7 +2157,7 @@ class Worker
      * @param mixed $msg
      * @return void
      */
-    public static function log(mixed $msg)
+    public static function log(mixed $msg): void
     {
         $msg = $msg . "\n";
         if (!static::$daemonize) {
@@ -2277,7 +2280,7 @@ class Worker
      *
      * @throws Exception
      */
-    public function listen()
+    public function listen(): void
     {
         if (!$this->socketName) {
             return;
@@ -2336,7 +2339,7 @@ class Worker
      *
      * @return void
      */
-    public function unlisten()
+    public function unlisten(): void
     {
         $this->pauseAccept();
         if ($this->mainSocket) {
@@ -2363,21 +2366,19 @@ class Worker
         // Check application layer protocol class.
         if (!isset(self::BUILD_IN_TRANSPORTS[$scheme])) {
             $scheme = \ucfirst($scheme);
-            $this->protocol = \substr($scheme, 0, 1) === '\\' ? $scheme : 'Protocols\\' . $scheme;
+            $this->protocol = $scheme[0] === '\\' ? $scheme : 'Protocols\\' . $scheme;
             if (!\class_exists($this->protocol)) {
                 $this->protocol = "Workerman\\Protocols\\$scheme";
                 if (!\class_exists($this->protocol)) {
-                    throw new Exception("class \\Protocols\\$scheme not exist");
+                    throw new \RuntimeException("class \\Protocols\\$scheme not exist");
                 }
             }
 
             if (!isset(self::BUILD_IN_TRANSPORTS[$this->transport])) {
-                throw new Exception('Bad worker->transport ' . \var_export($this->transport, true));
+                throw new \RuntimeException('Bad worker->transport ' . \var_export($this->transport, true));
             }
-        } else {
-            if ($this->transport === 'tcp') {
-                $this->transport = $scheme;
-            }
+        } else if ($this->transport === 'tcp') {
+            $this->transport = $scheme;
         }
         //local socket
         return self::BUILD_IN_TRANSPORTS[$this->transport] . ":" . $address;
@@ -2388,7 +2389,7 @@ class Worker
      *
      * @return void
      */
-    public function pauseAccept()
+    public function pauseAccept(): void
     {
         if (static::$globalEvent && false === $this->pauseAccept && $this->mainSocket) {
             static::$globalEvent->offReadable($this->mainSocket);
@@ -2401,7 +2402,7 @@ class Worker
      *
      * @return void
      */
-    public function resumeAccept()
+    public function resumeAccept(): void
     {
         // Register a listener to be notified when server socket is ready to read.
         if (static::$globalEvent && true === $this->pauseAccept && $this->mainSocket) {
@@ -2430,7 +2431,7 @@ class Worker
      * @return void
      * @throws Throwable
      */
-    public function run()
+    public function run(): void
     {
         $this->listen();
 
@@ -2451,7 +2452,7 @@ class Worker
      *
      * @return void
      */
-    public function stop()
+    public function stop(): void
     {
         // Try to emit onWorkerStop callback.
         if ($this->onWorkerStop) {
@@ -2485,7 +2486,7 @@ class Worker
      * @param resource $socket
      * @return void
      */
-    public function acceptTcpConnection($socket)
+    public function acceptTcpConnection($socket): void
     {
         // Accept a connection on server socket.
         \set_error_handler(function () {
