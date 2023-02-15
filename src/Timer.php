@@ -173,7 +173,7 @@ class Timer
                 return;
             // Swow
             case Swow::class:
-                usleep($delay * 1000 * 1000);
+                usleep((int)$delay * 1000 * 1000);
                 return;
         }
         throw new RuntimeException('Timer::sleep() require revolt/event-loop. Please run command "composer require revolt/event-loop" and restart workerman');
