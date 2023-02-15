@@ -12,6 +12,8 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
+declare(strict_types=1);
+
 namespace Workerman\Connection;
 
 use Exception;
@@ -193,7 +195,7 @@ class AsyncUdpConnection extends UdpConnection
         }
 
         if (!$this->socket) {
-            Worker::safeEcho(new Exception($errmsg));
+            Worker::safeEcho((string)(new Exception($errmsg)));
             $this->eventLoop = null;
             return;
         }

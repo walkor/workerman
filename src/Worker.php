@@ -12,6 +12,8 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
+declare(strict_types=1);
+
 namespace Workerman;
 
 use Exception;
@@ -699,7 +701,7 @@ class Worker
             // Get column mapping for UI
             foreach (static::getUiColumns() as $columnName => $prop) {
                 !isset($worker->$prop) && !isset($worker->context->$prop) && $worker->context->$prop = 'NNNN';
-                $propLength = \strlen($worker->$prop ?? $worker->context->$prop);
+                $propLength = \strlen((string)($worker->$prop ?? $worker->context->$prop));
                 $key = 'max' . \ucfirst(\strtolower($columnName)) . 'NameLength';
                 static::$$key = \max(static::$$key, $propLength);
             }
@@ -809,7 +811,7 @@ class Worker
         foreach (static::$workers as $worker) {
             $content = '';
             foreach (static::getUiColumns() as $columnName => $prop) {
-                $propValue = $worker->$prop ?? $worker->context->$prop;
+                $propValue = (string)($worker->$prop ?? $worker->context->$prop);
                 $key = 'max' . \ucfirst(\strtolower($columnName)) . 'NameLength';
                 \preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", $propValue, $matches);
                 $placeHolderLength = !empty($matches) ? \strlen(\implode('', $matches[0])) : 0;
@@ -1120,8 +1122,8 @@ class Worker
         $statusStr .= "Summary\t" . \str_pad($totalMemory . 'M', 7) . " "
             . \str_pad('-', $maxLen1) . " "
             . \str_pad('-', $maxLen2) . " "
-            . \str_pad($totalConnections, 11) . " " . \str_pad($totalFails, 9) . " "
-            . \str_pad($totalTimers, 7) . " " . \str_pad($totalRequests, 13) . " "
+            . \str_pad((string)$totalConnections, 11) . " " . \str_pad((string)$totalFails, 9) . " "
+            . \str_pad((string)$totalTimers, 7) . " " . \str_pad((string)$totalRequests, 13) . " "
             . \str_pad($totalQps, 6) . " [Summary] \n";
         return $statusStr;
     }
@@ -1436,7 +1438,7 @@ class Worker
             \restore_error_handler();
 
             // Display UI.
-            static::safeEcho(\str_pad($worker->name, 21) . \str_pad($worker->getSocketName(), 36) . \str_pad($worker->count, 10) . "[ok]\n");
+            static::safeEcho(\str_pad($worker->name, 21) . \str_pad($worker->getSocketName(), 36) . \str_pad((string)$worker->count, 10) . "[ok]\n");
             $worker->listen();
             $worker->run();
             static::$globalEvent->run();
@@ -2002,7 +2004,7 @@ class Worker
                     }
                 } else {
                     \file_put_contents(static::$statisticsFile,
-                        \str_pad($worker->name, static::$maxWorkerNameLength) . " " . \str_pad(0, 16) . " 0\n",
+                        \str_pad($worker->name, static::$maxWorkerNameLength) . " " . \str_pad('0', 16) . " 0\n",
                         \FILE_APPEND);
                 }
             }
@@ -2036,7 +2038,7 @@ class Worker
             . " ";
         $workerStatusStr .= \str_pad(ConnectionInterface::$statistics['connection_count'], 11)
             . " " . \str_pad(ConnectionInterface::$statistics['send_fail'], 9)
-            . " " . \str_pad(static::$globalEvent->getTimerCount(), 7)
+            . " " . \str_pad((string)static::$globalEvent->getTimerCount(), 7)
             . " " . \str_pad(ConnectionInterface::$statistics['total_request'], 13) . "\n";
         \file_put_contents(static::$statisticsFile, $workerStatusStr, \FILE_APPEND);
     }
@@ -2108,7 +2110,7 @@ class Worker
             if (\strlen($workerName) > 14) {
                 $workerName = \substr($workerName, 0, 12) . '..';
             }
-            $str .= \str_pad($pid, 9) . \str_pad($workerName, 16) . \str_pad($id, 10) . \str_pad($transport, 8)
+            $str .= \str_pad((string)$pid, 9) . \str_pad($workerName, 16) . \str_pad((string)$id, 10) . \str_pad($transport, 8)
                 . \str_pad($protocol, 16) . \str_pad($ipv4, 7) . \str_pad($ipv6, 7) . \str_pad($recvQ, 13)
                 . \str_pad($sendQ, 13) . \str_pad($bytesRead, 13) . \str_pad($bytesWritten, 13) . ' '
                 . \str_pad($state, 14) . ' ' . \str_pad($localAddress, 22) . ' ' . \str_pad($remoteAddress, 22) . "\n";

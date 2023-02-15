@@ -12,6 +12,8 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
+declare(strict_types=1);
+
 namespace Workerman\Events;
 
 use EventBase;
@@ -106,8 +108,8 @@ class Event implements EventInterface
                 $this->error($e);
             }
         });
-        if (!$event || !$event->addTimer($delay)) {
-            return false;
+        if (!$event->addTimer($delay)) {
+            throw new \RuntimeException("Event::addTimer($delay) failed");
         }
         $this->eventTimer[$timerId] = $event;
         return $timerId;
@@ -148,8 +150,8 @@ class Event implements EventInterface
                 $this->error($e);
             }
         });
-        if (!$event || !$event->addTimer($interval)) {
-            return false;
+        if (!$event->addTimer($interval)) {
+            throw new \RuntimeException("Event::addTimer($interval) failed");
         }
         $this->eventTimer[$timerId] = $event;
         return $timerId;

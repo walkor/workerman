@@ -12,6 +12,8 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
+declare(strict_types=1);
+
 namespace Workerman;
 
 use Exception;
@@ -129,12 +131,7 @@ class Timer
 
         // If not workerman runtime just return.
         if (!Worker::getAllWorkers()) {
-            return false;
-        }
-
-        if (!is_callable($func)) {
-            Worker::safeEcho(new Exception("not callable"));
-            return false;
+            throw new RuntimeException('Timer can only be used in workerman running environment');
         }
 
         if (empty(self::$tasks)) {
@@ -204,7 +201,7 @@ class Timer
                     try {
                         $taskFunc(...$taskArgs);
                     } catch (Throwable $e) {
-                        Worker::safeEcho($e);
+                        Worker::safeEcho((string)$e);
                     }
                     if ($persistent && !empty(self::$status[$index])) {
                         $newRunTime = time() + $timeInterval;

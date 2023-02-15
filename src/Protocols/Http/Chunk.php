@@ -12,8 +12,9 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
-namespace Workerman\Protocols\Http;
+declare(strict_types=1);
 
+namespace Workerman\Protocols\Http;
 
 use function dechex;
 use function strlen;

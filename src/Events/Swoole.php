@@ -11,6 +11,8 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
+declare(strict_types=1);
+
 namespace Workerman\Events;
 
 use Swoole\Event;
