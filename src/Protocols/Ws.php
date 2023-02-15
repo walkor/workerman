@@ -261,7 +261,7 @@ class Ws
 
         $frame = $connection->websocketType . $head . $maskKey;
         // append payload to frame:
-        $maskKey = str_repeat($maskKey, floor($length / 4)) . substr($maskKey, 0, $length % 4);
+        $maskKey = str_repeat($maskKey, (int)floor($length / 4)) . substr($maskKey, 0, $length % 4);
         $frame .= $payload ^ $maskKey;
         if ($connection->context->handshakeStep === 1) {
             // If buffer has already full then discard the current package.

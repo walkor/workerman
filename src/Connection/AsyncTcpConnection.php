@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Workerman\Connection;
 
 use Exception;
+use RuntimeException;
 use stdClass;
 use Throwable;
 use Workerman\Timer;
@@ -152,7 +153,7 @@ class AsyncTcpConnection extends TcpConnection
                 $this->remoteAddress = substr($remoteAddress, strpos($remoteAddress, '/') + 2);
             }
             if (!$this->remoteAddress) {
-                Worker::safeEcho(new Exception('bad remote_address'));
+                throw new RuntimeException('Bad remoteAddress');
             }
         } else {
             if (!isset($addressInfo['port'])) {
