@@ -1103,7 +1103,7 @@ class Worker
             if (!isset($dataWaitingSort[$pid])) {
                 $statusStr .= "$pid\t" . \str_pad('N/A', 7) . " "
                     . \str_pad($info['listen'], static::$maxSocketNameLength) . " "
-                    . \str_pad($info['name'], static::$maxWorkerNameLength) . " "
+                    . \str_pad((string)$info['name'], static::$maxWorkerNameLength) . " "
                     . \str_pad('N/A', 11) . " " . \str_pad('N/A', 9) . " "
                     . \str_pad('N/A', 7) . " " . \str_pad('N/A', 13) . " N/A    [busy] \n";
                 continue;
@@ -1115,7 +1115,7 @@ class Worker
                 $qps = $currentTotalRequest[$pid] - $totalRequestCache[$pid];
                 $totalQps += $qps;
             }
-            $statusStr .= $dataWaitingSort[$pid] . " " . \str_pad($qps, 6) . " [idle]\n";
+            $statusStr .= $dataWaitingSort[$pid] . " " . \str_pad((string)$qps, 6) . " [idle]\n";
         }
         $totalRequestCache = $currentTotalRequest;
         $statusStr .= "----------------------------------------------PROCESS STATUS---------------------------------------------------\n";
@@ -1124,7 +1124,7 @@ class Worker
             . \str_pad('-', $maxLen2) . " "
             . \str_pad((string)$totalConnections, 11) . " " . \str_pad((string)$totalFails, 9) . " "
             . \str_pad((string)$totalTimers, 7) . " " . \str_pad((string)$totalRequests, 13) . " "
-            . \str_pad($totalQps, 6) . " [Summary] \n";
+            . \str_pad((string)$totalQps, 6) . " [Summary] \n";
         return $statusStr;
     }
 
@@ -1999,7 +1999,7 @@ class Worker
                 if (isset(static::$globalStatistics['worker_exit_info'][$workerId])) {
                     foreach (static::$globalStatistics['worker_exit_info'][$workerId] as $workerExitStatus => $workerExitCount) {
                         \file_put_contents(static::$statisticsFile,
-                            \str_pad($worker->name, static::$maxWorkerNameLength) . " " . \str_pad($workerExitStatus,
+                            \str_pad($worker->name, static::$maxWorkerNameLength) . " " . \str_pad((string)$workerExitStatus,
                                 16) . " $workerExitCount\n", \FILE_APPEND);
                     }
                 } else {
@@ -2032,14 +2032,14 @@ class Worker
         \reset(static::$workers);
         /** @var static $worker */
         $worker = current(static::$workers);
-        $workerStatusStr = \posix_getpid() . "\t" . \str_pad(round(memory_get_usage() / (1024 * 1024), 2) . "M", 7)
+        $workerStatusStr = \posix_getpid() . "\t" . \str_pad((string)round(memory_get_usage() / (1024 * 1024), 2) . "M", 7)
             . " " . \str_pad($worker->getSocketName(), static::$maxSocketNameLength) . " "
             . \str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name), static::$maxWorkerNameLength)
             . " ";
-        $workerStatusStr .= \str_pad(ConnectionInterface::$statistics['connection_count'], 11)
-            . " " . \str_pad(ConnectionInterface::$statistics['send_fail'], 9)
+        $workerStatusStr .= \str_pad((string)ConnectionInterface::$statistics['connection_count'], 11)
+            . " " . \str_pad((string)ConnectionInterface::$statistics['send_fail'], 9)
             . " " . \str_pad((string)static::$globalEvent->getTimerCount(), 7)
-            . " " . \str_pad(ConnectionInterface::$statistics['total_request'], 13) . "\n";
+            . " " . \str_pad((string)ConnectionInterface::$statistics['total_request'], 13) . "\n";
         \file_put_contents(static::$statisticsFile, $workerStatusStr, \FILE_APPEND);
     }
 
