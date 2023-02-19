@@ -34,7 +34,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.1.7';
+    const VERSION = '4.1.8';
 
     /**
      * Status starting.
@@ -1450,11 +1450,39 @@ class Worker
             /** @var Worker $worker */
             $worker = current(static::$_workers);
 
+            \Workerman\Timer::delAll();
+
+            //Update process state.
+            static::$_status = static::STATUS_RUNNING;
+
+            // Register shutdown function for checking errors.
+            \register_shutdown_function([__CLASS__, 'checkErrors']);
+
+            // Create a global event loop.
+            if (!static::$globalEvent) {
+                $eventLoopClass = static::getEventLoopName();
+                static::$globalEvent = new $eventLoopClass;
+            }
+
+            // Reinstall signal.
+            static::reinstallSignal();
+
+            // Init Timer.
+            Timer::init(static::$globalEvent);
+
+            \restore_error_handler();
+
             // Display UI.
-            static::safeEcho(\str_pad($worker->name, 30) . \str_pad($worker->getSocketName(), 36) . \str_pad($worker->count, 10) . "[ok]\n");
+            static::safeEcho(\str_pad($worker->name, 21) . \str_pad($worker->getSocketName(), 36) . \str_pad((string)$worker->count, 10) . "[ok]\n");
             $worker->listen();
             $worker->run();
-            exit("@@@child exit@@@\r\n");
+            static::$globalEvent->loop();
+            if (static::$_status !== self::STATUS_SHUTDOWN) {
+                $err = new Exception('event-loop exited');
+                static::log($err);
+                exit(250);
+            }
+            exit(0);
         }
         else
         {
