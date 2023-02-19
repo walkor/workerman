@@ -113,9 +113,9 @@ class Request
      *
      * @param string|null $name
      * @param mixed|null $default
-     * @return string|null|array
+     * @return mixed
      */
-    public function get(string $name = null, mixed $default = null): array|string|null
+    public function get(string $name = null, mixed $default = null): mixed
     {
         if (!isset($this->data['get'])) {
             $this->parseGet();
@@ -131,9 +131,9 @@ class Request
      *
      * @param string|null $name
      * @param mixed|null $default
-     * @return array|string|null
+     * @return mixed
      */
-    public function post(string $name = null, mixed $default = null): array|string|null
+    public function post(string $name = null, mixed $default = null): mixed
     {
         if (!isset($this->data['post'])) {
             $this->parsePost();
@@ -149,9 +149,9 @@ class Request
      *
      * @param string|null $name
      * @param mixed|null $default
-     * @return array|string|null
+     * @return mixed
      */
-    public function header(string $name = null, mixed $default = null): array|string|null
+    public function header(string $name = null, mixed $default = null): mixed
     {
         if (!isset($this->data['headers'])) {
             $this->parseHeaders();
@@ -168,9 +168,9 @@ class Request
      *
      * @param string|null $name
      * @param mixed|null $default
-     * @return string|null|array
+     * @return mixed
      */
-    public function cookie(string $name = null, mixed $default = null): array|string|null
+    public function cookie(string $name = null, mixed $default = null): mixed
     {
         if (!isset($this->data['cookie'])) {
             $this->data['cookie'] = [];
