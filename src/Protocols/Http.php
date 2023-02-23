@@ -208,7 +208,7 @@ class Http
         }
         if (!is_object($response)) {
             $extHeader = '';
-            if (isset($connection->headers)) {
+            if ($connection->headers) {
                 foreach ($connection->headers as $name => $value) {
                     if (is_array($value)) {
                         foreach ($value as $item) {
@@ -225,7 +225,7 @@ class Http
             return "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$extHeader}Connection: keep-alive\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $bodyLen\r\n\r\n$response";
         }
 
-        if (isset($connection->headers)) {
+        if ($connection->headers) {
             $response->withHeaders($connection->headers);
             $connection->headers = [];
         }
