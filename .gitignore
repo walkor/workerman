@@ -4,3 +4,5 @@ logs
 .settings
 .idea
 .DS_Store
+vendor/
+composer.lock
