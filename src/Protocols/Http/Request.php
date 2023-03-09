@@ -591,19 +591,20 @@ class Request
                     if (preg_match('/name="(.*?)"; filename="(.*?)"/i', $value, $match)) {
                         $error = 0;
                         $tmpFile = '';
+                        $fileName = $match[1];
                         $size = strlen($boundaryValue);
                         $tmpUploadDir = HTTP::uploadTmpDir();
                         if (!$tmpUploadDir) {
                             $error = UPLOAD_ERR_NO_TMP_DIR;
-                        } else if ($boundaryValue === '') {
+                        } else if ($boundaryValue === '' && $fileName === '') {
                             $error = UPLOAD_ERR_NO_FILE;
                         } else {
                             $tmpFile = tempnam($tmpUploadDir, 'workerman.upload.');
-                            if ($tmpFile === false || false == file_put_contents($tmpFile, $boundaryValue)) {
+                            if ($tmpFile === false || false === file_put_contents($tmpFile, $boundaryValue)) {
                                 $error = UPLOAD_ERR_CANT_WRITE;
                             }
                         }
-                        $uploadKey = $match[1];
+                        $uploadKey = $fileName;
                         // Parse upload files.
                         $file = [
                             'name' => $match[2],
