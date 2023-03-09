@@ -546,22 +546,23 @@ class Request
                     if (\preg_match('/name="(.*?)"; filename="(.*?)"/i', $value, $match)) {
                         $error = 0;
                         $tmp_file = '';
+                        $file_name = $match[2];
                         $size = \strlen($boundary_value);
                         $tmp_upload_dir = HTTP::uploadTmpDir();
                         if (!$tmp_upload_dir) {
                             $error = UPLOAD_ERR_NO_TMP_DIR;
-                        } else if ($boundary_value === '') {
+                        } else if ($boundary_value === '' && $file_name === '') {
                             $error = UPLOAD_ERR_NO_FILE;
                         } else {
                             $tmp_file = \tempnam($tmp_upload_dir, 'workerman.upload.');
-                            if ($tmp_file === false || false == \file_put_contents($tmp_file, $boundary_value)) {
+                            if ($tmp_file === false || false === \file_put_contents($tmp_file, $boundary_value)) {
                                 $error = UPLOAD_ERR_CANT_WRITE;
                             }
                         }
                         $upload_key = $match[1];
                         // Parse upload files.
                         $file = [
-                            'name' => $match[2],
+                            'name' => $file_name,
                             'tmp_name' => $tmp_file,
                             'size' => $size,
                             'error' => $error,
