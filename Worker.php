@@ -767,7 +767,7 @@ class Worker
     protected static function getCurrentUser()
     {
         $user_info = \posix_getpwuid(\posix_getuid());
-        return $user_info['name'];
+        return $user_info['name'] ?? 'unknown';
     }
 
     /**
