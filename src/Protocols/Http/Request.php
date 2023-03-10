@@ -596,12 +596,14 @@ class Request
                         $tmpUploadDir = HTTP::uploadTmpDir();
                         if (!$tmpUploadDir) {
                             $error = UPLOAD_ERR_NO_TMP_DIR;
-                        } else if ($boundaryValue === '' && $fileName === '') {
+                        } else if ($fileName === '') {
                             $error = UPLOAD_ERR_NO_FILE;
                         } else {
                             $tmpFile = tempnam($tmpUploadDir, 'workerman.upload.');
-                            if ($tmpFile === false || false === file_put_contents($tmpFile, $boundaryValue)) {
+                            if ($tmpFile === false) {
                                 $error = UPLOAD_ERR_CANT_WRITE;
+                            }else{
+                                file_put_contents($tmpFile, $boundaryValue);
                             }
                         }
                         $uploadKey = $fileName;
