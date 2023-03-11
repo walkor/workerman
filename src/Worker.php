@@ -28,6 +28,7 @@ use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
 use Workerman\Events\Revolt;
 use Workerman\Events\Select;
+use Workerman\Protocols\ProtocolInterface;
 
 /**
  * Worker class

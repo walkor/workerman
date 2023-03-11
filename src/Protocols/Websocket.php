@@ -72,11 +72,11 @@ class Websocket
                 return 0;
             }
         } else {
-            $firstbyte = ord($buffer[0]);
-            $secondbyte = ord($buffer[1]);
-            $dataLen = $secondbyte & 127;
-            $isFinFrame = $firstbyte >> 7;
-            $masked = $secondbyte >> 7;
+            $firstByte = ord($buffer[0]);
+            $secondByte = ord($buffer[1]);
+            $dataLen = $secondByte & 127;
+            $isFinFrame = $firstByte >> 7;
+            $masked = $secondByte >> 7;
 
             if (!$masked) {
                 Worker::safeEcho("frame not masked so close the connection\n");
@@ -84,7 +84,7 @@ class Websocket
                 return 0;
             }
 
-            $opcode = $firstbyte & 0xf;
+            $opcode = $firstByte & 0xf;
             switch ($opcode) {
                 case 0x0:
                     // Blob type.
@@ -392,7 +392,7 @@ class Websocket
                 }
             }
             if (!$hasServerHeader) {
-                $handshakeMessage .= "Server: workerman/" . Worker::VERSION . "\r\n";
+                $handshakeMessage .= 'Server: ' . Worker::$processTitle . ' ('. Worker::VERSION . ')' . "\r\n";
             }
             $handshakeMessage .= "\r\n";
             // Send handshake response.

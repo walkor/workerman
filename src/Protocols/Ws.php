@@ -73,11 +73,11 @@ class Ws
             }
         } else {
 
-            $firstbyte = ord($buffer[0]);
-            $secondbyte = ord($buffer[1]);
-            $dataLen = $secondbyte & 127;
-            $isFinFrame = $firstbyte >> 7;
-            $masked = $secondbyte >> 7;
+            $firstByte = ord($buffer[0]);
+            $secondByte = ord($buffer[1]);
+            $dataLen = $secondByte & 127;
+            $isFinFrame = $firstByte >> 7;
+            $masked = $secondByte >> 7;
 
             if ($masked) {
                 Worker::safeEcho("frame masked so close the connection\n");
@@ -85,7 +85,7 @@ class Ws
                 return 0;
             }
 
-            $opcode = $firstbyte & 0xf;
+            $opcode = $firstByte & 0xf;
 
             switch ($opcode) {
                 case 0x0:
