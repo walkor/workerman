@@ -55,7 +55,7 @@ interface EventInterface
      * @param callable $func
      * @return void
      */
-    public function onReadable($stream, callable $func);
+    public function onReadable($stream, callable $func): void;
 
     /**
      * Cancel a callback of stream readable.
@@ -70,7 +70,7 @@ interface EventInterface
      * @param callable $func
      * @return void
      */
-    public function onWritable($stream, callable $func);
+    public function onWritable($stream, callable $func): void;
 
     /**
      * Cancel a callback of stream writable.
@@ -86,7 +86,7 @@ interface EventInterface
      * @return void
      * @throws Throwable
      */
-    public function onSignal(int $signal, callable $func);
+    public function onSignal(int $signal, callable $func): void;
 
     /**
      * Cancel a callback of signal.
@@ -99,20 +99,20 @@ interface EventInterface
      * Delete all timer.
      * @return void
      */
-    public function deleteAllTimer();
+    public function deleteAllTimer(): void;
 
     /**
      * Run the event loop.
      * @return void
      * @throws Throwable
      */
-    public function run();
+    public function run(): void;
 
     /**
      * Stop event loop.
      * @return void
      */
-    public function stop();
+    public function stop(): void;
 
     /**
      * Get Timer count.
@@ -125,7 +125,7 @@ interface EventInterface
      * @param callable $errorHandler
      * @return void
      */
-    public function setErrorHandler(callable $errorHandler);
+    public function setErrorHandler(callable $errorHandler): void;
 
     /**
      * Get error handler

@@ -22,22 +22,6 @@ use Workerman\Connection\AsyncTcpConnection;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Timer;
 use Workerman\Worker;
-use function base64_encode;
-use function bin2hex;
-use function floor;
-use function gettype;
-use function is_array;
-use function is_scalar;
-use function ord;
-use function pack;
-use function preg_match;
-use function sha1;
-use function str_repeat;
-use function strlen;
-use function strpos;
-use function substr;
-use function trim;
-use function unpack;
 
 /**
  * Websocket protocol for client.

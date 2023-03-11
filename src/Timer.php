@@ -16,22 +16,12 @@ declare(strict_types=1);
 
 namespace Workerman;
 
-use Exception;
-use Revolt\EventLoop;
 use RuntimeException;
-use Swoole\Coroutine\System;
 use Throwable;
 use Workerman\Events\EventInterface;
 use Workerman\Events\Revolt;
 use Workerman\Events\Swoole;
 use Workerman\Events\Swow;
-use function function_exists;
-use function is_callable;
-use function pcntl_alarm;
-use function pcntl_signal;
-use function time;
-use const PHP_INT_MAX;
-use const SIGALRM;
 
 /**
  * Timer.
@@ -161,7 +151,7 @@ class Timer
         switch (Worker::$eventLoopClass) {
             // Fiber
             case Revolt::class:
-                $suspension = EventLoop::getSuspension();
+                $suspension = \Revolt\EventLoop::getSuspension();
                 static::add($delay, function () use ($suspension) {
                     $suspension->resume();
                 }, null, false);
@@ -169,7 +159,7 @@ class Timer
                 return;
             // Swoole
             case Swoole::class:
-                System::sleep($delay);
+                \Swoole\Coroutine\System::sleep($delay);
                 return;
             // Swow
             case Swow::class:

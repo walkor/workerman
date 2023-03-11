@@ -19,10 +19,6 @@ use Swoole\Event;
 use Swoole\Process;
 use Swoole\Timer;
 use Throwable;
-use function count;
-use function posix_kill;
-use const SWOOLE_EVENT_READ;
-use const SWOOLE_EVENT_WRITE;
 
 class Swoole implements EventInterface
 {
@@ -61,6 +57,7 @@ class Swoole implements EventInterface
 
     /**
      * {@inheritdoc}
+     * @throws Throwable
      */
     public function delay(float $delay, callable $func, array $args = []): int
     {
@@ -101,6 +98,7 @@ class Swoole implements EventInterface
 
     /**
      * {@inheritdoc}
+     * @throws Throwable
      */
     public function repeat(float $interval, callable $func, array $args = []): int
     {
@@ -120,7 +118,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onReadable($stream, callable $func)
+    public function onReadable($stream, callable $func): void
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
@@ -156,7 +154,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onWritable($stream, callable $func)
+    public function onWritable($stream, callable $func): void
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
@@ -192,9 +190,9 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onSignal(int $signal, callable $func)
+    public function onSignal(int $signal, callable $func): void
     {
-        return Process::signal($signal, $func);
+        Process::signal($signal, $func);
     }
 
     /**
@@ -209,7 +207,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteAllTimer()
+    public function deleteAllTimer(): void
     {
         foreach ($this->eventTimer as $timerId) {
             Timer::clear($timerId);
@@ -219,7 +217,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function run()
+    public function run(): void
     {
         Event::wait();
     }
@@ -229,7 +227,7 @@ class Swoole implements EventInterface
      *
      * @return void
      */
-    public function stop()
+    public function stop(): void
     {
         Event::exit();
         posix_kill(posix_getpid(), SIGINT);
@@ -248,7 +246,7 @@ class Swoole implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function setErrorHandler(callable $errorHandler)
+    public function setErrorHandler(callable $errorHandler): void
     {
         $this->errorHandler = $errorHandler;
     }
@@ -266,7 +264,7 @@ class Swoole implements EventInterface
      * @return void
      * @throws Throwable
      */
-    public function error(Throwable $e)
+    public function error(Throwable $e): void
     {
         if (!$this->errorHandler) {
             throw new $e;

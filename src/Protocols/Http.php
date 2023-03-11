@@ -20,25 +20,6 @@ use Throwable;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
-use function clearstatcache;
-use function count;
-use function explode;
-use function filesize;
-use function fopen;
-use function fread;
-use function fseek;
-use function ftell;
-use function in_array;
-use function ini_get;
-use function is_array;
-use function is_object;
-use function key;
-use function preg_match;
-use function strlen;
-use function strpos;
-use function strstr;
-use function substr;
-use function sys_get_temp_dir;
 
 /**
  * Class Http.
@@ -271,7 +252,7 @@ class Http
      * @param int $length
      * @throws Throwable
      */
-    protected static function sendStream(TcpConnection $connection, $handler, int $offset = 0, int $length = 0)
+    protected static function sendStream(TcpConnection $connection, $handler, int $offset = 0, int $length = 0): void
     {
         $connection->context->bufferFull = false;
         $connection->context->streamSending = true;
@@ -293,7 +274,7 @@ class Http
                         $connection->onBufferDrain = null;
                         return;
                     }
-                    $size = $remainSize > $size ? $size : $remainSize;
+                    $size = min($remainSize, $size);
                 }
 
                 $buffer = fread($handler, $size);

@@ -18,9 +18,6 @@ namespace Workerman\Events;
 
 use Revolt\EventLoop;
 use Revolt\EventLoop\Driver;
-use function count;
-use function function_exists;
-use function pcntl_signal;
 
 /**
  * Revolt eventloop
@@ -83,7 +80,7 @@ class Revolt implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function run()
+    public function run(): void
     {
         $this->driver->run();
     }
@@ -91,7 +88,7 @@ class Revolt implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function stop()
+    public function stop(): void
     {
         foreach ($this->eventSignal as $cbId) {
             $this->driver->cancel($cbId);
@@ -134,7 +131,7 @@ class Revolt implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onReadable($stream, callable $func)
+    public function onReadable($stream, callable $func): void
     {
         $fdKey = (int)$stream;
         if (isset($this->readEvents[$fdKey])) {
@@ -164,7 +161,7 @@ class Revolt implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onWritable($stream, callable $func)
+    public function onWritable($stream, callable $func): void
     {
         $fdKey = (int)$stream;
         if (isset($this->writeEvents[$fdKey])) {
@@ -193,7 +190,7 @@ class Revolt implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onSignal(int $signal, callable $func)
+    public function onSignal(int $signal, callable $func): void
     {
         $fdKey = $signal;
         if (isset($this->eventSignal[$fdKey])) {
@@ -243,7 +240,7 @@ class Revolt implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteAllTimer()
+    public function deleteAllTimer(): void
     {
         foreach ($this->eventTimer as $cbId) {
             $this->driver->cancel($cbId);
@@ -262,7 +259,7 @@ class Revolt implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function setErrorHandler(callable $errorHandler)
+    public function setErrorHandler(callable $errorHandler): void
     {
         $this->driver->setErrorHandler($errorHandler);
     }
