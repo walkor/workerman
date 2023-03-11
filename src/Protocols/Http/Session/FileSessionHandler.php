@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols\Http\Session;
 
+use Exception;
 use Workerman\Protocols\Http\Session;
 use function clearstatcache;
 use function file_get_contents;
@@ -104,6 +105,7 @@ class FileSessionHandler implements SessionHandlerInterface
 
     /**
      * {@inheritdoc}
+     * @throws Exception
      */
     public function write(string $sessionId, string $sessionData): bool
     {
@@ -115,7 +117,7 @@ class FileSessionHandler implements SessionHandlerInterface
     }
 
     /**
-     * Update sesstion modify time.
+     * Update session modify time.
      *
      * @see https://www.php.net/manual/en/class.sessionupdatetimestamphandlerinterface.php
      * @see https://www.php.net/manual/zh/function.touch.php

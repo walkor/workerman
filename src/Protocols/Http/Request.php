@@ -188,7 +188,7 @@ class Request
      * @param string|null $name
      * @return array|null
      */
-    public function file(string $name = null)
+    public function file(string $name = null): ?array
     {
         if (!isset($this->data['files'])) {
             $this->parsePost();
@@ -382,7 +382,7 @@ class Request
      *
      * @param bool $value
      */
-    public static function enableCache(bool $value)
+    public static function enableCache(bool $value): void
     {
         static::$enableCache = $value;
     }
@@ -392,7 +392,7 @@ class Request
      *
      * @return void
      */
-    protected function parseHeadFirstLine()
+    protected function parseHeadFirstLine(): void
     {
         $firstLine = strstr($this->buffer, "\r\n", true);
         $tmp = explode(' ', $firstLine, 3);
@@ -405,7 +405,7 @@ class Request
      *
      * @return void
      */
-    protected function parseProtocolVersion()
+    protected function parseProtocolVersion(): void
     {
         $firstLine = strstr($this->buffer, "\r\n", true);
         $protocolVersion = substr(strstr($firstLine, 'HTTP/'), 5);
@@ -417,7 +417,7 @@ class Request
      *
      * @return void
      */
-    protected function parseHeaders()
+    protected function parseHeaders(): void
     {
         static $cache = [];
         $this->data['headers'] = [];
@@ -461,7 +461,7 @@ class Request
      *
      * @return void
      */
-    protected function parseGet()
+    protected function parseGet(): void
     {
         static $cache = [];
         $queryString = $this->queryString();
@@ -488,7 +488,7 @@ class Request
      *
      * @return void
      */
-    protected function parsePost()
+    protected function parsePost(): void
     {
         static $cache = [];
         $this->data['post'] = $this->data['files'] = [];
@@ -526,7 +526,7 @@ class Request
      * @param string $httpPostBoundary
      * @return void
      */
-    protected function parseUploadFiles(string $httpPostBoundary)
+    protected function parseUploadFiles(string $httpPostBoundary): void
     {
         $httpPostBoundary = trim($httpPostBoundary, '"');
         $buffer = $this->buffer;
@@ -654,7 +654,7 @@ class Request
      * @param array $cookieParams
      * @return void
      */
-    protected function setSidCookie(string $sessionName, string $sid, array $cookieParams)
+    protected function setSidCookie(string $sessionName, string $sid, array $cookieParams): void
     {
         if (!$this->connection) {
             throw new RuntimeException('Request->setSidCookie() fail, header already send');

@@ -82,7 +82,7 @@ class Timer
      * @param EventInterface|null $event
      * @return void
      */
-    public static function init(EventInterface $event = null)
+    public static function init(EventInterface $event = null): void
     {
         if ($event) {
             self::$event = $event;
@@ -98,7 +98,7 @@ class Timer
      *
      * @return void
      */
-    public static function signalHandle()
+    public static function signalHandle(): void
     {
         if (!self::$event) {
             pcntl_alarm(1);
@@ -156,7 +156,7 @@ class Timer
      * @param float $delay
      * @return void
      */
-    public static function sleep(float $delay)
+    public static function sleep(float $delay): void
     {
         switch (Worker::$eventLoopClass) {
             // Fiber
@@ -184,7 +184,7 @@ class Timer
      *
      * @return void
      */
-    public static function tick()
+    public static function tick(): void
     {
         if (empty(self::$tasks)) {
             pcntl_alarm(0);
@@ -241,14 +241,12 @@ class Timer
      *
      * @return void
      */
-    public static function delAll()
+    public static function delAll(): void
     {
         self::$tasks = self::$status = [];
         if (function_exists('pcntl_alarm')) {
             pcntl_alarm(0);
         }
-        if (self::$event) {
-            self::$event->deleteAllTimer();
-        }
+        self::$event?->deleteAllTimer();
     }
 }

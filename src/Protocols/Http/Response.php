@@ -167,7 +167,7 @@ class Response
      *
      * @return void
      */
-    public static function init()
+    public static function init(): void
     {
         static::initMimeTypeMap();
     }
@@ -176,13 +176,13 @@ class Response
      * Response constructor.
      *
      * @param int $status
-     * @param array $headers
+     * @param array|null $headers
      * @param string $body
      */
     public function __construct(
-        int    $status = 200,
-        array  $headers = [],
-        string $body = ''
+        int     $status = 200,
+        ?array  $headers = [],
+        string  $body = ''
     )
     {
         $this->status = $status;
@@ -208,7 +208,7 @@ class Response
      *
      * @param string $name
      * @param string $value
-     * @return Response
+     * @return $this
      */
     public function withHeader(string $name, string $value): static
     {
@@ -480,7 +480,7 @@ class Response
      *
      * @return void
      */
-    public static function initMimeTypeMap()
+    public static function initMimeTypeMap(): void
     {
         $mimeFile = __DIR__ . '/mime.types';
         $items = file($mimeFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);

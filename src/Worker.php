@@ -422,7 +422,7 @@ class Worker
     protected static int $maxSocketNameLength = 12;
 
     /**
-     * Maximum length of the process user names.
+     * Maximum length of the process usernames.
      *
      * @var int
      */
@@ -554,7 +554,7 @@ class Worker
      * Run all worker instances.
      *
      * @return void
-     * @throws Exception
+     * @throws Throwable
      */
     public static function runAll(): void
     {
@@ -644,7 +644,7 @@ class Worker
      * @param int $flag
      * @return void
      */
-    protected static function lock($flag = \LOCK_EX): void
+    protected static function lock(int $flag = \LOCK_EX): void
     {
         static $fd;
         if (\DIRECTORY_SEPARATOR !== '/') {
@@ -803,7 +803,7 @@ class Worker
             $key = 'max' . \ucfirst(\strtolower($columnName)) . 'NameLength';
             //just keep compatible with listen name
             $columnName === 'socket' && $columnName = 'listen';
-            $title .= "<w>{$columnName}</w>" . \str_pad('', static::$$key + static::UI_SAFE_LENGTH - \strlen($columnName));
+            $title .= "<w>$columnName</w>" . \str_pad('', static::$$key + static::UI_SAFE_LENGTH - \strlen($columnName));
         }
         $title && static::safeEcho($title . \PHP_EOL);
 
@@ -813,7 +813,7 @@ class Worker
             foreach (static::getUiColumns() as $columnName => $prop) {
                 $propValue = (string)($worker->$prop ?? $worker->context->$prop);
                 $key = 'max' . \ucfirst(\strtolower($columnName)) . 'NameLength';
-                \preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", $propValue, $matches);
+                \preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/i", $propValue, $matches);
                 $placeHolderLength = !empty($matches) ? \strlen(\implode('', $matches[0])) : 0;
                 $content .= \str_pad($propValue, static::$$key + static::UI_SAFE_LENGTH + $placeHolderLength);
             }
@@ -1037,9 +1037,9 @@ class Worker
     /**
      * Get argv.
      *
-     * @return mixed
+     * @return array
      */
-    public static function getArgv(): mixed
+    public static function getArgv(): array
     {
         global $argv;
         return isset($argv[1]) ? $argv : (static::$command ? \explode(' ', static::$command) : $argv);
@@ -1151,6 +1151,7 @@ class Worker
      * Reinstall signal handler.
      *
      * @return void
+     * @throws Throwable
      */
     protected static function reinstallSignal(): void
     {
@@ -1161,7 +1162,7 @@ class Worker
         foreach ($signals as $signal) {
             \pcntl_signal($signal, \SIG_IGN, false);
             static::$globalEvent->onSignal($signal, [static::class, 'signalHandler']);
-        };
+        }
     }
 
     /**
@@ -1354,7 +1355,7 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
-     * @throws Exception
+     * @throws Throwable
      */
     protected static function forkWorkers(): void
     {
@@ -1369,7 +1370,7 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
-     * @throws Exception
+     * @throws Throwable
      */
     protected static function forkWorkersForLinux(): void
     {
@@ -1395,7 +1396,7 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
-     * @throws Exception
+     * @throws Throwable
      */
     protected static function forkWorkersForWindows(): void
     {
@@ -1485,12 +1486,12 @@ class Worker
     {
         $startFile = \realpath($startFile);
 
-        $descriptorspec = array(
+        $descriptor_spec = array(
             STDIN, STDOUT, STDOUT
         );
 
         $pipes = array();
-        $process = \proc_open('"' . PHP_BINARY . '" '  . " \"$startFile\" -q", $descriptorspec, $pipes, null, null, ['bypass_shell' => true]);
+        $process = \proc_open('"' . PHP_BINARY . '" '  . " \"$startFile\" -q", $descriptor_spec, $pipes, null, null, ['bypass_shell' => true]);
 
         if (empty(static::$globalEvent)) {
             static::$globalEvent = new Select();
@@ -1622,7 +1623,7 @@ class Worker
         // Get uid.
         $userInfo = \posix_getpwnam($this->user);
         if (!$userInfo) {
-            static::log("Warning: User {$this->user} not exists");
+            static::log("Warning: User $this->user not exists");
             return;
         }
         $uid = $userInfo['uid'];
@@ -1630,7 +1631,7 @@ class Worker
         if ($this->group) {
             $groupInfo = \posix_getgrnam($this->group);
             if (!$groupInfo) {
-                static::log("Warning: Group {$this->group} not exists");
+                static::log("Warning: Group $this->group not exists");
                 return;
             }
             $gid = $groupInfo['gid'];
@@ -1664,7 +1665,7 @@ class Worker
      * Monitor all child processes.
      *
      * @return void
-     * @throws Exception
+     * @throws Throwable
      */
     protected static function monitorWorkers(): void
     {
@@ -1679,7 +1680,7 @@ class Worker
      * Monitor all child processes.
      *
      * @return void
-     * @throws Exception
+     * @throws Throwable
      */
     protected static function monitorWorkersForLinux(): void
     {
@@ -1704,7 +1705,7 @@ class Worker
                         }
                         // Exit status.
                         if ($status !== 0) {
-                            static::log("worker[{$worker->name}:$pid] exit with status $status");
+                            static::log("worker[$worker->name:$pid] exit with status $status");
                         }
 
                         // onWorkerExit
@@ -1712,7 +1713,7 @@ class Worker
                             try {
                                 (static::$onWorkerExit)($worker, $status, $pid);
                             } catch (Throwable $exception) {
-                                static::log("worker[{$worker->name}] onWorkerExit $exception");
+                                static::log("worker[$worker->name] onWorkerExit $exception");
                             }
                         }
 
@@ -1754,6 +1755,7 @@ class Worker
      * Monitor all child processes.
      *
      * @return void
+     * @throws Throwable
      */
     protected static function monitorWorkersForWindows(): void
     {
@@ -1765,7 +1767,7 @@ class Worker
     /**
      * Exit current process.
      */
-    protected static function exitAndClearAll()
+    protected static function exitAndClearAll(): void
     {
         foreach (static::$workers as $worker) {
             $socketName = $worker->getSocketName();
@@ -1912,9 +1914,7 @@ class Worker
             }
             if (!static::$gracefulStop || ConnectionInterface::$statistics['connection_count'] <= 0) {
                 static::$workers = [];
-                if (static::$globalEvent) {
-                    static::$globalEvent->stop();
-                }
+                static::$globalEvent?->stop();
 
                 try {
                     exit($code);
@@ -2032,7 +2032,7 @@ class Worker
         \reset(static::$workers);
         /** @var static $worker */
         $worker = current(static::$workers);
-        $workerStatusStr = \posix_getpid() . "\t" . \str_pad((string)round(memory_get_usage() / (1024 * 1024), 2) . "M", 7)
+        $workerStatusStr = \posix_getpid() . "\t" . \str_pad(round(memory_get_usage() / (1024 * 1024), 2) . "M", 7)
             . " " . \str_pad($worker->getSocketName(), static::$maxSocketNameLength) . " "
             . \str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name), static::$maxWorkerNameLength)
             . " ";
@@ -2086,7 +2086,7 @@ class Worker
 
         /** @var static $worker */
         foreach (TcpConnection::$connections as $connection) {
-            /** @var \Workerman\Connection\TcpConnection $connection */
+            /** @var TcpConnection $connection */
             $transport = $connection->transport;
             $ipv4 = $connection->isIpV4() ? ' 1' : ' 0';
             $ipv6 = $connection->isIpV6() ? ' 1' : ' 0';
@@ -2098,7 +2098,7 @@ class Worker
             $bytesRead = $bytesFormat($connection->bytesRead);
             $bytesWritten = $bytesFormat($connection->bytesWritten);
             $id = $connection->id;
-            $protocol = $connection->protocol ? $connection->protocol : $connection->transport;
+            $protocol = $connection->protocol ?: $connection->transport;
             $pos = \strrpos($protocol, '\\');
             if ($pos) {
                 $protocol = \substr($protocol, $pos + 1);
@@ -2591,12 +2591,12 @@ class Worker
             return false;
         }
 
-        $masterIsAlive = $masterPid && \posix_kill($masterPid, 0) && \posix_getpid() !== $masterPid;
+        $masterIsAlive = \posix_kill($masterPid, 0) && \posix_getpid() !== $masterPid;
         if (!$masterIsAlive) {
             return false;
         }
 
-        $cmdline = "/proc/{$masterPid}/cmdline";
+        $cmdline = "/proc/$masterPid/cmdline";
         if (!is_readable($cmdline) || empty(static::$processTitle)) {
             return true;
         }
