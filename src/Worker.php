@@ -136,7 +136,7 @@ class Worker
     public bool $reusePort = false;
 
     /**
-     * Emitted when worker processes start.
+     * Emitted when worker processes is starting.
      *
      * @var ?callable
      */
@@ -150,7 +150,7 @@ class Worker
     public $onConnect = null;
 
     /**
-     * Emitted when websocket handshake completed (Only work when protocol is ws).
+     * Emitted when websocket handshake did complete (Only called when protocol is ws).
      *
      * @var ?callable
      */
@@ -192,14 +192,14 @@ class Worker
     public $onBufferDrain = null;
 
     /**
-     * Emitted when worker processes stopped.
+     * Emitted when worker processes has stopped.
      *
      * @var ?callable
      */
     public $onWorkerStop = null;
 
     /**
-     * Emitted when worker processes get reload signal.
+     * Emitted when worker processes receives reload signal.
      *
      * @var ?callable
      */
@@ -215,7 +215,7 @@ class Worker
     /**
      * Store all connections of clients.
      *
-     * @var array
+     * @var TcpConnection[]
      */
     public array $connections = [];
 
@@ -542,7 +542,7 @@ class Worker
      * If $outputStream support decorated
      * @var bool
      */
-    protected static ?bool $outputDecorated = null;
+    protected static bool $outputDecorated = false;
 
     /**
      * Worker object's hash id(unique identifier).
@@ -647,8 +647,9 @@ class Worker
      */
     protected static function lock(int $flag = LOCK_EX): void
     {
+		global $argv;
         static $fd;
-        if (DIRECTORY_SEPARATOR !== '/') {
+        if (DIRECTORY_SEPARATOR !== '/' | empty($argv)) {
             return;
         }
         $lockFile = static::$pidFile . '.lock';
@@ -882,10 +883,12 @@ class Worker
      */
     protected static function parseCommand(): void
     {
-        if (DIRECTORY_SEPARATOR !== '/') {
+		global $argv;
+
+        if (DIRECTORY_SEPARATOR !== '/' || empty($argv)) {
             return;
         }
-        global $argv;
+
         // Check argv;
         $startFile = $argv[0];
         $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in DEBUG mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
@@ -1294,7 +1297,8 @@ class Worker
      */
     protected static function saveMasterPid(): void
     {
-        if (DIRECTORY_SEPARATOR !== '/') {
+		global $argv;
+        if (DIRECTORY_SEPARATOR !== '/' || empty($argv)) {
             return;
         }
 
@@ -2153,17 +2157,18 @@ class Worker
         return self::ERROR_TYPE[$type] ?? '';
     }
 
-    /**
-     * Log.
-     *
-     * @param mixed $msg
-     * @return void
-     */
-    public static function log(mixed $msg): void
+	/**
+	 * Log.
+	 *
+	 * @param mixed $msg
+	 * @param bool $decorated
+	 * @return void
+	 */
+    public static function log(mixed $msg,bool $decorated = false): void
     {
         $msg = $msg . "\n";
         if (!static::$daemonize) {
-            static::safeEcho($msg);
+            static::safeEcho($msg, $decorated);
         }
         file_put_contents(static::$logFile, date('Y-m-d H:i:s') . ' ' . 'pid:'
             . (DIRECTORY_SEPARATOR === '/' ? posix_getpid() : 1) . ' ' . $msg, FILE_APPEND | LOCK_EX);
@@ -2181,7 +2186,7 @@ class Worker
         if (!$stream) {
             return false;
         }
-        if (!$decorated) {
+        if ($decorated) {
             $line = $white = $green = $end = '';
             if (static::$outputDecorated) {
                 $line = "\033[1A\n\033[K";

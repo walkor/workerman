@@ -509,8 +509,8 @@ class Request
         $postEncodeString = '';
         $filesEncodeString = '';
         $files = [];
-        $bodayPosition = strpos($buffer, "\r\n\r\n") + 4;
-        $offset = $bodayPosition + strlen($httpPostBoundary) + 2;
+        $bodyPosition = strpos($buffer, "\r\n\r\n") + 4;
+        $offset = $bodyPosition + strlen($httpPostBoundary) + 2;
         $maxCount = static::$maxFileUploads;
         while ($maxCount-- > 0 && $offset) {
             $offset = $this->parseUploadFile($httpPostBoundary, $offset, $postEncodeString, $filesEncodeString, $files);
