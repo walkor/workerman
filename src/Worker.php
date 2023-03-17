@@ -649,7 +649,7 @@ class Worker
     {
 		global $argv;
         static $fd;
-        if (DIRECTORY_SEPARATOR !== '/' | empty($argv)) {
+        if (DIRECTORY_SEPARATOR !== '/' || empty($argv)) {
             return;
         }
         $lockFile = static::$pidFile . '.lock';
