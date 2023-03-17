@@ -19,6 +19,8 @@ namespace Workerman\Events;
 use EventBase;
 use RuntimeException;
 use Throwable;
+use function class_exists;
+use function count;
 
 /**
  * libevent eventloop

@@ -22,6 +22,21 @@ use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Worker;
+use function base64_encode;
+use function chr;
+use function floor;
+use function gettype;
+use function is_scalar;
+use function ord;
+use function pack;
+use function preg_match;
+use function sha1;
+use function str_repeat;
+use function stripos;
+use function strlen;
+use function strpos;
+use function substr;
+use function unpack;
 
 /**
  * WebSocket protocol.

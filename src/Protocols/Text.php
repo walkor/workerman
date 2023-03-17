@@ -17,6 +17,9 @@ declare(strict_types=1);
 namespace Workerman\Protocols;
 
 use Workerman\Connection\ConnectionInterface;
+use function rtrim;
+use function strlen;
+use function strpos;
 
 /**
  * Text Protocol.

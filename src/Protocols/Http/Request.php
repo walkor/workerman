@@ -20,6 +20,30 @@ use Exception;
 use RuntimeException;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
+use function array_walk_recursive;
+use function bin2hex;
+use function clearstatcache;
+use function count;
+use function explode;
+use function file_put_contents;
+use function is_file;
+use function json_decode;
+use function ltrim;
+use function microtime;
+use function pack;
+use function parse_str;
+use function parse_url;
+use function preg_match;
+use function preg_replace;
+use function strlen;
+use function strpos;
+use function strstr;
+use function strtolower;
+use function substr;
+use function tempnam;
+use function trim;
+use function unlink;
+use function urlencode;
 
 /**
  * Class Request

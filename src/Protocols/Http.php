@@ -20,6 +20,25 @@ use Throwable;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
+use function clearstatcache;
+use function count;
+use function explode;
+use function filesize;
+use function fopen;
+use function fread;
+use function fseek;
+use function ftell;
+use function in_array;
+use function ini_get;
+use function is_array;
+use function is_object;
+use function key;
+use function preg_match;
+use function strlen;
+use function strpos;
+use function strstr;
+use function substr;
+use function sys_get_temp_dir;
 
 /**
  * Class Http.

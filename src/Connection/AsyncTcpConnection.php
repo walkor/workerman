@@ -22,6 +22,28 @@ use stdClass;
 use Throwable;
 use Workerman\Timer;
 use Workerman\Worker;
+use function class_exists;
+use function explode;
+use function function_exists;
+use function is_resource;
+use function method_exists;
+use function microtime;
+use function parse_url;
+use function socket_import_stream;
+use function socket_set_option;
+use function stream_context_create;
+use function stream_set_blocking;
+use function stream_set_read_buffer;
+use function stream_socket_client;
+use function stream_socket_get_name;
+use function ucfirst;
+use const DIRECTORY_SEPARATOR;
+use const PHP_INT_MAX;
+use const SO_KEEPALIVE;
+use const SOL_SOCKET;
+use const SOL_TCP;
+use const STREAM_CLIENT_ASYNC_CONNECT;
+use const TCP_NODELAY;
 
 /**
  * AsyncTcpConnection.

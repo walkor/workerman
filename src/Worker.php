@@ -18,6 +18,7 @@ namespace Workerman;
 
 use AllowDynamicProperties;
 use Exception;
+use Revolt\EventLoop;
 use RuntimeException;
 use stdClass;
 use Throwable;
@@ -29,6 +30,12 @@ use Workerman\Events\EventInterface;
 use Workerman\Events\Revolt;
 use Workerman\Events\Select;
 use Workerman\Protocols\ProtocolInterface;
+use function method_exists;
+use function restore_error_handler;
+use function set_error_handler;
+use function stream_socket_accept;
+use function stream_socket_recvfrom;
+use function substr;
 
 /**
  * Worker class
@@ -647,7 +654,7 @@ class Worker
      */
     protected static function lock(int $flag = LOCK_EX): void
     {
-		global $argv;
+        global $argv;
         static $fd;
         if (DIRECTORY_SEPARATOR !== '/' || empty($argv)) {
             return;
@@ -883,7 +890,7 @@ class Worker
      */
     protected static function parseCommand(): void
     {
-		global $argv;
+        global $argv;
 
         if (DIRECTORY_SEPARATOR !== '/' || empty($argv)) {
             return;
@@ -1297,7 +1304,7 @@ class Worker
      */
     protected static function saveMasterPid(): void
     {
-		global $argv;
+        global $argv;
         if (DIRECTORY_SEPARATOR !== '/' || empty($argv)) {
             return;
         }
@@ -1319,7 +1326,7 @@ class Worker
             return static::$eventLoopClass;
         }
 
-        if (class_exists(\Revolt\EventLoop::class)) {
+        if (class_exists(EventLoop::class)) {
             static::$eventLoopClass = Revolt::class;
             return static::$eventLoopClass;
         }
@@ -1495,7 +1502,7 @@ class Worker
         );
 
         $pipes = array();
-        $process = proc_open('"' . PHP_BINARY . '" '  . " \"$startFile\" -q", $descriptor_spec, $pipes, null, null, ['bypass_shell' => true]);
+        $process = proc_open('"' . PHP_BINARY . '" ' . " \"$startFile\" -q", $descriptor_spec, $pipes, null, null, ['bypass_shell' => true]);
 
         if (empty(static::$globalEvent)) {
             static::$globalEvent = new Select();
@@ -2157,14 +2164,14 @@ class Worker
         return self::ERROR_TYPE[$type] ?? '';
     }
 
-	/**
-	 * Log.
-	 *
-	 * @param mixed $msg
-	 * @param bool $decorated
-	 * @return void
-	 */
-    public static function log(mixed $msg,bool $decorated = false): void
+    /**
+     * Log.
+     *
+     * @param mixed $msg
+     * @param bool $decorated
+     * @return void
+     */
+    public static function log(mixed $msg, bool $decorated = false): void
     {
         $msg = $msg . "\n";
         if (!static::$daemonize) {
@@ -2477,7 +2484,7 @@ class Worker
             }
         }
         // Remove worker.
-        foreach(static::$workers as $key => $one_worker) {
+        foreach (static::$workers as $key => $one_worker) {
             if ($one_worker->workerId === $this->workerId) {
                 unset(static::$workers[$key]);
             }

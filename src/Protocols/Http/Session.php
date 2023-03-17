@@ -21,6 +21,15 @@ use JetBrains\PhpStorm\ArrayShape;
 use RuntimeException;
 use Workerman\Protocols\Http\Session\FileSessionHandler;
 use Workerman\Protocols\Http\Session\SessionHandlerInterface;
+use function array_key_exists;
+use function ini_get;
+use function is_array;
+use function is_scalar;
+use function preg_match;
+use function random_int;
+use function serialize;
+use function session_get_cookie_params;
+use function unserialize;
 
 /**
  * Class Session

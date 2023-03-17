@@ -16,6 +16,9 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols\Http;
 
+use function dechex;
+use function strlen;
+
 /**
  * Class Chunk
  * @package Workerman\Protocols\Http

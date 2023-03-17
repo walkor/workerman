@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols\Http;
 
+use function str_replace;
+
 /**
  * Class ServerSentEvents
  * @package Workerman\Protocols\Http

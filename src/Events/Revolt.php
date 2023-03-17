@@ -18,6 +18,9 @@ namespace Workerman\Events;
 
 use Revolt\EventLoop;
 use Revolt\EventLoop\Driver;
+use function count;
+use function function_exists;
+use function pcntl_signal;
 
 /**
  * Revolt eventloop

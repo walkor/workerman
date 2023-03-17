@@ -20,6 +20,13 @@ use JetBrains\PhpStorm\ArrayShape;
 use JetBrains\PhpStorm\Pure;
 use JsonSerializable;
 use Workerman\Protocols\ProtocolInterface;
+use function stream_socket_get_name;
+use function stream_socket_sendto;
+use function strlen;
+use function strrchr;
+use function strrpos;
+use function substr;
+use function trim;
 
 /**
  * UdpConnection.

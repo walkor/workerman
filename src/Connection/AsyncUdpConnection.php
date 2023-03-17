@@ -20,6 +20,18 @@ use Exception;
 use Throwable;
 use Workerman\Protocols\ProtocolInterface;
 use Workerman\Worker;
+use function class_exists;
+use function explode;
+use function fclose;
+use function stream_context_create;
+use function stream_set_blocking;
+use function stream_socket_client;
+use function stream_socket_recvfrom;
+use function stream_socket_sendto;
+use function strlen;
+use function substr;
+use function ucfirst;
+use const STREAM_CLIENT_CONNECT;
 
 /**
  * AsyncUdpConnection.

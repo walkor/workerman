@@ -16,6 +16,21 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols\Http;
 
+use function array_merge_recursive;
+use function explode;
+use function file;
+use function filemtime;
+use function gmdate;
+use function is_array;
+use function is_file;
+use function pathinfo;
+use function preg_match;
+use function rawurlencode;
+use function strlen;
+use function substr;
+use const FILE_IGNORE_NEW_LINES;
+use const FILE_SKIP_EMPTY_LINES;
+
 /**
  * Class Response
  * @package Workerman\Protocols\Http
