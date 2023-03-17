@@ -2193,7 +2193,7 @@ class Worker
         if (!$stream) {
             return false;
         }
-        if ($decorated) {
+        if (!$decorated) {
             $line = $white = $green = $end = '';
             if (static::$outputDecorated) {
                 $line = "\033[1A\n\033[K";
