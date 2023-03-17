@@ -64,72 +64,84 @@ class AsyncTcpConnection extends TcpConnection
         'sslv3' => 'sslv3',
         'tls' => 'tls'
     ];
+
     /**
      * Emitted when socket connection is successfully established.
      *
      * @var ?callable
      */
     public $onConnect = null;
+
     /**
      * Emitted when websocket handshake completed (Only work when protocol is ws).
      *
      * @var ?callable
      */
     public $onWebSocketConnect = null;
+
     /**
      * Transport layer protocol.
      *
      * @var string
      */
     public string $transport = 'tcp';
+
     /**
      * Socks5 proxy.
      *
      * @var string
      */
     public string $proxySocks5 = '';
+
     /**
      * Http proxy.
      *
      * @var string
      */
     public string $proxyHttp = '';
+
     /**
      * Status.
      *
      * @var int
      */
     protected int $status = self::STATUS_INITIAL;
+
     /**
      * Remote host.
      *
      * @var string
      */
     protected string $remoteHost = '';
+
     /**
      * Remote port.
      *
      * @var int
      */
     protected int $remotePort = 80;
+
     /**
      * Connect start time.
      *
      * @var float
      */
     protected float $connectStartTime = 0;
+
     /**
      * Remote URI.
      *
      * @var string
      */
     protected string $remoteURI = '';
+
     /**
      * Context option.
      *
      * @var array
      */
     protected array $socketContext = [];
+
     /**
      * Reconnect timer.
      *

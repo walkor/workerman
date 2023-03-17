@@ -20,11 +20,12 @@ use Throwable;
 use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
 use Workerman\Worker;
+use AllowDynamicProperties;
 
 /**
  * ConnectionInterface.
  */
-#[\AllowDynamicProperties]
+#[AllowDynamicProperties]
 abstract class ConnectionInterface
 {
     /**
