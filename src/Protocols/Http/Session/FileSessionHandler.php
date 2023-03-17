@@ -16,22 +16,8 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols\Http\Session;
 
+use Exception;
 use Workerman\Protocols\Http\Session;
-use function clearstatcache;
-use function file_get_contents;
-use function file_put_contents;
-use function filemtime;
-use function glob;
-use function is_dir;
-use function is_file;
-use function mkdir;
-use function rename;
-use function session_save_path;
-use function strlen;
-use function sys_get_temp_dir;
-use function time;
-use function touch;
-use function unlink;
 
 /**
  * Class FileSessionHandler
@@ -104,6 +90,7 @@ class FileSessionHandler implements SessionHandlerInterface
 
     /**
      * {@inheritdoc}
+     * @throws Exception
      */
     public function write(string $sessionId, string $sessionData): bool
     {
@@ -115,7 +102,7 @@ class FileSessionHandler implements SessionHandlerInterface
     }
 
     /**
-     * Update sesstion modify time.
+     * Update session modify time.
      *
      * @see https://www.php.net/manual/en/class.sessionupdatetimestamphandlerinterface.php
      * @see https://www.php.net/manual/zh/function.touch.php

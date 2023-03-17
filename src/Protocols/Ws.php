@@ -22,22 +22,6 @@ use Workerman\Connection\AsyncTcpConnection;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Timer;
 use Workerman\Worker;
-use function base64_encode;
-use function bin2hex;
-use function floor;
-use function gettype;
-use function is_array;
-use function is_scalar;
-use function ord;
-use function pack;
-use function preg_match;
-use function sha1;
-use function str_repeat;
-use function strlen;
-use function strpos;
-use function substr;
-use function trim;
-use function unpack;
 
 /**
  * Websocket protocol for client.
@@ -89,11 +73,11 @@ class Ws
             }
         } else {
 
-            $firstbyte = ord($buffer[0]);
-            $secondbyte = ord($buffer[1]);
-            $dataLen = $secondbyte & 127;
-            $isFinFrame = $firstbyte >> 7;
-            $masked = $secondbyte >> 7;
+            $firstByte = ord($buffer[0]);
+            $secondByte = ord($buffer[1]);
+            $dataLen = $secondByte & 127;
+            $isFinFrame = $firstByte >> 7;
+            $masked = $secondByte >> 7;
 
             if ($masked) {
                 Worker::safeEcho("frame masked so close the connection\n");
@@ -101,7 +85,7 @@ class Ws
                 return 0;
             }
 
-            $opcode = $firstbyte & 0xf;
+            $opcode = $firstByte & 0xf;
 
             switch ($opcode) {
                 case 0x0:
@@ -324,11 +308,11 @@ class Ws
     /**
      * Send websocket handshake data.
      *
-     * @param $connection
+     * @param AsyncTcpConnection $connection
      * @return void
      * @throws Throwable
      */
-    public static function onConnect($connection)
+    public static function onConnect(AsyncTcpConnection $connection): void
     {
         static::sendHandshake($connection);
     }
@@ -338,7 +322,7 @@ class Ws
      *
      * @param AsyncTcpConnection $connection
      */
-    public static function onClose(AsyncTcpConnection $connection)
+    public static function onClose(AsyncTcpConnection $connection): void
     {
         $connection->context->handshakeStep = null;
         $connection->context->websocketCurrentFrameLength = 0;
@@ -357,7 +341,7 @@ class Ws
      * @return void
      * @throws Throwable
      */
-    public static function sendHandshake(AsyncTcpConnection $connection)
+    public static function sendHandshake(AsyncTcpConnection $connection): void
     {
         if (!empty($connection->context->handshakeStep)) {
             return;

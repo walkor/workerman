@@ -16,22 +16,12 @@ declare(strict_types=1);
 
 namespace Workerman;
 
-use Exception;
-use Revolt\EventLoop;
 use RuntimeException;
-use Swoole\Coroutine\System;
 use Throwable;
 use Workerman\Events\EventInterface;
 use Workerman\Events\Revolt;
 use Workerman\Events\Swoole;
 use Workerman\Events\Swow;
-use function function_exists;
-use function is_callable;
-use function pcntl_alarm;
-use function pcntl_signal;
-use function time;
-use const PHP_INT_MAX;
-use const SIGALRM;
 
 /**
  * Timer.
@@ -82,7 +72,7 @@ class Timer
      * @param EventInterface|null $event
      * @return void
      */
-    public static function init(EventInterface $event = null)
+    public static function init(EventInterface $event = null): void
     {
         if ($event) {
             self::$event = $event;
@@ -98,7 +88,7 @@ class Timer
      *
      * @return void
      */
-    public static function signalHandle()
+    public static function signalHandle(): void
     {
         if (!self::$event) {
             pcntl_alarm(1);
@@ -156,12 +146,12 @@ class Timer
      * @param float $delay
      * @return void
      */
-    public static function sleep(float $delay)
+    public static function sleep(float $delay): void
     {
         switch (Worker::$eventLoopClass) {
             // Fiber
             case Revolt::class:
-                $suspension = EventLoop::getSuspension();
+                $suspension = \Revolt\EventLoop::getSuspension();
                 static::add($delay, function () use ($suspension) {
                     $suspension->resume();
                 }, null, false);
@@ -169,7 +159,7 @@ class Timer
                 return;
             // Swoole
             case Swoole::class:
-                System::sleep($delay);
+                \Swoole\Coroutine\System::sleep($delay);
                 return;
             // Swow
             case Swow::class:
@@ -184,7 +174,7 @@ class Timer
      *
      * @return void
      */
-    public static function tick()
+    public static function tick(): void
     {
         if (empty(self::$tasks)) {
             pcntl_alarm(0);
@@ -241,14 +231,12 @@ class Timer
      *
      * @return void
      */
-    public static function delAll()
+    public static function delAll(): void
     {
         self::$tasks = self::$status = [];
         if (function_exists('pcntl_alarm')) {
             pcntl_alarm(0);
         }
-        if (self::$event) {
-            self::$event->deleteAllTimer();
-        }
+        self::$event?->deleteAllTimer();
     }
 }

@@ -19,12 +19,14 @@ namespace Workerman\Protocols\Http\Session;
 use Redis;
 use RedisCluster;
 use RedisClusterException;
+use RedisException;
 
 class RedisClusterSessionHandler extends RedisSessionHandler
 {
     /**
      * @param $config
      * @throws RedisClusterException
+     * @throws RedisException
      */
     public function __construct($config)
     {

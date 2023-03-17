@@ -22,21 +22,6 @@ use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Worker;
-use function base64_encode;
-use function chr;
-use function floor;
-use function gettype;
-use function is_scalar;
-use function ord;
-use function pack;
-use function preg_match;
-use function sha1;
-use function str_repeat;
-use function stripos;
-use function strlen;
-use function strpos;
-use function substr;
-use function unpack;
 
 /**
  * WebSocket protocol.
@@ -87,11 +72,11 @@ class Websocket
                 return 0;
             }
         } else {
-            $firstbyte = ord($buffer[0]);
-            $secondbyte = ord($buffer[1]);
-            $dataLen = $secondbyte & 127;
-            $isFinFrame = $firstbyte >> 7;
-            $masked = $secondbyte >> 7;
+            $firstByte = ord($buffer[0]);
+            $secondByte = ord($buffer[1]);
+            $dataLen = $secondByte & 127;
+            $isFinFrame = $firstByte >> 7;
+            $masked = $secondByte >> 7;
 
             if (!$masked) {
                 Worker::safeEcho("frame not masked so close the connection\n");
@@ -99,7 +84,7 @@ class Websocket
                 return 0;
             }
 
-            $opcode = $firstbyte & 0xf;
+            $opcode = $firstByte & 0xf;
             switch ($opcode) {
                 case 0x0:
                     // Blob type.
@@ -359,14 +344,15 @@ class Websocket
             if (preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
                 $SecWebSocketKey = $match[1];
             } else {
-                $connection->close("HTTP/1.1 200 WebSocket\r\nServer: workerman/" . Worker::VERSION . "\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman/" . Worker::VERSION . "</div>",
-                    true);
+                $connection->close(
+					'HTTP/1.1 200 OK\r\nServer: '. Worker::$processTitle . ' ('. Worker::VERSION . ')'
+					. '\r\n\r\n<div style="text-align:center"><h1>WebSocket</h1><hr>'. Worker::$processTitle . '/' . Worker::VERSION . '</div>', true);
                 return 0;
             }
             // Calculation websocket key.
             $newKey = base64_encode(sha1($SecWebSocketKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true));
             // Handshake response data.
-            $handshakeMessage = "HTTP/1.1 101 Switching Protocols\r\n"
+            $handshakeMessage = "HTTP/1.1 101 Switching Protocol\r\n"
                 . "Upgrade: websocket\r\n"
                 . "Sec-WebSocket-Version: 13\r\n"
                 . "Connection: Upgrade\r\n"
@@ -407,7 +393,7 @@ class Websocket
                 }
             }
             if (!$hasServerHeader) {
-                $handshakeMessage .= "Server: workerman/" . Worker::VERSION . "\r\n";
+                $handshakeMessage .= 'Server: ' . Worker::$processTitle . ' ('. Worker::VERSION . ')' . "\r\n";
             }
             $handshakeMessage .= "\r\n";
             // Send handshake response.
@@ -426,8 +412,9 @@ class Websocket
             return 0;
         }
         // Bad websocket handshake request.
-        $connection->close("HTTP/1.1 200 WebSocket\r\nServer: workerman/" . Worker::VERSION . "\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman/" . Worker::VERSION . "</div>",
-            true);
+        $connection->close(
+			'HTTP/1.1 200 OK\r\nServer: ' . Worker::$processTitle . ' ('. Worker::VERSION . ')'
+			. '\r\n\r\n<div style="text-align:center"><h1>WebSocket</h1><hr>'. Worker::$processTitle . '/' . Worker::VERSION . '</div>', true);
         return 0;
     }
 

@@ -16,21 +16,6 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols\Http;
 
-use function array_merge_recursive;
-use function explode;
-use function file;
-use function filemtime;
-use function gmdate;
-use function is_array;
-use function is_file;
-use function pathinfo;
-use function preg_match;
-use function rawurlencode;
-use function strlen;
-use function substr;
-use const FILE_IGNORE_NEW_LINES;
-use const FILE_SKIP_EMPTY_LINES;
-
 /**
  * Class Response
  * @package Workerman\Protocols\Http
@@ -167,7 +152,7 @@ class Response
      *
      * @return void
      */
-    public static function init()
+    public static function init(): void
     {
         static::initMimeTypeMap();
     }
@@ -176,13 +161,13 @@ class Response
      * Response constructor.
      *
      * @param int $status
-     * @param array $headers
+     * @param array|null $headers
      * @param string $body
      */
     public function __construct(
-        int    $status = 200,
-        array  $headers = [],
-        string $body = ''
+        int     $status = 200,
+        ?array  $headers = [],
+        string  $body = ''
     )
     {
         $this->status = $status;
@@ -208,7 +193,7 @@ class Response
      *
      * @param string $name
      * @param string $value
-     * @return Response
+     * @return $this
      */
     public function withHeader(string $name, string $value): static
     {
@@ -480,7 +465,7 @@ class Response
      *
      * @return void
      */
-    public static function initMimeTypeMap()
+    public static function initMimeTypeMap(): void
     {
         $mimeFile = __DIR__ . '/mime.types';
         $items = file($mimeFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);

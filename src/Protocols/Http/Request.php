@@ -20,30 +20,6 @@ use Exception;
 use RuntimeException;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
-use function array_walk_recursive;
-use function bin2hex;
-use function clearstatcache;
-use function count;
-use function explode;
-use function file_put_contents;
-use function is_file;
-use function json_decode;
-use function ltrim;
-use function microtime;
-use function pack;
-use function parse_str;
-use function parse_url;
-use function preg_match;
-use function preg_replace;
-use function strlen;
-use function strpos;
-use function strstr;
-use function strtolower;
-use function substr;
-use function tempnam;
-use function trim;
-use function unlink;
-use function urlencode;
 
 /**
  * Class Request
@@ -188,7 +164,7 @@ class Request
      * @param string|null $name
      * @return array|null
      */
-    public function file(string $name = null)
+    public function file(string $name = null): ?array
     {
         if (!isset($this->data['files'])) {
             $this->parsePost();
@@ -382,7 +358,7 @@ class Request
      *
      * @param bool $value
      */
-    public static function enableCache(bool $value)
+    public static function enableCache(bool $value): void
     {
         static::$enableCache = $value;
     }
@@ -392,7 +368,7 @@ class Request
      *
      * @return void
      */
-    protected function parseHeadFirstLine()
+    protected function parseHeadFirstLine(): void
     {
         $firstLine = strstr($this->buffer, "\r\n", true);
         $tmp = explode(' ', $firstLine, 3);
@@ -405,7 +381,7 @@ class Request
      *
      * @return void
      */
-    protected function parseProtocolVersion()
+    protected function parseProtocolVersion(): void
     {
         $firstLine = strstr($this->buffer, "\r\n", true);
         $protocolVersion = substr(strstr($firstLine, 'HTTP/'), 5);
@@ -417,7 +393,7 @@ class Request
      *
      * @return void
      */
-    protected function parseHeaders()
+    protected function parseHeaders(): void
     {
         static $cache = [];
         $this->data['headers'] = [];
@@ -461,7 +437,7 @@ class Request
      *
      * @return void
      */
-    protected function parseGet()
+    protected function parseGet(): void
     {
         static $cache = [];
         $queryString = $this->queryString();
@@ -488,7 +464,7 @@ class Request
      *
      * @return void
      */
-    protected function parsePost()
+    protected function parsePost(): void
     {
         static $cache = [];
         $this->data['post'] = $this->data['files'] = [];
@@ -526,15 +502,15 @@ class Request
      * @param string $httpPostBoundary
      * @return void
      */
-    protected function parseUploadFiles(string $httpPostBoundary)
+    protected function parseUploadFiles(string $httpPostBoundary): void
     {
         $httpPostBoundary = trim($httpPostBoundary, '"');
         $buffer = $this->buffer;
         $postEncodeString = '';
         $filesEncodeString = '';
         $files = [];
-        $bodayPosition = strpos($buffer, "\r\n\r\n") + 4;
-        $offset = $bodayPosition + strlen($httpPostBoundary) + 2;
+        $bodyPosition = strpos($buffer, "\r\n\r\n") + 4;
+        $offset = $bodyPosition + strlen($httpPostBoundary) + 2;
         $maxCount = static::$maxFileUploads;
         while ($maxCount-- > 0 && $offset) {
             $offset = $this->parseUploadFile($httpPostBoundary, $offset, $postEncodeString, $filesEncodeString, $files);
@@ -654,7 +630,7 @@ class Request
      * @param array $cookieParams
      * @return void
      */
-    protected function setSidCookie(string $sessionName, string $sid, array $cookieParams)
+    protected function setSidCookie(string $sessionName, string $sid, array $cookieParams): void
     {
         if (!$this->connection) {
             throw new RuntimeException('Request->setSidCookie() fail, header already send');

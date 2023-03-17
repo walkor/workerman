@@ -9,16 +9,6 @@ use Swow\Coroutine;
 use Swow\Signal;
 use Swow\SignalException;
 use Throwable;
-use function count;
-use function is_resource;
-use function max;
-use function msleep;
-use function stream_poll_one;
-use function Swow\Sync\waitAll;
-use const STREAM_POLLHUP;
-use const STREAM_POLLIN;
-use const STREAM_POLLNONE;
-use const STREAM_POLLOUT;
 
 class Swow implements EventInterface
 {
@@ -63,6 +53,7 @@ class Swow implements EventInterface
 
     /**
      * {@inheritdoc}
+     * @throws Throwable
      */
     public function delay(float $delay, callable $func, array $args = []): int
     {
@@ -85,6 +76,7 @@ class Swow implements EventInterface
 
     /**
      * {@inheritdoc}
+     * @throws Throwable
      */
     public function repeat(float $interval, callable $func, array $args = []): int
     {
@@ -133,7 +125,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteAllTimer()
+    public function deleteAllTimer(): void
     {
         foreach ($this->eventTimer as $timerId) {
             $this->offDelay($timerId);
@@ -143,7 +135,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onReadable($stream, callable $func)
+    public function onReadable($stream, callable $func): void
     {
         $fd = (int)$stream;
         if (isset($this->readEvents[$fd])) {
@@ -192,7 +184,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onWritable($stream, callable $func)
+    public function onWritable($stream, callable $func): void
     {
         $fd = (int)$stream;
         if (isset($this->writeEvents[$fd])) {
@@ -236,7 +228,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function onSignal(int $signal, callable $func)
+    public function onSignal(int $signal, callable $func): void
     {
         Coroutine::run(function () use ($signal, $func): void {
             $this->signalListener[$signal] = Coroutine::getCurrent();
@@ -269,7 +261,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function run()
+    public function run(): void
     {
         waitAll();
     }
@@ -279,7 +271,7 @@ class Swow implements EventInterface
      *
      * @return void
      */
-    public function stop()
+    public function stop(): void
     {
         Coroutine::killAll();
     }
@@ -287,7 +279,7 @@ class Swow implements EventInterface
     /**
      * {@inheritdoc}
      */
-    public function setErrorHandler(callable $errorHandler)
+    public function setErrorHandler(callable $errorHandler): void
     {
         $this->errorHandler = $errorHandler;
     }
@@ -305,7 +297,7 @@ class Swow implements EventInterface
      * @return void
      * @throws Throwable
      */
-    public function error(Throwable $e)
+    public function error(Throwable $e): void
     {
         if (!$this->errorHandler) {
             throw new $e;

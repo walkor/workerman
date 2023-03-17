@@ -20,13 +20,6 @@ use JetBrains\PhpStorm\ArrayShape;
 use JetBrains\PhpStorm\Pure;
 use JsonSerializable;
 use Workerman\Protocols\ProtocolInterface;
-use function stream_socket_get_name;
-use function stream_socket_sendto;
-use function strlen;
-use function strrchr;
-use function strrpos;
-use function substr;
-use function trim;
 
 /**
  * UdpConnection.
@@ -175,9 +168,10 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      * Close connection.
      *
      * @param mixed|null $data
+     * @param bool $raw
      * @return void
      */
-    public function close(mixed $data = null, bool $raw = false)
+    public function close(mixed $data = null, bool $raw = false): void
     {
         if ($data !== null) {
             $this->send($data, $raw);
@@ -228,7 +222,11 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @return array
      */
-    #[ArrayShape(['transport' => "string", 'getRemoteIp' => "string", 'remotePort' => "int", 'getRemoteAddress' => "string", 'getLocalIp' => "string", 'getLocalPort' => "int", 'getLocalAddress' => "string", 'isIpV4' => "bool", 'isIpV6' => "bool"])] public function jsonSerialize(): array
+    #[ArrayShape([
+        'transport' => "string", 'getRemoteIp' => "string", 'remotePort' => "int", 'getRemoteAddress' => "string",
+        'getLocalIp' => "string", 'getLocalPort' => "int", 'getLocalAddress' => "string", 'isIpV4' => "bool", 'isIpV6' => "bool"]
+    )]
+    public function jsonSerialize(): array
     {
         return [
             'transport' => $this->transport,

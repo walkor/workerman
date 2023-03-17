@@ -20,18 +20,6 @@ use Exception;
 use Throwable;
 use Workerman\Protocols\ProtocolInterface;
 use Workerman\Worker;
-use function class_exists;
-use function explode;
-use function fclose;
-use function stream_context_create;
-use function stream_set_blocking;
-use function stream_socket_client;
-use function stream_socket_recvfrom;
-use function stream_socket_sendto;
-use function strlen;
-use function substr;
-use function ucfirst;
-use const STREAM_CLIENT_CONNECT;
 
 /**
  * AsyncUdpConnection.
@@ -99,7 +87,7 @@ class AsyncUdpConnection extends UdpConnection
      * @return void
      * @throws Throwable
      */
-    public function baseRead($socket)
+    public function baseRead($socket): void
     {
         $recvBuffer = stream_socket_recvfrom($socket, static::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
         if (false === $recvBuffer || empty($remoteAddress)) {
@@ -129,7 +117,7 @@ class AsyncUdpConnection extends UdpConnection
      * @return void
      * @throws Throwable
      */
-    public function close(mixed $data = null, bool $raw = false)
+    public function close(mixed $data = null, bool $raw = false): void
     {
         if ($data !== null) {
             $this->send($data, $raw);
@@ -169,7 +157,7 @@ class AsyncUdpConnection extends UdpConnection
         if ($this->connected === false) {
             $this->connect();
         }
-        return strlen($sendBuffer) === stream_socket_sendto($this->socket, $sendBuffer, 0);
+        return strlen($sendBuffer) === stream_socket_sendto($this->socket, $sendBuffer);
     }
 
     /**
@@ -178,7 +166,7 @@ class AsyncUdpConnection extends UdpConnection
      * @return void
      * @throws Throwable
      */
-    public function connect()
+    public function connect(): void
     {
         if ($this->connected === true) {
             return;

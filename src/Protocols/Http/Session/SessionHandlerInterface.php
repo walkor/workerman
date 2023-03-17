@@ -103,7 +103,7 @@ interface SessionHandlerInterface
     public function write(string $sessionId, string $sessionData): bool;
 
     /**
-     * Update sesstion modify time.
+     * Update session modify time.
      *
      * @see https://www.php.net/manual/en/class.sessionupdatetimestamphandlerinterface.php
      *

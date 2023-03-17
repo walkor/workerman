@@ -21,15 +21,6 @@ use JetBrains\PhpStorm\ArrayShape;
 use RuntimeException;
 use Workerman\Protocols\Http\Session\FileSessionHandler;
 use Workerman\Protocols\Http\Session\SessionHandlerInterface;
-use function array_key_exists;
-use function ini_get;
-use function is_array;
-use function is_scalar;
-use function preg_match;
-use function random_int;
-use function serialize;
-use function session_get_cookie_params;
-use function unserialize;
 
 /**
  * Class Session
@@ -194,7 +185,7 @@ class Session
      * @param string $name
      * @param mixed $value
      */
-    public function set(string $name, mixed $value)
+    public function set(string $name, mixed $value): void
     {
         $this->data[$name] = $value;
         $this->needSave = true;
@@ -205,7 +196,7 @@ class Session
      *
      * @param string $name
      */
-    public function delete(string $name)
+    public function delete(string $name): void
     {
         unset($this->data[$name]);
         $this->needSave = true;
@@ -231,7 +222,7 @@ class Session
      * @param array|string $key
      * @param mixed|null $value
      */
-    public function put(array|string $key, mixed $value = null)
+    public function put(array|string $key, mixed $value = null): void
     {
         if (!is_array($key)) {
             $this->set($key, $value);
@@ -249,7 +240,7 @@ class Session
      *
      * @param array|string $name
      */
-    public function forget(array|string $name)
+    public function forget(array|string $name): void
     {
         if (is_scalar($name)) {
             $this->delete($name);
@@ -278,7 +269,7 @@ class Session
      *
      * @return void
      */
-    public function flush()
+    public function flush(): void
     {
         $this->needSave = true;
         $this->data = [];
@@ -311,7 +302,7 @@ class Session
      *
      * @return void
      */
-    public function save()
+    public function save(): void
     {
         if ($this->needSave) {
             if (empty($this->data)) {
@@ -340,7 +331,7 @@ class Session
      *
      * @return void
      */
-    public static function init()
+    public static function init(): void
     {
         if (($gcProbability = (int)ini_get('session.gc_probability')) && ($gcDivisor = (int)ini_get('session.gc_divisor'))) {
             static::$gcProbability = [$gcProbability, $gcDivisor];
@@ -399,7 +390,7 @@ class Session
      *
      * @return void
      */
-    protected static function initHandler()
+    protected static function initHandler(): void
     {
         if (static::$handlerConfig === null) {
             static::$handler = new static::$handlerClass();
@@ -413,7 +404,7 @@ class Session
      *
      * @return void
      */
-    public function gc()
+    public function gc(): void
     {
         static::$handler->gc(static::$lifetime);
     }
@@ -437,7 +428,7 @@ class Session
      *
      * @param string $sessionId
      */
-    protected static function checkSessionId(string $sessionId)
+    protected static function checkSessionId(string $sessionId): void
     {
         if (!preg_match('/^[a-zA-Z0-9]+$/', $sessionId)) {
             throw new RuntimeException("session_id $sessionId is invalid");

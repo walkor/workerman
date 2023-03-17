@@ -16,11 +16,6 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols;
 
-use function pack;
-use function strlen;
-use function substr;
-use function unpack;
-
 /**
  * Frame Protocol.
  */
