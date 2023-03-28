@@ -188,7 +188,7 @@ class Request
      * @param string|null $name
      * @return array|null
      */
-    public function file(string $name = null): ?array
+    public function file(string $name = null)
     {
         if (!isset($this->data['files'])) {
             $this->parsePost();
