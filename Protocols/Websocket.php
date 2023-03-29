@@ -226,9 +226,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      */
     public static function encode($buffer, ConnectionInterface $connection)
     {
-        if (!is_scalar($buffer)) {
-            throw new \Exception("You can't send(" . \gettype($buffer) . ") to client, you need to convert it to a string. ");
-        }
+        $buffer = (string) $buffer;
         $len = \strlen($buffer);
         if (empty($connection->websocketType)) {
             $connection->websocketType = static::BINARY_TYPE_BLOB;
