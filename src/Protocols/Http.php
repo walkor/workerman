@@ -124,14 +124,14 @@ class Http
         }
 
         $header = substr($buffer, 0, $crlfPos);
-        $hostHeaderPosition = strpos($header, "\r\nHost: ");
+        $hostHeaderPosition = stripos($header, "\r\nHost: ");
 
         if (false === $hostHeaderPosition && $firstLine[2] === "HTTP/1.1") {
             $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
             return 0;
         }
 
-        if ($pos = strpos($header, "\r\nContent-Length: ")) {
+        if ($pos = stripos($header, "\r\nContent-Length: ")) {
             $length = $length + (int)substr($header, $pos + 18, 10);
             $hasContentLength = true;
         } else if (preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
