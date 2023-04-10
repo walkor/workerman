@@ -1099,7 +1099,7 @@ class Worker
                 $pid = $pidMath[0];
                 $dataWaitingSort[$pid] = $value;
                 if (preg_match('/^\S+?\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?(\S+?)\s+?/', $value, $match)) {
-                    $totalMemory += (int)str_ireplace('M', '', $match[1]);
+                    $totalMemory += (float)str_ireplace('M', '', $match[1]);
                     $maxLen1 = max($maxLen1, strlen($match[2]));
                     $maxLen2 = max($maxLen2, strlen($match[3]));
                     $totalConnections += (int)$match[4];
