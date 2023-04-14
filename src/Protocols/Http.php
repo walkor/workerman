@@ -212,10 +212,10 @@ class Http
                 foreach ($connection->headers as $name => $value) {
                     if (is_array($value)) {
                         foreach ($value as $item) {
-                            $extHeader = "$name: $item\r\n";
+                            $extHeader .= "$name: $item\r\n";
                         }
                     } else {
-                        $extHeader = "$name: $value\r\n";
+                        $extHeader .= "$name: $value\r\n";
                     }
                 }
                 $connection->headers = [];
