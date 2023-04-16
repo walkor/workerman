@@ -24,6 +24,8 @@
 |
 */
 
+use Workerman\Connection\TcpConnection;
+
 expect()->extend('toBeOne', function () {
     return $this->toBe(1);
 });
@@ -42,4 +44,17 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+function testWithConnectionClose(Closure $closure, string $dataContains = null, $connectionClass = TcpConnection::class): void
+{
+    $tcpConnection = Mockery::spy($connectionClass);
+    $closure($tcpConnection);
+    if ($dataContains) {
+        $tcpConnection->shouldHaveReceived('close', function ($actual) use ($dataContains) {
+            return str_contains($actual, $dataContains);
+        });
+    } else {
+        $tcpConnection->shouldHaveReceived('close');
+    }
 }

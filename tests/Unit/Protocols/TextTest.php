@@ -7,6 +7,12 @@ test(Text::class, function () {
     $connection = Mockery::mock(ConnectionInterface::class);
 
     //::input
+    //input too long
+    testWithConnectionClose(function ($connection) {
+        $connection->maxPackageSize = 5;
+        expect(Text::input('abcdefgh', $connection))
+            ->toBe(0);
+    });
     //input without "\n"
     expect(Text::input('jhdxr', $connection))
         ->toBe(0);

@@ -20,20 +20,8 @@ it('customizes request class', function () {
 });
 
 it('tests ::input', function () {
-    $testWithConnectionClose = function (Closure $closure, string $dataContains = null) {
-        $tcpConnection = Mockery::spy(TcpConnection::class);
-        $closure($tcpConnection);
-        if ($dataContains) {
-            $tcpConnection->shouldHaveReceived('close', function ($actual) use ($dataContains) {
-                return str_contains($actual, $dataContains);
-            });
-        } else {
-            $tcpConnection->shouldHaveReceived('close');
-        }
-    };
-
     //test 413 payload too large
-    $testWithConnectionClose(function (TcpConnection $tcpConnection) {
+    testWithConnectionClose(function (TcpConnection $tcpConnection) {
         expect(Http::input(str_repeat('jhdxr', 3333), $tcpConnection))
             ->toBe(0);
     }, '413 Payload Too Large');
@@ -47,19 +35,19 @@ it('tests ::input', function () {
         '{"key": "value", "foo": "bar"}';
 
     //unrecognized method
-    $testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
+    testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
         expect(Http::input(str_replace('POST', 'MIAOWU', $buffer), $tcpConnection))
             ->toBe(0);
     }, '400 Bad Request');
 
     //HTTP 1.1 without Host header
-    $testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
+    testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
         expect(Http::input(str_replace("Host: ", 'NotHost: ', $buffer), $tcpConnection))
             ->toBe(0);
     }, '400 Bad Request');
 
     //content-length exceeds connection max package size
-    $testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
+    testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
         $tcpConnection->maxPackageSize = 10;
         expect(Http::input($buffer, $tcpConnection))
             ->toBe(0);
