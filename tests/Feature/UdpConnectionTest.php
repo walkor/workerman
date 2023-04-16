@@ -27,6 +27,5 @@ it('tests udp connection', function () {
         }, null, false);
     };
     Worker::runAll();
-})
-    //require posix, multiple workers
-    ->skip(PHP_OS_FAMILY === 'Windows', 'necessary features are not supported on Windows');
+})->skipOnWindows() //require posix, multiple workers
+->skip(message: 'this test needs to run isolated process while pest not support doing so yet');
