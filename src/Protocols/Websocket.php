@@ -360,8 +360,7 @@ class Websocket
                 $SecWebSocketKey = $match[1];
             } else {
                 $connection->close(
-					'HTTP/1.1 200 OK\r\nServer: '. Worker::$processTitle . ' ('. Worker::VERSION . ')'
-					. '\r\n\r\n<div style="text-align:center"><h1>WebSocket</h1><hr>'. Worker::$processTitle . '/' . Worker::VERSION . '</div>', true);
+					"HTTP/1.0 200 OK\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman</div>", true);
                 return 0;
             }
             // Calculation websocket key.
@@ -408,7 +407,7 @@ class Websocket
                 }
             }
             if (!$hasServerHeader) {
-                $handshakeMessage .= 'Server: ' . Worker::$processTitle . ' ('. Worker::VERSION . ')' . "\r\n";
+                $handshakeMessage .= "Server: workerman\r\n";
             }
             $handshakeMessage .= "\r\n";
             // Send handshake response.
@@ -428,8 +427,7 @@ class Websocket
         }
         // Bad websocket handshake request.
         $connection->close(
-			'HTTP/1.1 200 OK\r\nServer: ' . Worker::$processTitle . ' ('. Worker::VERSION . ')'
-			. '\r\n\r\n<div style="text-align:center"><h1>WebSocket</h1><hr>'. Worker::$processTitle . '/' . Worker::VERSION . '</div>', true);
+            "HTTP/1.0 200 OK\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman</div>", true);
         return 0;
     }
 

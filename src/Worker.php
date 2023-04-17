@@ -317,13 +317,6 @@ class Worker
     public static string $eventLoopClass = '';
 
     /**
-     * Process title
-     *
-     * @var string
-     */
-    public static string $processTitle = 'WorkerMan';
-
-    /**
      * After sending the stop command to the child process stopTimeout seconds,
      * if the process is still living then forced to kill.
      *
@@ -637,7 +630,7 @@ class Worker
         static::$globalStatistics['start_timestamp'] = time();
 
         // Process title.
-        static::setProcessTitle(static::$processTitle . ': master process  start_file=' . static::$startFile);
+        static::setProcessTitle('WorkerMan: master process  start_file=' . static::$startFile);
 
         // Init data for worker id.
         static::initId();
@@ -1594,7 +1587,7 @@ class Worker
 
             restore_error_handler();
 
-            static::setProcessTitle(self::$processTitle . ': worker process  ' . $worker->name . ' ' . $worker->getSocketName());
+            static::setProcessTitle('WorkerMan: worker process  ' . $worker->name . ' ' . $worker->getSocketName());
             $worker->setUserAndGroup();
             $worker->id = $id;
             $worker->run();
@@ -2608,7 +2601,7 @@ class Worker
         }
 
         $cmdline = "/proc/$masterPid/cmdline";
-        if (!is_readable($cmdline) || empty(static::$processTitle)) {
+        if (!is_readable($cmdline)) {
             return true;
         }
 
@@ -2617,7 +2610,7 @@ class Worker
             return true;
         }
 
-        return stripos($content, static::$processTitle) !== false || stripos($content, 'php') !== false;
+        return stripos($content, 'WorkerMan') !== false || stripos($content, 'php') !== false;
     }
 }
 
