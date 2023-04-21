@@ -274,7 +274,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             if (\strlen($connection->context->tmpWebsocketData) > $connection->maxSendBufferSize) {
                 if ($connection->onError) {
                     try {
-                        ($connection->onError)($connection, ConnectionInterface::SEND_FAIL, 'send buffer full and drop package');
+                        ($connection->onError)($connection, WORKERMAN_SEND_FAIL, 'send buffer full and drop package');
                     } catch (\Throwable $e) {
                         Worker::stopAll(250, $e);
                     }
