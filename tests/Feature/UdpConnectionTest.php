@@ -20,8 +20,7 @@ beforeAll(function () use ($serverAddress) {
             }
             \$connection->send('received: '.\$data);
         };
-        global \$argv;
-        \$argv = ['', 'start'];
+        Worker::$command = 'start';
         Worker::runAll();
     PHP
     );
