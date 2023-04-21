@@ -49,7 +49,7 @@ class Worker
      *
      * @var string
      */
-    public const VERSION = '5.0.0-beta.3';
+    public const VERSION = '5.0.0-beta.5';
 
     /**
      * Status starting.
@@ -647,9 +647,8 @@ class Worker
      */
     protected static function lock(int $flag = LOCK_EX): void
     {
-        global $argv;
         static $fd;
-        if (DIRECTORY_SEPARATOR !== '/' || empty($argv)) {
+        if (DIRECTORY_SEPARATOR !== '/') {
             return;
         }
         $lockFile = static::$pidFile . '.lock';
@@ -827,9 +826,7 @@ class Worker
         !empty($content) && static::safeEcho($lineLast);
 
         if (static::$daemonize) {
-            global $argv;
-            $startFile = $argv[0];
-            static::safeEcho('Input "php ' . $startFile . ' stop" to stop. Start success.' . "\n\n");
+            static::safeEcho('Input "php ' . basename(static::$startFile) . ' stop" to stop. Start success.' . "\n\n");
         } else {
             static::safeEcho("Press Ctrl+C to stop. Start success.\n");
         }
@@ -883,14 +880,12 @@ class Worker
      */
     protected static function parseCommand(): void
     {
-        global $argv;
-
-        if (DIRECTORY_SEPARATOR !== '/' || empty($argv)) {
+        if (DIRECTORY_SEPARATOR !== '/') {
             return;
         }
 
         // Check argv;
-        $startFile = $argv[0];
+        $startFile = basename(static::$startFile);
         $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in DEBUG mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
         $availableCommands = [
             'start',
@@ -906,9 +901,10 @@ class Worker
         ];
         $command = $mode = '';
         foreach (static::getArgv() as $value) {
-            if (in_array($value, $availableCommands)) {
+            if (!$command && in_array($value, $availableCommands)) {
                 $command = $value;
-            } elseif (in_array($value, $availableMode)) {
+            }
+            if (!$mode && in_array($value, $availableMode)) {
                 $mode = $value;
             }
         }
@@ -1046,7 +1042,7 @@ class Worker
     public static function getArgv(): array
     {
         global $argv;
-        return isset($argv[1]) ? $argv : (static::$command ? explode(' ', static::$command) : $argv);
+        return static::$command ? array_merge($argv, explode(' ', static::$command)) : $argv;
     }
 
     /**
@@ -1297,8 +1293,7 @@ class Worker
      */
     protected static function saveMasterPid(): void
     {
-        global $argv;
-        if (DIRECTORY_SEPARATOR !== '/' || empty($argv)) {
+        if (DIRECTORY_SEPARATOR !== '/') {
             return;
         }
 
