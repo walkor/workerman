@@ -20,7 +20,7 @@ beforeAll(function () use ($serverAddress) {
             }
             \$connection->send('received: '.\$data);
         };
-        Worker::$command = 'start';
+        Worker::\$command = 'start';
         Worker::runAll();
     PHP
     );
