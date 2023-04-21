@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - feature/tests
+      - feature/feature-tests
   pull_request:
   schedule:
     - cron: '0 0 * * *'
@@ -29,7 +30,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: json
+          extensions: json, posix, pcntl
           ini-values: error_reporting=E_ALL
           tools: composer:v2
           coverage: xdebug

@@ -59,7 +59,7 @@ function testWithConnectionClose(Closure $closure, string $dataContains = null, 
     }
 }
 
-function terminate_current_test()
+function terminate_current_process()
 {
     posix_kill(posix_getppid(), SIGINT);
 }
