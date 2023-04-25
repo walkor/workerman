@@ -652,6 +652,8 @@ class Request
                             if ($tmpFile === false || false === file_put_contents($tmpFile, $boundaryValue)) {
                                 $error = UPLOAD_ERR_CANT_WRITE;
                             }
+                            $this->uploadedFiles[] = $tmpFile;
+                            self::$globalUploadedFiles[] = $tmpFile;
                         }
                         $uploadKey = $fileName;
                         // Parse upload files.
