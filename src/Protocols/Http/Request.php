@@ -152,7 +152,19 @@ class Request
                 if (!in_array($from, Request::$globalUploadedFiles, true)) {
                     return false;
                 }
-                return rename($from, $to);
+                $successful = false;
+                if (rename($from, $to)) {
+                    $successful = true;
+                } elseif (copy($from, $to)) {
+                    unlink($from);
+                    $successful = true;
+                }
+                if($successful) {
+                    Request::$globalUploadedFiles = array_diff(Request::$globalUploadedFiles, [$from]);
+                }else{
+                    trigger_error(sprintf('Unable to move "%s" to "%s"', $from, $to), E_USER_WARNING);
+                }
+                return $successful;
             }
         }
     }
