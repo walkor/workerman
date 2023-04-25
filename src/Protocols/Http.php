@@ -319,6 +319,18 @@ class Http
         $doWrite();
     }
 
+    public static function onClose(TcpConnection $connection): void
+    {
+        $globalUploadedFiles = Request::getGlobalUploadedFiles();
+        if(!empty($globalUploadedFiles)){
+            foreach ($globalUploadedFiles as $file){
+                if(is_file($file)){
+                    unlink($file);
+                }
+            }
+        }
+    }
+
     /**
      * Set or get uploadTmpDir.
      *

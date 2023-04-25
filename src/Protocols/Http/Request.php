@@ -731,6 +731,11 @@ class Request
             . (!$cookieParams['httponly'] ? '' : '; HttpOnly')];
     }
 
+    public static function getGlobalUploadedFiles(): array
+    {
+        return self::$globalUploadedFiles;
+    }
+
     /**
      * __toString.
      */
@@ -791,15 +796,15 @@ class Request
      */
     public function __destruct()
     {
-        if (isset($this->data['files'])) {
+        if (!empty($this->uploadedFiles)) {
             clearstatcache();
-            array_walk_recursive($this->data['files'], function ($value, $key) {
-                if ($key === 'tmp_name') {
-                    if (is_file($value)) {
-                        unlink($value);
-                    }
+            foreach ($this->uploadedFiles as $file) {
+                if (is_file($file)) {
+                    unlink($file);
                 }
-            });
+            }
+            self::$globalUploadedFiles = array_diff(self::$globalUploadedFiles, $this->uploadedFiles);
+            $this->uploadedFiles = [];
         }
     }
 }
