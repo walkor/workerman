@@ -70,6 +70,8 @@ class Request
      */
     public static int $maxFileUploads;
 
+    public static int $uploadMaxFilesize;
+
     /**
      * Properties.
      *
@@ -137,6 +139,14 @@ class Request
         }
         static::$maxFileUploads = (int)$maxFileUploads;
 
+        if (function_exists('ini_parse_quantity') &&
+            ($uploadMaxFilesize = ini_get('upload_max_filesize')) !== false) {
+            static::$uploadMaxFilesize = ini_parse_quantity($uploadMaxFilesize);
+        } else {
+            //ini_parse_quantity is introduced in PHP 8.2, ignoring this for old versions
+            static::$uploadMaxFilesize = PHP_INT_MAX;
+        }
+
         //since php8 it's possible to override built-in functions by disabling them
         //provide workerman compatible implementations if applies
         //WARNING: THIS REQUIRES PHP8.0.0 OR HIGHER, do not backport to older versions
@@ -159,9 +169,9 @@ class Request
                     unlink($from);
                     $successful = true;
                 }
-                if($successful) {
+                if ($successful) {
                     Request::$globalUploadedFiles = array_diff(Request::$globalUploadedFiles, [$from]);
-                }else{
+                } else {
                     trigger_error(sprintf('Unable to move "%s" to "%s"', $from, $to), E_USER_WARNING);
                 }
                 return $successful;
@@ -655,9 +665,11 @@ class Request
                         $fileName = $match[1];
                         $size = strlen($boundaryValue);
                         $tmpUploadDir = HTTP::uploadTmpDir();
-                        if (!$tmpUploadDir) {
+                        if ($size > static::$uploadMaxFilesize) {
+                            $error = UPLOAD_ERR_INI_SIZE;
+                        } elseif (!$tmpUploadDir) {
                             $error = UPLOAD_ERR_NO_TMP_DIR;
-                        } else if ($boundaryValue === '' && $fileName === '') {
+                        } elseif ($boundaryValue === '' && $fileName === '') {
                             $error = UPLOAD_ERR_NO_FILE;
                         } else {
                             $tmpFile = tempnam($tmpUploadDir, 'workerman.upload.');
