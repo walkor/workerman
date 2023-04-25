@@ -322,13 +322,15 @@ class Http
     public static function onClose(TcpConnection $connection): void
     {
         $globalUploadedFiles = Request::getGlobalUploadedFiles();
-        if(!empty($globalUploadedFiles)){
-            foreach ($globalUploadedFiles as $file){
-                if(is_file($file)){
+        if (!empty($globalUploadedFiles)) {
+            foreach ($globalUploadedFiles as $file) {
+                if (is_file($file)) {
                     unlink($file);
                 }
             }
         }
+
+        $connection->request?->session?->gc();
     }
 
     /**
