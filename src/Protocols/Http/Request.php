@@ -68,7 +68,7 @@ class Request
     /**
      * @var int
      */
-    public static int $maxFileUploads = 1024;
+    public static int $maxFileUploads;
 
     /**
      * Properties.
@@ -99,6 +99,27 @@ class Request
     protected static bool $enableCache = true;
 
     /**
+     * Uploaded files within the request.
+     * This array stores all temporary files' path ($_FILE['xxx']['tmp_name']).
+     * Used to clean temporary files when possible.
+     *
+     * @var array
+     * @internal
+     */
+    protected array $uploadedFiles = [];
+
+    /**
+     * Similar to self::$uploadedFiles, but globally.
+     * Used for is_uploaded_file() and move_uploaded_file(),
+     * as these two functions are not bind with any request context
+     * thus we are not able to distinguish between different requests.
+     *
+     * @var array
+     * @internal
+     */
+    protected static array $globalUploadedFiles = [];
+
+    /**
      * Request constructor.
      *
      * @param string $buffer
@@ -106,6 +127,34 @@ class Request
     public function __construct(string $buffer)
     {
         $this->buffer = $buffer;
+    }
+
+    public static function init(): void
+    {
+        //try to get max_file_uploads from php.ini. If not exists, set it to workerman's default value.
+        if (($maxFileUploads = ini_get('max_file_uploads')) === false) {
+            $maxFileUploads = 1024;
+        }
+        static::$maxFileUploads = (int)$maxFileUploads;
+
+        //since php8 it's possible to override built-in functions by disabling them
+        //provide workerman compatible implementations if applies
+        //WARNING: THIS REQUIRES PHP8.0.0 OR HIGHER, do not backport to older versions
+        if (!function_exists('is_uploaded_file')) {
+            function is_uploaded_file(string $filename): bool
+            {
+                return in_array($filename, Request::$globalUploadedFiles, true);
+            }
+        }
+        if (!function_exists('move_uploaded_file')) {
+            function move_uploaded_file(string $from, string $to): bool
+            {
+                if (!in_array($from, Request::$globalUploadedFiles, true)) {
+                    return false;
+                }
+                return rename($from, $to);
+            }
+        }
     }
 
     /**
@@ -589,7 +638,7 @@ class Request
                 case "content-disposition":
                     // Is file data.
                     if (preg_match('/name="(.*?)"; filename="(.*?)"/i', $value, $match)) {
-                        $error = 0;
+                        $error = UPLOAD_ERR_OK;
                         $tmpFile = '';
                         $fileName = $match[1];
                         $size = strlen($boundaryValue);

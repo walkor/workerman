@@ -637,6 +637,9 @@ class Worker
 
         // Timer init.
         Timer::init();
+
+        // init HTTP Request
+        \Workerman\Protocols\Http\Request::init();
     }
 
     /**
