@@ -10,6 +10,6 @@ it('tests ' . ServerSentEvents::class, function () {
         'retry' => 5000,
     ];
     $sse = new ServerSentEvents($data);
-    $expected = "event: {$data['event']}\ndata: {$data['data']}\n\nid: {$data['id']}\nretry: {$data['retry']}\n";
+    $expected = "event: {$data['event']}\nid: {$data['id']}\nretry: {$data['retry']}\ndata: {$data['data']}\n\n";
     expect((string)$sse)->toBe($expected);
 });
