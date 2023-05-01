@@ -34,7 +34,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.1.10';
+    const VERSION = '4.1.11';
 
     /**
      * Status starting.
