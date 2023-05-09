@@ -783,10 +783,10 @@ class Worker
             return;
         }
         if (DIRECTORY_SEPARATOR !== '/') {
-            static::safeEcho("----------------------- WORKERMAN -----------------------------\r\n");
-            static::safeEcho('Workerman version:' . static::VERSION . '          PHP version:' . PHP_VERSION . "\r\n");
-            static::safeEcho("------------------------ WORKERS -------------------------------\r\n");
-            static::safeEcho("worker               listen                              processes status\r\n");
+            static::safeEcho("---------------------------------------------- WORKERMAN -----------------------------------------------\r\n");
+            static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. \PHP_VERSION. "\r\n");
+            static::safeEcho("----------------------------------------------- WORKERS ------------------------------------------------\r\n");
+            static::safeEcho("worker                                          listen                              processes   status\r\n");
             return;
         }
 
@@ -1438,7 +1438,7 @@ class Worker
             restore_error_handler();
 
             // Display UI.
-            static::safeEcho(str_pad($worker->name, 21) . str_pad($worker->getSocketName(), 36) . str_pad('1', 10) . "[ok]\n");
+            static::safeEcho(str_pad($worker->name, 48) . str_pad($worker->getSocketName(), 36) . str_pad('1', 10) . "  [ok]\n");
             $worker->listen();
             $worker->run();
             static::$globalEvent->run();
