@@ -427,7 +427,7 @@ class Response
         if (!isset($headers['Transfer-Encoding'])) {
             $head .= "Content-Length: $body_len\r\n\r\n";
         } else {
-            return "$head\r\n".dechex($body_len)."\r\n{$this->_body}\r\n";
+            return $body_len ? "$head\r\n" . dechex($body_len) . "\r\n{$this->_body}\r\n" : "$head\r\n";
         }
 
         // The whole http package
