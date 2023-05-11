@@ -150,10 +150,6 @@ class Request
             $this->_data['cookie'] = array();
             \parse_str(\preg_replace('/; ?/', '&', $this->header('cookie', '')), $this->_data['cookie']);
             foreach ($this->_data['cookie'] as $key => $value) {
-                if ($key[0] ?? '' === '$') {
-                    unset($this->_data['cookie'][$key]);
-                    continue;
-                }
                 $this->_data['cookie'][$key] = trim($value, '"');
             }
         }
