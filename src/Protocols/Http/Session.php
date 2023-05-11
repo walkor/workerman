@@ -439,7 +439,7 @@ class Session
      */
     protected static function checkSessionId(string $sessionId): void
     {
-        if (!preg_match('/^[a-zA-Z0-9]+$/', $sessionId)) {
+        if (!preg_match('/^[a-zA-Z0-9"]+$/', $sessionId)) {
             throw new RuntimeException("session_id $sessionId is invalid");
         }
     }
