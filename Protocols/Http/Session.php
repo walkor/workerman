@@ -422,7 +422,7 @@ class Session
      */
     protected static function checkSessionId($session_id)
     {
-        if (!\preg_match('/^[a-zA-Z0-9]+$/', $session_id)) {
+        if (!\preg_match('/^[a-zA-Z0-9"]+$/', $session_id)) {
             throw new SessionException("session_id $session_id is invalid");
         }
     }
