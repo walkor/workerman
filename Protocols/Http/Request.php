@@ -149,9 +149,6 @@ class Request
         if (!isset($this->_data['cookie'])) {
             $this->_data['cookie'] = array();
             \parse_str(\preg_replace('/; ?/', '&', $this->header('cookie', '')), $this->_data['cookie']);
-            foreach ($this->_data['cookie'] as $key => $value) {
-                $this->_data['cookie'][$key] = trim($value, '"');
-            }
         }
         if ($name === null) {
             return $this->_data['cookie'];
