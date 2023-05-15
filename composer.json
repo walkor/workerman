@@ -3,7 +3,9 @@
     "type": "library",
     "keywords": [
         "event-loop",
-        "asynchronous"
+        "asynchronous",
+        "http",
+        "framework"
     ],
     "homepage": "https://www.workerman.net",
     "license": "MIT",
