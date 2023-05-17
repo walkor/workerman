@@ -435,7 +435,7 @@ class Request
         $headData = explode("\r\n", $headBuffer);
         foreach ($headData as $content) {
             if (str_contains($content, ':')) {
-                list($key, $value) = explode(':', $content, 2);
+                [$key, $value] = explode(':', $content, 2);
                 $key = strtolower($key);
                 $value = ltrim($value);
             } else {
@@ -584,7 +584,7 @@ class Request
             if (!strpos($contentLine, ': ')) {
                 return 0;
             }
-            list($key, $value) = explode(': ', $contentLine);
+            [$key, $value] = explode(': ', $contentLine);
             switch (strtolower($key)) {
                 case "content-disposition":
                     // Is file data.

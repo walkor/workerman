@@ -1771,7 +1771,7 @@ class Worker
         foreach (static::$workers as $worker) {
             $socketName = $worker->getSocketName();
             if ($worker->transport === 'unix' && $socketName) {
-                list(, $address) = explode(':', $socketName, 2);
+                [, $address] = explode(':', $socketName, 2);
                 $address = substr($address, strpos($address, '/') + 2);
                 @unlink($address);
             }
@@ -2363,7 +2363,7 @@ class Worker
             return null;
         }
         // Get the application layer communication protocol and listening address.
-        list($scheme, $address) = explode(':', $this->socketName, 2);
+        [$scheme, $address] = explode(':', $this->socketName, 2);
         // Check application layer protocol class.
         if (!isset(self::BUILD_IN_TRANSPORTS[$scheme])) {
             $scheme = ucfirst($scheme);
