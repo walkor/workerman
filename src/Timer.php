@@ -23,7 +23,6 @@ use Workerman\Events\Revolt;
 use Workerman\Events\Swoole;
 use Workerman\Events\Swow;
 use function function_exists;
-use function is_callable;
 use function pcntl_alarm;
 use function pcntl_signal;
 use function time;
