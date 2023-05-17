@@ -110,7 +110,6 @@ class Http
             // Judge whether the package length exceeds the limit.
             if (strlen($buffer) >= 16384) {
                 $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
-                return 0;
             }
             return 0;
         }
