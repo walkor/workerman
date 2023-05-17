@@ -607,7 +607,9 @@ class Request
                         $uploadKey = $fileName;
                         // Parse upload files.
                         $file = [...$file, 'name' => $match[2], 'tmp_name' => $tmpFile, 'size' => $size, 'error' => $error];
-                        if (!isset($file['type'])) $file['type'] = '';
+                        if (!isset($file['type'])) {
+                            $file['type'] = '';
+                        }
                         break;
                     } // Is post field.
                     else {

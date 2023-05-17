@@ -201,7 +201,9 @@ class Timer
                     }
                     if ($persistent && !empty(self::$status[$index])) {
                         $newRunTime = time() + $timeInterval;
-                        if (!isset(self::$tasks[$newRunTime])) self::$tasks[$newRunTime] = [];
+                        if (!isset(self::$tasks[$newRunTime])) {
+                            self::$tasks[$newRunTime] = [];
+                        }
                         self::$tasks[$newRunTime][$index] = [$taskFunc, (array)$taskArgs, $persistent, $timeInterval];
                     }
                 }

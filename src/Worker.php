@@ -2549,8 +2549,9 @@ class Worker
                     if ($parser && method_exists($parser, 'input')) {
                         while ($recvBuffer !== '') {
                             $len = $parser::input($recvBuffer, $connection);
-                            if ($len === 0)
+                            if ($len === 0) {
                                 return true;
+                            }
                             $package = substr($recvBuffer, 0, $len);
                             $recvBuffer = substr($recvBuffer, $len);
                             $data = $parser::decode($package, $connection);
