@@ -731,10 +731,8 @@ class Request
         if (isset($this->data['files'])) {
             clearstatcache();
             array_walk_recursive($this->data['files'], function ($value, $key) {
-                if ($key === 'tmp_name') {
-                    if (is_file($value)) {
-                        unlink($value);
-                    }
+                if ($key === 'tmp_name' && is_file($value)) {
+                    unlink($value);
                 }
             });
         }

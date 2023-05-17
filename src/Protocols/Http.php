@@ -145,11 +145,9 @@ class Http
             }
         }
 
-        if ($hasContentLength) {
-            if ($length > $connection->maxPackageSize) {
-                $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
-                return 0;
-            }
+        if ($hasContentLength && $length > $connection->maxPackageSize) {
+            $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
+            return 0;
         }
 
         if (!isset($buffer[512])) {

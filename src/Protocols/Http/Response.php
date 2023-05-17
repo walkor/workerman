@@ -414,10 +414,8 @@ class Response
             $head .= "Content-Disposition: attachment; filename=\"$baseName\"\r\n";
         }
 
-        if (!isset($headers['Last-Modified'])) {
-            if ($mtime = filemtime($file)) {
-                $head .= 'Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT' . "\r\n";
-            }
+        if (!isset($headers['Last-Modified']) && $mtime = filemtime($file)) {
+            $head .= 'Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT' . "\r\n";
         }
 
         return "$head\r\n";
