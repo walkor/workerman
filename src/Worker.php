@@ -1042,7 +1042,7 @@ class Worker
     public static function getArgv(): array
     {
         global $argv;
-        return static::$command ? array_merge($argv, explode(' ', static::$command)) : $argv;
+        return static::$command ? [...$argv, ...explode(' ', static::$command)] : $argv;
     }
 
     /**
@@ -2259,7 +2259,7 @@ class Worker
             && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
             && strpos($socketName,'unix') !== 0 // if not unix socket
             && strpos($socketName,'udp') !== 0) { // if not udp socket
-            
+
             $address = \parse_url($socketName);
             if (isset($address['host']) && isset($address['port'])) {
                 try {
@@ -2608,4 +2608,3 @@ class Worker
         return stripos($content, 'WorkerMan') !== false || stripos($content, 'php') !== false;
     }
 }
-
