@@ -279,7 +279,7 @@ class Ws
             }
             $connection->context->tmpWebsocketData = $connection->context->tmpWebsocketData . $frame;
             // Check buffer is full.
-            if ($connection->maxSendBufferSize <= strlen($connection->context->tmpWebsocketData) && $connection->onBufferFull) {
+            if ($connection->onBufferFull && $connection->maxSendBufferSize <= strlen($connection->context->tmpWebsocketData)) {
                 try {
                     ($connection->onBufferFull)($connection);
                 } catch (Throwable $e) {

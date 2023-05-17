@@ -939,7 +939,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      */
     protected function checkBufferWillFull(): void
     {
-        if ($this->maxSendBufferSize <= strlen($this->sendBuffer) && $this->onBufferFull) {
+        if ($this->onBufferFull && $this->maxSendBufferSize <= strlen($this->sendBuffer)) {
             try {
                 ($this->onBufferFull)($this);
             } catch (Throwable $e) {

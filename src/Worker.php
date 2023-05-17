@@ -1400,7 +1400,7 @@ class Worker
     protected static function forkWorkersForWindows(): void
     {
         $files = static::getStartFilesForWindows();
-        if (in_array('-q', static::getArgv()) || count($files) === 1) {
+        if (count($files) === 1 || in_array('-q', static::getArgv())) {
             if (count(static::$workers) > 1) {
                 static::safeEcho("@@@ Error: multi workers init in one php file are not support @@@\r\n");
                 static::safeEcho("@@@ See https://www.workerman.net/doc/workerman/faq/multi-woker-for-windows.html @@@\r\n");
