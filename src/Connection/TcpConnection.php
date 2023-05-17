@@ -686,7 +686,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 // The data is enough for a packet.
                 ++self::$statistics['total_request'];
                 // The current packet length is equal to the length of the buffer.
-                if ($one = strlen($this->recvBuffer) === $this->currentPackageLength) {
+                if ($one = (strlen($this->recvBuffer) === $this->currentPackageLength)) {
                     $oneRequestBuffer = $this->recvBuffer;
                     $this->recvBuffer = '';
                 } else {
