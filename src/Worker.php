@@ -1448,15 +1448,15 @@ class Worker
                 exit(250);
             }
             exit(0);
-        } else {
-            static::$globalEvent = new Select();
-            static::$globalEvent->setErrorHandler(function ($exception) {
-                static::stopAll(250, $exception);
-            });
-            Timer::init(static::$globalEvent);
-            foreach ($files as $startFile) {
-                static::forkOneWorkerForWindows($startFile);
-            }
+        }
+
+        static::$globalEvent = new Select();
+        static::$globalEvent->setErrorHandler(function ($exception) {
+            static::stopAll(250, $exception);
+        });
+        Timer::init(static::$globalEvent);
+        foreach ($files as $startFile) {
+            static::forkOneWorkerForWindows($startFile);
         }
     }
 

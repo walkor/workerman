@@ -181,7 +181,9 @@ class Ws
                     }
                     return 0;
 
-                } else if ($opcode === 0xa) {
+                }
+
+                if ($opcode === 0xa) {
                     if ($recvLen >= $currentFrameLength) {
                         $pongData = static::decode(substr($buffer, 0, $currentFrameLength), $connection);
                         $connection->consumeRecvBuffer($currentFrameLength);
@@ -203,9 +205,9 @@ class Ws
                     return 0;
                 }
                 return $currentFrameLength;
-            } else {
-                $connection->context->websocketCurrentFrameLength = $currentFrameLength;
             }
+
+            $connection->context->websocketCurrentFrameLength = $currentFrameLength;
         }
         // Received just a frame length data.
         if ($connection->context->websocketCurrentFrameLength === $recvLen) {
@@ -310,13 +312,13 @@ class Ws
         if ($connection->context->websocketCurrentFrameLength) {
             $connection->context->websocketDataBuffer .= $decodedData;
             return $connection->context->websocketDataBuffer;
-        } else {
-            if ($connection->context->websocketDataBuffer !== '') {
-                $decodedData = $connection->context->websocketDataBuffer . $decodedData;
-                $connection->context->websocketDataBuffer = '';
-            }
-            return $decodedData;
         }
+
+        if ($connection->context->websocketDataBuffer !== '') {
+            $decodedData = $connection->context->websocketDataBuffer . $decodedData;
+            $connection->context->websocketDataBuffer = '';
+        }
+        return $decodedData;
     }
 
     /**

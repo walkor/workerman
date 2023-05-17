@@ -184,7 +184,9 @@ class Websocket
                         }
                     }
                     return 0;
-                } else if ($opcode === 0xa) {
+                }
+
+                if ($opcode === 0xa) {
                     if ($recvLen >= $currentFrameLength) {
                         $pongData = static::decode(substr($buffer, 0, $currentFrameLength), $connection);
                         $connection->consumeRecvBuffer($currentFrameLength);
@@ -207,9 +209,9 @@ class Websocket
                     return 0;
                 }
                 return $currentFrameLength;
-            } else {
-                $connection->context->websocketCurrentFrameLength = $currentFrameLength;
             }
+
+            $connection->context->websocketCurrentFrameLength = $currentFrameLength;
         }
 
         // Received just a frame length data.
@@ -218,18 +220,20 @@ class Websocket
             $connection->consumeRecvBuffer($connection->context->websocketCurrentFrameLength);
             $connection->context->websocketCurrentFrameLength = 0;
             return 0;
-        } // The length of the received data is greater than the length of a frame.
-        elseif ($connection->context->websocketCurrentFrameLength < $recvLen) {
+        }
+
+        // The length of the received data is greater than the length of a frame.
+        if ($connection->context->websocketCurrentFrameLength < $recvLen) {
             static::decode(substr($buffer, 0, $connection->context->websocketCurrentFrameLength), $connection);
             $connection->consumeRecvBuffer($connection->context->websocketCurrentFrameLength);
             $currentFrameLength = $connection->context->websocketCurrentFrameLength;
             $connection->context->websocketCurrentFrameLength = 0;
             // Continue to read next frame.
             return static::input(substr($buffer, $currentFrameLength), $connection);
-        } // The length of the received data is less than the length of a frame.
-        else {
-            return 0;
         }
+
+        // The length of the received data is less than the length of a frame.
+        return 0;
     }
 
     /**
@@ -325,13 +329,13 @@ class Websocket
         if ($connection->context->websocketCurrentFrameLength) {
             $connection->context->websocketDataBuffer .= $decoded;
             return $connection->context->websocketDataBuffer;
-        } else {
-            if ($connection->context->websocketDataBuffer !== '') {
-                $decoded = $connection->context->websocketDataBuffer . $decoded;
-                $connection->context->websocketDataBuffer = '';
-            }
-            return $decoded;
         }
+
+        if ($connection->context->websocketDataBuffer !== '') {
+            $decoded = $connection->context->websocketDataBuffer . $decoded;
+            $connection->context->websocketDataBuffer = '';
+        }
+        return $decoded;
     }
 
     /**

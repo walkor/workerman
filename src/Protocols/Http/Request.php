@@ -611,15 +611,14 @@ class Request
                             $file['type'] = '';
                         }
                         break;
-                    } // Is post field.
-                    else {
-                        // Parse $POST.
-                        if (preg_match('/name="(.*?)"$/', $value, $match)) {
-                            $k = $match[1];
-                            $postEncodeString .= urlencode($k) . "=" . urlencode($boundaryValue) . '&';
-                        }
-                        return $sectionEndOffset + strlen($boundary) + 2;
                     }
+                    // Is post field.
+                    // Parse $POST.
+                    if (preg_match('/name="(.*?)"$/', $value, $match)) {
+                        $k = $match[1];
+                        $postEncodeString .= urlencode($k) . "=" . urlencode($boundaryValue) . '&';
+                    }
+                    return $sectionEndOffset + strlen($boundary) + 2;
                 case "content-type":
                     $file['type'] = trim($value);
                     break;
