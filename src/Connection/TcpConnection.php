@@ -63,42 +63,42 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @var int
      */
-    const READ_BUFFER_SIZE = 87380;
+    public const READ_BUFFER_SIZE = 87380;
 
     /**
      * Status initial.
      *
      * @var int
      */
-    const STATUS_INITIAL = 0;
+    public const STATUS_INITIAL = 0;
 
     /**
      * Status connecting.
      *
      * @var int
      */
-    const STATUS_CONNECTING = 1;
+    public const STATUS_CONNECTING = 1;
 
     /**
      * Status connection established.
      *
      * @var int
      */
-    const STATUS_ESTABLISHED = 2;
+    public const STATUS_ESTABLISHED = 2;
 
     /**
      * Status closing.
      *
      * @var int
      */
-    const STATUS_CLOSING = 4;
+    public const STATUS_CLOSING = 4;
 
     /**
      * Status closed.
      *
      * @var int
      */
-    const STATUS_CLOSED = 8;
+    public const STATUS_CLOSED = 8;
 
     /**
      * Emitted when socket connection is successfully established.
@@ -319,7 +319,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @var array
      */
-    const STATUS_TO_STRING = [
+    public const STATUS_TO_STRING = [
         self::STATUS_INITIAL => 'INITIAL',
         self::STATUS_CONNECTING => 'CONNECTING',
         self::STATUS_ESTABLISHED => 'ESTABLISHED',

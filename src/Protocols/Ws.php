@@ -49,14 +49,14 @@ class Ws
      *
      * @var string
      */
-    const BINARY_TYPE_BLOB = "\x81";
+    public const BINARY_TYPE_BLOB = "\x81";
 
     /**
      * Websocket arraybuffer type.
      *
      * @var string
      */
-    const BINARY_TYPE_ARRAYBUFFER = "\x82";
+    public const BINARY_TYPE_ARRAYBUFFER = "\x82";
 
     /**
      * Check the integrity of the package.

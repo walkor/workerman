@@ -92,7 +92,7 @@ class Response
      *
      * @link https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
      */
-    const PHRASES = [
+    public const PHRASES = [
         100 => 'Continue',
         101 => 'Switching Protocols',
         102 => 'Processing', // WebDAV; RFC 2518

@@ -55,7 +55,7 @@ class AsyncTcpConnection extends TcpConnection
      *
      * @var array<string,string>
      */
-    const BUILD_IN_TRANSPORTS = [
+    public const BUILD_IN_TRANSPORTS = [
         'tcp' => 'tcp',
         'udp' => 'udp',
         'unix' => 'unix',
