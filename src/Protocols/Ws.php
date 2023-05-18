@@ -49,14 +49,14 @@ class Ws
      *
      * @var string
      */
-    const BINARY_TYPE_BLOB = "\x81";
+    public const BINARY_TYPE_BLOB = "\x81";
 
     /**
      * Websocket arraybuffer type.
      *
      * @var string
      */
-    const BINARY_TYPE_ARRAYBUFFER = "\x82";
+    public const BINARY_TYPE_ARRAYBUFFER = "\x82";
 
     /**
      * Check the integrity of the package.
@@ -181,7 +181,9 @@ class Ws
                     }
                     return 0;
 
-                } else if ($opcode === 0xa) {
+                }
+
+                if ($opcode === 0xa) {
                     if ($recvLen >= $currentFrameLength) {
                         $pongData = static::decode(substr($buffer, 0, $currentFrameLength), $connection);
                         $connection->consumeRecvBuffer($currentFrameLength);
@@ -203,9 +205,9 @@ class Ws
                     return 0;
                 }
                 return $currentFrameLength;
-            } else {
-                $connection->context->websocketCurrentFrameLength = $currentFrameLength;
             }
+
+            $connection->context->websocketCurrentFrameLength = $currentFrameLength;
         }
         // Received just a frame length data.
         if ($connection->context->websocketCurrentFrameLength === $recvLen) {
@@ -275,15 +277,13 @@ class Ws
                 }
                 return '';
             }
-            $connection->context->tmpWebsocketData = $connection->context->tmpWebsocketData . $frame;
+            $connection->context->tmpWebsocketData .= $frame;
             // Check buffer is full.
-            if ($connection->maxSendBufferSize <= strlen($connection->context->tmpWebsocketData)) {
-                if ($connection->onBufferFull) {
-                    try {
-                        ($connection->onBufferFull)($connection);
-                    } catch (Throwable $e) {
-                        Worker::stopAll(250, $e);
-                    }
+            if ($connection->onBufferFull && $connection->maxSendBufferSize <= strlen($connection->context->tmpWebsocketData)) {
+                try {
+                    ($connection->onBufferFull)($connection);
+                } catch (Throwable $e) {
+                    Worker::stopAll(250, $e);
                 }
             }
             return '';
@@ -312,13 +312,13 @@ class Ws
         if ($connection->context->websocketCurrentFrameLength) {
             $connection->context->websocketDataBuffer .= $decodedData;
             return $connection->context->websocketDataBuffer;
-        } else {
-            if ($connection->context->websocketDataBuffer !== '') {
-                $decodedData = $connection->context->websocketDataBuffer . $decodedData;
-                $connection->context->websocketDataBuffer = '';
-            }
-            return $decodedData;
         }
+
+        if ($connection->context->websocketDataBuffer !== '') {
+            $decodedData = $connection->context->websocketDataBuffer . $decodedData;
+            $connection->context->websocketDataBuffer = '';
+        }
+        return $decodedData;
     }
 
     /**

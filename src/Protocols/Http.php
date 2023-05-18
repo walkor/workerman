@@ -110,7 +110,6 @@ class Http
             // Judge whether the package length exceeds the limit.
             if (strlen($buffer) >= 16384) {
                 $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
-                return 0;
             }
             return 0;
         }
@@ -132,10 +131,10 @@ class Http
         }
 
         if ($pos = stripos($header, "\r\nContent-Length: ")) {
-            $length = $length + (int)substr($header, $pos + 18, 10);
+            $length += (int)substr($header, $pos + 18, 10);
             $hasContentLength = true;
         } else if (preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
-            $length = $length + (int)$match[1];
+            $length += (int)$match[1];
             $hasContentLength = true;
         } else {
             $hasContentLength = false;
@@ -145,11 +144,9 @@ class Http
             }
         }
 
-        if ($hasContentLength) {
-            if ($length > $connection->maxPackageSize) {
-                $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
-                return 0;
-            }
+        if ($hasContentLength && $length > $connection->maxPackageSize) {
+            $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
+            return 0;
         }
 
         if (!isset($buffer[512])) {

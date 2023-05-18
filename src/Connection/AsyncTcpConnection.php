@@ -55,7 +55,7 @@ class AsyncTcpConnection extends TcpConnection
      *
      * @var array<string,string>
      */
-    const BUILD_IN_TRANSPORTS = [
+    public const BUILD_IN_TRANSPORTS = [
         'tcp' => 'tcp',
         'udp' => 'udp',
         'unix' => 'unix',
@@ -160,7 +160,7 @@ class AsyncTcpConnection extends TcpConnection
     {
         $addressInfo = parse_url($remoteAddress);
         if (!$addressInfo) {
-            list($scheme, $this->remoteAddress) = explode(':', $remoteAddress, 2);
+            [$scheme, $this->remoteAddress] = explode(':', $remoteAddress, 2);
             if ('unix' === strtolower($scheme)) {
                 $this->remoteAddress = substr($remoteAddress, strpos($remoteAddress, '/') + 2);
             }

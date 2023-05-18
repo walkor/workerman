@@ -435,7 +435,7 @@ class Request
         $headData = explode("\r\n", $headBuffer);
         foreach ($headData as $content) {
             if (str_contains($content, ':')) {
-                list($key, $value) = explode(':', $content, 2);
+                [$key, $value] = explode(':', $content, 2);
                 $key = strtolower($key);
                 $value = ltrim($value);
             } else {
@@ -584,7 +584,7 @@ class Request
             if (!strpos($contentLine, ': ')) {
                 return 0;
             }
-            list($key, $value) = explode(': ', $contentLine);
+            [$key, $value] = explode(': ', $contentLine);
             switch (strtolower($key)) {
                 case "content-disposition":
                     // Is file data.
@@ -606,23 +606,19 @@ class Request
                         }
                         $uploadKey = $fileName;
                         // Parse upload files.
-                        $file = array_merge($file, [
-                            'name' => $match[2],
-                            'tmp_name' => $tmpFile,
-                            'size' => $size,
-                            'error' => $error
-                        ]);
-                        if (!isset($file['type'])) $file['type'] = '';
-                        break;
-                    } // Is post field.
-                    else {
-                        // Parse $POST.
-                        if (preg_match('/name="(.*?)"$/', $value, $match)) {
-                            $k = $match[1];
-                            $postEncodeString .= urlencode($k) . "=" . urlencode($boundaryValue) . '&';
+                        $file = [...$file, 'name' => $match[2], 'tmp_name' => $tmpFile, 'size' => $size, 'error' => $error];
+                        if (!isset($file['type'])) {
+                            $file['type'] = '';
                         }
-                        return $sectionEndOffset + strlen($boundary) + 2;
+                        break;
                     }
+                    // Is post field.
+                    // Parse $POST.
+                    if (preg_match('/name="(.*?)"$/', $value, $match)) {
+                        $k = $match[1];
+                        $postEncodeString .= urlencode($k) . "=" . urlencode($boundaryValue) . '&';
+                    }
+                    return $sectionEndOffset + strlen($boundary) + 2;
                 case "content-type":
                     $file['type'] = trim($value);
                     break;
@@ -731,10 +727,8 @@ class Request
         if (isset($this->data['files'])) {
             clearstatcache();
             array_walk_recursive($this->data['files'], function ($value, $key) {
-                if ($key === 'tmp_name') {
-                    if (is_file($value)) {
-                        unlink($value);
-                    }
+                if ($key === 'tmp_name' && is_file($value)) {
+                    unlink($value);
                 }
             });
         }

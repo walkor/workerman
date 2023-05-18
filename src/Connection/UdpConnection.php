@@ -38,7 +38,7 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @var int
      */
-    const MAX_UDP_PACKAGE_SIZE = 65535;
+    public const MAX_UDP_PACKAGE_SIZE = 65535;
 
     /**
      * Transport layer protocol.

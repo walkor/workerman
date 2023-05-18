@@ -23,7 +23,6 @@ use Workerman\Events\Revolt;
 use Workerman\Events\Swoole;
 use Workerman\Events\Swow;
 use function function_exists;
-use function is_callable;
 use function pcntl_alarm;
 use function pcntl_signal;
 use function time;
@@ -202,7 +201,9 @@ class Timer
                     }
                     if ($persistent && !empty(self::$status[$index])) {
                         $newRunTime = time() + $timeInterval;
-                        if (!isset(self::$tasks[$newRunTime])) self::$tasks[$newRunTime] = [];
+                        if (!isset(self::$tasks[$newRunTime])) {
+                            self::$tasks[$newRunTime] = [];
+                        }
                         self::$tasks[$newRunTime][$index] = [$taskFunc, (array)$taskArgs, $persistent, $timeInterval];
                     }
                 }

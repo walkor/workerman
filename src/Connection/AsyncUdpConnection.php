@@ -75,7 +75,7 @@ class AsyncUdpConnection extends UdpConnection
     public function __construct($remoteAddress, $contextOption = [])
     {
         // Get the application layer communication protocol and listening address.
-        list($scheme, $address) = explode(':', $remoteAddress, 2);
+        [$scheme, $address] = explode(':', $remoteAddress, 2);
         // Check application layer protocol class.
         if ($scheme !== 'udp') {
             $scheme = ucfirst($scheme);

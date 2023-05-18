@@ -63,42 +63,42 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @var int
      */
-    const READ_BUFFER_SIZE = 87380;
+    public const READ_BUFFER_SIZE = 87380;
 
     /**
      * Status initial.
      *
      * @var int
      */
-    const STATUS_INITIAL = 0;
+    public const STATUS_INITIAL = 0;
 
     /**
      * Status connecting.
      *
      * @var int
      */
-    const STATUS_CONNECTING = 1;
+    public const STATUS_CONNECTING = 1;
 
     /**
      * Status connection established.
      *
      * @var int
      */
-    const STATUS_ESTABLISHED = 2;
+    public const STATUS_ESTABLISHED = 2;
 
     /**
      * Status closing.
      *
      * @var int
      */
-    const STATUS_CLOSING = 4;
+    public const STATUS_CLOSING = 4;
 
     /**
      * Status closed.
      *
      * @var int
      */
-    const STATUS_CLOSED = 8;
+    public const STATUS_CLOSED = 8;
 
     /**
      * Emitted when socket connection is successfully established.
@@ -319,7 +319,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @var array
      */
-    const STATUS_TO_STRING = [
+    public const STATUS_TO_STRING = [
         self::STATUS_INITIAL => 'INITIAL',
         self::STATUS_CONNECTING => 'CONNECTING',
         self::STATUS_ESTABLISHED => 'ESTABLISHED',
@@ -686,7 +686,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 // The data is enough for a packet.
                 ++self::$statistics['total_request'];
                 // The current packet length is equal to the length of the buffer.
-                if ($one = strlen($this->recvBuffer) === $this->currentPackageLength) {
+                if ($one = (strlen($this->recvBuffer) === $this->currentPackageLength)) {
                     $oneRequestBuffer = $this->recvBuffer;
                     $this->recvBuffer = '';
                 } else {
@@ -939,13 +939,11 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      */
     protected function checkBufferWillFull(): void
     {
-        if ($this->maxSendBufferSize <= strlen($this->sendBuffer)) {
-            if ($this->onBufferFull) {
-                try {
-                    ($this->onBufferFull)($this);
-                } catch (Throwable $e) {
-                    $this->error($e);
-                }
+        if ($this->onBufferFull && $this->maxSendBufferSize <= strlen($this->sendBuffer)) {
+            try {
+                ($this->onBufferFull)($this);
+            } catch (Throwable $e) {
+                $this->error($e);
             }
         }
     }

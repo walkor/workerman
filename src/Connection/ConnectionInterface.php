@@ -33,14 +33,14 @@ abstract class ConnectionInterface
      *
      * @var int
      */
-    const CONNECT_FAIL = 1;
+    public const CONNECT_FAIL = 1;
 
     /**
      * Send failed.
      *
      * @var int
      */
-    const SEND_FAIL = 2;
+    public const SEND_FAIL = 2;
 
     /**
      * Statistics for status command.

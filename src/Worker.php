@@ -1042,7 +1042,7 @@ class Worker
     public static function getArgv(): array
     {
         global $argv;
-        return static::$command ? array_merge($argv, explode(' ', static::$command)) : $argv;
+        return static::$command ? [...$argv, ...explode(' ', static::$command)] : $argv;
     }
 
     /**
@@ -1109,7 +1109,7 @@ class Worker
                 continue;
             }
             //$qps = isset($totalRequestCache[$pid]) ? $currentTotalRequest[$pid]
-            if (!isset($totalRequestCache[$pid]) || !isset($currentTotalRequest[$pid])) {
+            if (!isset($totalRequestCache[$pid], $currentTotalRequest[$pid])) {
                 $qps = 0;
             } else {
                 $qps = $currentTotalRequest[$pid] - $totalRequestCache[$pid];
@@ -1400,7 +1400,7 @@ class Worker
     protected static function forkWorkersForWindows(): void
     {
         $files = static::getStartFilesForWindows();
-        if (in_array('-q', static::getArgv()) || count($files) === 1) {
+        if (count($files) === 1 || in_array('-q', static::getArgv())) {
             if (count(static::$workers) > 1) {
                 static::safeEcho("@@@ Error: multi workers init in one php file are not support @@@\r\n");
                 static::safeEcho("@@@ See https://www.workerman.net/doc/workerman/faq/multi-woker-for-windows.html @@@\r\n");
@@ -1448,15 +1448,15 @@ class Worker
                 exit(250);
             }
             exit(0);
-        } else {
-            static::$globalEvent = new Select();
-            static::$globalEvent->setErrorHandler(function ($exception) {
-                static::stopAll(250, $exception);
-            });
-            Timer::init(static::$globalEvent);
-            foreach ($files as $startFile) {
-                static::forkOneWorkerForWindows($startFile);
-            }
+        }
+
+        static::$globalEvent = new Select();
+        static::$globalEvent->setErrorHandler(function ($exception) {
+            static::stopAll(250, $exception);
+        });
+        Timer::init(static::$globalEvent);
+        foreach ($files as $startFile) {
+            static::forkOneWorkerForWindows($startFile);
         }
     }
 
@@ -1771,7 +1771,7 @@ class Worker
         foreach (static::$workers as $worker) {
             $socketName = $worker->getSocketName();
             if ($worker->transport === 'unix' && $socketName) {
-                list(, $address) = explode(':', $socketName, 2);
+                [, $address] = explode(':', $socketName, 2);
                 $address = substr($address, strpos($address, '/') + 2);
                 @unlink($address);
             }
@@ -2161,7 +2161,7 @@ class Worker
      */
     public static function log(mixed $msg, bool $decorated = false): void
     {
-        $msg = $msg . "\n";
+        $msg .= "\n";
         if (!static::$daemonize) {
             static::safeEcho($msg, $decorated);
         }
@@ -2259,7 +2259,7 @@ class Worker
             && \strtolower(\php_uname('s')) !== 'darwin' // if not Mac OS
             && strpos($socketName,'unix') !== 0 // if not unix socket
             && strpos($socketName,'udp') !== 0) { // if not udp socket
-            
+
             $address = \parse_url($socketName);
             if (isset($address['host']) && isset($address['port'])) {
                 try {
@@ -2363,7 +2363,7 @@ class Worker
             return null;
         }
         // Get the application layer communication protocol and listening address.
-        list($scheme, $address) = explode(':', $this->socketName, 2);
+        [$scheme, $address] = explode(':', $this->socketName, 2);
         // Check application layer protocol class.
         if (!isset(self::BUILD_IN_TRANSPORTS[$scheme])) {
             $scheme = ucfirst($scheme);
@@ -2549,8 +2549,9 @@ class Worker
                     if ($parser && method_exists($parser, 'input')) {
                         while ($recvBuffer !== '') {
                             $len = $parser::input($recvBuffer, $connection);
-                            if ($len === 0)
+                            if ($len === 0) {
                                 return true;
+                            }
                             $package = substr($recvBuffer, 0, $len);
                             $recvBuffer = substr($recvBuffer, $len);
                             $data = $parser::decode($package, $connection);
@@ -2608,4 +2609,3 @@ class Worker
         return stripos($content, 'WorkerMan') !== false || stripos($content, 'php') !== false;
     }
 }
-
