@@ -1109,7 +1109,7 @@ class Worker
                 continue;
             }
             //$qps = isset($totalRequestCache[$pid]) ? $currentTotalRequest[$pid]
-            if (!isset($totalRequestCache[$pid]) || !isset($currentTotalRequest[$pid])) {
+            if (!isset($totalRequestCache[$pid], $currentTotalRequest[$pid])) {
                 $qps = 0;
             } else {
                 $qps = $currentTotalRequest[$pid] - $totalRequestCache[$pid];
