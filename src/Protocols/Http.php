@@ -131,10 +131,10 @@ class Http
         }
 
         if ($pos = stripos($header, "\r\nContent-Length: ")) {
-            $length = $length + (int)substr($header, $pos + 18, 10);
+            $length += (int)substr($header, $pos + 18, 10);
             $hasContentLength = true;
         } else if (preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
-            $length = $length + (int)$match[1];
+            $length += (int)$match[1];
             $hasContentLength = true;
         } else {
             $hasContentLength = false;

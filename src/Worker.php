@@ -2161,7 +2161,7 @@ class Worker
      */
     public static function log(mixed $msg, bool $decorated = false): void
     {
-        $msg = $msg . "\n";
+        $msg .= "\n";
         if (!static::$daemonize) {
             static::safeEcho($msg, $decorated);
         }
