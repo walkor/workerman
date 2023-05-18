@@ -320,7 +320,7 @@ class Session
                 static::$handler->write($this->sessionId, serialize($this->data));
             }
         } elseif (static::$autoUpdateTimestamp) {
-            static::refresh();
+            $this->refresh();
         }
         $this->needSave = false;
     }
