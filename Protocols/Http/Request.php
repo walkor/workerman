@@ -208,8 +208,8 @@ class Request
     public function host($without_port = false)
     {
         $host = $this->header('host');
-        if ($host && $without_port && $pos = \strpos($host, ':')) {
-            return \substr($host, 0, $pos);
+        if ($host && $without_port) {
+            return preg_replace('/:\d{1,5}$/', '', $host);
         }
         return $host;
     }
