@@ -234,8 +234,8 @@ class Request
     public function host(bool $withoutPort = false): ?string
     {
         $host = $this->header('host');
-        if ($host && $withoutPort && $pos = strpos($host, ':')) {
-            return substr($host, 0, $pos);
+        if ($host && $without_port) {
+            return preg_replace('/:\d{1,5}$/', '', $host);
         }
         return $host;
     }
