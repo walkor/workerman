@@ -16,8 +16,6 @@ declare(strict_types=1);
 
 namespace Workerman\Connection;
 
-use JetBrains\PhpStorm\ArrayShape;
-use JetBrains\PhpStorm\Pure;
 use JsonSerializable;
 use Workerman\Protocols\ProtocolInterface;
 use function stream_socket_get_name;
@@ -191,7 +189,6 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      *
      * return bool.
      */
-    #[Pure]
     public function isIpV4(): bool
     {
         if ($this->transport === 'unix') {
@@ -205,7 +202,6 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      *
      * return bool.
      */
-    #[Pure]
     public function isIpV6(): bool
     {
         if ($this->transport === 'unix') {
@@ -229,10 +225,6 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @return array
      */
-    #[ArrayShape([
-        'transport' => "string", 'getRemoteIp' => "string", 'remotePort' => "int", 'getRemoteAddress' => "string",
-        'getLocalIp' => "string", 'getLocalPort' => "int", 'getLocalAddress' => "string", 'isIpV4' => "bool", 'isIpV6' => "bool"]
-    )]
     public function jsonSerialize(): array
     {
         return [

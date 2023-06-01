@@ -15,7 +15,6 @@ declare(strict_types=1);
 
 namespace Workerman\Connection;
 
-use JetBrains\PhpStorm\Pure;
 use JsonSerializable;
 use stdClass;
 use Throwable;
@@ -898,7 +897,6 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      *
      * return bool.
      */
-    #[Pure]
     public function isIpV4(): bool
     {
         if ($this->transport === 'unix') {
@@ -912,7 +910,6 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      *
      * return bool.
      */
-    #[Pure]
     public function isIpV6(): bool
     {
         if ($this->transport === 'unix') {
@@ -1038,7 +1035,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @param mixed $value
      */
-    public static function enableCache(bool $value = true)
+    public static function enableCache(bool $value = true): void
     {
         static::$enableCache = $value;
     }
@@ -1069,6 +1066,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      * Destruct.
      *
      * @return void
+     * @throws Throwable
      */
     public function __destruct()
     {

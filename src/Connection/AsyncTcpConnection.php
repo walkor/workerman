@@ -301,7 +301,7 @@ class AsyncTcpConnection extends TcpConnection
             }
             return;
         }
-        // Add socket to global event loop waiting connection is successfully established or faild.
+        // Add socket to global event loop waiting connection is successfully established or failed.
         $this->eventLoop->onWritable($this->socket, [$this, 'checkConnection']);
         // For windows.
         if (DIRECTORY_SEPARATOR === '\\' && method_exists($this->eventLoop, 'onExcept')) {

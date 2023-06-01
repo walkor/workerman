@@ -242,7 +242,7 @@ class Websocket
      * @param mixed $buffer
      * @param TcpConnection $connection
      * @return string
-     * @throws Exception
+     * @throws Throwable
      */
     public static function encode(mixed $buffer, TcpConnection $connection): string
     {
@@ -362,7 +362,7 @@ class Websocket
                 $SecWebSocketKey = $match[1];
             } else {
                 $connection->close(
-					"HTTP/1.0 200 OK\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman</div>", true);
+                    "HTTP/1.0 200 OK\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman</div>", true);
                 return 0;
             }
             // Calculation websocket key.
