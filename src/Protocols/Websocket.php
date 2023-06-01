@@ -236,14 +236,14 @@ class Websocket
         return 0;
     }
 
-    /**
-     * Websocket encode.
-     *
-     * @param mixed $buffer
-     * @param TcpConnection $connection
-     * @return string
-     * @throws Exception
-     */
+	/**
+	 * Websocket encode.
+	 *
+	 * @param mixed $buffer
+	 * @param TcpConnection $connection
+	 * @return string
+	 * @throws Throwable
+	 */
     public static function encode(mixed $buffer, TcpConnection $connection): string
     {
         if (!is_scalar($buffer)) {

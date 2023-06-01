@@ -620,7 +620,7 @@ class Worker
                 @mkdir(dirname(static::$logFile), 0777, true);
             }
             touch(static::$logFile);
-            chmod(static::$logFile, 0622);
+            chmod(static::$logFile, 0644);
         }
 
         // State.
@@ -761,7 +761,7 @@ class Worker
     }
 
     /**
-     * Get unix user of current porcess.
+     * Get unix user of current process.
      *
      * @return string
      */
@@ -792,7 +792,7 @@ class Worker
 
         //show version
         $lineVersion = 'Workerman version:' . static::VERSION . str_pad('PHP version:', 16, ' ', STR_PAD_LEFT) . PHP_VERSION . str_pad('Event-loop:', 16, ' ', STR_PAD_LEFT) . static::getEventLoopName() . PHP_EOL;
-        !defined('LINE_VERSIOIN_LENGTH') && define('LINE_VERSIOIN_LENGTH', strlen($lineVersion));
+        !defined('LINE_VERSION_LENGTH') && define('LINE_VERSION_LENGTH', strlen($lineVersion));
         $totalLength = static::getSingleLineTotalLength();
         $lineOne = '<n>' . str_pad('<w> WORKERMAN </w>', $totalLength + strlen('<w></w>'), '-', STR_PAD_BOTH) . '</n>' . PHP_EOL;
         $lineTwo = str_pad('<w> WORKERS </w>', $totalLength + strlen('<w></w>'), '-', STR_PAD_BOTH) . PHP_EOL;
@@ -827,9 +827,11 @@ class Worker
 
         if (static::$daemonize) {
             static::safeEcho('Input "php ' . basename(static::$startFile) . ' stop" to stop. Start success.' . "\n\n");
+        } else if (!empty(static::$command)) {
+			static::safeEcho("Start success.\n"); // Workerman used as library
         } else {
-            static::safeEcho("Press Ctrl+C to stop. Start success.\n");
-        }
+			static::safeEcho("Press Ctrl+C to stop. Start success.\n");
+		}
     }
 
     /**
@@ -867,8 +869,8 @@ class Worker
         }
 
         //Keep beauty when show less columns
-        !defined('LINE_VERSIOIN_LENGTH') && define('LINE_VERSIOIN_LENGTH', 0);
-        $totalLength <= LINE_VERSIOIN_LENGTH && $totalLength = LINE_VERSIOIN_LENGTH;
+        !defined('LINE_VERSION_LENGTH') && define('LINE_VERSION_LENGTH', 0);
+        $totalLength <= LINE_VERSION_LENGTH && $totalLength = LINE_VERSION_LENGTH;
 
         return $totalLength;
     }
@@ -886,7 +888,7 @@ class Worker
 
         // Check argv;
         $startFile = basename(static::$startFile);
-        $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in DEBUG mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
+        $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in USER mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
         $availableCommands = [
             'start',
             'stop',
@@ -919,7 +921,7 @@ class Worker
             if ($mode === '-d' || static::$daemonize) {
                 $modeStr = 'in DAEMON mode';
             } else {
-                $modeStr = 'in DEBUG mode';
+                $modeStr = 'in USER mode';
             }
         }
         static::log("Workerman[$startFile] $command $modeStr");
@@ -973,9 +975,9 @@ class Worker
                 }
                 // Master process will send SIGIO signal to all child processes.
                 posix_kill($masterPid, SIGIO);
-                // Waiting amoment.
+                // Waiting a moment.
                 usleep(500000);
-                // Display statisitcs data from a disk file.
+                // Display statistics data from a disk file.
                 if (is_readable($statisticsFile)) {
                     readfile($statisticsFile);
                 }
@@ -1005,7 +1007,7 @@ class Worker
                             static::log("Workerman[$startFile] stop fail");
                             exit;
                         }
-                        // Waiting amoment.
+                        // Waiting a moment.
                         usleep(10000);
                         continue;
                     }
@@ -1165,12 +1167,12 @@ class Worker
         }
     }
 
-    /**
-     * Signal handler.
-     *
-     * @param int $signal
-     * @throws Exception
-     */
+	/**
+	 * Signal handler.
+	 *
+	 * @param int $signal
+	 * @throws Throwable
+	 */
     public static function signalHandler(int $signal): void
     {
         switch ($signal) {
@@ -1298,9 +1300,9 @@ class Worker
         }
 
         static::$masterPid = posix_getpid();
-        if (false === file_put_contents(static::$pidFile, static::$masterPid)) {
-            throw new RuntimeException('can not save pid to ' . static::$pidFile);
-        }
+		if (false === file_put_contents(static::$pidFile, static::$masterPid)) {
+			throw new RuntimeException('can not save pid to ' . static::$pidFile);
+		}
     }
 
     /**
@@ -1784,12 +1786,12 @@ class Worker
         exit(0);
     }
 
-    /**
-     * Execute reload.
-     *
-     * @return void
-     * @throws Exception
-     */
+	/**
+	 * Execute reload.
+	 *
+	 * @return void
+	 * @throws Throwable
+	 */
     protected static function reload(): void
     {
         // For master process.
@@ -1866,12 +1868,13 @@ class Worker
         }
     }
 
-    /**
-     * Stop all.
-     *
-     * @param int $code
-     * @param mixed $log
-     */
+	/**
+	 * Stop all.
+	 *
+	 * @param int $code
+	 * @param mixed $log
+	 * @throws Throwable
+	 */
     public static function stopAll(int $code = 0, mixed $log = ''): void
     {
         if ($log) {
@@ -2448,11 +2451,12 @@ class Worker
         }
     }
 
-    /**
-     * Stop current worker instance.
-     *
-     * @return void
-     */
+	/**
+	 * Stop current worker instance.
+	 *
+	 * @return void
+	 * @throws Throwable
+	 */
     public function stop(): void
     {
         // Try to emit onWorkerStop callback.
@@ -2466,7 +2470,7 @@ class Worker
         // Remove listener for server socket.
         $this->unlisten();
         // Close all connections for the worker.
-        if (!static::$gracefulStop) {
+        if (static::$gracefulStop) {
             foreach ($this->connections as $connection) {
                 $connection->close();
             }
@@ -2481,12 +2485,13 @@ class Worker
         $this->onMessage = $this->onClose = $this->onError = $this->onBufferDrain = $this->onBufferFull = null;
     }
 
-    /**
-     * Accept a connection.
-     *
-     * @param resource $socket
-     * @return void
-     */
+	/**
+	 * Accept a connection.
+	 *
+	 * @param resource $socket
+	 * @return void
+	 * @throws Throwable
+	 */
     public function acceptTcpConnection($socket): void
     {
         // Accept a connection on server socket.
@@ -2522,12 +2527,13 @@ class Worker
         }
     }
 
-    /**
-     * For udp package.
-     *
-     * @param resource $socket
-     * @return bool
-     */
+	/**
+	 * For udp package.
+	 *
+	 * @param resource $socket
+	 * @return bool
+	 * @throws Throwable
+	 */
     public function acceptUdpConnection($socket): bool
     {
         set_error_handler(function () {
