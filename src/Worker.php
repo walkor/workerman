@@ -828,10 +828,10 @@ class Worker
         if (static::$daemonize) {
             static::safeEcho('Input "php ' . basename(static::$startFile) . ' stop" to stop. Start success.' . "\n\n");
         } else if (!empty(static::$command)) {
-			static::safeEcho("Start success.\n"); // Workerman used as library
+            static::safeEcho("Start success.\n"); // Workerman used as library
         } else {
-			static::safeEcho("Press Ctrl+C to stop. Start success.\n");
-		}
+            static::safeEcho("Press Ctrl+C to stop. Start success.\n");
+        }
     }
 
     /**
@@ -1167,12 +1167,12 @@ class Worker
         }
     }
 
-	/**
-	 * Signal handler.
-	 *
-	 * @param int $signal
-	 * @throws Throwable
-	 */
+    /**
+     * Signal handler.
+     *
+     * @param int $signal
+     * @throws Throwable
+     */
     public static function signalHandler(int $signal): void
     {
         switch ($signal) {
@@ -1300,9 +1300,9 @@ class Worker
         }
 
         static::$masterPid = posix_getpid();
-		if (false === file_put_contents(static::$pidFile, static::$masterPid)) {
-			throw new RuntimeException('can not save pid to ' . static::$pidFile);
-		}
+        if (false === file_put_contents(static::$pidFile, static::$masterPid)) {
+            throw new RuntimeException('can not save pid to ' . static::$pidFile);
+        }
     }
 
     /**
@@ -1786,12 +1786,12 @@ class Worker
         exit(0);
     }
 
-	/**
-	 * Execute reload.
-	 *
-	 * @return void
-	 * @throws Throwable
-	 */
+    /**
+     * Execute reload.
+     *
+     * @return void
+     * @throws Throwable
+     */
     protected static function reload(): void
     {
         // For master process.
@@ -1868,13 +1868,13 @@ class Worker
         }
     }
 
-	/**
-	 * Stop all.
-	 *
-	 * @param int $code
-	 * @param mixed $log
-	 * @throws Throwable
-	 */
+    /**
+     * Stop all.
+     *
+     * @param int $code
+     * @param mixed $log
+     * @throws Throwable
+     */
     public static function stopAll(int $code = 0, mixed $log = ''): void
     {
         if ($log) {
@@ -2451,12 +2451,12 @@ class Worker
         }
     }
 
-	/**
-	 * Stop current worker instance.
-	 *
-	 * @return void
-	 * @throws Throwable
-	 */
+    /**
+     * Stop current worker instance.
+     *
+     * @return void
+     * @throws Throwable
+     */
     public function stop(): void
     {
         // Try to emit onWorkerStop callback.
@@ -2485,13 +2485,13 @@ class Worker
         $this->onMessage = $this->onClose = $this->onError = $this->onBufferDrain = $this->onBufferFull = null;
     }
 
-	/**
-	 * Accept a connection.
-	 *
-	 * @param resource $socket
-	 * @return void
-	 * @throws Throwable
-	 */
+    /**
+     * Accept a connection.
+     *
+     * @param resource $socket
+     * @return void
+     * @throws Throwable
+     */
     public function acceptTcpConnection($socket): void
     {
         // Accept a connection on server socket.
@@ -2527,13 +2527,13 @@ class Worker
         }
     }
 
-	/**
-	 * For udp package.
-	 *
-	 * @param resource $socket
-	 * @return bool
-	 * @throws Throwable
-	 */
+    /**
+     * For udp package.
+     *
+     * @param resource $socket
+     * @return bool
+     * @throws Throwable
+     */
     public function acceptUdpConnection($socket): bool
     {
         set_error_handler(function () {

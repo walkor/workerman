@@ -1036,7 +1036,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      * @param mixed $value
      */
     public static function enableCache(bool $value = true): void
-	{
+    {
         static::$enableCache = $value;
     }
 
@@ -1062,12 +1062,12 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         ];
     }
 
-	/**
-	 * Destruct.
-	 *
-	 * @return void
-	 * @throws Throwable
-	 */
+    /**
+     * Destruct.
+     *
+     * @return void
+     * @throws Throwable
+     */
     public function __destruct()
     {
         static $mod;
