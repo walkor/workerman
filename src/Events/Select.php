@@ -380,7 +380,7 @@ class Select implements EventInterface
             if ($read || $write || $except) {
                 // Waiting read/write/signal/timeout events.
                 try {
-                    stream_select($read, $write, $except, 0, $this->selectTimeout);
+                    @stream_select($read, $write, $except, 0, $this->selectTimeout);
                 } catch (Throwable) {
                 }
             } else {
