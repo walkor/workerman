@@ -20,6 +20,7 @@ use Exception;
 use Throwable;
 use Workerman\Connection\AsyncTcpConnection;
 use Workerman\Connection\ConnectionInterface;
+use Workerman\Protocols\Http\Response;
 use Workerman\Timer;
 use Workerman\Worker;
 use function base64_encode;
@@ -422,10 +423,12 @@ class Ws
             // handshake complete
             $connection->context->handshakeStep = 2;
             $handshakeResponseLength = $pos + 4;
+            $buffer = substr($buffer, 0, $handshakeResponseLength);
+            $response = static::parseResponse($buffer);
             // Try to emit onWebSocketConnect callback.
             if (isset($connection->onWebSocketConnect)) {
                 try {
-                    ($connection->onWebSocketConnect)($connection, substr($buffer, 0, $handshakeResponseLength));
+                    ($connection->onWebSocketConnect)($connection, $response);
                 } catch (Throwable $e) {
                     Worker::stopAll(250, $e);
                 }
@@ -452,4 +455,29 @@ class Ws
         return 0;
     }
 
+    /**
+     * Parse response.
+     *
+     * @param string $buffer
+     * @return Response
+     */
+    protected static function parseResponse(string $buffer): Response
+    {
+        [$http_header, ] = \explode("\r\n\r\n", $buffer, 2);
+        $header_data = \explode("\r\n", $http_header);
+        [$protocol, $status, $phrase] = \explode(' ', $header_data[0], 3);
+        $protocolVersion = substr($protocol, 5);
+        unset($header_data[0]);
+        $headers = [];
+        foreach ($header_data as $content) {
+            // \r\n\r\n
+            if (empty($content)) {
+                continue;
+            }
+            list($key, $value) = \explode(':', $content, 2);
+            $value = \trim($value);
+            $headers[$key] = $value;
+        }
+        return (new Response())->withStatus((int)$status, $phrase)->withHeaders($headers)->withProtocolVersion($protocolVersion);
+    }
 }
