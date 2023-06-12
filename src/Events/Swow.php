@@ -9,6 +9,7 @@ use Swow\Coroutine;
 use Swow\Signal;
 use Swow\SignalException;
 use Throwable;
+use function Swow\Sync\waitAll;
 
 class Swow implements EventInterface
 {
