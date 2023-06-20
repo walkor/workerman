@@ -5,9 +5,9 @@ use Workerman\Protocols\Http\Response;
 it('test some simple case', function () {
     $response = new Response(201, ['X-foo' => 'bar'], 'hello, xiami');
 
-    expect($response->getStatusCode())->toBe(201);
-    expect($response->getHeaders())->toBe(['X-foo' => 'bar']);
-    expect($response->rawBody())->toBe('hello, xiami');
+    expect($response->getStatusCode())->toBe(201)
+        ->and($response->getHeaders())->toBe(['X-foo' => 'bar'])
+        ->and($response->rawBody())->toBe('hello, xiami');
 
     //headers
     $response->header('abc', '123');
@@ -18,8 +18,8 @@ it('test some simple case', function () {
         ->toContain('abc: 123')
         ->toContain('def: 456');
     $response->withoutHeader('def');
-    expect((string)$response)->not->toContain('def: 456');
-    expect($response->getHeader('abc'))
+    expect((string)$response)->not->toContain('def: 456')
+        ->and($response->getHeader('abc'))
         ->toBe('123');
 
     $response->withStatus(202, 'some reason');
@@ -36,7 +36,7 @@ it('test some simple case', function () {
 
 
     //cookie
-    $response->cookie('foo', 'bar', httpOnly: true, domain: 'xia.moe');
+    $response->cookie('foo', 'bar', domain: 'xia.moe', httpOnly: true);
     expect((string)$response)
         ->toContain('Set-Cookie: foo=bar; Domain=xia.moe; HttpOnly');
 });

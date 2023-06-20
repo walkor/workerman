@@ -15,16 +15,14 @@ test(Text::class, function () {
     });
     //input without "\n"
     expect(Text::input('jhdxr', $connection))
-        ->toBe(0);
-    //input with "\n"
-    expect(Text::input("jhdxr\n", $connection))
-        ->toBe(6);
-
-    //::encode
-    expect(Text::encode('jhdxr'))
-        ->toBe("jhdxr\n");
-
-    //::decode
-    expect(Text::decode("jhdxr\n"))
+        ->toBe(0)
+        //input with "\n"
+        ->and(Text::input("jhdxr\n", $connection))
+        ->toBe(6)
+        //::encode
+        ->and(Text::encode('jhdxr'))
+        ->toBe("jhdxr\n")
+        //::decode
+        ->and(Text::decode("jhdxr\n"))
         ->toBe('jhdxr');
 });
