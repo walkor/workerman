@@ -29,7 +29,7 @@ beforeAll(function () use ($serverAddress) {
 });
 
 afterAll(function () use ($serverAddress) {
-    $socket = stream_socket_client(self::$serverAddress, timeout: 1);
+    $socket = stream_socket_client($serverAddress, timeout: 1);
     fwrite($socket, 'bye');
     fclose($socket);
 });

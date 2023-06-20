@@ -4,15 +4,17 @@ use Workerman\Connection\UdpConnection;
 use Symfony\Component\Process\PhpProcess;
 
 $remoteAddress = '[::1]:12345';
-$process = new PhpProcess(<<<PHP
-<?php
-\$socketServer = stream_socket_server("udp://$remoteAddress", \$errno, \$errstr, STREAM_SERVER_BIND);
-do{
-    \$data = stream_socket_recvfrom(\$socketServer, 3);
-}while(\$data !== false && \$data !== 'bye');
-PHP
-);
-$process->start();
+beforeAll(function () use ($remoteAddress) {
+    $process = new PhpProcess(<<<PHP
+        <?php
+        \$socketServer = stream_socket_server("udp://$remoteAddress", \$errno, \$errstr, STREAM_SERVER_BIND);
+        do{
+            \$data = stream_socket_recvfrom(\$socketServer, 3);
+        }while(\$data !== false && \$data !== 'bye');
+        PHP
+    );
+    $process->start();
+});
 
 it('tests ' . UdpConnection::class, function () use ($remoteAddress) {
 
