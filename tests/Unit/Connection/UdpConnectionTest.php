@@ -5,16 +5,22 @@ use Symfony\Component\Process\PhpProcess;
 use Workerman\Protocols\Text;
 
 $remoteAddress = '[::1]:12345';
-beforeAll(function () use ($remoteAddress) {
+$process = null;
+beforeAll(function () use ($remoteAddress, &$process) {
     $process = new PhpProcess(<<<PHP
         <?php
         \$socketServer = stream_socket_server("udp://$remoteAddress", \$errno, \$errstr, STREAM_SERVER_BIND);
         do{
             \$data = stream_socket_recvfrom(\$socketServer, 3);
         }while(\$data !== false && \$data !== 'bye');
-        PHP
+    PHP
     );
     $process->start();
+    sleep(1);
+});
+
+afterAll(function () use (&$process) {
+    $process->stop();
 });
 
 it('tests ' . UdpConnection::class, function () use ($remoteAddress) {

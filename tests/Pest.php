@@ -58,8 +58,3 @@ function testWithConnectionClose(Closure $closure, string $dataContains = null, 
         $tcpConnection->shouldHaveReceived('close');
     }
 }
-
-function terminate_current_process()
-{
-    posix_kill(posix_getppid(), SIGINT);
-}
