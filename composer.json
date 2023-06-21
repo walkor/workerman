@@ -43,7 +43,8 @@
     },
     "require-dev": {
         "pestphp/pest": "2.x-dev",
-        "mockery/mockery": "2.0.x-dev"
+        "mockery/mockery": "2.0.x-dev",
+        "guzzlehttp/guzzle": "^7.0"
     },
     "config": {
         "allow-plugins": {
