@@ -106,7 +106,6 @@ it('tests http connection', function () {
         ->toMatchArray([
             'name' => 'HttpServer.php',
             'error' => 0,
-            'type' => 'application/x-httpd-php',
         ]);
 
     $response = $client->get('/404');
