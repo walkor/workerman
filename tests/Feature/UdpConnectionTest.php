@@ -4,7 +4,8 @@ use Symfony\Component\Process\PhpProcess;
 use Workerman\Worker;
 
 $serverAddress = 'udp://127.0.0.1:6789';
-beforeAll(function () use ($serverAddress) {
+$process = null;
+beforeAll(function () use ($serverAddress, &$process) {
     $process = new PhpProcess(<<<PHP
         <?php    
         if(!defined('STDIN')) define('STDIN', fopen('php://stdin', 'r'));
@@ -15,9 +16,6 @@ beforeAll(function () use ($serverAddress) {
         
         \$server = new Worker('$serverAddress');
         \$server->onMessage = function (\$connection, \$data) {
-            if(str_starts_with(\$data, 'bye')) {
-                terminate_current_process();
-            }
             \$connection->send('received: '.\$data);
         };
         Worker::\$command = 'start';
@@ -25,13 +23,11 @@ beforeAll(function () use ($serverAddress) {
     PHP
     );
     $process->start();
-    sleep(5);
+    sleep(1);
 });
 
-afterAll(function () use ($serverAddress) {
-    $socket = stream_socket_client(self::$serverAddress, timeout: 1);
-    fwrite($socket, 'bye');
-    fclose($socket);
+afterAll(function () use (&$process) {
+    $process->stop();
 });
 
 it('tests udp connection', function () use ($serverAddress) {

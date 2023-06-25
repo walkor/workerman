@@ -3,8 +3,8 @@
 use Workerman\Protocols\Frame;
 
 it('tests ::input', function () {
-    expect(Frame::input('foo'))->toBe(0);
-    expect(Frame::input("\0\0\0*foobar"))
+    expect(Frame::input('foo'))->toBe(0)
+        ->and(Frame::input("\0\0\0*foobar"))
         ->toBe(42);
 });
 
