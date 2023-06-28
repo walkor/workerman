@@ -118,7 +118,7 @@ class Http
         $firstLine = explode(" ", strstr($buffer, "\r\n", true), 3);
 
         if (!in_array($firstLine[0], ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
-            $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+            $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
 
@@ -126,7 +126,7 @@ class Http
         $hostHeaderPosition = stripos($header, "\r\nHost: ");
 
         if (false === $hostHeaderPosition && $firstLine[2] === "HTTP/1.1") {
-            $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+            $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
 
@@ -139,7 +139,7 @@ class Http
         } else {
             $hasContentLength = false;
             if (false !== stripos($header, "\r\nTransfer-Encoding:")) {
-                $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+                $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
                 return 0;
             }
         }
