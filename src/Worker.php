@@ -552,6 +552,14 @@ class Worker
     protected ?string $workerId = null;
 
     /**
+     * 避免std被重复关闭，导致已经拿到std handle的实例异常
+     * To avoid repeatedly closing the std handle, which could result in unexpected behavior for instances that have already obtained the handle.
+     *
+     * @var bool
+     */
+    protected static bool $hasResetStd = false;
+
+    /**
      * Run all worker instances.
      *
      * @return void
@@ -1248,7 +1256,7 @@ class Worker
      */
     public static function resetStd(bool $throwException = true): void
     {
-        if (!static::$daemonize || DIRECTORY_SEPARATOR !== '/') {
+        if (!static::$daemonize || DIRECTORY_SEPARATOR !== '/' || static::$hasResetStd) {
             return;
         }
         global $STDOUT, $STDERR;
@@ -1281,6 +1289,10 @@ class Worker
             static::$outputStream = null;
             static::outputStream($STDOUT);
             restore_error_handler();
+
+            //mark as reset
+            static::$hasResetStd = true;
+
             return;
         }
         if ($throwException) {
