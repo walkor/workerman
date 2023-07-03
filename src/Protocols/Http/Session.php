@@ -17,7 +17,6 @@ declare(strict_types=1);
 namespace Workerman\Protocols\Http;
 
 use Exception;
-use JetBrains\PhpStorm\ArrayShape;
 use RuntimeException;
 use Workerman\Protocols\Http\Session\FileSessionHandler;
 use Workerman\Protocols\Http\Session\SessionHandlerInterface;
@@ -381,7 +380,6 @@ class Session
      *
      * @return array
      */
-    #[ArrayShape(['lifetime' => "int", 'path' => "string", 'domain' => "string", 'secure' => "bool", 'httponly' => "bool", 'samesite' => "string"])]
     public static function getCookieParams(): array
     {
         return [

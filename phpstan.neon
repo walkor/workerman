@@ -1,0 +1,25 @@
+parameters:
+	level: 0
+	paths:
+		- src
+		- tests
+	ignoreErrors:
+	    -
+	        path: src/Events/Revolt.php
+	        messages:
+	            - '#Property Workerman\\Events\\Revolt::\$driver has unknown class Revolt\\EventLoop\\Driver as its type.#'
+	            - '#Call to static method getDriver\(\) on an unknown class Revolt\\EventLoop.#'
+	            - '#Method Workerman\\Events\\Revolt::driver\(\) has invalid return type Revolt\\EventLoop\\Driver.#'
+	    -
+	        path: src/Events/Swow.php
+	        messages:
+	            - '#Used function Swow\\Sync\\waitAll not found.#'
+	            - '#Call to static method .* on an unknown class Swow\\.*.#'
+	            - '#Function msleep not found.#'
+	            - '#Function stream_poll_one not found.#'
+	            - '#Caught class Swow\\SignalException not found.#'
+	            - '#Function Swow\\Sync\\waitAll not found.#'
+	    - path: src/Timer.php
+	      message: '#Call to static method getSuspension\(\) on an unknown class Revolt\\EventLoop.#'
+	    - path: tests/Pest.php
+	      message: '#Undefined variable: \$this#'

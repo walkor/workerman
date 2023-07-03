@@ -44,11 +44,15 @@
     "require-dev": {
         "pestphp/pest": "2.x-dev",
         "mockery/mockery": "2.0.x-dev",
-        "guzzlehttp/guzzle": "^7.0"
+        "guzzlehttp/guzzle": "^7.0",
+        "phpstan/phpstan": "1.11.x-dev"
     },
     "config": {
         "allow-plugins": {
             "pestphp/pest-plugin": true
         }
+    },
+    "scripts": {
+        "analyse": "phpstan analyse -c phpstan.neon --memory-limit=-1"
     }
 }
