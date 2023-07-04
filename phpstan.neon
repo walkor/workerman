@@ -1,5 +1,5 @@
 parameters:
-	level: 0
+	level: 1
 	paths:
 		- src
 		- tests
@@ -19,7 +19,13 @@ parameters:
 	            - '#Function stream_poll_one not found.#'
 	            - '#Caught class Swow\\SignalException not found.#'
 	            - '#Function Swow\\Sync\\waitAll not found.#'
+	            - '#Constant STREAM_POLLHUP not found.#'
+	            - '#Constant STREAM_POLLIN not found.#'
+	            - '#Constant STREAM_POLLNONE not found.#'
+	            - '#Constant STREAM_POLLOUT not found.#'
 	    - path: src/Timer.php
 	      message: '#Call to static method getSuspension\(\) on an unknown class Revolt\\EventLoop.#'
 	    - path: tests/Pest.php
 	      message: '#Undefined variable: \$this#'
+	    - path: src/Worker.php
+	      message: '#Constant LINE_VERSION_LENGTH not found.#'
