@@ -55,6 +55,7 @@ it('tests ::input', function () {
 });
 
 it('tests ::encode for non-object response', function () {
+    /** @var TcpConnection $tcpConnection */
     $tcpConnection = Mockery::mock(TcpConnection::class);
     $tcpConnection->headers = [
         'foo' => 'bar',
@@ -73,6 +74,7 @@ it('tests ::encode for non-object response', function () {
 });
 
 it('tests ::encode for ' . Response::class, function () {
+    /** @var TcpConnection $tcpConnection */
     $tcpConnection = Mockery::mock(TcpConnection::class);
     $tcpConnection->headers = [
         'foo' => 'bar',

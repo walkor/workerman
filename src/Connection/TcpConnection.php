@@ -53,7 +53,7 @@ use const STREAM_CRYPTO_METHOD_SSLv2_SERVER;
 
 /**
  * TcpConnection.
- * @property string websocketType
+ * @property string $websocketType
  */
 class TcpConnection extends ConnectionInterface implements JsonSerializable
 {
@@ -1033,7 +1033,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     /**
      * Enable or disable Cache.
      *
-     * @param mixed $value
+     * @param bool $value
      */
     public static function enableCache(bool $value = true): void
     {

@@ -1,5 +1,5 @@
 parameters:
-	level: 1
+	level: 2
 	paths:
 		- src
 		- tests
@@ -10,6 +10,7 @@ parameters:
 	            - '#Property Workerman\\Events\\Revolt::\$driver has unknown class Revolt\\EventLoop\\Driver as its type.#'
 	            - '#Call to static method getDriver\(\) on an unknown class Revolt\\EventLoop.#'
 	            - '#Method Workerman\\Events\\Revolt::driver\(\) has invalid return type Revolt\\EventLoop\\Driver.#'
+	            - '#Call to method .* on an unknown class Revolt\\EventLoop\\Driver.#'
 	    -
 	        path: src/Events/Swow.php
 	        messages:
@@ -23,6 +24,7 @@ parameters:
 	            - '#Constant STREAM_POLLIN not found.#'
 	            - '#Constant STREAM_POLLNONE not found.#'
 	            - '#Constant STREAM_POLLOUT not found.#'
+	            - '#Property Workerman\\Events\\Swow::.* has unknown class Swow\\Coroutine as its type.#'
 	    - path: src/Timer.php
 	      message: '#Call to static method getSuspension\(\) on an unknown class Revolt\\EventLoop.#'
 	    - path: tests/Pest.php

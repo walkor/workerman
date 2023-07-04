@@ -1972,7 +1972,6 @@ class Worker
         if (static::$masterPid === posix_getpid()) {
             $allWorkerInfo = [];
             foreach (static::$pidMap as $workerId => $pidArray) {
-                /** @var /Workerman/Worker $worker */
                 $worker = static::$workers[$workerId];
                 foreach ($pidArray as $pid) {
                     $allWorkerInfo[$pid] = ['name' => $worker->name, 'listen' => $worker->getSocketName()];
@@ -2086,7 +2085,6 @@ class Worker
         $currentWorker = current(static::$workers);
         $defaultWorkerName = $currentWorker->name;
 
-        /** @var static $worker */
         foreach (TcpConnection::$connections as $connection) {
             /** @var TcpConnection $connection */
             $transport = $connection->transport;
