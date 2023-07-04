@@ -8,3 +8,4 @@ vendor/
 /.vscode
 composer.lock
 phpunit.xml
+/phpstan.neon
