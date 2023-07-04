@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [8.1, 8.2]
+        php: ["8.1", "8.2", "8.3"]
         stability: [prefer-lowest, prefer-stable]
 
     name: PHP ${{ matrix.php }} - ${{ matrix.stability }}
@@ -46,5 +46,5 @@ jobs:
         run: composer analyse
 
       - name: Execute tests
-        run: vendor/bin/pest --coverage
+        run: vendor/bin/pest --coverage --colors=always
 
