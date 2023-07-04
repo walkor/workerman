@@ -367,12 +367,8 @@ class Ws
         $userHeader = $connection->headers ?? null;
         $userHeaderStr = '';
         if (!empty($userHeader)) {
-            if (is_array($userHeader)) {
-                foreach ($userHeader as $k => $v) {
-                    $userHeaderStr .= "$k: $v\r\n";
-                }
-            } else {
-                $userHeaderStr .= $userHeader;
+            foreach ($userHeader as $k => $v) {
+                $userHeaderStr .= "$k: $v\r\n";
             }
             $userHeaderStr = "\r\n" . trim($userHeaderStr);
         }
