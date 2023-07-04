@@ -1686,6 +1686,7 @@ class Worker
     protected static function monitorWorkersForLinux(): void
     {
         static::$status = static::STATUS_RUNNING;
+        // @phpstan-ignore-next-line While loop condition is always true.
         while (1) {
             // Calls signal handlers for pending signals.
             pcntl_signal_dispatch();
@@ -2211,6 +2212,7 @@ class Worker
         if (!$stream) {
             $stream = static::$outputStream ?: STDOUT;
         }
+        // @phpstan-ignore-next-line Negated boolean expression is always false.
         if (!$stream || !is_resource($stream) || 'stream' !== get_resource_type($stream)) {
             return false;
         }
@@ -2550,6 +2552,7 @@ class Worker
                 if ($this->protocol !== null) {
                     /** @var ProtocolInterface $parser */
                     $parser = $this->protocol;
+                    // @phpstan-ignore-next-line Left side of && is always true.
                     if ($parser && method_exists($parser, 'input')) {
                         while ($recvBuffer !== '') {
                             $len = $parser::input($recvBuffer, $connection);
