@@ -166,7 +166,7 @@ class Worker
     /**
      * Emitted when data is received.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onMessage = null;
 
@@ -312,7 +312,7 @@ class Worker
     /**
      * EventLoopClass
      *
-     * @var class-string
+     * @var string|class-string
      */
     public static string $eventLoopClass = '';
 
@@ -340,7 +340,7 @@ class Worker
     /**
      * Listening socket.
      *
-     * @var resource
+     * @var ?resource
      */
     protected $mainSocket = null;
 
@@ -534,7 +534,7 @@ class Worker
 
     /**
      * Standard output stream
-     * @var resource
+     * @var ?resource
      */
     protected static $outputStream = null;
 
