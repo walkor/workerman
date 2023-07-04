@@ -99,6 +99,13 @@ class Request
     protected static bool $enableCache = true;
 
     /**
+     * Session id.
+     *
+     * @var mixed|string
+     */
+    protected mixed $sid;
+
+    /**
      * Request constructor.
      *
      * @param string $buffer
