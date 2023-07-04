@@ -44,5 +44,5 @@ jobs:
 #          command: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Execute tests
-        run: vendor/bin/pest --coverage
+        run: vendor/bin/pest --coverage --colors=always
 
