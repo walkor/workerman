@@ -1915,11 +1915,7 @@ class Worker
                 static::$workers = [];
                 static::$globalEvent?->stop();
 
-                try {
-                    exit($code);
-                } catch (Exception $e) {
-
-                }
+                exit($code);
             }
         }
     }
