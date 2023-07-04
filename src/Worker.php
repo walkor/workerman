@@ -1516,14 +1516,10 @@ class Worker
             $process = $processData[0];
             $startFile = $processData[1];
             $status = proc_get_status($process);
-            if (isset($status['running'])) {
-                if (!$status['running']) {
-                    static::safeEcho("process $startFile terminated and try to restart\n");
-                    proc_close($process);
-                    static::forkOneWorkerForWindows($startFile);
-                }
-            } else {
-                static::safeEcho("proc_get_status fail\n");
+            if (!$status['running']) {
+                static::safeEcho("process $startFile terminated and try to restart\n");
+                proc_close($process);
+                static::forkOneWorkerForWindows($startFile);
             }
         }
     }
