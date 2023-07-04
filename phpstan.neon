@@ -1,5 +1,5 @@
 parameters:
-	level: 4
+	level: 5
 	paths:
 		- src
 		- tests
@@ -31,3 +31,4 @@ parameters:
 	      message: '#Undefined variable: \$this#'
 	    - path: src/Worker.php
 	      message: '#Constant LINE_VERSION_LENGTH not found.#'
+	    - message: '#Parameter \#1 \$callback of function set_error_handler expects \(callable\(int, string, string, int\): bool\)\|null,.*#'

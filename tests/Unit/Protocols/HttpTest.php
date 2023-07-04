@@ -95,6 +95,7 @@ it('tests ::encode for ' . Response::class, function () {
 });
 
 it('tests ::decode', function () {
+    /** @var TcpConnection $tcpConnection */
     $tcpConnection = Mockery::mock(TcpConnection::class);
 
     //example request from ChatGPT :)

@@ -4,6 +4,7 @@ use Workerman\Connection\ConnectionInterface;
 use Workerman\Protocols\Text;
 
 test(Text::class, function () {
+    /** @var ConnectionInterface $connection */
     $connection = Mockery::mock(ConnectionInterface::class);
 
     //::input
