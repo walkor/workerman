@@ -1279,7 +1279,7 @@ class Worker
             }
             // change output stream
             static::$outputStream = null;
-            static::outputStream($STDOUT);
+            self::outputStream($STDOUT);
             restore_error_handler();
             return;
         }
@@ -2178,7 +2178,7 @@ class Worker
      */
     public static function safeEcho(string $msg, bool $decorated = false): bool
     {
-        $stream = static::outputStream();
+        $stream = self::outputStream();
         if (!$stream) {
             return false;
         }
