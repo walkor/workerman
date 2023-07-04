@@ -85,6 +85,7 @@ class Swow implements EventInterface
         $t = max($t, 1);
         $that = $this;
         $coroutine = Coroutine::run(static function () use ($t, $func, $args, $that): void {
+            // @phpstan-ignore-next-line While loop condition is always true.
             while (true) {
                 msleep($t);
                 try {

@@ -99,6 +99,13 @@ class Request
     protected static bool $enableCache = true;
 
     /**
+     * Session id.
+     *
+     * @var mixed|string
+     */
+    protected mixed $sid;
+
+    /**
      * Request constructor.
      *
      * @param string $buffer
@@ -296,11 +303,11 @@ class Request
     /**
      * Get/Set session id.
      *
-     * @param null $sessionId
+     * @param string|null $sessionId
      * @return string
      * @throws Exception
      */
-    public function sessionId($sessionId = null): string
+    public function sessionId(string $sessionId = null): string
     {
         if ($sessionId) {
             unset($this->sid);

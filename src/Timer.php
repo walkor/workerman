@@ -107,7 +107,7 @@ class Timer
      *
      * @param float $timeInterval
      * @param callable $func
-     * @param mixed|array $args
+     * @param null|array $args
      * @param bool $persistent
      * @return int
      */

@@ -1,0 +1,34 @@
+parameters:
+	level: 5
+	paths:
+		- src
+		- tests
+	ignoreErrors:
+	    -
+	        path: src/Events/Revolt.php
+	        messages:
+	            - '#Property Workerman\\Events\\Revolt::\$driver has unknown class Revolt\\EventLoop\\Driver as its type.#'
+	            - '#Call to static method getDriver\(\) on an unknown class Revolt\\EventLoop.#'
+	            - '#Method Workerman\\Events\\Revolt::driver\(\) has invalid return type Revolt\\EventLoop\\Driver.#'
+	            - '#Call to method .* on an unknown class Revolt\\EventLoop\\Driver.#'
+	    -
+	        path: src/Events/Swow.php
+	        messages:
+	            - '#Used function Swow\\Sync\\waitAll not found.#'
+	            - '#Call to static method .* on an unknown class Swow\\.*.#'
+	            - '#Function msleep not found.#'
+	            - '#Function stream_poll_one not found.#'
+	            - '#Caught class Swow\\SignalException not found.#'
+	            - '#Function Swow\\Sync\\waitAll not found.#'
+	            - '#Constant STREAM_POLLHUP not found.#'
+	            - '#Constant STREAM_POLLIN not found.#'
+	            - '#Constant STREAM_POLLNONE not found.#'
+	            - '#Constant STREAM_POLLOUT not found.#'
+	            - '#Property Workerman\\Events\\Swow::.* has unknown class Swow\\Coroutine as its type.#'
+	    - path: src/Timer.php
+	      message: '#Call to static method getSuspension\(\) on an unknown class Revolt\\EventLoop.#'
+	    - path: tests/Pest.php
+	      message: '#Undefined variable: \$this#'
+	    - path: src/Worker.php
+	      message: '#Constant LINE_VERSION_LENGTH not found.#'
+	    - message: '#Parameter \#1 \$callback of function set_error_handler expects \(callable\(int, string, string, int\): bool\)\|null,.*#'

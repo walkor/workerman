@@ -32,7 +32,7 @@ afterAll(function () use (&$process) {
 
 it('tests udp connection', function () use ($serverAddress) {
     $socket = stream_socket_client($serverAddress, $errno, $errstr, 1);
-    expect($errno)->toBeInt(0);
+    expect($errno)->toBeInt()->toBe(0);
     fwrite($socket, 'xiami');
     $data = fread($socket, 1024);
     expect($data)->toBeString('received: xiami');

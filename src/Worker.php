@@ -166,7 +166,7 @@ class Worker
     /**
      * Emitted when data is received.
      *
-     * @var callable
+     * @var ?callable
      */
     public $onMessage = null;
 
@@ -312,7 +312,7 @@ class Worker
     /**
      * EventLoopClass
      *
-     * @var class-string
+     * @var string|class-string
      */
     public static string $eventLoopClass = '';
 
@@ -340,7 +340,7 @@ class Worker
     /**
      * Listening socket.
      *
-     * @var resource
+     * @var ?resource
      */
     protected $mainSocket = null;
 
@@ -534,7 +534,7 @@ class Worker
 
     /**
      * Standard output stream
-     * @var resource
+     * @var ?resource
      */
     protected static $outputStream = null;
 
@@ -1279,7 +1279,7 @@ class Worker
             }
             // change output stream
             static::$outputStream = null;
-            static::outputStream($STDOUT);
+            self::outputStream($STDOUT);
             restore_error_handler();
             return;
         }
@@ -1516,14 +1516,10 @@ class Worker
             $process = $processData[0];
             $startFile = $processData[1];
             $status = proc_get_status($process);
-            if (isset($status['running'])) {
-                if (!$status['running']) {
-                    static::safeEcho("process $startFile terminated and try to restart\n");
-                    proc_close($process);
-                    static::forkOneWorkerForWindows($startFile);
-                }
-            } else {
-                static::safeEcho("proc_get_status fail\n");
+            if (!$status['running']) {
+                static::safeEcho("process $startFile terminated and try to restart\n");
+                proc_close($process);
+                static::forkOneWorkerForWindows($startFile);
             }
         }
     }
@@ -1686,6 +1682,7 @@ class Worker
     protected static function monitorWorkersForLinux(): void
     {
         static::$status = static::STATUS_RUNNING;
+        // @phpstan-ignore-next-line While loop condition is always true.
         while (1) {
             // Calls signal handlers for pending signals.
             pcntl_signal_dispatch();
@@ -1918,11 +1915,7 @@ class Worker
                 static::$workers = [];
                 static::$globalEvent?->stop();
 
-                try {
-                    exit($code);
-                } catch (Exception $e) {
-
-                }
+                exit($code);
             }
         }
     }
@@ -1972,7 +1965,6 @@ class Worker
         if (static::$masterPid === posix_getpid()) {
             $allWorkerInfo = [];
             foreach (static::$pidMap as $workerId => $pidArray) {
-                /** @var /Workerman/Worker $worker */
                 $worker = static::$workers[$workerId];
                 foreach ($pidArray as $pid) {
                     $allWorkerInfo[$pid] = ['name' => $worker->name, 'listen' => $worker->getSocketName()];
@@ -2086,7 +2078,6 @@ class Worker
         $currentWorker = current(static::$workers);
         $defaultWorkerName = $currentWorker->name;
 
-        /** @var static $worker */
         foreach (TcpConnection::$connections as $connection) {
             /** @var TcpConnection $connection */
             $transport = $connection->transport;
@@ -2180,7 +2171,7 @@ class Worker
      */
     public static function safeEcho(string $msg, bool $decorated = false): bool
     {
-        $stream = static::outputStream();
+        $stream = self::outputStream();
         if (!$stream) {
             return false;
         }
@@ -2213,6 +2204,7 @@ class Worker
         if (!$stream) {
             $stream = static::$outputStream ?: STDOUT;
         }
+        // @phpstan-ignore-next-line Negated boolean expression is always false.
         if (!$stream || !is_resource($stream) || 'stream' !== get_resource_type($stream)) {
             return false;
         }
@@ -2552,6 +2544,7 @@ class Worker
                 if ($this->protocol !== null) {
                     /** @var ProtocolInterface $parser */
                     $parser = $this->protocol;
+                    // @phpstan-ignore-next-line Left side of && is always true.
                     if ($parser && method_exists($parser, 'input')) {
                         while ($recvBuffer !== '') {
                             $len = $parser::input($recvBuffer, $connection);

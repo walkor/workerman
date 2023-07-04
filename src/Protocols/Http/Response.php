@@ -401,7 +401,7 @@ class Response
 
         $fileInfo = pathinfo($file);
         $extension = $fileInfo['extension'] ?? '';
-        $baseName = $fileInfo['basename'] ?? 'unknown';
+        $baseName = $fileInfo['basename'] ?: 'unknown';
         if (!isset($headers['Content-Type'])) {
             if (isset(self::$mimeTypeMap[$extension])) {
                 $head .= "Content-Type: " . self::$mimeTypeMap[$extension] . "\r\n";
