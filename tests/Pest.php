@@ -58,3 +58,13 @@ function testWithConnectionClose(Closure $closure, string $dataContains = null, 
         $tcpConnection->shouldHaveReceived('close');
     }
 }
+
+function getNonFrameOutput(string $output): string
+{
+    $end = "Start success.\n";
+    $pos = strpos($output, $end);
+    if ($pos !== false) {
+        return substr($output, $pos + strlen($end));
+    }
+    return $output;
+}
