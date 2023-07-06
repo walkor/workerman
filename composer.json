@@ -53,6 +53,6 @@
         }
     },
     "scripts": {
-        "analyse": "phpstan"
+        "analyze": "phpstan"
     }
 }

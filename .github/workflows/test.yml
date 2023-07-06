@@ -43,7 +43,7 @@ jobs:
           command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress
 
       - name: Static analysis
-        run: composer analyse
+        run: composer analyze
 
       - name: Execute tests
         run: vendor/bin/pest --coverage --colors=always
