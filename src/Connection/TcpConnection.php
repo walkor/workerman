@@ -819,7 +819,8 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         if (false === $ret) {
             $this->destroy();
             return false;
-        } elseif (0 === $ret) {
+        }
+        if (0 === $ret) {
             // There isn't enough data and should try again.
             return 0;
         }
