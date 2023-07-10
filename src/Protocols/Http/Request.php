@@ -632,7 +632,7 @@ class Request
                     $file['type'] = trim($value);
                     break;
 
-                case "webkitRelativePath":
+                case "webkitrelativepath":
                     $file['full_path'] = \trim($value);
                     break;
             }
