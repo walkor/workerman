@@ -21,7 +21,7 @@ interface EventInterface
      * Delay the execution of a callback.
      * @param float $delay
      * @param callable $func
-     * @param array $args
+     * @param mixed[] $args
      * @return int
      */
     public function delay(float $delay, callable $func, array $args = []): int;
@@ -37,7 +37,7 @@ interface EventInterface
      * Repeatedly execute a callback.
      * @param float $interval
      * @param callable $func
-     * @param array $args
+     * @param mixed[] $args
      * @return int
      */
     public function repeat(float $interval, callable $func, array $args = []): int;

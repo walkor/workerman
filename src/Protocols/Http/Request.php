@@ -593,6 +593,7 @@ class Request
             }
             [$key, $value] = explode(': ', $contentLine);
             switch (strtolower($key)) {
+
                 case "content-disposition":
                     // Is file data.
                     if (preg_match('/name="(.*?)"; filename="(.*?)"/i', $value, $match)) {
@@ -613,7 +614,7 @@ class Request
                         }
                         $uploadKey = $fileName;
                         // Parse upload files.
-                        $file = [...$file, 'name' => $match[2], 'tmp_name' => $tmpFile, 'size' => $size, 'error' => $error];
+                        $file = [...$file, 'name' => $match[2], 'tmp_name' => $tmpFile, 'size' => $size, 'error' => $error, 'full_path' => $match[2]];
                         if (!isset($file['type'])) {
                             $file['type'] = '';
                         }
@@ -626,8 +627,13 @@ class Request
                         $postEncodeString .= urlencode($k) . "=" . urlencode($boundaryValue) . '&';
                     }
                     return $sectionEndOffset + strlen($boundary) + 2;
+                
                 case "content-type":
                     $file['type'] = trim($value);
+                    break;
+
+                case "webkitrelativepath":
+                    $file['full_path'] = \trim($value);
                     break;
             }
         }
