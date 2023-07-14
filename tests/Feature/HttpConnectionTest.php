@@ -11,10 +11,10 @@ beforeAll(function () use (&$process) {
     $process = new PhpProcess($code);
     $process->start();
     sleep(1);
-    $process->getOutput();
 });
 
 afterAll(function () use (&$process) {
+    $process->getOutput();
     $process->stop();
 });
 
