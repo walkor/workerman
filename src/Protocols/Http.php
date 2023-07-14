@@ -86,7 +86,7 @@ class Http
      *
      * @param bool $value
      */
-    public static function enableCache(bool $value)
+    public static function enableCache(bool $value): void
     {
         static::$enableCache = $value;
     }
@@ -197,7 +197,7 @@ class Http
      * @return string
      * @throws Throwable
      */
-    public static function encode(mixed $response, TcpConnection $connection): string
+    public static function encode(string|Response $response, TcpConnection $connection): string
     {
         if (isset($connection->request)) {
             $request = $connection->request;
@@ -217,7 +217,6 @@ class Http
                 }
                 $connection->headers = [];
             }
-            $response = (string)$response;
             $bodyLen = strlen($response);
             return "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$extHeader}Connection: keep-alive\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $bodyLen\r\n\r\n$response";
         }
