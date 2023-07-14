@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols\Http;
 
+use Stringable;
+
 use function dechex;
 use function strlen;
 
@@ -23,7 +25,7 @@ use function strlen;
  * Class Chunk
  * @package Workerman\Protocols\Http
  */
-class Chunk
+class Chunk implements Stringable
 {
     /**
      * Chunk buffer.
@@ -47,7 +49,7 @@ class Chunk
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return dechex(strlen($this->buffer)) . "\r\n$this->buffer\r\n";
     }

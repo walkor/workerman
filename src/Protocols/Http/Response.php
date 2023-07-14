@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols\Http;
 
+use Stringable;
+
 use function array_merge_recursive;
 use function explode;
 use function file;
@@ -35,7 +37,7 @@ use const FILE_SKIP_EMPTY_LINES;
  * Class Response
  * @package Workerman\Protocols\Http
  */
-class Response
+class Response implements Stringable
 {
     /**
      * Header data.
@@ -426,7 +428,7 @@ class Response
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         if ($this->file) {
             return $this->createHeadForFile($this->file);

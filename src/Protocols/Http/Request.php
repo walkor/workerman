@@ -18,6 +18,7 @@ namespace Workerman\Protocols\Http;
 
 use Exception;
 use RuntimeException;
+use Stringable;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
 use function array_walk_recursive;
@@ -49,7 +50,7 @@ use function urlencode;
  * Class Request
  * @package Workerman\Protocols\Http
  */
-class Request
+class Request implements Stringable
 {
     /**
      * Connection.
@@ -680,7 +681,7 @@ class Request
     /**
      * __toString.
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->buffer;
     }
