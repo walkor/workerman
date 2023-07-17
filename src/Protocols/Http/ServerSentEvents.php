@@ -16,13 +16,15 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols\Http;
 
+use Stringable;
+
 use function str_replace;
 
 /**
  * Class ServerSentEvents
  * @package Workerman\Protocols\Http
  */
-class ServerSentEvents
+class ServerSentEvents implements Stringable
 {
     /**
      * Data.
@@ -45,7 +47,7 @@ class ServerSentEvents
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         $buffer = '';
         $data = $this->data;
