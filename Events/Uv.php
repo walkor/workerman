@@ -109,8 +109,8 @@ class Uv implements EventInterface
                 $repeat = $flag === self::EV_TIMER_ONCE ? 0 : (int)($fd * 1000);
                 $param  = array($func, (array)$args, $flag, $fd, self::$_timerId);
                 $timerWatcher = \uv_timer_init(); 
-                \uv_timer_start($timerWatcher, 1, $repeat, function($watcher)use($param){
-                    call_user_func_array([$this, 'timerCallback'], [$param]);
+                \uv_timer_start($timerWatcher, ($flag === self::EV_TIMER_ONCE ? (int)($fd * 1000) :1), $repeat, function($watcher)use($param){
+                    call_user_func_array([$this, 'timerCallback'], [$param]); 
                 });
                 $this->_eventTimer[self::$_timerId] = $timerWatcher;
                 return self::$_timerId++;
