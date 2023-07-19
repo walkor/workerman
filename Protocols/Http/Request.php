@@ -46,7 +46,7 @@ class Request
     public $properties = array();
 
     /**
-     * @var int 
+     * @var int
      */
     public static $maxFileUploads = 1024;
 
@@ -70,6 +70,13 @@ class Request
      * @var bool
      */
     protected static $_enableCache = true;
+
+    /**
+     * Is safe.
+     *
+     * @var bool
+     */
+    protected $_isSafe = true;
 
 
     /**
@@ -657,13 +664,23 @@ class Request
     }
 
     /**
+     * __wakeup.
+     *
+     * @return void
+     */
+    public function __wakeup()
+    {
+        $this->_isSafe = false;
+    }
+
+    /**
      * __destruct.
      *
      * @return void
      */
     public function __destruct()
     {
-        if (isset($this->_data['files'])) {
+        if (isset($this->_data['files']) && $this->_isSafe) {
             \clearstatcache();
             \array_walk_recursive($this->_data['files'], function($value, $key){
                 if ($key === 'tmp_name') {
