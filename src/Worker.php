@@ -1065,7 +1065,9 @@ class Worker
         }
         $statusStr = '';
         $currentTotalRequest = [];
-        $workerInfo = unserialize($info[0]);
+        try {
+            $workerInfo = unserialize($info[0], ['allowed_classes' => false]);
+        } catch (Throwable $exception) {}
         ksort($workerInfo, SORT_NUMERIC);
         unset($info[0]);
         $dataWaitingSort = [];
