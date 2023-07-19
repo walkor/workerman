@@ -149,6 +149,13 @@ class Session
     protected string $sessionId;
 
     /**
+     * Is safe.
+     *
+     * @var bool
+     */
+    protected $isSafe = true;
+
+    /**
      * Session constructor.
      *
      * @param string $sessionId
@@ -417,6 +424,16 @@ class Session
     }
 
     /**
+     * __wakeup.
+     *
+     * @return void
+     */
+    public function __wakeup()
+    {
+        $this->isSafe = false;
+    }
+
+    /**
      * __destruct.
      *
      * @return void
@@ -424,6 +441,9 @@ class Session
      */
     public function __destruct()
     {
+        if (!$this->isSafe) {
+            return;
+        }
         $this->save();
         if (random_int(1, static::$gcProbability[1]) <= static::$gcProbability[0]) {
             $this->gc();

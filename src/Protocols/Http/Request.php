@@ -93,6 +93,13 @@ class Request implements Stringable
     protected array $data = [];
 
     /**
+     * Is safe.
+     *
+     * @var bool
+     */
+    protected $isSafe = true;
+
+    /**
      * Enable cache.
      *
      * @var bool
@@ -731,6 +738,17 @@ class Request implements Stringable
         unset($this->properties[$name]);
     }
 
+
+    /**
+     * __wakeup.
+     *
+     * @return void
+     */
+    public function __wakeup()
+    {
+        $this->isSafe = false;
+    }
+
     /**
      * __destruct.
      *
@@ -738,7 +756,7 @@ class Request implements Stringable
      */
     public function __destruct()
     {
-        if (isset($this->data['files'])) {
+        if (isset($this->data['files']) && $this->isSafe) {
             clearstatcache();
             array_walk_recursive($this->data['files'], function ($value, $key) {
                 if ($key === 'tmp_name' && is_file($value)) {
