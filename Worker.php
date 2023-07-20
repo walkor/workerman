@@ -85,7 +85,6 @@ class Worker
      */
     const UI_SAFE_LENGTH = 4;    
 	
-	
 	/**
      * The signal what will be set to childred on worker stop
      *
@@ -1233,12 +1232,12 @@ class Worker
             case \SIGINT:
             case \SIGTERM:
             case \SIGHUP:
-            case \SIGTSTP:
+            case SIGNAL_STOP:
                 static::$_gracefulStop = false;
                 static::stopAll();
                 break;
             // Graceful stop.
-            case \SIGQUIT:
+            case SIGNAL_STOP_GRACEFUL:
                 static::$_gracefulStop = true;
                 static::stopAll();
                 break;
