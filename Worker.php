@@ -83,7 +83,22 @@ class Worker
      *
      * @var int
      */
-    const UI_SAFE_LENGTH = 4;
+    const UI_SAFE_LENGTH = 4;    
+	
+	
+	/**
+     * The signal what will be set to childred on worker stop
+     *
+     * @var int
+     */
+    const SIGNAL_STOP = \SIGINT;	
+	
+	/**
+     * The signal what will be set to childred on worker stop gracefull
+     *
+     * @var int
+     */
+    const SIGNAL_STOP_GRACEFUL = \SIGQUIT;
 
     /**
      * Worker id.
@@ -1933,9 +1948,9 @@ class Worker
             $worker_pid_array = static::getAllWorkerPids();
             // Send stop signal to all child processes.
             if (static::$_gracefulStop) {
-                $sig = \SIGQUIT;
+                $sig = SIGNAL_STOP_GRACEFUL;
             } else {
-                $sig = \SIGINT;
+                $sig = SIGNAL_STOP;
             }
             foreach ($worker_pid_array as $worker_pid) {
                 if (static::$daemonize) {
