@@ -100,6 +100,8 @@ class Uv implements EventInterface
                         Worker::stopAll(250, $e);
                     }
                 };
+				
+				$this->del($fd, $flag);
                 $signalWatcher = \uv_signal_init(); 
                 \uv_signal_start($signalWatcher, $signalCallback, $fd);
                 $this->_eventSignal[$fd] = $signalWatcher;
