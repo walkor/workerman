@@ -34,7 +34,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.0.45';
+    const VERSION = '4.0.46';
 
     /**
      * Status starting.
@@ -1057,7 +1057,10 @@ class Worker
         }
         $status_str = '';
         $current_total_request = array();
-        $worker_info = \unserialize($info[0]);
+        $workerInfo = [];
+        try {
+            $workerInfo = unserialize($info[0], ['allowed_classes' => false]);
+        } catch (Throwable $exception) {}
         \ksort($worker_info, SORT_NUMERIC);
         unset($info[0]);
         $data_waiting_sort = array();
