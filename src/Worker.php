@@ -1065,6 +1065,7 @@ class Worker
         }
         $statusStr = '';
         $currentTotalRequest = [];
+        $workerInfo = [];
         try {
             $workerInfo = unserialize($info[0], ['allowed_classes' => false]);
         } catch (Throwable $exception) {}
