@@ -1064,7 +1064,7 @@ class Worker
         try {
             $workerInfo = unserialize($info[0], ['allowed_classes' => false]);
         } catch (Throwable $exception) {}
-        \ksort($worker_info, SORT_NUMERIC);
+        \ksort($workerInfo, SORT_NUMERIC);
         unset($info[0]);
         $data_waiting_sort = array();
         $read_process_status = false;
@@ -1099,7 +1099,7 @@ class Worker
                 }
             }
         }
-        foreach($worker_info as $pid => $info) {
+        foreach($workerInfo as $pid => $info) {
             if (!isset($data_waiting_sort[$pid])) {
                 $status_str .= "$pid\t" . \str_pad('N/A', 7) . " "
                     . \str_pad($info['listen'], static::$_maxSocketNameLength) . " "
