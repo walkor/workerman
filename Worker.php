@@ -1057,9 +1057,9 @@ class Worker
         }
         $status_str = '';
         $current_total_request = array();
-        $workerInfo = [];
+        $worker_info = [];
         try {
-            $workerInfo = unserialize($info[0], ['allowed_classes' => false]);
+            $worker_info = unserialize($info[0], ['allowed_classes' => false]);
         } catch (Throwable $exception) {}
         \ksort($worker_info, SORT_NUMERIC);
         unset($info[0]);
