@@ -581,8 +581,8 @@ class Worker
      */
     protected static function checkSapiEnv(): void
     {
-        // Only for cli.
-        if (PHP_SAPI !== 'cli') {
+        // Only for cli and micro.
+        if (!in_array(\PHP_SAPI, ['cli', 'micro'])) {
             exit("Only run in command line mode \n");
         }
     }
