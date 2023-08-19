@@ -27,6 +27,7 @@ beforeAll(function () use ($serverAddress, &$process) {
 });
 
 afterAll(function () use (&$process) {
+    echo "\nUDP Test:\n", $process->getOutput();
     $process->stop();
 });
 
