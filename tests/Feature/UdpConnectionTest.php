@@ -38,4 +38,4 @@ it('tests udp connection', function () use ($serverAddress) {
     expect($data)->toBeString('received: xiami');
     fclose($socket);
 })
-    ->skipOnWindows(); //require posix
+    ->skipOnWindows('require posix'); //require posix
