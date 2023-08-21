@@ -14,6 +14,7 @@ beforeAll(function () use (&$process) {
 });
 
 afterAll(function () use (&$process) {
+    echo $process->getOutput();
     $process->stop();
 });
 
