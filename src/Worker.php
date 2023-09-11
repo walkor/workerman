@@ -1003,7 +1003,7 @@ class Worker
                     $masterIsAlive = $masterPid && posix_kill($masterPid, 0);
                     if ($masterIsAlive) {
                         // Timeout?
-                        if (!static::$gracefulStop && time() - $startTime >= $timeout) {
+                        if (!static::getGracefulStop() && time() - $startTime >= $timeout) {
                             static::log("Workerman[$startFile] stop fail");
                             exit;
                         }
@@ -1799,7 +1799,7 @@ class Worker
     {
         // For master process.
         if (static::$masterPid === posix_getpid()) {
-            $sig = static::$gracefulStop ? SIGUSR2 : SIGUSR1;
+            $sig = static::getGracefulStop() ? SIGUSR2 : SIGUSR1;
             // Set reloading state.
             if (static::$status !== static::STATUS_RELOADING && static::$status !== static::STATUS_SHUTDOWN) {
                 static::log("Workerman[" . basename(static::$startFile) . "] reloading");
@@ -1847,7 +1847,7 @@ class Worker
             // Send reload signal to a worker process.
             posix_kill($oneWorkerPid, $sig);
             // If the process does not exit after stopTimeout seconds try to kill it.
-            if (!static::$gracefulStop) {
+            if (!static::getGracefulStop()) {
                 Timer::add(static::$stopTimeout, '\posix_kill', [$oneWorkerPid, SIGKILL], false);
             }
         } // For child processes.
@@ -1890,7 +1890,7 @@ class Worker
             static::log("Workerman[" . basename(static::$startFile) . "] stopping ...");
             $workerPidArray = static::getAllWorkerPids();
             // Send stop signal to all child processes.
-            $sig = static::$gracefulStop ? SIGQUIT : SIGINT;
+            $sig = static::getGracefulStop() ? SIGQUIT : SIGINT;
             foreach ($workerPidArray as $workerPid) {
                 // Fix exit with status 2 for php8.2
                 if ($sig === SIGINT && !static::$daemonize) {
@@ -1898,7 +1898,7 @@ class Worker
                 } else {
                     posix_kill($workerPid, $sig);
                 }
-                if (!static::$gracefulStop) {
+                if (!static::getGracefulStop()) {
                     Timer::add(ceil(static::$stopTimeout), '\posix_kill', [$workerPid, SIGKILL], false);
                 }
             }
@@ -1917,7 +1917,7 @@ class Worker
                     $worker->stopping = true;
                 }
             }
-            if (!static::$gracefulStop || ConnectionInterface::$statistics['connection_count'] <= 0) {
+            if (!static::getGracefulStop() || ConnectionInterface::$statistics['connection_count'] <= 0) {
                 static::$workers = [];
                 static::$globalEvent?->stop();
 
@@ -2468,7 +2468,7 @@ class Worker
         // Remove listener for server socket.
         $this->unlisten();
         // Close all connections for the worker.
-        if (static::$gracefulStop) {
+        if (!static::getGracefulStop()) {
             foreach ($this->connections as $connection) {
                 $connection->close();
             }
