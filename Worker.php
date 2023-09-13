@@ -2063,7 +2063,7 @@ class Worker
     public static function checkErrors()
     {
         if (static::STATUS_SHUTDOWN !== static::$_status) {
-            $error_msg = static::$_OS === \OS_TYPE_LINUX ? 'Worker['. \posix_getpid() .'] process terminated' : 'Worker process terminated';
+            $error_msg = static::$_OS === \OS_TYPE_LINUX ? ' |> Worker['. \posix_getpid() .'] process terminated' : 'Worker process terminated';
             $errors    = error_get_last();
             if ($errors && ($errors['type'] === \E_ERROR ||
                     $errors['type'] === \E_PARSE ||
