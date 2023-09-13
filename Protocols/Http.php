@@ -459,6 +459,9 @@ class Http
             return true;
         }
         HttpCache::$instance->sessionStarted = true;
+        if (isset($_COOKIE[HttpCache::$sessionName]) && !\preg_match('/^[a-zA-Z0-9]+$/', $_COOKIE[HttpCache::$sessionName])) {
+            unset($_COOKIE[HttpCache::$sessionName]);
+        }
         // Generate a SID.
         if (!isset($_COOKIE[HttpCache::$sessionName]) || !\is_file(HttpCache::$sessionPath . '/ses_' . $_COOKIE[HttpCache::$sessionName])) {
             // Create a unique session_id and the associated file name.
