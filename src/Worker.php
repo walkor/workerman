@@ -30,12 +30,14 @@ use Workerman\Events\EventInterface;
 use Workerman\Events\Revolt;
 use Workerman\Events\Select;
 use Workerman\Protocols\ProtocolInterface;
+
 use function method_exists;
 use function restore_error_handler;
 use function set_error_handler;
 use function stream_socket_accept;
 use function stream_socket_recvfrom;
 use function substr;
+use function array_walk;
 
 /**
  * Worker class
@@ -784,7 +786,7 @@ class Worker
         }
         if (DIRECTORY_SEPARATOR !== '/') {
             static::safeEcho("---------------------------------------------- WORKERMAN -----------------------------------------------\r\n");
-            static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. \PHP_VERSION. "\r\n");
+            static::safeEcho('Workerman version:' . static::VERSION . '          PHP version:' . \PHP_VERSION . "\r\n");
             static::safeEcho("----------------------------------------------- WORKERS ------------------------------------------------\r\n");
             static::safeEcho("worker                                          listen                              processes   status\r\n");
             return;
@@ -827,7 +829,7 @@ class Worker
 
         if (static::$daemonize) {
             static::safeEcho('Input "php ' . basename(static::$startFile) . ' stop" to stop. Start success.' . "\n\n");
-        } else if (!empty(static::$command)) {
+        } elseif (!empty(static::$command)) {
             static::safeEcho("Start success.\n"); // Workerman used as library
         } else {
             static::safeEcho("Press Ctrl+C to stop. Start success.\n");
@@ -969,6 +971,7 @@ class Worker
                     }
                     static::safeEcho("\nPress Ctrl+C to quit.\n\n");
                 }
+                // no break
             case 'connections':
                 if (is_file($statisticsFile) && is_writable($statisticsFile)) {
                     unlink($statisticsFile);
@@ -1030,7 +1033,7 @@ class Worker
                 }
                 posix_kill($masterPid, $sig);
                 exit;
-            default :
+            default:
                 static::safeEcho('Unknown command: ' . $command . "\n");
                 exit($usage);
         }
@@ -1068,7 +1071,8 @@ class Worker
         $workerInfo = [];
         try {
             $workerInfo = unserialize($info[0], ['allowed_classes' => false]);
-        } catch (Throwable $exception) {}
+        } catch (Throwable $exception) {
+        }
         ksort($workerInfo, SORT_NUMERIC);
         unset($info[0]);
         $dataWaitingSort = [];
@@ -1165,7 +1169,7 @@ class Worker
         }
         $signals = [SIGINT, SIGTERM, SIGHUP, SIGTSTP, SIGQUIT, SIGUSR1, SIGUSR2, SIGIOT, SIGIO];
         foreach ($signals as $signal) {
-            pcntl_signal($signal, SIG_IGN, false);
+            // Rewrite master process signal.
             static::$globalEvent->onSignal($signal, [static::class, 'signalHandler']);
         }
     }
@@ -1187,12 +1191,12 @@ class Worker
                 static::$gracefulStop = false;
                 static::stopAll();
                 break;
-            // Graceful stop.
+                // Graceful stop.
             case SIGQUIT:
                 static::$gracefulStop = true;
                 static::stopAll();
                 break;
-            // Reload.
+                // Reload.
             case SIGUSR2:
             case SIGUSR1:
                 if (static::$status === static::STATUS_RELOADING || static::$status === static::STATUS_SHUTDOWN) {
@@ -1202,11 +1206,11 @@ class Worker
                 static::$pidsToRestart = static::getAllWorkerPids();
                 static::reload();
                 break;
-            // Show status.
+                // Show status.
             case SIGIOT:
                 static::writeStatisticsToStatusFile();
                 break;
-            // Show connection status.
+                // Show connection status.
             case SIGIO:
                 static::writeConnectionsStatisticsToStatusFile();
                 break;
@@ -1258,8 +1262,7 @@ class Worker
         $handle = fopen(static::$stdoutFile, "a");
         if ($handle) {
             unset($handle);
-            set_error_handler(function () {
-            });
+            set_error_handler(function () {});
             if ($STDOUT) {
                 fclose($STDOUT);
             }
@@ -1428,7 +1431,7 @@ class Worker
             // Create a global event loop.
             if (!static::$globalEvent) {
                 $eventLoopClass = static::getEventLoopName();
-                static::$globalEvent = new $eventLoopClass;
+                static::$globalEvent = new $eventLoopClass();
                 static::$globalEvent->setErrorHandler(function ($exception) {
                     static::stopAll(250, $exception);
                 });
@@ -1443,8 +1446,8 @@ class Worker
             restore_error_handler();
 
             // Add an empty timer to prevent the event-loop from exiting.
-            Timer::add(1000000, function (){});
-            
+            Timer::add(1000000, function () {});
+
             // Display UI.
             static::safeEcho(str_pad($worker->name, 48) . str_pad($worker->getSocketName(), 36) . str_pad('1', 10) . "  [ok]\n");
             $worker->listen();
@@ -1572,7 +1575,7 @@ class Worker
             // Create a global event loop.
             if (!static::$globalEvent) {
                 $eventLoopClass = static::getEventLoopName();
-                static::$globalEvent = new $eventLoopClass;
+                static::$globalEvent = new $eventLoopClass();
                 static::$globalEvent->setErrorHandler(function ($exception) {
                     static::stopAll(250, $exception);
                 });
@@ -1658,8 +1661,7 @@ class Worker
      */
     protected static function setProcessTitle(string $title): void
     {
-        set_error_handler(function () {
-        });
+        set_error_handler(function () {});
         cli_set_process_title($title);
         restore_error_handler();
     }
@@ -1801,7 +1803,7 @@ class Worker
         if (static::$masterPid === posix_getpid()) {
             $sig = static::getGracefulStop() ? SIGUSR2 : SIGUSR1;
             // Set reloading state.
-            if (static::$status !== static::STATUS_RELOADING && static::$status !== static::STATUS_SHUTDOWN) {
+            if (static::$status === static::STATUS_RUNNING) {
                 static::log("Workerman[" . basename(static::$startFile) . "] reloading");
                 static::$status = static::STATUS_RELOADING;
 
@@ -1911,17 +1913,18 @@ class Worker
         else {
             // Execute exit.
             $workers = array_reverse(static::$workers);
-            foreach ($workers as $worker) {
-                if (!$worker->stopping) {
-                    $worker->stop();
-                    $worker->stopping = true;
-                }
-            }
+            array_walk($workers, static fn (Worker $worker) => $worker->stop());
+
             if (!static::getGracefulStop() || ConnectionInterface::$statistics['connection_count'] <= 0) {
                 static::$workers = [];
                 static::$globalEvent?->stop();
 
-                exit($code);
+                try {
+                    // Ignore Swoole ExitException: Swoole exit.
+                    exit($code);
+                } catch(\Exception $e) {
+
+                }
             }
         }
     }
@@ -1979,42 +1982,75 @@ class Worker
 
             file_put_contents(static::$statisticsFile, serialize($allWorkerInfo) . "\n", FILE_APPEND);
             $loadavg = function_exists('sys_getloadavg') ? array_map('round', sys_getloadavg(), [2, 2, 2]) : ['-', '-', '-'];
-            file_put_contents(static::$statisticsFile,
-                "----------------------------------------------GLOBAL STATUS----------------------------------------------------\n", FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
-                'Workerman version:' . static::VERSION . "          PHP version:" . PHP_VERSION . "\n", FILE_APPEND);
-            file_put_contents(static::$statisticsFile, 'start time:' . date('Y-m-d H:i:s',
-                    static::$globalStatistics['start_timestamp']) . '   run ' . floor((time() - static::$globalStatistics['start_timestamp']) / (24 * 60 * 60)) . ' days ' . floor(((time() - static::$globalStatistics['start_timestamp']) % (24 * 60 * 60)) / (60 * 60)) . " hours   \n",
-                FILE_APPEND);
+            file_put_contents(
+                static::$statisticsFile,
+                "----------------------------------------------GLOBAL STATUS----------------------------------------------------\n",
+                FILE_APPEND
+            );
+            file_put_contents(
+                static::$statisticsFile,
+                'Workerman version:' . static::VERSION . "          PHP version:" . PHP_VERSION . "\n",
+                FILE_APPEND
+            );
+            file_put_contents(
+                static::$statisticsFile,
+                'start time:' . date(
+                    'Y-m-d H:i:s',
+                    static::$globalStatistics['start_timestamp']
+                ) . '   run ' . floor((time() - static::$globalStatistics['start_timestamp']) / (24 * 60 * 60)) . ' days ' . floor(((time() - static::$globalStatistics['start_timestamp']) % (24 * 60 * 60)) / (60 * 60)) . " hours   \n",
+                FILE_APPEND
+            );
             $loadStr = 'load average: ' . implode(", ", $loadavg);
-            file_put_contents(static::$statisticsFile,
-                str_pad($loadStr, 33) . 'event-loop:' . static::getEventLoopName() . "\n", FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
+            file_put_contents(
+                static::$statisticsFile,
+                str_pad($loadStr, 33) . 'event-loop:' . static::getEventLoopName() . "\n",
+                FILE_APPEND
+            );
+            file_put_contents(
+                static::$statisticsFile,
                 count(static::$pidMap) . ' workers       ' . count(static::getAllWorkerPids()) . " processes\n",
-                FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
-                str_pad('worker_name', static::$maxWorkerNameLength) . " exit_status      exit_count\n", FILE_APPEND);
+                FILE_APPEND
+            );
+            file_put_contents(
+                static::$statisticsFile,
+                str_pad('worker_name', static::$maxWorkerNameLength) . " exit_status      exit_count\n",
+                FILE_APPEND
+            );
             foreach (static::$pidMap as $workerId => $workerPidArray) {
                 $worker = static::$workers[$workerId];
                 if (isset(static::$globalStatistics['worker_exit_info'][$workerId])) {
                     foreach (static::$globalStatistics['worker_exit_info'][$workerId] as $workerExitStatus => $workerExitCount) {
-                        file_put_contents(static::$statisticsFile,
-                            str_pad($worker->name, static::$maxWorkerNameLength) . " " . str_pad((string)$workerExitStatus,
-                                16) . " $workerExitCount\n", FILE_APPEND);
+                        file_put_contents(
+                            static::$statisticsFile,
+                            str_pad($worker->name, static::$maxWorkerNameLength) . " " . str_pad(
+                                (string)$workerExitStatus,
+                                16
+                            ) . " $workerExitCount\n",
+                            FILE_APPEND
+                        );
                     }
                 } else {
-                    file_put_contents(static::$statisticsFile,
+                    file_put_contents(
+                        static::$statisticsFile,
                         str_pad($worker->name, static::$maxWorkerNameLength) . " " . str_pad('0', 16) . " 0\n",
-                        FILE_APPEND);
+                        FILE_APPEND
+                    );
                 }
             }
-            file_put_contents(static::$statisticsFile,
+            file_put_contents(
+                static::$statisticsFile,
                 "----------------------------------------------PROCESS STATUS---------------------------------------------------\n",
-                FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
-                "pid\tmemory  " . str_pad('listening', static::$maxSocketNameLength) . " " . str_pad('worker_name',
-                    static::$maxWorkerNameLength) . " connections " . str_pad('send_fail', 9) . " "
-                . str_pad('timers', 8) . str_pad('total_request', 13) . " qps    status\n", FILE_APPEND);
+                FILE_APPEND
+            );
+            file_put_contents(
+                static::$statisticsFile,
+                "pid\tmemory  " . str_pad('listening', static::$maxSocketNameLength) . " " . str_pad(
+                    'worker_name',
+                    static::$maxWorkerNameLength
+                ) . " connections " . str_pad('send_fail', 9) . " "
+                . str_pad('timers', 8) . str_pad('total_request', 13) . " qps    status\n",
+                FILE_APPEND
+            );
 
             chmod(static::$statisticsFile, 0722);
 
@@ -2321,8 +2357,7 @@ class Worker
 
             // Try to open keepalive for tcp and disable Nagle algorithm.
             if (function_exists('socket_import_stream') && self::BUILD_IN_TRANSPORTS[$this->transport] === 'tcp') {
-                set_error_handler(function () {
-                });
+                set_error_handler(function () {});
                 $socket = socket_import_stream($this->mainSocket);
                 socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
                 socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
@@ -2345,8 +2380,7 @@ class Worker
     {
         $this->pauseAccept();
         if ($this->mainSocket) {
-            set_error_handler(function () {
-            });
+            set_error_handler(function () {});
             fclose($this->mainSocket);
             restore_error_handler();
             $this->mainSocket = null;
@@ -2379,7 +2413,7 @@ class Worker
             if (!isset(self::BUILD_IN_TRANSPORTS[$this->transport])) {
                 throw new RuntimeException('Bad worker->transport ' . var_export($this->transport, true));
             }
-        } else if ($this->transport === 'tcp') {
+        } elseif ($this->transport === 'tcp') {
             $this->transport = $scheme;
         }
         //local socket
@@ -2457,6 +2491,9 @@ class Worker
      */
     public function stop(): void
     {
+        if ($this->stopping === true) {
+            return;
+        }
         // Try to emit onWorkerStop callback.
         if ($this->onWorkerStop) {
             try {
@@ -2481,6 +2518,7 @@ class Worker
         }
         // Clear callback.
         $this->onMessage = $this->onClose = $this->onError = $this->onBufferDrain = $this->onBufferFull = null;
+        $this->stopping = true;
     }
 
     /**
@@ -2493,8 +2531,7 @@ class Worker
     public function acceptTcpConnection($socket): void
     {
         // Accept a connection on server socket.
-        set_error_handler(function () {
-        });
+        set_error_handler(function () {});
         $newSocket = stream_socket_accept($socket, 0, $remoteAddress);
         restore_error_handler();
 
@@ -2534,8 +2571,7 @@ class Worker
      */
     public function acceptUdpConnection($socket): bool
     {
-        set_error_handler(function () {
-        });
+        set_error_handler(function () {});
         $recvBuffer = stream_socket_recvfrom($socket, UdpConnection::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
         restore_error_handler();
         if (false === $recvBuffer || empty($remoteAddress)) {
