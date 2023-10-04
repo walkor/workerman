@@ -36,6 +36,7 @@ use function set_error_handler;
 use function stream_socket_accept;
 use function stream_socket_recvfrom;
 use function substr;
+use function array_walk;
 
 /**
  * Worker class
@@ -1165,7 +1166,7 @@ class Worker
         }
         $signals = [SIGINT, SIGTERM, SIGHUP, SIGTSTP, SIGQUIT, SIGUSR1, SIGUSR2, SIGIOT, SIGIO];
         foreach ($signals as $signal) {
-            pcntl_signal($signal, SIG_IGN, false);
+            // Rewrite master process signal.
             static::$globalEvent->onSignal($signal, [static::class, 'signalHandler']);
         }
     }
@@ -1801,7 +1802,7 @@ class Worker
         if (static::$masterPid === posix_getpid()) {
             $sig = static::getGracefulStop() ? SIGUSR2 : SIGUSR1;
             // Set reloading state.
-            if (static::$status !== static::STATUS_RELOADING && static::$status !== static::STATUS_SHUTDOWN) {
+            if (static::$status === static::STATUS_RUNNING) {
                 static::log("Workerman[" . basename(static::$startFile) . "] reloading");
                 static::$status = static::STATUS_RELOADING;
 
@@ -1911,17 +1912,18 @@ class Worker
         else {
             // Execute exit.
             $workers = array_reverse(static::$workers);
-            foreach ($workers as $worker) {
-                if (!$worker->stopping) {
-                    $worker->stop();
-                    $worker->stopping = true;
-                }
-            }
+            array_walk($workers, static fn (Worker $worker) => $worker->stop());
+
             if (!static::getGracefulStop() || ConnectionInterface::$statistics['connection_count'] <= 0) {
                 static::$workers = [];
                 static::$globalEvent?->stop();
 
-                exit($code);
+                try {
+                    // Ignore Swoole ExitException: Swoole exit.
+                    exit($code);
+                } catch(\Exception $e) {
+
+                }
             }
         }
     }
@@ -2457,6 +2459,9 @@ class Worker
      */
     public function stop(): void
     {
+        if ($this->stopping === true) {
+            return;
+        }
         // Try to emit onWorkerStop callback.
         if ($this->onWorkerStop) {
             try {
@@ -2481,6 +2486,7 @@ class Worker
         }
         // Clear callback.
         $this->onMessage = $this->onClose = $this->onError = $this->onBufferDrain = $this->onBufferFull = null;
+        $this->stopping  = true;
     }
 
     /**
