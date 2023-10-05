@@ -1921,6 +1921,7 @@ class Worker
                 try {
                     // Ignore Swoole ExitException: Swoole exit.
                     exit($code);
+                    /** @phpstan-ignore-next-line */
                 } catch(\Exception $e) {
 
                 }
