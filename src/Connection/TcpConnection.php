@@ -22,6 +22,7 @@ use Workerman\Events\EventInterface;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\ProtocolInterface;
 use Workerman\Worker;
+
 use function ceil;
 use function count;
 use function fclose;
@@ -45,6 +46,7 @@ use function strrchr;
 use function strrpos;
 use function substr;
 use function var_export;
+
 use const PHP_INT_MAX;
 use const STREAM_CRYPTO_METHOD_SSLv23_CLIENT;
 use const STREAM_CRYPTO_METHOD_SSLv23_SERVER;
@@ -352,7 +354,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         $this->maxPackageSize = self::$defaultMaxPackageSize;
         $this->remoteAddress = $remoteAddress;
         static::$connections[$this->id] = $this;
-        $this->context = new stdClass;
+        $this->context = new stdClass();
     }
 
     /**
@@ -388,7 +390,11 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         if (false === $raw && $this->protocol !== null) {
             /** @var ProtocolInterface $parser */
             $parser = $this->protocol;
-            $sendBuffer = $parser::encode($sendBuffer, $this);
+            try {
+                $sendBuffer = $parser::encode($sendBuffer, $this);
+            } catch(\Throwable $e) {
+                $this->error($e);
+            }
             if ($sendBuffer === '') {
                 return;
             }

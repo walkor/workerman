@@ -196,12 +196,12 @@ class Swoole implements EventInterface
     }
 
     /**
+     * Please see https://wiki.swoole.com/#/process/process?id=signal
      * {@inheritdoc}
      */
     public function offSignal(int $signal): bool
     {
-        return Process::signal($signal, function () {
-        });
+        return Process::signal($signal, null);
     }
 
     /**
