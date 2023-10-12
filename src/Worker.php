@@ -1822,15 +1822,11 @@ class Worker
                 foreach (static::$pidMap as $workerId => $workerPidArray) {
                     $worker = static::$workers[$workerId];
                     if ($worker->reloadable) {
-                        foreach ($workerPidArray as $pid) {
-                            $reloadablePidArray[$pid] = $pid;
-                        }
-                    } else {
-                        foreach ($workerPidArray as $pid) {
-                            // Send reload signal to a worker process which reloadable is false.
-                            posix_kill($pid, $sig);
-                        }
+                        $reloadablePidArray += $workerPidArray;
+                        continue;
                     }
+                    // Send reload signal to a worker process which reloadable is false.
+                    array_walk($workerPidArray, static fn($pid) => posix_kill($pid, $sig));
                 }
                 // Get all pids that are waiting reload.
                 static::$pidsToRestart = array_intersect(static::$pidsToRestart, $reloadablePidArray);
