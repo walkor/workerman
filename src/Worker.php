@@ -37,6 +37,7 @@ use function stream_socket_accept;
 use function stream_socket_recvfrom;
 use function substr;
 use function array_walk;
+use function get_class;
 
 /**
  * Worker class
@@ -627,6 +628,9 @@ class Worker
         // State.
         static::$status = static::STATUS_STARTING;
 
+        // Avoiding incorrect user calls.
+        static::resetGlobalEvent();
+
         // For statistics.
         static::$globalStatistics['start_timestamp'] = time();
 
@@ -638,6 +642,19 @@ class Worker
 
         // Timer init.
         Timer::init();
+    }
+
+    /**
+     * reset globalEvent Instance.
+     *
+     * @return void
+     */
+    protected static function resetGlobalEvent(): void
+    {
+        if (static::$globalEvent instanceof EventInterface) {
+            static::$eventLoopClass = get_class(static::$globalEvent);
+            static::$globalEvent = null;
+        }
     }
 
     /**

@@ -46,16 +46,6 @@ class Swoole implements EventInterface
     protected $errorHandler = null;
 
     /**
-     * Construct
-     */
-    public function __construct()
-    {
-        // Avoid process exit due to no listening
-        Timer::tick(100000000, function () {
-        });
-    }
-
-    /**
      * {@inheritdoc}
      * @throws Throwable
      */
@@ -219,6 +209,8 @@ class Swoole implements EventInterface
      */
     public function run(): void
     {
+        // Avoid process exit due to no listening
+        Timer::tick(100000000, static fn() => null);
         Event::wait();
     }
 
