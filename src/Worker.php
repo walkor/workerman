@@ -629,7 +629,7 @@ class Worker
         static::$status = static::STATUS_STARTING;
 
         // Avoiding incorrect user calls.
-        // static::resetGlobalEvent();
+        static::resetGlobalEvent();
 
         // For statistics.
         static::$globalStatistics['start_timestamp'] = time();
