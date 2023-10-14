@@ -37,6 +37,7 @@ use function stream_socket_accept;
 use function stream_socket_recvfrom;
 use function substr;
 use function array_walk;
+use function get_class;
 
 /**
  * Worker class
@@ -627,6 +628,9 @@ class Worker
         // State.
         static::$status = static::STATUS_STARTING;
 
+        // Avoiding incorrect user calls.
+        // static::resetGlobalEvent();
+
         // For statistics.
         static::$globalStatistics['start_timestamp'] = time();
 
@@ -638,6 +642,20 @@ class Worker
 
         // Timer init.
         Timer::init();
+    }
+
+    /**
+     * reset globalEvent Instance.
+     *
+     * @return void
+     */
+    protected static function resetGlobalEvent(): void
+    {
+        if (static::$status === static::STATUS_STARTING &&
+        static::$globalEvent instanceof EventInterface) {
+            static::$eventLoopClass = get_class(static::$globalEvent);
+            static::$globalEvent = null;
+        }
     }
 
     /**
@@ -1822,15 +1840,11 @@ class Worker
                 foreach (static::$pidMap as $workerId => $workerPidArray) {
                     $worker = static::$workers[$workerId];
                     if ($worker->reloadable) {
-                        foreach ($workerPidArray as $pid) {
-                            $reloadablePidArray[$pid] = $pid;
-                        }
-                    } else {
-                        foreach ($workerPidArray as $pid) {
-                            // Send reload signal to a worker process which reloadable is false.
-                            posix_kill($pid, $sig);
-                        }
+                        $reloadablePidArray += $workerPidArray;
+                        continue;
                     }
+                    // Send reload signal to a worker process which reloadable is false.
+                    array_walk($workerPidArray, static fn ($pid) => posix_kill($pid, $sig));
                 }
                 // Get all pids that are waiting reload.
                 static::$pidsToRestart = array_intersect(static::$pidsToRestart, $reloadablePidArray);
