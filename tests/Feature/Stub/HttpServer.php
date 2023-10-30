@@ -13,7 +13,7 @@ if (!defined('STDIN')) define('STDIN', fopen('php://stdin', 'r'));
 if (!defined('STDOUT')) define('STDOUT', fopen('php://stdout', 'w'));
 if (!defined('STDERR')) define('STDERR', fopen('php://stderr', 'w'));
 
-$worker = new Worker('http://0.0.0.0:8080');
+$worker = new Worker('http://127.0.0.1:8080');
 
 $worker->onMessage = function (TcpConnection $connection, Request $request) {
     match ($request->path()) {

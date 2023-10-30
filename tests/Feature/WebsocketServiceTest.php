@@ -11,7 +11,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 if (!defined('STDIN')) define('STDIN', fopen('php://stdin', 'r'));
 if (!defined('STDOUT')) define('STDOUT', fopen('php://stdout', 'w'));
 if (!defined('STDERR')) define('STDERR', fopen('php://stderr', 'w'));
-\$worker = new Worker("websocket://0.0.0.0:2000");
+\$worker = new Worker("websocket://127.0.0.1:8081");
 %s
 Worker::\$pidFile = __DIR__ . '/WebsocketServer.pid';
 Worker::\$command = 'start';
@@ -28,7 +28,7 @@ if (!defined('STDOUT')) define('STDOUT', fopen('php://stdout', 'w'));
 if (!defined('STDERR')) define('STDERR', fopen('php://stderr', 'w'));
 \$worker = new Worker();
 \$worker->onWorkerStart = function(\$worker){
-    \$con = new AsyncTcpConnection('ws://127.0.0.1:2000');
+    \$con = new AsyncTcpConnection('ws://127.0.0.1:8081');
     %s
     \$con->connect();
 };
