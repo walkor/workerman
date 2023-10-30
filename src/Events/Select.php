@@ -272,9 +272,6 @@ class Select implements EventInterface
      */
     public function onSignal(int $signal, callable $func): void
     {
-        if (!function_exists('pcntl_signal')) {
-            return;
-        }
         $this->signalEvents[$signal] = $func;
         pcntl_signal($signal, $this->signalHandler(...));
     }
@@ -284,9 +281,6 @@ class Select implements EventInterface
      */
     public function offSignal(int $signal): bool
     {
-        if (!function_exists('pcntl_signal')) {
-            return false;
-        }
         pcntl_signal($signal, SIG_IGN);
         if (isset($this->signalEvents[$signal])) {
             unset($this->signalEvents[$signal]);

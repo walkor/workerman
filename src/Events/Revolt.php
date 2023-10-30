@@ -97,9 +97,7 @@ class Revolt implements EventInterface
             $this->driver->cancel($cbId);
         }
         $this->driver->stop();
-        if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGINT, SIG_IGN);
-        }
+        pcntl_signal(SIGINT, SIG_IGN);
     }
 
     /**

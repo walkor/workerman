@@ -22,7 +22,6 @@ use Workerman\Events\EventInterface;
 use Workerman\Events\Revolt;
 use Workerman\Events\Swoole;
 use Workerman\Events\Swow;
-use function function_exists;
 use function pcntl_alarm;
 use function pcntl_signal;
 use function time;
@@ -84,9 +83,7 @@ class Timer
             self::$event = $event;
             return;
         }
-        if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGALRM, ['\Workerman\Timer', 'signalHandle'], false);
-        }
+        pcntl_signal(SIGALRM, ['\Workerman\Timer', 'signalHandle'], false);
     }
 
     /**
@@ -242,9 +239,7 @@ class Timer
     public static function delAll(): void
     {
         self::$tasks = self::$status = [];
-        if (function_exists('pcntl_alarm')) {
-            pcntl_alarm(0);
-        }
+        pcntl_alarm(0);
         self::$event?->deleteAllTimer();
     }
 }
