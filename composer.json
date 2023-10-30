@@ -27,14 +27,16 @@
     },
     "require": {
         "php": ">=8.1",
-        "ext-json": "*"
+        "ext-json": "*",
+        "ext-posix": "*",
+        "ext-pcntl": "*"
     },
     "suggest": {
         "ext-event": "For better performance. "
     },
     "autoload": {
         "psr-4": {
-            "Workerman\\": "src"
+            "Workerman\\": "src/"
         }
     },
     "minimum-stability": "dev",
