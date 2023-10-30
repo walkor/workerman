@@ -85,7 +85,7 @@ class Timer
             return;
         }
         if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGALRM, ['\Workerman\Timer', 'signalHandle'], false);
+            pcntl_signal(SIGALRM, self::signalHandle(...), false);
         }
     }
 

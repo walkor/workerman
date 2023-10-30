@@ -123,9 +123,8 @@ class Http
         }
 
         $header = substr($buffer, 0, $crlfPos);
-        $hostHeaderPosition = stripos($header, "\r\nHost: ");
 
-        if (false === $hostHeaderPosition && $firstLine[2] === "HTTP/1.1") {
+        if (!str_contains($header, "\r\nHost: ") && $firstLine[2] === "HTTP/1.1") {
             $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
@@ -138,7 +137,7 @@ class Http
             $hasContentLength = true;
         } else {
             $hasContentLength = false;
-            if (false !== stripos($header, "\r\nTransfer-Encoding:")) {
+            if (str_contains($header, "\r\nTransfer-Encoding:")) {
                 $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
                 return 0;
             }

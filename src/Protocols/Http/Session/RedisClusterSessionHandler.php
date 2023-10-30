@@ -52,5 +52,4 @@ class RedisClusterSessionHandler extends RedisSessionHandler
     {
         return $this->redis->get($sessionId);
     }
-
 }

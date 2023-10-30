@@ -263,5 +263,4 @@ class Swoole implements EventInterface
         }
         ($this->errorHandler)($e);
     }
-
 }

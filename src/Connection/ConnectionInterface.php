@@ -188,5 +188,4 @@ abstract class ConnectionInterface
             throw $exception;
         }
     }
-
 }
