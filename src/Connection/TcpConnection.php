@@ -1019,7 +1019,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         // Try to emit protocol::onClose
         if ($this->protocol && method_exists($this->protocol, 'onClose')) {
             try {
-                $this->protocol->onClose($this);
+                $this->protocol::onClose($this);
             } catch (Throwable $e) {
                 $this->error($e);
             }

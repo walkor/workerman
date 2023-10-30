@@ -58,7 +58,7 @@ abstract class ConnectionInterface
      * Application layer protocol.
      * The format is like this Workerman\\Protocols\\Http.
      *
-     * @var ?string
+     * @var ?class-string
      */
     public ?string $protocol = null;
 

@@ -422,7 +422,7 @@ class AsyncTcpConnection extends TcpConnection
             // Try to emit protocol::onConnect
             if ($this->protocol && method_exists($this->protocol, 'onConnect')) {
                 try {
-                    $this->protocol->onConnect($this);
+                    $this->protocol::onConnect($this);
                 } catch (Throwable $e) {
                     $this->error($e);
                 }
