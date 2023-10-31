@@ -102,7 +102,8 @@ class Event implements EventInterface
     {
         $className = $this->eventClassName;
         $timerId = $this->timerId++;
-        $event = new $className($this->eventBase, -1, $className::TIMEOUT, function () use ($func, $args) {
+        $event = new $className($this->eventBase, -1, $className::TIMEOUT, function () use ($func, $args, $timerId) {
+            unset($this->eventTimer[$timerId]);
             try {
                 $func(...$args);
             } catch (Throwable $e) {
