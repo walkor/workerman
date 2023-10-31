@@ -202,7 +202,7 @@ class AsyncUdpConnection extends UdpConnection
 
         stream_set_blocking($this->socket, false);
         if ($this->onMessage) {
-            $this->eventLoop->onReadable($this->socket, [$this, 'baseRead']);
+            $this->eventLoop->onReadable($this->socket, $this->baseRead(...));
         }
         $this->connected = true;
         // Try to emit onConnect callback.
@@ -214,5 +214,4 @@ class AsyncUdpConnection extends UdpConnection
             }
         }
     }
-
 }

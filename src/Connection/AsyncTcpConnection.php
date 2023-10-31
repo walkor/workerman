@@ -53,7 +53,7 @@ class AsyncTcpConnection extends TcpConnection
     /**
      * PHP built-in protocols.
      *
-     * @var array<string,string>
+     * @var array<string, string>
      */
     public const BUILD_IN_TRANSPORTS = [
         'tcp' => 'tcp',
@@ -230,7 +230,7 @@ class AsyncTcpConnection extends TcpConnection
             Timer::del($this->reconnectTimer);
         }
         if ($after > 0) {
-            $this->reconnectTimer = Timer::add($after, [$this, 'connect'], null, false);
+            $this->reconnectTimer = Timer::add($after, $this->connect(...), null, false);
             return;
         }
         $this->connect();
@@ -302,10 +302,10 @@ class AsyncTcpConnection extends TcpConnection
             return;
         }
         // Add socket to global event loop waiting connection is successfully established or failed.
-        $this->eventLoop->onWritable($this->socket, [$this, 'checkConnection']);
+        $this->eventLoop->onWritable($this->socket, $this->checkConnection(...));
         // For windows.
         if (DIRECTORY_SEPARATOR === '\\' && method_exists($this->eventLoop, 'onExcept')) {
-            $this->eventLoop->onExcept($this->socket, [$this, 'checkConnection']);
+            $this->eventLoop->onExcept($this->socket, $this->checkConnection(...));
         }
     }
 
@@ -402,11 +402,11 @@ class AsyncTcpConnection extends TcpConnection
             } else {
                 // There are some data waiting to send.
                 if ($this->sendBuffer) {
-                    $this->eventLoop->onWritable($this->socket, [$this, 'baseWrite']);
+                    $this->eventLoop->onWritable($this->socket, $this->baseWrite(...));
                 }
             }
             // Register a listener waiting read event.
-            $this->eventLoop->onReadable($this->socket, [$this, 'baseRead']);
+            $this->eventLoop->onReadable($this->socket, $this->baseRead(...));
 
             $this->status = self::STATUS_ESTABLISHED;
             $this->remoteAddress = $address;
@@ -422,13 +422,12 @@ class AsyncTcpConnection extends TcpConnection
             // Try to emit protocol::onConnect
             if ($this->protocol && method_exists($this->protocol, 'onConnect')) {
                 try {
-                    [$this->protocol, 'onConnect']($this);
+                    $this->protocol::onConnect($this);
                 } catch (Throwable $e) {
                     $this->error($e);
                 }
             }
         } else {
-
             // Connection failed.
             $this->emitError(static::CONNECT_FAIL, 'connect ' . $this->remoteAddress . ' fail after ' . round(microtime(true) - $this->connectStartTime, 4) . ' seconds');
             if ($this->status === self::STATUS_CLOSING) {
@@ -438,6 +437,5 @@ class AsyncTcpConnection extends TcpConnection
                 $this->onConnect = null;
             }
         }
-
     }
 }

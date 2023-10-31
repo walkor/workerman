@@ -432,5 +432,4 @@ class Websocket
             "HTTP/1.0 200 OK\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman</div>", true);
         return 0;
     }
-
 }

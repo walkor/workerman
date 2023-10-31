@@ -469,5 +469,4 @@ class Select implements EventInterface
         }
         ($this->errorHandler)($e);
     }
-
 }

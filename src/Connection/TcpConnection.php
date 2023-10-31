@@ -349,7 +349,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             stream_set_read_buffer($this->socket, 0);
         }
         $this->eventLoop = $eventLoop;
-        $this->eventLoop->onReadable($this->socket, [$this, 'baseRead']);
+        $this->eventLoop->onReadable($this->socket, $this->baseRead(...));
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
         $this->maxPackageSize = self::$defaultMaxPackageSize;
         $this->remoteAddress = $remoteAddress;
@@ -415,7 +415,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         // Attempt to send data directly.
         if ($this->sendBuffer === '') {
             if ($this->transport === 'ssl') {
-                $this->eventLoop->onWritable($this->socket, [$this, 'baseWrite']);
+                $this->eventLoop->onWritable($this->socket, $this->baseWrite(...));
                 $this->sendBuffer = $sendBuffer;
                 $this->checkBufferWillFull();
                 return;
@@ -451,7 +451,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 }
                 $this->sendBuffer = $sendBuffer;
             }
-            $this->eventLoop->onWritable($this->socket, [$this, 'baseWrite']);
+            $this->eventLoop->onWritable($this->socket, $this->baseWrite(...));
             // Check if send buffer will be full.
             $this->checkBufferWillFull();
             return;
@@ -587,7 +587,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public function resumeRecv(): void
     {
         if ($this->isPaused === true) {
-            $this->eventLoop->onReadable($this->socket, [$this, 'baseRead']);
+            $this->eventLoop->onReadable($this->socket, $this->baseRead(...));
             $this->isPaused = false;
             $this->baseRead($this->socket, false);
         }
@@ -610,7 +610,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             if ($this->doSslHandshake($socket)) {
                 $this->sslHandshakeCompleted = true;
                 if ($this->sendBuffer) {
-                    $this->eventLoop->onWritable($socket, [$this, 'baseWrite']);
+                    $this->eventLoop->onWritable($socket, $this->baseWrite(...));
                 }
             } else {
                 return;
@@ -621,6 +621,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         try {
             $buffer = @fread($socket, self::READ_BUFFER_SIZE);
         } catch (Throwable) {
+            // do nothing
         }
 
         // Check connection closed.
@@ -1018,7 +1019,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         // Try to emit protocol::onClose
         if ($this->protocol && method_exists($this->protocol, 'onClose')) {
             try {
-                ([$this->protocol, 'onClose'])($this);
+                $this->protocol::onClose($this);
             } catch (Throwable $e) {
                 $this->error($e);
             }

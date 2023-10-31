@@ -90,7 +90,7 @@ class Response implements Stringable
     /**
      * Phrases.
      *
-     * @var array<int,string>
+     * @var array<int, string>
      *
      * @link https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
      */
