@@ -1738,10 +1738,8 @@ class Worker
                         }
 
                         // For Statistics.
-                        if (!isset(static::$globalStatistics['worker_exit_info'][$workerId][$status])) {
-                            static::$globalStatistics['worker_exit_info'][$workerId][$status] = 0;
-                        }
-                        ++static::$globalStatistics['worker_exit_info'][$workerId][$status];
+                        static::$globalStatistics['worker_exit_info'][$workerId][$status] ??= 0;
+                        static::$globalStatistics['worker_exit_info'][$workerId][$status]++;
 
                         // Clear process data.
                         unset(static::$pidMap[$workerId][$pid]);
@@ -2260,9 +2258,7 @@ class Worker
         // Context for socket.
         if ($socketName) {
             $this->socketName = $socketName;
-            if (!isset($socketContext['socket']['backlog'])) {
-                $socketContext['socket']['backlog'] = static::DEFAULT_BACKLOG;
-            }
+            $socketContext['socket']['backlog'] ??= static::DEFAULT_BACKLOG;
             $this->socketContext = stream_context_create($socketContext);
         }
 
@@ -2589,7 +2585,7 @@ class Worker
                 } else {
                     $messageCallback($connection, $recvBuffer);
                 }
-                ++ConnectionInterface::$statistics['total_request'];
+                ConnectionInterface::$statistics['total_request']++;
             } catch (Throwable $e) {
                 static::stopAll(250, $e);
             }

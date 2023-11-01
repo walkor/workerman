@@ -275,10 +275,7 @@ class Request implements Stringable
      */
     public function path(): string
     {
-        if (!isset($this->data['path'])) {
-            $this->data['path'] = (string)parse_url($this->uri(), PHP_URL_PATH);
-        }
-        return $this->data['path'];
+        return $this->data['path'] ??= (string)parse_url($this->uri(), PHP_URL_PATH);
     }
 
     /**
@@ -288,10 +285,7 @@ class Request implements Stringable
      */
     public function queryString(): string
     {
-        if (!isset($this->data['query_string'])) {
-            $this->data['query_string'] = (string)parse_url($this->uri(), PHP_URL_QUERY);
-        }
-        return $this->data['query_string'];
+        return $this->data['query_string'] ??= (string)parse_url($this->uri(), PHP_URL_QUERY);
     }
 
     /**
@@ -302,10 +296,7 @@ class Request implements Stringable
      */
     public function session(): Session
     {
-        if ($this->session === null) {
-            $this->session = new Session($this->sessionId());
-        }
-        return $this->session;
+        return $this->session ??= new Session($this->sessionId());
     }
 
     /**
@@ -366,10 +357,7 @@ class Request implements Stringable
      */
     public function rawHead(): string
     {
-        if (!isset($this->data['head'])) {
-            $this->data['head'] = strstr($this->buffer, "\r\n\r\n", true);
-        }
-        return $this->data['head'];
+        return $this->data['head'] ??= strstr($this->buffer, "\r\n\r\n", true);
     }
 
     /**
@@ -623,9 +611,7 @@ class Request implements Stringable
                         $uploadKey = $fileName;
                         // Parse upload files.
                         $file = [...$file, 'name' => $match[2], 'tmp_name' => $tmpFile, 'size' => $size, 'error' => $error, 'full_path' => $match[2]];
-                        if (!isset($file['type'])) {
-                            $file['type'] = '';
-                        }
+                        $file['type'] ??= '';
                         break;
                     }
                     // Is post field.

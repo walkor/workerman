@@ -59,12 +59,8 @@ class RedisSessionHandler implements SessionHandlerInterface
             throw new RuntimeException('Please install redis extension.');
         }
 
-        if (!isset($config['timeout'])) {
-            $config['timeout'] = 2;
-        }
-
+        $config['timeout'] ??= 2;
         $this->config = $config;
-
         $this->connect();
 
         Timer::add($config['ping'] ?? 55, function () {
