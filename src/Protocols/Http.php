@@ -70,12 +70,12 @@ class Http
     /**
      * Get or set the request class name.
      *
-     * @param string|null $className
+     * @param class-string|null $className
      * @return string
      */
     public static function requestClass(string $className = null): string
     {
-        if ($className) {
+        if ($className !== null) {
             static::$requestClass = $className;
         }
         return static::$requestClass;
@@ -202,6 +202,7 @@ class Http
             $request = $connection->request;
             $request->session = $request->connection = $connection->request = null;
         }
+
         if (!is_object($response)) {
             $extHeader = '';
             if ($connection->headers) {

@@ -377,10 +377,10 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @param mixed $sendBuffer
      * @param bool $raw
-     * @return bool|void
+     * @return bool|null
      * @throws Throwable
      */
-    public function send(mixed $sendBuffer, bool $raw = false)
+    public function send(mixed $sendBuffer, bool $raw = false): bool|null
     {
         if ($this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
             return false;
@@ -396,7 +396,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 $this->error($e);
             }
             if ($sendBuffer === '') {
-                return;
+                return null;
             }
         }
 
@@ -409,7 +409,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             }
             $this->sendBuffer .= $sendBuffer;
             $this->checkBufferWillFull();
-            return;
+            return null;
         }
 
         // Attempt to send data directly.
@@ -418,7 +418,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 $this->eventLoop->onWritable($this->socket, $this->baseWrite(...));
                 $this->sendBuffer = $sendBuffer;
                 $this->checkBufferWillFull();
-                return;
+                return null;
             }
             $len = 0;
             try {
@@ -454,7 +454,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             $this->eventLoop->onWritable($this->socket, $this->baseWrite(...));
             // Check if send buffer will be full.
             $this->checkBufferWillFull();
-            return;
+            return null;
         }
 
         if ($this->bufferIsFull()) {
@@ -465,6 +465,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         $this->sendBuffer .= $sendBuffer;
         // Check if send buffer is full.
         $this->checkBufferWillFull();
+        return null;
     }
 
     /**
@@ -871,7 +872,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     /**
      * Close connection.
      *
-     * @param mixed|null $data
+     * @param mixed $data
      * @param bool $raw
      * @return void
      * @throws Throwable

@@ -1992,7 +1992,7 @@ class Worker
             }
 
             file_put_contents(static::$statisticsFile, serialize($allWorkerInfo) . "\n", FILE_APPEND);
-            $loadavg = function_exists('sys_getloadavg') ? array_map('round', sys_getloadavg(), [2, 2, 2]) : ['-', '-', '-'];
+            $loadavg = function_exists('sys_getloadavg') ? array_map(round(...), sys_getloadavg(), [2, 2, 2]) : ['-', '-', '-'];
             file_put_contents(static::$statisticsFile,
                 "----------------------------------------------GLOBAL STATUS----------------------------------------------------\n", FILE_APPEND);
             file_put_contents(static::$statisticsFile,

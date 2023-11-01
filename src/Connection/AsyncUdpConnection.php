@@ -124,7 +124,7 @@ class AsyncUdpConnection extends UdpConnection
     /**
      * Close connection.
      *
-     * @param mixed|null $data
+     * @param mixed $data
      * @param bool $raw
      * @return void
      * @throws Throwable
@@ -153,17 +153,17 @@ class AsyncUdpConnection extends UdpConnection
      *
      * @param mixed $sendBuffer
      * @param bool $raw
-     * @return void|boolean
+     * @return bool|null
      * @throws Throwable
      */
-    public function send(mixed $sendBuffer, bool $raw = false)
+    public function send(mixed $sendBuffer, bool $raw = false): bool|null
     {
         if (false === $raw && $this->protocol) {
             /** @var ProtocolInterface $parser */
             $parser = $this->protocol;
             $sendBuffer = $parser::encode($sendBuffer, $this);
             if ($sendBuffer === '') {
-                return;
+                return null;
             }
         }
         if ($this->connected === false) {
