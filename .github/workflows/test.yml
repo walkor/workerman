@@ -47,4 +47,4 @@ jobs:
         run: composer analyze
 
       - name: Execute tests
-        run: vendor/bin/pest --coverage --colors=always
+        run: composer test
