@@ -186,7 +186,7 @@ class Session
      * Get session.
      *
      * @param string $name
-     * @param mixed|null $default
+     * @param mixed $default
      * @return mixed
      */
     public function get(string $name, mixed $default = null): mixed
@@ -221,7 +221,7 @@ class Session
      * Retrieve and delete an item from the session.
      *
      * @param string $name
-     * @param mixed|null $default
+     * @param mixed $default
      * @return mixed
      */
     public function pull(string $name, mixed $default = null): mixed
@@ -235,7 +235,7 @@ class Session
      * Store data in the session.
      *
      * @param array|string $key
-     * @param mixed|null $value
+     * @param mixed $value
      */
     public function put(array|string $key, mixed $value = null): void
     {
@@ -367,8 +367,8 @@ class Session
     /**
      * Set session handler class.
      *
-     * @param mixed|null $className
-     * @param mixed|null $config
+     * @param mixed $className
+     * @param mixed $config
      * @return string
      */
     public static function handlerClass(mixed $className = null, mixed $config = null): string

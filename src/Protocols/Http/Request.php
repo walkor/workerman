@@ -97,7 +97,7 @@ class Request implements Stringable
      *
      * @var bool
      */
-    protected $isSafe = true;
+    protected bool $isSafe = true;
 
     /**
      * Enable cache.
@@ -109,7 +109,7 @@ class Request implements Stringable
     /**
      * Session id.
      *
-     * @var mixed|string
+     * @var mixed
      */
     protected mixed $sid;
 
@@ -127,7 +127,7 @@ class Request implements Stringable
      * Get query.
      *
      * @param string|null $name
-     * @param mixed|null $default
+     * @param mixed $default
      * @return mixed
      */
     public function get(string $name = null, mixed $default = null): mixed
@@ -145,7 +145,7 @@ class Request implements Stringable
      * Get post.
      *
      * @param string|null $name
-     * @param mixed|null $default
+     * @param mixed $default
      * @return mixed
      */
     public function post(string $name = null, mixed $default = null): mixed
@@ -163,7 +163,7 @@ class Request implements Stringable
      * Get header item by name.
      *
      * @param string|null $name
-     * @param mixed|null $default
+     * @param mixed $default
      * @return mixed
      */
     public function header(string $name = null, mixed $default = null): mixed
@@ -182,7 +182,7 @@ class Request implements Stringable
      * Get cookie item by name.
      *
      * @param string|null $name
-     * @param mixed|null $default
+     * @param mixed $default
      * @return mixed
      */
     public function cookie(string $name = null, mixed $default = null): mixed
@@ -203,7 +203,7 @@ class Request implements Stringable
      * @param string|null $name
      * @return array|null
      */
-    public function file(string $name = null)
+    public function file(string $name = null): array|null
     {
         if (!isset($this->data['files'])) {
             $this->parsePost();
@@ -569,14 +569,14 @@ class Request implements Stringable
     /**
      * Parse upload file.
      *
-     * @param $boundary
-     * @param $sectionStartOffset
-     * @param $postEncodeString
-     * @param $filesEncodeStr
-     * @param $files
+     * @param string $boundary
+     * @param int $sectionStartOffset
+     * @param string $postEncodeString
+     * @param string $filesEncodeStr
+     * @param array $files
      * @return int
      */
-    protected function parseUploadFile($boundary, $sectionStartOffset, &$postEncodeString, &$filesEncodeStr, &$files): int
+    protected function parseUploadFile(string $boundary, int $sectionStartOffset, string &$postEncodeString, string &$filesEncodeStr, array &$files): int
     {
         $file = [];
         $boundary = "\r\n$boundary";
@@ -700,7 +700,7 @@ class Request implements Stringable
      * @param mixed $value
      * @return void
      */
-    public function __set(string $name, mixed $value)
+    public function __set(string $name, mixed $value): void
     {
         $this->properties[$name] = $value;
     }
@@ -709,9 +709,9 @@ class Request implements Stringable
      * Getter.
      *
      * @param string $name
-     * @return mixed|null
+     * @return mixed
      */
-    public function __get(string $name)
+    public function __get(string $name): mixed
     {
         return $this->properties[$name] ?? null;
     }
@@ -722,7 +722,7 @@ class Request implements Stringable
      * @param string $name
      * @return bool
      */
-    public function __isset(string $name)
+    public function __isset(string $name): bool
     {
         return isset($this->properties[$name]);
     }
@@ -733,18 +733,17 @@ class Request implements Stringable
      * @param string $name
      * @return void
      */
-    public function __unset(string $name)
+    public function __unset(string $name): void
     {
         unset($this->properties[$name]);
     }
-
 
     /**
      * __wakeup.
      *
      * @return void
      */
-    public function __wakeup()
+    public function __wakeup(): void
     {
         $this->isSafe = false;
     }

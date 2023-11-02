@@ -76,16 +76,16 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @param mixed $sendBuffer
      * @param bool $raw
-     * @return void|boolean
+     * @return bool|null
      */
-    public function send(mixed $sendBuffer, bool $raw = false)
+    public function send(mixed $sendBuffer, bool $raw = false): bool|null
     {
         if (false === $raw && $this->protocol) {
             /** @var ProtocolInterface $parser */
             $parser = $this->protocol;
             $sendBuffer = $parser::encode($sendBuffer, $this);
             if ($sendBuffer === '') {
-                return;
+                return null;
             }
         }
         return strlen($sendBuffer) === stream_socket_sendto($this->socket, $sendBuffer, 0, $this->isIpV6() ? '[' . $this->getRemoteIp() . ']:' . $this->getRemotePort() : $this->remoteAddress);
@@ -172,7 +172,7 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
     /**
      * Close connection.
      *
-     * @param mixed|null $data
+     * @param mixed $data
      * @param bool $raw
      * @return void
      */

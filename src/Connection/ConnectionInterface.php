@@ -98,9 +98,9 @@ abstract class ConnectionInterface
      *
      * @param mixed $sendBuffer
      * @param bool $raw
-     * @return void|boolean
+     * @return bool|null
      */
-    abstract public function send(mixed $sendBuffer, bool $raw = false);
+    abstract public function send(mixed $sendBuffer, bool $raw = false): bool|null;
 
     /**
      * Get remote IP.
@@ -147,7 +147,7 @@ abstract class ConnectionInterface
     /**
      * Close connection.
      *
-     * @param mixed|null $data
+     * @param mixed $data
      * @param bool $raw
      * @return void
      */
