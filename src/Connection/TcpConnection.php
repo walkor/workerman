@@ -1082,9 +1082,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         static $mod;
         self::$statistics['connection_count']--;
         if (Worker::getGracefulStop()) {
-            if (!isset($mod)) {
-                $mod = ceil((self::$statistics['connection_count'] + 1) / 3);
-            }
+            $mod ??= ceil((self::$statistics['connection_count'] + 1) / 3);
 
             if (0 === self::$statistics['connection_count'] % $mod) {
                 $pid = function_exists('posix_getpid') ? posix_getpid() : 0;

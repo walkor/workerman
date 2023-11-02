@@ -168,12 +168,8 @@ class AsyncTcpConnection extends TcpConnection
                 throw new RuntimeException('Bad remoteAddress');
             }
         } else {
-            if (!isset($addressInfo['port'])) {
-                $addressInfo['port'] = 0;
-            }
-            if (!isset($addressInfo['path'])) {
-                $addressInfo['path'] = '/';
-            }
+            $addressInfo['port'] ??= 0;
+            $addressInfo['path'] ??= '/';
             if (!isset($addressInfo['query'])) {
                 $addressInfo['query'] = '';
             } else {
