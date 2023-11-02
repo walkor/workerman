@@ -53,6 +53,7 @@
         }
     },
     "scripts": {
-        "analyze": "phpstan"
+        "analyze": "phpstan",
+        "test": "pest --colors=always"
     }
 }
