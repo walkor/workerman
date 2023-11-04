@@ -113,7 +113,7 @@ final class Revolt implements EventInterface
     public function delay(float $delay, callable $func, array $args = []): int
     {
         $timerId = $this->timerId++;
-        $closure = static function () use ($func, $args, $timerId) {
+        $closure = function () use ($func, $args, $timerId) {
             unset($this->eventTimer[$timerId]);
             $func(...$args);
         };

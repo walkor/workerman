@@ -816,10 +816,11 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         }
 
         // Hidden error.
-        set_error_handler(function ($errno, $err_str) {
+        set_error_handler(static function (int $code, string $msg): bool {
             if (!Worker::$daemonize) {
-                Worker::safeEcho("SSL handshake error: $err_str \n");
+                Worker::safeEcho(sprintf("SSL handshake error: %s\n", $msg));
             }
+            return true;
         });
         $ret = stream_socket_enable_crypto($socket, true, $type);
         restore_error_handler();

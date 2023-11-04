@@ -32,8 +32,5 @@ parameters:
 	            - '#Call to an undefined method EventBase::+.#'
 	    - path: src/Timer.php
 	      message: '#Call to static method getSuspension\(\) on an unknown class Revolt\\EventLoop.#'
-	    - path: tests/Pest.php
-	      message: '#Undefined variable: \$this#'
 	    - path: src/Worker.php
 	      message: '#Constant LINE_VERSION_LENGTH not found.#'
-	    - message: '#Parameter \#1 \$callback of function set_error_handler expects \(callable\(int, string, string, int\): bool\)\|null,.*#'
