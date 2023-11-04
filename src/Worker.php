@@ -279,9 +279,9 @@ class Worker
     /**
      * Log file.
      *
-     * @var mixed
+     * @var string
      */
-    public static mixed $logFile = '';
+    public static string $logFile;
 
     /**
      * Global event loop.
@@ -314,9 +314,9 @@ class Worker
     /**
      * EventLoopClass
      *
-     * @var string|class-string
+     * @var class-string<EventInterface>
      */
-    public static string $eventLoopClass = '';
+    public static string $eventLoopClass;
 
     /**
      * After sending the stop command to the child process stopTimeout seconds,
@@ -486,15 +486,6 @@ class Worker
     ];
 
     /**
-     * Available event loops.
-     *
-     * @var array<string, string>
-     */
-    protected static array $availableEventLoops = [
-        'event' => Event::class,
-    ];
-
-    /**
      * PHP built-in protocols.
      *
      * @var array<string, string>
@@ -563,19 +554,23 @@ class Worker
      */
     public static function runAll(): void
     {
-        static::checkSapiEnv();
-        static::init();
-        static::parseCommand();
-        static::lock();
-        static::daemonize();
-        static::initWorkers();
-        static::installSignal();
-        static::saveMasterPid();
-        static::lock(LOCK_UN);
-        static::displayUI();
-        static::forkWorkers();
-        static::resetStd();
-        static::monitorWorkers();
+        try {
+            static::checkSapiEnv();
+            static::init();
+            static::parseCommand();
+            static::lock();
+            static::daemonize();
+            static::initWorkers();
+            static::installSignal();
+            static::saveMasterPid();
+            static::lock(LOCK_UN);
+            static::displayUI();
+            static::forkWorkers();
+            static::resetStd();
+            static::monitorWorkers();
+        } catch (\Throwable $e) {
+            static::log($e);
+        }
     }
 
     /**
@@ -587,7 +582,7 @@ class Worker
     {
         // Only for cli and micro.
         if (!in_array(\PHP_SAPI, ['cli', 'micro'])) {
-            exit("Only run in command line mode\n");
+            throw new \RuntimeException("Only run in command line mode");
         }
     }
 
@@ -630,8 +625,8 @@ class Worker
         // State.
         static::$status = static::STATUS_STARTING;
 
-        // Avoiding incorrect user calls.
-        static::resetGlobalEvent();
+        // Init global event.
+        static::initGlobalEvent();
 
         // For statistics.
         static::$globalStatistics['start_timestamp'] = time();
@@ -647,16 +642,30 @@ class Worker
     }
 
     /**
-     * reset globalEvent Instance.
+     * Init global event.
      *
      * @return void
      */
-    protected static function resetGlobalEvent(): void
+    protected static function initGlobalEvent(): void
     {
-        if (static::$status === static::STATUS_STARTING && static::$globalEvent instanceof EventInterface) {
+        if (static::$globalEvent !== null) {
             static::$eventLoopClass = get_class(static::$globalEvent);
             static::$globalEvent = null;
+            return;
         }
+
+        if (isset(static::$eventLoopClass)) {
+            if (!is_subclass_of(static::$eventLoopClass, EventInterface::class)) {
+                throw new RuntimeException(sprintf('%s::$eventLoopClass must implement %s', static::class, EventInterface::class));
+            }
+            return;
+        }
+
+        static::$eventLoopClass = match (true) {
+            class_exists(EventLoop::class) => Revolt::class,
+            extension_loaded('event') => Event::class,
+            default => Select::class,
+        };
     }
 
     /**
@@ -1332,32 +1341,10 @@ class Worker
     /**
      * Get event loop name.
      *
-     * @return string
+     * @return class-string<EventInterface>
      */
     protected static function getEventLoopName(): string
     {
-        if (static::$eventLoopClass) {
-            return static::$eventLoopClass;
-        }
-
-        if (class_exists(EventLoop::class)) {
-            static::$eventLoopClass = Revolt::class;
-            return static::$eventLoopClass;
-        }
-
-        $loopName = '';
-        foreach (static::$availableEventLoops as $name => $class) {
-            if (extension_loaded($name)) {
-                $loopName = $name;
-                break;
-            }
-        }
-
-        if ($loopName) {
-            static::$eventLoopClass = static::$availableEventLoops[$loopName];
-        } else {
-            static::$eventLoopClass = Select::class;
-        }
         return static::$eventLoopClass;
     }
 
@@ -1447,9 +1434,9 @@ class Worker
             register_shutdown_function(static::checkErrors(...));
 
             // Create a global event loop.
-            if (!static::$globalEvent) {
+            if (static::$globalEvent === null) {
                 $eventLoopClass = static::getEventLoopName();
-                static::$globalEvent = new $eventLoopClass;
+                static::$globalEvent = new $eventLoopClass();
                 static::$globalEvent->setErrorHandler(function ($exception) {
                     static::stopAll(250, $exception);
                 });
@@ -1517,7 +1504,7 @@ class Worker
         $pipes = [];
         $process = proc_open('"' . PHP_BINARY . '" ' . " \"$startFile\" -q", $descriptorSpec, $pipes, null, null, ['bypass_shell' => true]);
 
-        if (empty(static::$globalEvent)) {
+        if (static::$globalEvent === null) {
             static::$globalEvent = new Select();
             static::$globalEvent->setErrorHandler(function ($exception) {
                 static::stopAll(250, $exception);
@@ -1588,9 +1575,9 @@ class Worker
             register_shutdown_function(static::checkErrors(...));
 
             // Create a global event loop.
-            if (!static::$globalEvent) {
+            if (static::$globalEvent === null) {
                 $eventLoopClass = static::getEventLoopName();
-                static::$globalEvent = new $eventLoopClass;
+                static::$globalEvent = new $eventLoopClass();
                 static::$globalEvent->setErrorHandler(function ($exception) {
                     static::stopAll(250, $exception);
                 });
@@ -1798,7 +1785,7 @@ class Worker
         @unlink(static::$pidFile);
         static::log("Workerman[" . basename(static::$startFile) . "] has been stopped");
         if (static::$onMasterStop) {
-            call_user_func(static::$onMasterStop);
+            (static::$onMasterStop)();
         }
         exit(0);
     }
@@ -1823,7 +1810,7 @@ class Worker
                 // Try to emit onMasterReload callback.
                 if (static::$onMasterReload) {
                     try {
-                        call_user_func(static::$onMasterReload);
+                        (static::$onMasterReload)();
                     } catch (Throwable $e) {
                         static::stopAll(250, $e);
                     }
@@ -1867,7 +1854,7 @@ class Worker
             // Try to emit onWorkerReload callback.
             if ($worker->onWorkerReload) {
                 try {
-                    call_user_func($worker->onWorkerReload, $worker);
+                    ($worker->onWorkerReload)($worker);
                 } catch (Throwable $e) {
                     static::stopAll(250, $e);
                 }
@@ -2165,18 +2152,22 @@ class Worker
     /**
      * Log.
      *
-     * @param mixed $msg
+     * @param \Stringable|string $msg
      * @param bool $decorated
      * @return void
      */
-    public static function log(mixed $msg, bool $decorated = false): void
+    public static function log(\Stringable|string $msg, bool $decorated = false): void
     {
-        $msg .= "\n";
+        $msg = trim((string)$msg);
+
         if (!static::$daemonize) {
-            static::safeEcho($msg, $decorated);
+            static::safeEcho("$msg\n", $decorated);
         }
-        file_put_contents(static::$logFile, date('Y-m-d H:i:s') . ' ' . 'pid:'
-            . (DIRECTORY_SEPARATOR === '/' ? posix_getpid() : 1) . ' ' . $msg, FILE_APPEND | LOCK_EX);
+
+        if (isset(static::$logFile)) {
+            $pid = DIRECTORY_SEPARATOR === '/' ? posix_getpid() : 1;
+            file_put_contents(static::$logFile, sprintf("%s pid:%d %s\n", date('Y-m-d H:i:s'), $pid, $msg), FILE_APPEND | LOCK_EX);
+        }
     }
 
     /**
@@ -2400,7 +2391,7 @@ class Worker
      */
     public function pauseAccept(): void
     {
-        if (static::$globalEvent && false === $this->pauseAccept && $this->mainSocket) {
+        if (static::$globalEvent !== null && $this->pauseAccept === false && $this->mainSocket !== null) {
             static::$globalEvent->offReadable($this->mainSocket);
             $this->pauseAccept = true;
         }
@@ -2414,7 +2405,7 @@ class Worker
     public function resumeAccept(): void
     {
         // Register a listener to be notified when server socket is ready to read.
-        if (static::$globalEvent && true === $this->pauseAccept && $this->mainSocket) {
+        if (static::$globalEvent !== null && $this->pauseAccept === true && $this->mainSocket !== null) {
             if ($this->transport !== 'udp') {
                 static::$globalEvent->onReadable($this->mainSocket, $this->acceptTcpConnection(...));
             } else {
