@@ -140,11 +140,4 @@ interface EventInterface
      * @return void
      */
     public function setErrorHandler(callable $errorHandler): void;
-
-    /**
-     * Get error handler
-     *
-     * @return null|callable (\Throwable): void
-     */
-    public function getErrorHandler(): ?callable;
 }

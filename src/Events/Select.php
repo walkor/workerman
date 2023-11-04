@@ -442,14 +442,6 @@ final class Select implements EventInterface
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function getErrorHandler(): ?callable
-    {
-        return $this->errorHandler;
-    }
-
-    /**
      * @param callable $func
      * @param array $args
      * @return void

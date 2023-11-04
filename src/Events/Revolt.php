@@ -262,12 +262,4 @@ final class Revolt implements EventInterface
     {
         $this->driver->setErrorHandler($errorHandler);
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getErrorHandler(): ?callable
-    {
-        return $this->driver->getErrorHandler();
-    }
 }
