@@ -25,6 +25,11 @@ parameters:
 	            - '#Constant STREAM_POLLNONE not found.#'
 	            - '#Constant STREAM_POLLOUT not found.#'
 	            - '#Property Workerman\\Events\\Swow::.* has unknown class Swow\\Coroutine as its type.#'
+	    -
+	        path: src/Events/Event.php
+	        reportUnmatched: false
+	        messages:
+	            - '#Call to an undefined method EventBase::+.#'
 	    - path: src/Timer.php
 	      message: '#Call to static method getSuspension\(\) on an unknown class Revolt\\EventLoop.#'
 	    - path: tests/Pest.php

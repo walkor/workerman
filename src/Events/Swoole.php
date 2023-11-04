@@ -18,25 +18,27 @@ namespace Workerman\Events;
 use Swoole\Event;
 use Swoole\Process;
 use Swoole\Timer;
-use Throwable;
 
 class Swoole implements EventInterface
 {
     /**
      * All listeners for read timer
-     * @var array
+     *
+     * @var array<int, int>
      */
     protected array $eventTimer = [];
 
     /**
      * All listeners for read event.
-     * @var array
+     *
+     * @var array<int, resource>
      */
     protected array $readEvents = [];
 
     /**
      * All listeners for write event.
-     * @var array
+     *
+     * @var array<int, resource>
      */
     protected array $writeEvents = [];
 
@@ -47,7 +49,6 @@ class Swoole implements EventInterface
 
     /**
      * {@inheritdoc}
-     * @throws Throwable
      */
     public function delay(float $delay, callable $func, array $args = []): int
     {
@@ -55,11 +56,7 @@ class Swoole implements EventInterface
         $t = max($t, 1);
         $timerId = Timer::after($t, function () use ($func, $args, &$timerId) {
             unset($this->eventTimer[$timerId]);
-            try {
-                $func(...$args);
-            } catch (Throwable $e) {
-                $this->error($e);
-            }
+            $this->safeCall($func, $args);
         });
         $this->eventTimer[$timerId] = $timerId;
         return $timerId;
@@ -71,9 +68,9 @@ class Swoole implements EventInterface
     public function offDelay(int $timerId): bool
     {
         if (isset($this->eventTimer[$timerId])) {
-            $res = Timer::clear($timerId);
+            Timer::clear($timerId);
             unset($this->eventTimer[$timerId]);
-            return $res;
+            return true;
         }
         return false;
     }
@@ -88,18 +85,13 @@ class Swoole implements EventInterface
 
     /**
      * {@inheritdoc}
-     * @throws Throwable
      */
     public function repeat(float $interval, callable $func, array $args = []): int
     {
         $t = (int)($interval * 1000);
         $t = max($t, 1);
         $timerId = Timer::tick($t, function () use ($func, $args) {
-            try {
-                $func(...$args);
-            } catch (Throwable $e) {
-                $this->error($e);
-            }
+            $this->safeCall($func, $args);
         });
         $this->eventTimer[$timerId] = $timerId;
         return $timerId;
@@ -112,14 +104,13 @@ class Swoole implements EventInterface
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
-            Event::add($stream, $func, null, SWOOLE_EVENT_READ);
+            Event::add($stream, fn () => $this->safeCall($func, [$stream]), null, SWOOLE_EVENT_READ);
+        } elseif (isset($this->writeEvents[$fd])) {
+            Event::set($stream, fn () => $this->safeCall($func, [$stream]), null, SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
         } else {
-            if (isset($this->writeEvents[$fd])) {
-                Event::set($stream, $func, null, SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
-            } else {
-                Event::set($stream, $func, null, SWOOLE_EVENT_READ);
-            }
+            Event::set($stream, fn () => $this->safeCall($func, [$stream]), null, SWOOLE_EVENT_READ);
         }
+
         $this->readEvents[$fd] = $stream;
     }
 
@@ -148,14 +139,13 @@ class Swoole implements EventInterface
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
-            Event::add($stream, null, $func, SWOOLE_EVENT_WRITE);
+            Event::add($stream, null, fn () => $this->safeCall($func, [$stream]), SWOOLE_EVENT_WRITE);
+        } elseif (isset($this->readEvents[$fd])) {
+            Event::set($stream, null, fn () => $this->safeCall($func, [$stream]), SWOOLE_EVENT_WRITE | SWOOLE_EVENT_READ);
         } else {
-            if (isset($this->readEvents[$fd])) {
-                Event::set($stream, null, $func, SWOOLE_EVENT_WRITE | SWOOLE_EVENT_READ);
-            } else {
-                Event::set($stream, null, $func, SWOOLE_EVENT_WRITE);
-            }
+            Event::set($stream, null, fn () => $this->safeCall($func, [$stream]), SWOOLE_EVENT_WRITE);
         }
+
         $this->writeEvents[$fd] = $stream;
     }
 
@@ -182,7 +172,7 @@ class Swoole implements EventInterface
      */
     public function onSignal(int $signal, callable $func): void
     {
-        Process::signal($signal, $func);
+        Process::signal($signal, fn () => $this->safeCall($func, [$signal]));
     }
 
     /**
@@ -252,15 +242,20 @@ class Swoole implements EventInterface
     }
 
     /**
-     * @param Throwable $e
+     * @param callable $func
+     * @param array $args
      * @return void
-     * @throws Throwable
      */
-    public function error(Throwable $e): void
+    private function safeCall(callable $func, array $args = []): void
     {
-        if (!$this->errorHandler) {
-            throw new $e;
+        try {
+            $func(...$args);
+        } catch (\Throwable $e) {
+            if ($this->errorHandler === null) {
+                echo $e;
+            } else {
+                ($this->errorHandler)($e);
+            }
         }
-        ($this->errorHandler)($e);
     }
 }

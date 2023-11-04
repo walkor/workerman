@@ -16,12 +16,6 @@ declare(strict_types=1);
 
 namespace Workerman\Events;
 
-use EventBase;
-use RuntimeException;
-use Throwable;
-use function class_exists;
-use function count;
-
 /**
  * libevent eventloop
  */
@@ -29,43 +23,49 @@ class Event implements EventInterface
 {
     /**
      * Event base.
-     * @var EventBase
+     *
+     * @var \EventBase
      */
-    protected EventBase $eventBase;
+    protected \EventBase $eventBase;
 
     /**
      * All listeners for read event.
-     * @var array
+     *
+     * @var array<int, \Event>
      */
     protected array $readEvents = [];
 
     /**
      * All listeners for write event.
-     * @var array
+     *
+     * @var array<int, \Event>
      */
     protected array $writeEvents = [];
 
     /**
      * Event listeners of signal.
-     * @var array
+     *
+     * @var array<int, \Event>
      */
     protected array $eventSignal = [];
 
     /**
      * All timer event listeners.
-     * [func, args, event, flag, time_interval]
-     * @var array
+     *
+     * @var array<int, \Event>
      */
     protected array $eventTimer = [];
 
     /**
      * Timer id.
+     *
      * @var int
      */
     protected int $timerId = 0;
 
     /**
      * Event class name.
+     *
      * @var string
      */
     protected string $eventClassName = '';
@@ -77,17 +77,16 @@ class Event implements EventInterface
 
     /**
      * Construct.
-     * @return void
      */
     public function __construct()
     {
-        if (class_exists('\\\\Event', false)) {
+        if (\class_exists('\\\\Event', false)) {
             $className = '\\\\Event';
         } else {
             $className = '\Event';
         }
         $this->eventClassName = $className;
-        if (class_exists('\\\\EventBase', false)) {
+        if (\class_exists('\\\\EventBase', false)) {
             $className = '\\\\EventBase';
         } else {
             $className = '\EventBase';
@@ -104,14 +103,10 @@ class Event implements EventInterface
         $timerId = $this->timerId++;
         $event = new $className($this->eventBase, -1, $className::TIMEOUT, function () use ($func, $args, $timerId) {
             unset($this->eventTimer[$timerId]);
-            try {
-                $func(...$args);
-            } catch (Throwable $e) {
-                $this->error($e);
-            }
+            $this->safeCall($func, $args);
         });
         if (!$event->addTimer($delay)) {
-            throw new RuntimeException("Event::addTimer($delay) failed");
+            throw new \RuntimeException("Event::addTimer($delay) failed");
         }
         $this->eventTimer[$timerId] = $event;
         return $timerId;
@@ -145,15 +140,9 @@ class Event implements EventInterface
     {
         $className = $this->eventClassName;
         $timerId = $this->timerId++;
-        $event = new $className($this->eventBase, -1, $className::TIMEOUT | $className::PERSIST, function () use ($func, $args) {
-            try {
-                $func(...$args);
-            } catch (Throwable $e) {
-                $this->error($e);
-            }
-        });
+        $event = new $className($this->eventBase, -1, $className::TIMEOUT | $className::PERSIST, fn () => $this->safeCall($func, $args));
         if (!$event->addTimer($interval)) {
-            throw new RuntimeException("Event::addTimer($interval) failed");
+            throw new \RuntimeException("Event::addTimer($interval) failed");
         }
         $this->eventTimer[$timerId] = $event;
         return $timerId;
@@ -166,12 +155,10 @@ class Event implements EventInterface
     {
         $className = $this->eventClassName;
         $fdKey = (int)$stream;
-        $event = new $this->eventClassName($this->eventBase, $stream, $className::READ | $className::PERSIST, $func, $stream);
-        // @phpstan-ignore-next-line Negated boolean expression is always false.
-        if (!$event || !$event->add()) {
-            return;
+        $event = new $className($this->eventBase, $stream, $className::READ | $className::PERSIST, fn () => $this->safeCall($func, [$stream]));
+        if ($event->add()) {
+            $this->readEvents[$fdKey] = $event;
         }
-        $this->readEvents[$fdKey] = $event;
     }
 
     /**
@@ -195,12 +182,10 @@ class Event implements EventInterface
     {
         $className = $this->eventClassName;
         $fdKey = (int)$stream;
-        $event = new $this->eventClassName($this->eventBase, $stream, $className::WRITE | $className::PERSIST, $func, $stream);
-        // @phpstan-ignore-next-line Negated boolean expression is always false.
-        if (!$event || !$event->add()) {
-            return;
+        $event = new $className($this->eventBase, $stream, $className::WRITE | $className::PERSIST, fn () => $this->safeCall($func, [$stream]));
+        if ($event->add()) {
+            $this->writeEvents[$fdKey] = $event;
         }
-        $this->writeEvents[$fdKey] = $event;
     }
 
     /**
@@ -224,11 +209,10 @@ class Event implements EventInterface
     {
         $className = $this->eventClassName;
         $fdKey = $signal;
-        $event = $className::signal($this->eventBase, $signal, $func);
-        if (!$event || !$event->add()) {
-            return;
+        $event = $className::signal($this->eventBase, $signal, fn () => $this->safeCall($func, [$signal]));
+        if ($event->add()) {
+            $this->eventSignal[$fdKey] = $event;
         }
-        $this->eventSignal[$fdKey] = $event;
     }
 
     /**
@@ -277,7 +261,7 @@ class Event implements EventInterface
      */
     public function getTimerCount(): int
     {
-        return count($this->eventTimer);
+        return \count($this->eventTimer);
     }
 
     /**
@@ -297,20 +281,20 @@ class Event implements EventInterface
     }
 
     /**
-     * @param Throwable $e
+     * @param callable $func
+     * @param array $args
      * @return void
-     * @throws Throwable
      */
-    public function error(Throwable $e): void
+    private function safeCall(callable $func, array $args = []): void
     {
         try {
-            if (!$this->errorHandler) {
-                throw new $e;
+            $func(...$args);
+        } catch (\Throwable $e) {
+            if ($this->errorHandler === null) {
+                echo $e;
+            } else {
+                ($this->errorHandler)($e);
             }
-            ($this->errorHandler)($e);
-        } catch (Throwable $e) {
-            // Cannot trigger an exception in the Event callback, otherwise it will cause an infinite loop
-            echo $e;
         }
     }
 }
