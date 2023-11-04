@@ -19,33 +19,33 @@ use Swoole\Event;
 use Swoole\Process;
 use Swoole\Timer;
 
-class Swoole implements EventInterface
+final class Swoole implements EventInterface
 {
     /**
      * All listeners for read timer
      *
      * @var array<int, int>
      */
-    protected array $eventTimer = [];
+    private array $eventTimer = [];
 
     /**
      * All listeners for read event.
      *
      * @var array<int, resource>
      */
-    protected array $readEvents = [];
+    private array $readEvents = [];
 
     /**
      * All listeners for write event.
      *
      * @var array<int, resource>
      */
-    protected array $writeEvents = [];
+    private array $writeEvents = [];
 
     /**
      * @var ?callable
      */
-    protected $errorHandler = null;
+    private $errorHandler = null;
 
     /**
      * {@inheritdoc}

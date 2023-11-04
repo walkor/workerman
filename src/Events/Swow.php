@@ -9,38 +9,38 @@ use Swow\Signal;
 use Swow\SignalException;
 use function Swow\Sync\waitAll;
 
-class Swow implements EventInterface
+final class Swow implements EventInterface
 {
     /**
      * All listeners for read timer.
      *
      * @var array<int, int>
      */
-    protected array $eventTimer = [];
+    private array $eventTimer = [];
 
     /**
      * All listeners for read event.
      *
      * @var array<int, Coroutine>
      */
-    protected array $readEvents = [];
+    private array $readEvents = [];
 
     /**
      * All listeners for write event.
      * @var array<int, Coroutine>
      */
-    protected array $writeEvents = [];
+    private array $writeEvents = [];
 
     /**
      * All listeners for signal.
      * @var array<int, Coroutine>
      */
-    protected array $signalListener = [];
+    private array $signalListener = [];
 
     /**
      * @var ?callable
      */
-    protected $errorHandler = null;
+    private $errorHandler = null;
 
     /**
      * Get timer count.
