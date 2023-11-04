@@ -27,12 +27,14 @@ class Swow implements EventInterface
 
     /**
      * All listeners for write event.
+     *
      * @var array<int, Coroutine>
      */
     protected array $writeEvents = [];
 
     /**
      * All listeners for signal.
+     *
      * @var array<int, Coroutine>
      */
     protected array $signalListener = [];
