@@ -2531,16 +2531,16 @@ class Worker
      * For udp package.
      *
      * @param resource $socket
-     * @return bool
+     * @return void
      * @throws Throwable
      */
-    protected function acceptUdpConnection(mixed $socket): bool
+    protected function acceptUdpConnection(mixed $socket): void
     {
         set_error_handler(static fn (): bool => true);
         $recvBuffer = stream_socket_recvfrom($socket, UdpConnection::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
         restore_error_handler();
         if (false === $recvBuffer || empty($remoteAddress)) {
-            return false;
+            return;
         }
         // UdpConnection.
         $connection = new UdpConnection($socket, $remoteAddress);
@@ -2556,7 +2556,7 @@ class Worker
                         while ($recvBuffer !== '') {
                             $len = $parser::input($recvBuffer, $connection);
                             if ($len === 0) {
-                                return true;
+                                return;
                             }
                             $package = substr($recvBuffer, 0, $len);
                             $recvBuffer = substr($recvBuffer, $len);
@@ -2570,7 +2570,7 @@ class Worker
                         $data = $parser::decode($recvBuffer, $connection);
                         // Discard bad packets.
                         if ($data === false) {
-                            return true;
+                            return;
                         }
                         $messageCallback($connection, $data);
                     }
@@ -2582,7 +2582,6 @@ class Worker
                 static::stopAll(250, $e);
             }
         }
-        return true;
     }
 
     /**

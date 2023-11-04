@@ -4,36 +4,38 @@ declare(strict_types=1);
 
 namespace Workerman\Events;
 
-use RuntimeException;
 use Swow\Coroutine;
 use Swow\Signal;
 use Swow\SignalException;
-use Throwable;
 use function Swow\Sync\waitAll;
 
 class Swow implements EventInterface
 {
     /**
-     * All listeners for read timer
-     * @var array
+     * All listeners for read timer.
+     *
+     * @var array<int, int>
      */
     protected array $eventTimer = [];
 
     /**
      * All listeners for read event.
-     * @var array<Coroutine>
+     *
+     * @var array<int, Coroutine>
      */
     protected array $readEvents = [];
 
     /**
      * All listeners for write event.
-     * @var array<Coroutine>
+     *
+     * @var array<int, Coroutine>
      */
     protected array $writeEvents = [];
 
     /**
      * All listeners for signal.
-     * @var array<Coroutine>
+     *
+     * @var array<int, Coroutine>
      */
     protected array $signalListener = [];
 
@@ -54,21 +56,15 @@ class Swow implements EventInterface
 
     /**
      * {@inheritdoc}
-     * @throws Throwable
      */
     public function delay(float $delay, callable $func, array $args = []): int
     {
         $t = (int)($delay * 1000);
         $t = max($t, 1);
-        $that = $this;
-        $coroutine = Coroutine::run(function () use ($t, $func, $args, $that): void {
+        $coroutine = Coroutine::run(function () use ($t, $func, $args): void {
             msleep($t);
             unset($this->eventTimer[Coroutine::getCurrent()->getId()]);
-            try {
-                $func(...$args);
-            } catch (Throwable $e) {
-                $that->error($e);
-            }
+            $this->safeCall($func, $args);
         });
         $timerId = $coroutine->getId();
         $this->eventTimer[$timerId] = $timerId;
@@ -77,22 +73,16 @@ class Swow implements EventInterface
 
     /**
      * {@inheritdoc}
-     * @throws Throwable
      */
     public function repeat(float $interval, callable $func, array $args = []): int
     {
         $t = (int)($interval * 1000);
         $t = max($t, 1);
-        $that = $this;
-        $coroutine = Coroutine::run(static function () use ($t, $func, $args, $that): void {
+        $coroutine = Coroutine::run(function () use ($t, $func, $args): void {
             // @phpstan-ignore-next-line While loop condition is always true.
             while (true) {
                 msleep($t);
-                try {
-                    $func(...$args);
-                } catch (Throwable $e) {
-                    $that->error($e);
-                }
+                $this->safeCall($func, $args);
             }
         });
         $timerId = $coroutine->getId();
@@ -156,14 +146,14 @@ class Swow implements EventInterface
                         break;
                     }
                     if ($rEvent !== STREAM_POLLNONE) {
-                        $func($stream);
+                        $this->safeCall($func, [$stream]);
                     }
                     if ($rEvent !== STREAM_POLLIN) {
                         $this->offReadable($stream);
                         break;
                     }
                 }
-            } catch (RuntimeException) {
+            } catch (\RuntimeException) {
                 $this->offReadable($stream);
             }
         });
@@ -201,14 +191,14 @@ class Swow implements EventInterface
                         break;
                     }
                     if ($rEvent !== STREAM_POLLNONE) {
-                        $func($stream);
+                        $this->safeCall($func, [$stream]);
                     }
                     if ($rEvent !== STREAM_POLLOUT) {
                         $this->offWritable($stream);
                         break;
                     }
                 }
-            } catch (RuntimeException) {
+            } catch (\RuntimeException) {
                 $this->offWritable($stream);
             }
         });
@@ -241,8 +231,9 @@ class Swow implements EventInterface
                         $this->signalListener[$signal] !== Coroutine::getCurrent()) {
                         break;
                     }
-                    $func($signal);
+                    $this->safeCall($func, [$signal]);
                 } catch (SignalException) {
+                    // do nothing
                 }
             }
         });
@@ -295,15 +286,20 @@ class Swow implements EventInterface
     }
 
     /**
-     * @param Throwable $e
+     * @param callable $func
+     * @param array $args
      * @return void
-     * @throws Throwable
      */
-    public function error(Throwable $e): void
+    private function safeCall(callable $func, array $args = []): void
     {
-        if (!$this->errorHandler) {
-            throw new $e;
+        try {
+            $func(...$args);
+        } catch (\Throwable $e) {
+            if ($this->errorHandler === null) {
+                echo $e;
+            } else {
+                ($this->errorHandler)($e);
+            }
         }
-        ($this->errorHandler)($e);
     }
 }

@@ -34,30 +34,35 @@ class Revolt implements EventInterface
 
     /**
      * All listeners for read event.
-     * @var array
+     *
+     * @var array<int, string>
      */
     protected array $readEvents = [];
 
     /**
      * All listeners for write event.
-     * @var array
+     *
+     * @var array<int, string>
      */
     protected array $writeEvents = [];
 
     /**
      * Event listeners of signal.
-     * @var array
+     *
+     * @var array<int, string>
      */
     protected array $eventSignal = [];
 
     /**
      * Event listeners of timer.
-     * @var array
+     *
+     * @var array<int, string>
      */
     protected array $eventTimer = [];
 
     /**
      * Timer id.
+     *
      * @var int
      */
     protected int $timerId = 1;
@@ -71,7 +76,7 @@ class Revolt implements EventInterface
     }
 
     /**
-     * Get driver
+     * Get driver.
      *
      * @return Driver
      */
@@ -123,10 +128,7 @@ class Revolt implements EventInterface
     public function repeat(float $interval, callable $func, array $args = []): int
     {
         $timerId = $this->timerId++;
-        $closure = function () use ($func, $args) {
-            $func(...$args);
-        };
-        $cbId = $this->driver->repeat($interval, $closure);
+        $cbId = $this->driver->repeat($interval, static fn () => $func(...$args));
         $this->eventTimer[$timerId] = $cbId;
         return $timerId;
     }
@@ -142,9 +144,7 @@ class Revolt implements EventInterface
             unset($this->readEvents[$fdKey]);
         }
 
-        $this->readEvents[$fdKey] = $this->driver->onReadable($stream, function () use ($stream, $func) {
-            $func($stream);
-        });
+        $this->readEvents[$fdKey] = $this->driver->onReadable($stream, static fn () => $func($stream));
     }
 
     /**
@@ -171,9 +171,7 @@ class Revolt implements EventInterface
             $this->driver->cancel($this->writeEvents[$fdKey]);
             unset($this->writeEvents[$fdKey]);
         }
-        $this->writeEvents[$fdKey] = $this->driver->onWritable($stream, function () use ($stream, $func) {
-            $func($stream);
-        });
+        $this->writeEvents[$fdKey] = $this->driver->onWritable($stream, static fn () => $func($stream));
     }
 
     /**
@@ -200,9 +198,7 @@ class Revolt implements EventInterface
             $this->driver->cancel($this->eventSignal[$fdKey]);
             unset($this->eventSignal[$fdKey]);
         }
-        $this->eventSignal[$fdKey] = $this->driver->onSignal($signal, function () use ($signal, $func) {
-            $func($signal);
-        });
+        $this->eventSignal[$fdKey] = $this->driver->onSignal($signal, static fn () => $func($signal));
     }
 
     /**
