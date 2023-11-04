@@ -598,8 +598,9 @@ class Worker
      */
     protected static function init(): void
     {
-        set_error_handler(function ($code, $msg, $file, $line) {
-            static::safeEcho("$msg in file $file on line $line\n");
+        set_error_handler(static function (int $code, string $msg, string $file, int $line): bool {
+            static::safeEcho(sprintf("%s \"%s\" in file %s on line %d\n", static::getErrorType($code), $msg, $file, $line));
+            return true;
         });
 
         // Start file.
@@ -1280,7 +1281,7 @@ class Worker
         $handle = fopen(static::$stdoutFile, "a");
         if ($handle) {
             unset($handle);
-            set_error_handler(function () {});
+            set_error_handler(static fn (): bool => true);
             if ($STDOUT) {
                 fclose($STDOUT);
             }
@@ -1675,7 +1676,7 @@ class Worker
      */
     protected static function setProcessTitle(string $title): void
     {
-        set_error_handler(function (){});
+        set_error_handler(static fn (): bool => true);
         cli_set_process_title($title);
         restore_error_handler();
     }
@@ -2273,7 +2274,7 @@ class Worker
             $address = \parse_url($socketName);
             if (isset($address['host']) && isset($address['port'])) {
                 try {
-                    \set_error_handler(function(){});
+                    \set_error_handler(static fn (): bool => true);
                     // If address not in use, turn reusePort on automatically.
                     $server = stream_socket_server("tcp://{$address['host']}:{$address['port']}");
                     if ($server) {
@@ -2330,7 +2331,7 @@ class Worker
 
             // Try to open keepalive for tcp and disable Nagle algorithm.
             if (function_exists('socket_import_stream') && self::BUILD_IN_TRANSPORTS[$this->transport] === 'tcp') {
-                set_error_handler(function () {});
+                set_error_handler(static fn (): bool => true);
                 $socket = socket_import_stream($this->mainSocket);
                 socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
                 socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
@@ -2353,7 +2354,7 @@ class Worker
     {
         $this->pauseAccept();
         if ($this->mainSocket) {
-            set_error_handler(function () {});
+            set_error_handler(static fn (): bool => true);
             fclose($this->mainSocket);
             restore_error_handler();
             $this->mainSocket = null;
@@ -2504,7 +2505,7 @@ class Worker
     protected function acceptTcpConnection(mixed $socket): void
     {
         // Accept a connection on server socket.
-        set_error_handler(function () {});
+        set_error_handler(static fn (): bool => true);
         $newSocket = stream_socket_accept($socket, 0, $remoteAddress);
         restore_error_handler();
 
@@ -2544,7 +2545,7 @@ class Worker
      */
     protected function acceptUdpConnection(mixed $socket): bool
     {
-        set_error_handler(function () {});
+        set_error_handler(static fn (): bool => true);
         $recvBuffer = stream_socket_recvfrom($socket, UdpConnection::MAX_UDP_PACKAGE_SIZE, 0, $remoteAddress);
         restore_error_handler();
         if (false === $recvBuffer || empty($remoteAddress)) {
