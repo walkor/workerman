@@ -267,14 +267,21 @@ class Worker
      *
      * @var string
      */
-    public static string $pidFile = '';
+    public static string $pidFile;
 
     /**
-     * The file used to store the master process status file.
+     * The file used to store the master process status.
      *
      * @var string
      */
-    public static string $statusFile = '';
+    public static string $processStatusFile;
+
+    /**
+     * The file used to store connections status.
+     *
+     * @var string
+     */
+    public static string $connectionStatusFile;
 
     /**
      * Log file.
@@ -455,18 +462,11 @@ class Worker
     protected static int $maxStateNameLength = 1;
 
     /**
-     * The file to store status info of current worker process.
-     *
-     * @var string
-     */
-    protected static string $statisticsFile = '';
-
-    /**
      * Start file.
      *
      * @var string
      */
-    protected static string $startFile = '';
+    protected static string $startFile;
 
     /**
      * Processes for windows.
@@ -600,19 +600,20 @@ class Worker
 
         // Start file.
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        static::$startFile = end($backtrace)['file'];
-
-        $uniquePrefix = str_replace('/', '_', static::$startFile);
+        static::$startFile ??= end($backtrace)['file'];
+        $startFilePrefix = hash('xxh64', static::$startFile);
 
         // Pid file.
-        if (empty(static::$pidFile)) {
-            static::$pidFile = __DIR__ . "/../$uniquePrefix.pid";
-        }
+        static::$pidFile ??= sprintf('%s/workerman.%s.pid', sys_get_temp_dir(), $startFilePrefix);
+
+        // Process status file.
+        static::$processStatusFile ??= sprintf('%s/workerman.%s.process.status', sys_get_temp_dir(), $startFilePrefix);
+
+        // Connections status file.
+        static::$connectionStatusFile ??= sprintf('%s/workerman.%s.connection.status', sys_get_temp_dir(), $startFilePrefix);
 
         // Log file.
-        if (empty(static::$logFile)) {
-            static::$logFile = __DIR__ . '/../../workerman.log';
-        }
+        static::$logFile ??= sprintf('%s/workerman.log', dirname(__DIR__, 2));
 
         if (!is_file(static::$logFile)) {
             // if /runtime/logs  default folder not exists
@@ -707,7 +708,7 @@ class Worker
         if (DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-        static::$statisticsFile = static::$statusFile ?: __DIR__ . '/../workerman-' . posix_getpid() . '.status';
+
         foreach (static::$workers as $worker) {
             // Worker name.
             if (empty($worker->name)) {
@@ -970,8 +971,6 @@ class Worker
             exit;
         }
 
-        $statisticsFile = static::$statusFile ?: __DIR__ . "/../workerman-$masterPid.$command";
-
         // execute command.
         switch ($command) {
             case 'start':
@@ -980,38 +979,33 @@ class Worker
                 }
                 break;
             case 'status':
+                // Delete status file on shutdown
+                register_shutdown_function(unlink(...), static::$processStatusFile);
                 while (1) {
-                    if (is_file($statisticsFile)) {
-                        @unlink($statisticsFile);
-                    }
                     // Master process will send SIGIOT signal to all child processes.
                     posix_kill($masterPid, SIGIOT);
-                    // Sleep 1 second.
-                    sleep(1);
+                    // Waiting a moment.
+                    usleep(500000);
                     // Clear terminal.
                     if ($mode === '-d') {
                         static::safeEcho("\33[H\33[2J\33(B\33[m", true);
                     }
                     // Echo status data.
-                    static::safeEcho(static::formatStatusData($statisticsFile));
+                    static::safeEcho(static::formatProcessStatusData());
                     if ($mode !== '-d') {
-                        @unlink($statisticsFile);
                         exit(0);
                     }
                     static::safeEcho("\nPress Ctrl+C to quit.\n\n");
                 }
             case 'connections':
-                if (is_file($statisticsFile) && is_writable($statisticsFile)) {
-                    unlink($statisticsFile);
-                }
+                // Delete status file on shutdown
+                register_shutdown_function(unlink(...), static::$connectionStatusFile);
                 // Master process will send SIGIO signal to all child processes.
                 posix_kill($masterPid, SIGIO);
                 // Waiting a moment.
                 usleep(500000);
                 // Display statistics data from a disk file.
-                if (is_readable($statisticsFile)) {
-                    readfile($statisticsFile);
-                }
+                static::safeEcho(static::formatConnectionStatusData());
                 exit(0);
             case 'restart':
             case 'stop':
@@ -1081,16 +1075,15 @@ class Worker
     /**
      * Format status data.
      *
-     * @param string $statisticsFile
      * @return string
      */
-    protected static function formatStatusData(string $statisticsFile): string
+    protected static function formatProcessStatusData(): string
     {
         static $totalRequestCache = [];
-        if (!is_readable($statisticsFile)) {
+        if (!is_readable(static::$processStatusFile)) {
             return '';
         }
-        $info = file($statisticsFile, FILE_IGNORE_NEW_LINES);
+        $info = file(static::$processStatusFile, FILE_IGNORE_NEW_LINES);
         if (!$info) {
             return '';
         }
@@ -1164,6 +1157,11 @@ class Worker
             . str_pad((string)$totalTimers, 7) . " " . str_pad((string)$totalRequests, 13) . " "
             . str_pad((string)$totalQps, 6) . " [Summary] \n";
         return $statusStr;
+    }
+
+    protected static function formatConnectionStatusData(): string
+    {
+        return file_get_contents(static::$connectionStatusFile);
     }
 
     /**
@@ -1901,10 +1899,6 @@ class Worker
                 }
             }
             Timer::add(1, static::checkIfChildRunning(...));
-            // Remove statistics file.
-            if (is_file(static::$statisticsFile)) {
-                @unlink(static::$statisticsFile);
-            }
         } // For child processes.
         else {
             // Execute exit.
@@ -1976,47 +1970,46 @@ class Worker
                     $allWorkerInfo[$pid] = ['name' => $worker->name, 'listen' => $worker->getSocketName()];
                 }
             }
-
-            file_put_contents(static::$statisticsFile, serialize($allWorkerInfo) . "\n", FILE_APPEND);
+            file_put_contents(static::$processStatusFile, '');
+            chmod(static::$processStatusFile, 0722);
+            file_put_contents(static::$processStatusFile, serialize($allWorkerInfo) . "\n", FILE_APPEND);
             $loadavg = function_exists('sys_getloadavg') ? array_map(round(...), sys_getloadavg(), [2, 2, 2]) : ['-', '-', '-'];
-            file_put_contents(static::$statisticsFile,
+            file_put_contents(static::$processStatusFile,
                 "----------------------------------------------GLOBAL STATUS----------------------------------------------------\n", FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
+            file_put_contents(static::$processStatusFile,
                 'Workerman version:' . static::VERSION . "          PHP version:" . PHP_VERSION . "\n", FILE_APPEND);
-            file_put_contents(static::$statisticsFile, 'start time:' . date('Y-m-d H:i:s',
+            file_put_contents(static::$processStatusFile, 'start time:' . date('Y-m-d H:i:s',
                     static::$globalStatistics['start_timestamp']) . '   run ' . floor((time() - static::$globalStatistics['start_timestamp']) / (24 * 60 * 60)) . ' days ' . floor(((time() - static::$globalStatistics['start_timestamp']) % (24 * 60 * 60)) / (60 * 60)) . " hours   \n",
                 FILE_APPEND);
             $loadStr = 'load average: ' . implode(", ", $loadavg);
-            file_put_contents(static::$statisticsFile,
+            file_put_contents(static::$processStatusFile,
                 str_pad($loadStr, 33) . 'event-loop:' . static::getEventLoopName() . "\n", FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
+            file_put_contents(static::$processStatusFile,
                 count(static::$pidMap) . ' workers       ' . count(static::getAllWorkerPids()) . " processes\n",
                 FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
+            file_put_contents(static::$processStatusFile,
                 str_pad('worker_name', static::$maxWorkerNameLength) . " exit_status      exit_count\n", FILE_APPEND);
             foreach (static::$pidMap as $workerId => $workerPidArray) {
                 $worker = static::$workers[$workerId];
                 if (isset(static::$globalStatistics['worker_exit_info'][$workerId])) {
                     foreach (static::$globalStatistics['worker_exit_info'][$workerId] as $workerExitStatus => $workerExitCount) {
-                        file_put_contents(static::$statisticsFile,
+                        file_put_contents(static::$processStatusFile,
                             str_pad($worker->name, static::$maxWorkerNameLength) . " " . str_pad((string)$workerExitStatus,
                                 16) . " $workerExitCount\n", FILE_APPEND);
                     }
                 } else {
-                    file_put_contents(static::$statisticsFile,
+                    file_put_contents(static::$processStatusFile,
                         str_pad($worker->name, static::$maxWorkerNameLength) . " " . str_pad('0', 16) . " 0\n",
                         FILE_APPEND);
                 }
             }
-            file_put_contents(static::$statisticsFile,
+            file_put_contents(static::$processStatusFile,
                 "----------------------------------------------PROCESS STATUS---------------------------------------------------\n",
                 FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
+            file_put_contents(static::$processStatusFile,
                 "pid\tmemory  " . str_pad('listening', static::$maxSocketNameLength) . " " . str_pad('worker_name',
                     static::$maxWorkerNameLength) . " connections " . str_pad('send_fail', 9) . " "
                 . str_pad('timers', 8) . str_pad('total_request', 13) . " qps    status\n", FILE_APPEND);
-
-            chmod(static::$statisticsFile, 0722);
 
             foreach (static::getAllWorkerPids() as $workerPid) {
                 posix_kill($workerPid, SIGIOT);
@@ -2038,7 +2031,7 @@ class Worker
             . " " . str_pad((string)ConnectionInterface::$statistics['send_fail'], 9)
             . " " . str_pad((string)static::$globalEvent->getTimerCount(), 7)
             . " " . str_pad((string)ConnectionInterface::$statistics['total_request'], 13) . "\n";
-        file_put_contents(static::$statisticsFile, $workerStatusStr, FILE_APPEND);
+        file_put_contents(static::$processStatusFile, $workerStatusStr, FILE_APPEND);
     }
 
     /**
@@ -2050,9 +2043,10 @@ class Worker
     {
         // For master process.
         if (static::$masterPid === posix_getpid()) {
-            file_put_contents(static::$statisticsFile, "--------------------------------------------------------------------- WORKERMAN CONNECTION STATUS --------------------------------------------------------------------------------\n", FILE_APPEND);
-            file_put_contents(static::$statisticsFile, "PID      Worker          CID       Trans   Protocol        ipv4   ipv6   Recv-Q       Send-Q       Bytes-R      Bytes-W       Status         Local Address          Foreign Address\n", FILE_APPEND);
-            chmod(static::$statisticsFile, 0722);
+            file_put_contents(static::$connectionStatusFile, '');
+            chmod(static::$connectionStatusFile, 0722);
+            file_put_contents(static::$connectionStatusFile, "--------------------------------------------------------------------- WORKERMAN CONNECTION STATUS --------------------------------------------------------------------------------\n", FILE_APPEND);
+            file_put_contents(static::$connectionStatusFile, "PID      Worker          CID       Trans   Protocol        ipv4   ipv6   Recv-Q       Send-Q       Bytes-R      Bytes-W       Status         Local Address          Foreign Address\n", FILE_APPEND);
             foreach (static::getAllWorkerPids() as $workerPid) {
                 posix_kill($workerPid, SIGIO);
             }
@@ -2113,7 +2107,7 @@ class Worker
                 . str_pad($state, 14) . ' ' . str_pad($localAddress, 22) . ' ' . str_pad($remoteAddress, 22) . "\n";
         }
         if ($str) {
-            file_put_contents(static::$statisticsFile, $str, FILE_APPEND);
+            file_put_contents(static::$connectionStatusFile, $str, FILE_APPEND);
         }
     }
 
