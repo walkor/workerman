@@ -256,6 +256,13 @@ class Worker
     public static bool $daemonize = false;
 
     /**
+     * Standard output stream
+     *
+     * @var resource
+     */
+    public static $outputStream;
+
+    /**
      * Stdout file.
      *
      * @var string
@@ -528,16 +535,11 @@ class Worker
     protected static bool $gracefulStop = false;
 
     /**
-     * Standard output stream
-     * @var ?resource
-     */
-    protected static $outputStream = null;
-
-    /**
      * If $outputStream support decorated
+     *
      * @var bool
      */
-    protected static bool $outputDecorated = false;
+    protected static bool $outputDecorated;
 
     /**
      * Worker object's hash id(unique identifier).
@@ -556,6 +558,7 @@ class Worker
     {
         try {
             static::checkSapiEnv();
+            self::initStdOut();
             static::init();
             static::parseCommand();
             static::lock();
@@ -582,8 +585,46 @@ class Worker
     {
         // Only for cli and micro.
         if (!in_array(\PHP_SAPI, ['cli', 'micro'])) {
-            throw new \RuntimeException("Only run in command line mode");
+            exit("Only run in command line mode\n");
         }
+    }
+
+    private static function initStdOut(): void
+    {
+        $defaultStream = fn () => \defined('STDOUT') ? \STDOUT : (@fopen('php://stdout', 'w') ?: fopen('php://output', 'w'));
+        static::$outputStream ??= $defaultStream(); //@phpstan-ignore-line
+        if (!\is_resource(self::$outputStream) || get_resource_type(self::$outputStream) !== 'stream') {
+            $type = get_debug_type(self::$outputStream);
+            static::$outputStream = $defaultStream();
+            throw new \RuntimeException(sprintf('The $outputStream must to be a stream, %s given', $type));
+        }
+
+        static::$outputDecorated ??= self::hasColorSupport();
+    }
+
+    /**
+     * Borrowed from the symfony console
+     * @link https://github.com/symfony/console/blob/0d14a9f6d04d4ac38a8cea1171f4554e325dae92/Output/StreamOutput.php#L92
+     */
+    private static function hasColorSupport(): bool
+    {
+        // Follow https://no-color.org/
+        if (getenv('NO_COLOR') !== false) {
+            return false;
+        }
+
+        if (getenv('TERM_PROGRAM') === 'Hyper') {
+            return true;
+        }
+
+        if (\DIRECTORY_SEPARATOR === '\\') {
+            return (\function_exists('sapi_windows_vt100_support') && @sapi_windows_vt100_support(self::$outputStream))
+                || getenv('ANSICON') !== false
+                || getenv('ConEmuANSI') === 'ON'
+                || getenv('TERM') === 'xterm';
+        }
+
+        return stream_isatty(self::$outputStream);
     }
 
     /**
@@ -1275,50 +1316,32 @@ class Worker
     }
 
     /**
-     * Redirect standard input and output.
+     * Redirect standard output to stdoutFile.
      *
-     * @param bool $throwException
      * @return void
-     * @throws Exception
      */
-    public static function resetStd(bool $throwException = true): void
+    public static function resetStd(): void
     {
         if (!static::$daemonize || DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-        global $STDOUT, $STDERR;
-        $handle = fopen(static::$stdoutFile, "a");
-        if ($handle) {
-            unset($handle);
-            set_error_handler(static fn (): bool => true);
-            if ($STDOUT) {
-                fclose($STDOUT);
-            }
-            if ($STDERR) {
-                fclose($STDERR);
-            }
-            if (is_resource(STDOUT)) {
-                fclose(STDOUT);
-            }
-            if (is_resource(STDERR)) {
-                fclose(STDERR);
-            }
-            $STDOUT = fopen(static::$stdoutFile, "a");
-            $STDERR = fopen(static::$stdoutFile, "a");
-            // Fix standard output cannot redirect of PHP 8.1.8's bug
-            if (function_exists('posix_isatty') && posix_isatty(2)) {
-                ob_start(function ($string) {
-                    file_put_contents(static::$stdoutFile, $string, FILE_APPEND);
-                }, 1);
-            }
-            // change output stream
-            static::$outputStream = null;
-            self::outputStream($STDOUT);
-            restore_error_handler();
+
+        set_error_handler(static fn (): bool => true);
+        $stdOutStream = fopen(static::$stdoutFile, 'a');
+        restore_error_handler();
+
+        if ($stdOutStream === false) {
             return;
         }
-        if ($throwException) {
-            throw new RuntimeException('Can not open stdoutFile ' . static::$stdoutFile);
+
+        fclose(static::$outputStream);
+        static::$outputStream = $stdOutStream;
+
+        // Fix standard output cannot redirect of PHP 8.1.8's bug
+        if (function_exists('posix_isatty') && posix_isatty(2)) {
+            ob_start(function (string $string) {
+                file_put_contents(static::$stdoutFile, $string, FILE_APPEND);
+            }, 1);
         }
     }
 
@@ -1807,7 +1830,7 @@ class Worker
                 static::log("Workerman[" . basename(static::$startFile) . "] reloading");
                 static::$status = static::STATUS_RELOADING;
 
-                static::resetStd(false);
+                static::resetStd();
                 // Try to emit onMasterReload callback.
                 if (static::$onMasterReload) {
                     try {
@@ -1864,7 +1887,7 @@ class Worker
             if ($worker->reloadable) {
                 static::stopAll();
             } else {
-                static::resetStd(false);
+                static::resetStd();
             }
         }
     }
@@ -2175,62 +2198,30 @@ class Worker
      * Safe Echo.
      *
      * @param string $msg
-     * @param bool $decorated
-     * @return bool
+     * @return void
      */
-    public static function safeEcho(string $msg, bool $decorated = false): bool
+    public static function safeEcho(string $msg, bool $decorated = false): void
     {
-        $stream = self::outputStream();
-        if (!$stream) {
-            return false;
-        }
-        if (!$decorated) {
-            $line = $white = $green = $end = '';
-            if (static::$outputDecorated) {
-                $line = "\033[1A\n\033[K";
-                $white = "\033[47;30m";
-                $green = "\033[32;40m";
-                $end = "\033[0m";
-            }
-            $msg = str_replace(['<n>', '<w>', '<g>'], [$line, $white, $green], $msg);
-            $msg = str_replace(['</n>', '</w>', '</g>'], $end, $msg);
-        } elseif (!static::$outputDecorated) {
-            return false;
-        }
-        fwrite($stream, $msg);
-        fflush($stream);
-        return true;
-    }
-
-    /**
-     * set and get output stream.
-     *
-     * @param resource|null $stream
-     * @return false|resource
-     */
-    private static function outputStream($stream = null): mixed
-    {
-        if (!$stream) {
-            $stream = static::$outputStream ?: STDOUT;
-        }
-        // @phpstan-ignore-next-line Negated boolean expression is always false.
-        if (!$stream || !is_resource($stream) || 'stream' !== get_resource_type($stream)) {
-            return false;
-        }
-        $stat = fstat($stream);
-        if (!$stat) {
-            return false;
+        if (!(static::$outputDecorated ?? false) && $decorated) {
+            return;
         }
 
-        if (($stat['mode'] & 0170000) === 0100000) { // whether is regular file
-            static::$outputDecorated = false;
+        if (static::$outputDecorated ?? false) {
+            $line = "\033[1A\n\033[K";
+            $white = "\033[47;30m";
+            $green = "\033[32;40m";
+            $end = "\033[0m";
         } else {
-            static::$outputDecorated =
-                DIRECTORY_SEPARATOR === '/' && // linux or unix
-                function_exists('posix_isatty') &&
-                posix_isatty($stream); // whether is interactive terminal
+            $line = '';
+            $white = '';
+            $green = '';
+            $end = '';
         }
-        return static::$outputStream = $stream;
+
+        $msg = str_replace(['<n>', '<w>', '<g>'], [$line, $white, $green], $msg);
+        $msg = str_replace(['</n>', '</w>', '</g>'], $end, $msg);
+        fwrite(self::$outputStream, $msg);
+        fflush(self::$outputStream);
     }
 
     /**
