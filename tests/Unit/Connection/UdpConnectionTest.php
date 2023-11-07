@@ -16,7 +16,7 @@ beforeAll(function () use ($remoteAddress, &$process) {
     PHP
     );
     $process->start();
-    sleep(1);
+    usleep(250000);
 });
 
 afterAll(function () use (&$process) {

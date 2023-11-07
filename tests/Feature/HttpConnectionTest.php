@@ -7,10 +7,9 @@ use Symfony\Component\Process\PhpProcess;
 
 $process = null;
 beforeAll(function () use (&$process) {
-    $code = file_get_contents(__DIR__ . '/Stub/HttpServer.php');
-    $process = new PhpProcess($code);
+    $process = new PhpProcess(file_get_contents(__DIR__ . '/Stub/HttpServer.php'));
     $process->start();
-    sleep(1);
+    usleep(250000);
 });
 
 afterAll(function () use (&$process) {
