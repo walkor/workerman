@@ -18,47 +18,47 @@ namespace Workerman\Events;
 /**
  * Ev eventloop
  */
-class Ev implements EventInterface
+final class Ev implements EventInterface
 {
     /**
      * All listeners for read event.
      *
      * @var array<int, \EvIo>
      */
-    protected array $readEvents = [];
+    private array $readEvents = [];
 
     /**
      * All listeners for write event.
      *
      * @var array<int, \EvIo>
      */
-    protected array $writeEvents = [];
+    private array $writeEvents = [];
 
     /**
      * Event listeners of signal.
      *
      * @var array<int, \EvSignal>
      */
-    protected array $eventSignal = [];
+    private array $eventSignal = [];
 
     /**
      * All timer event listeners.
      *
      * @var array<int, \EvTimer>
      */
-    protected array $eventTimer = [];
+    private array $eventTimer = [];
 
     /**
      * @var ?callable
      */
-    protected $errorHandler = null;
+    private $errorHandler = null;
 
     /**
      * Timer id.
      *
      * @var int
      */
-    protected static int $timerId = 1;
+    private static int $timerId = 1;
 
     /**
      * {@inheritdoc}
@@ -216,14 +216,6 @@ class Ev implements EventInterface
     public function setErrorHandler(callable $errorHandler): void
     {
         $this->errorHandler = $errorHandler;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getErrorHandler(): ?callable
-    {
-        return $this->errorHandler;
     }
 
     /**

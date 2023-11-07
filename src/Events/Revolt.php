@@ -25,47 +25,47 @@ use function pcntl_signal;
 /**
  * Revolt eventloop
  */
-class Revolt implements EventInterface
+final class Revolt implements EventInterface
 {
     /**
      * @var Driver
      */
-    protected Driver $driver;
+    private Driver $driver;
 
     /**
      * All listeners for read event.
      *
      * @var array<int, string>
      */
-    protected array $readEvents = [];
+    private array $readEvents = [];
 
     /**
      * All listeners for write event.
      *
      * @var array<int, string>
      */
-    protected array $writeEvents = [];
+    private array $writeEvents = [];
 
     /**
      * Event listeners of signal.
      *
      * @var array<int, string>
      */
-    protected array $eventSignal = [];
+    private array $eventSignal = [];
 
     /**
      * Event listeners of timer.
      *
      * @var array<int, string>
      */
-    protected array $eventTimer = [];
+    private array $eventTimer = [];
 
     /**
      * Timer id.
      *
      * @var int
      */
-    protected int $timerId = 1;
+    private int $timerId = 1;
 
     /**
      * Construct.
@@ -261,13 +261,5 @@ class Revolt implements EventInterface
     public function setErrorHandler(callable $errorHandler): void
     {
         $this->driver->setErrorHandler($errorHandler);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getErrorHandler(): ?callable
-    {
-        return $this->driver->getErrorHandler();
     }
 }

@@ -19,61 +19,61 @@ namespace Workerman\Events;
 /**
  * libevent eventloop
  */
-class Event implements EventInterface
+final class Event implements EventInterface
 {
     /**
      * Event base.
      *
      * @var \EventBase
      */
-    protected \EventBase $eventBase;
+    private \EventBase $eventBase;
 
     /**
      * All listeners for read event.
      *
      * @var array<int, \Event>
      */
-    protected array $readEvents = [];
+    private array $readEvents = [];
 
     /**
      * All listeners for write event.
      *
      * @var array<int, \Event>
      */
-    protected array $writeEvents = [];
+    private array $writeEvents = [];
 
     /**
      * Event listeners of signal.
      *
      * @var array<int, \Event>
      */
-    protected array $eventSignal = [];
+    private array $eventSignal = [];
 
     /**
      * All timer event listeners.
      *
      * @var array<int, \Event>
      */
-    protected array $eventTimer = [];
+    private array $eventTimer = [];
 
     /**
      * Timer id.
      *
      * @var int
      */
-    protected int $timerId = 0;
+    private int $timerId = 0;
 
     /**
      * Event class name.
      *
      * @var string
      */
-    protected string $eventClassName = '';
+    private string $eventClassName = '';
 
     /**
      * @var ?callable
      */
-    protected $errorHandler = null;
+    private $errorHandler = null;
 
     /**
      * Construct.
@@ -270,14 +270,6 @@ class Event implements EventInterface
     public function setErrorHandler(callable $errorHandler): void
     {
         $this->errorHandler = $errorHandler;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getErrorHandler(): ?callable
-    {
-        return $this->errorHandler;
     }
 
     /**

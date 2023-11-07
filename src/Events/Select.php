@@ -26,61 +26,61 @@ use const DIRECTORY_SEPARATOR;
 /**
  * select eventloop
  */
-class Select implements EventInterface
+final class Select implements EventInterface
 {
     /**
      * Running.
      *
      * @var bool
      */
-    protected bool $running = true;
+    private bool $running = true;
 
     /**
      * All listeners for read/write event.
      *
      * @var array<int, callable>
      */
-    protected array $readEvents = [];
+    private array $readEvents = [];
 
     /**
      * All listeners for read/write event.
      *
      * @var array<int, callable>
      */
-    protected array $writeEvents = [];
+    private array $writeEvents = [];
 
     /**
      * @var array<int, callable>
      */
-    protected array $exceptEvents = [];
+    private array $exceptEvents = [];
 
     /**
      * Event listeners of signal.
      *
      * @var array<int, callable>
      */
-    protected array $signalEvents = [];
+    private array $signalEvents = [];
 
     /**
      * Fds waiting for read event.
      *
      * @var array<int, resource>
      */
-    protected array $readFds = [];
+    private array $readFds = [];
 
     /**
      * Fds waiting for write event.
      *
      * @var array<int, resource>
      */
-    protected array $writeFds = [];
+    private array $writeFds = [];
 
     /**
      * Fds waiting for except event.
      *
      * @var array<int, resource>
      */
-    protected array $exceptFds = [];
+    private array $exceptFds = [];
 
     /**
      * Timer scheduler.
@@ -88,7 +88,7 @@ class Select implements EventInterface
      *
      * @var \SplPriorityQueue
      */
-    protected \SplPriorityQueue $scheduler;
+    private \SplPriorityQueue $scheduler;
 
     /**
      * All timer event listeners.
@@ -96,26 +96,26 @@ class Select implements EventInterface
      *
      * @var array
      */
-    protected array $eventTimer = [];
+    private array $eventTimer = [];
 
     /**
      * Timer id.
      *
      * @var int
      */
-    protected int $timerId = 1;
+    private int $timerId = 1;
 
     /**
      * Select timeout.
      *
      * @var int
      */
-    protected int $selectTimeout = 100000000;
+    private int $selectTimeout = 100000000;
 
     /**
      * @var ?callable
      */
-    protected $errorHandler = null;
+    private $errorHandler = null;
 
     /**
      * Construct.
@@ -439,14 +439,6 @@ class Select implements EventInterface
     public function setErrorHandler(callable $errorHandler): void
     {
         $this->errorHandler = $errorHandler;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getErrorHandler(): ?callable
-    {
-        return $this->errorHandler;
     }
 
     /**
