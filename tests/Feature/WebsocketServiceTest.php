@@ -2,60 +2,26 @@
 
 use Symfony\Component\Process\PhpProcess;
 
-$serverCode = <<<PHP
-<?php
-use Workerman\Connection\TcpConnection;
-use Workerman\Protocols\Http\Request;
-use Workerman\Worker;
-require_once __DIR__ . '/vendor/autoload.php';
-if (!defined('STDIN')) define('STDIN', fopen('php://stdin', 'r'));
-if (!defined('STDOUT')) define('STDOUT', fopen('php://stdout', 'w'));
-if (!defined('STDERR')) define('STDERR', fopen('php://stderr', 'w'));
-\$worker = new Worker("websocket://127.0.0.1:8081");
-%s
-Worker::\$pidFile = __DIR__ . '/WebsocketServer.pid';
-Worker::\$command = 'start';
-Worker::runAll();
-PHP;
-
-$clientCode = <<<PHP
-<?php
-use Workerman\Connection\AsyncTcpConnection;
-use Workerman\Worker;
-require_once __DIR__ . '/vendor/autoload.php';
-if (!defined('STDIN')) define('STDIN', fopen('php://stdin', 'r'));
-if (!defined('STDOUT')) define('STDOUT', fopen('php://stdout', 'w'));
-if (!defined('STDERR')) define('STDERR', fopen('php://stderr', 'w'));
-\$worker = new Worker();
-\$worker->onWorkerStart = function(\$worker){
-    \$con = new AsyncTcpConnection('ws://127.0.0.1:8081');
-    %s
-    \$con->connect();
-};
-Worker::\$pidFile = __DIR__ . '/WebsocketClient.pid';
-Worker::\$command = 'start';
-Worker::runAll();
-PHP;
+$serverCode = file_get_contents(__DIR__ . '/Stub/WebsocketServer.php');
+$clientCode = file_get_contents(__DIR__ . '/Stub/WebsocketClient.php');
 
 it('tests websocket connection', function () use ($serverCode, $clientCode) {
-    $serverProcess = new PhpProcess(sprintf($serverCode, <<<PHP
+    $serverProcess = new PhpProcess(str_replace(subject: $serverCode, search: '//%action%', replace: <<<PHP
         \$worker->onWebSocketConnect = function () {
             echo "connected";
         };
         \$worker->onMessage = function () {};
-    PHP
-    ));
+    PHP));
     $serverProcess->start();
-    sleep(1);
+    usleep(250000);
 
-    $clientProcess = new PhpProcess(sprintf($clientCode, <<<PHP
+    $clientProcess = new PhpProcess(str_replace(subject: $clientCode, search: '//%action%', replace: <<<PHP
         \$con->onWebSocketConnect = function(AsyncTcpConnection \$con) {
             \$con->send('connect');
         };
-    PHP
-    ));
+    PHP));
     $clientProcess->start();
-    sleep(1);
+    usleep(250000);
 
     expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('connected')
         ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('');
@@ -65,27 +31,25 @@ it('tests websocket connection', function () use ($serverCode, $clientCode) {
 });
 
 it('tests server and client sending and receiving messages', function () use ($serverCode, $clientCode) {
-    $serverProcess = new PhpProcess(sprintf($serverCode, <<<PHP
+    $serverProcess = new PhpProcess(str_replace(subject: $serverCode, search: '//%action%', replace: <<<PHP
         \$worker->onMessage = function (TcpConnection \$connection, \$data) {
             echo \$data;
             \$connection->send('Hi');
         };
-    PHP
-    ));
+    PHP));
     $serverProcess->start();
-    sleep(1);
+    usleep(250000);
 
-    $clientProcess = new PhpProcess(sprintf($clientCode, <<<PHP
+    $clientProcess = new PhpProcess(str_replace(subject: $clientCode, search: '//%action%', replace: <<<PHP
         \$con->onWebSocketConnect = function(AsyncTcpConnection \$con) {
             \$con->send('Hello Chance');
         };
         \$con->onMessage = function(\$con, \$data) {
             echo \$data;
         };
-    PHP
-    ));
+    PHP));
     $clientProcess->start();
-    sleep(1);
+    usleep(250000);
 
     expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('Hello Chance')
         ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('Hi');
@@ -95,28 +59,26 @@ it('tests server and client sending and receiving messages', function () use ($s
 });
 
 it('tests server close connection', function () use ($serverCode, $clientCode) {
-    $serverProcess = new PhpProcess(sprintf($serverCode, <<<PHP
+    $serverProcess = new PhpProcess(str_replace(subject: $serverCode, search: '//%action%', replace: <<<PHP
         \$worker->onWebSocketConnect = function (TcpConnection \$connection) {
             echo 'close connection';
             \$connection->close();
         };
         \$worker->onMessage = function () {};
-    PHP
-    ));
+    PHP));
     $serverProcess->start();
-    sleep(1);
+    usleep(250000);
 
-    $clientProcess = new PhpProcess(sprintf($clientCode, <<<PHP
+    $clientProcess = new PhpProcess(str_replace(subject: $clientCode, search: '//%action%', replace: <<<PHP
         \$con->onWebSocketConnect = function(AsyncTcpConnection \$con) {
             \$con->send('connect');
         };
         \$con->onClose = function () {
             echo 'closed';
         };
-    PHP
-    ));
+    PHP));
     $clientProcess->start();
-    sleep(1);
+    usleep(250000);
 
     expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('close connection')
         ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('closed');
@@ -126,26 +88,24 @@ it('tests server close connection', function () use ($serverCode, $clientCode) {
 });
 
 it('tests client close connection', function () use ($serverCode, $clientCode) {
-    $serverProcess = new PhpProcess(sprintf($serverCode, <<<PHP
+    $serverProcess = new PhpProcess(str_replace(subject: $serverCode, search: '//%action%', replace: <<<PHP
         \$worker->onMessage = function () {};
         \$worker->onClose = function () {
             echo 'closed';
         };
-    PHP
-    ));
+    PHP));
     $serverProcess->start();
-    sleep(1);
+    usleep(250000);
 
-    $clientProcess = new PhpProcess(sprintf($clientCode, <<<PHP
+    $clientProcess = new PhpProcess(str_replace(subject: $clientCode, search: '//%action%', replace: <<<PHP
         \$con->onWebSocketConnect = function(AsyncTcpConnection \$con) {
             \$con->send('connect');
             echo 'close connection';
             \$con->close();
         };
-    PHP
-    ));
+    PHP));
     $clientProcess->start();
-    sleep(1);
+    usleep(250000);
 
     expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('closed')
         ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('close connection');
