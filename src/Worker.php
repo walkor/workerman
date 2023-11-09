@@ -1330,6 +1330,18 @@ class Worker
             return;
         }
 
+        if (is_resource(STDOUT)) {
+            fclose(STDOUT);
+        }
+
+        if (is_resource(STDERR)) {
+            fclose(STDERR);
+        }
+
+        if (is_resource(static::$outputStream)) {
+            fclose(static::$outputStream);
+        }
+
         set_error_handler(static fn (): bool => true);
         $stdOutStream = fopen(static::$stdoutFile, 'a');
         restore_error_handler();
@@ -1338,7 +1350,6 @@ class Worker
             return;
         }
 
-        fclose(static::$outputStream);
         static::$outputStream = $stdOutStream;
 
         // Fix standard output cannot redirect of PHP 8.1.8's bug
