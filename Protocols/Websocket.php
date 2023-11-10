@@ -30,11 +30,25 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
     const BINARY_TYPE_BLOB = "\x81";
 
     /**
+     * Websocket blob type.
+     *
+     * @var string
+     */
+    const BINARY_TYPE_BLOB_DEFLATE = "\xc1";
+
+    /**
      * Websocket arraybuffer type.
      *
      * @var string
      */
     const BINARY_TYPE_ARRAYBUFFER = "\x82";
+
+    /**
+     * Websocket arraybuffer type.
+     *
+     * @var string
+     */
+    const BINARY_TYPE_ARRAYBUFFER_DEFLATE = "\xc2";
 
     /**
      * Check the integrity of the package.
@@ -234,7 +248,13 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $connection->websocketType = static::BINARY_TYPE_BLOB;
         }
 
+        // permessage-deflate
+        if (\ord($connection->websocketType) & 64) {
+            $buffer = static::deflate($connection, $buffer);
+        }
+
         $first_byte = $connection->websocketType;
+        $len = \strlen($buffer);
 
         if ($len <= 125) {
             $encode_buffer = $first_byte . \chr($len) . $buffer;
@@ -294,7 +314,12 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
      */
     public static function decode($buffer, ConnectionInterface $connection)
     {
-        $len = \ord($buffer[1]) & 127;
+        $first_byte = \ord($buffer[0]);
+        $second_byte = \ord($buffer[1]);
+        $len = $second_byte & 127;
+        $is_fin_frame = $first_byte >> 7;
+        $rsv1 = 64 === ($first_byte & 64);
+
         if ($len === 126) {
             $masks = \substr($buffer, 4, 4);
             $data  = \substr($buffer, 8);
@@ -312,14 +337,79 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
         $decoded = $data ^ $masks;
         if ($connection->websocketCurrentFrameLength) {
             $connection->websocketDataBuffer .= $decoded;
+            if ($rsv1) {
+                return static::inflate($connection, $connection->websocketDataBuffer, $is_fin_frame);
+            }
             return $connection->websocketDataBuffer;
         } else {
             if ($connection->websocketDataBuffer !== '') {
                 $decoded                         = $connection->websocketDataBuffer . $decoded;
                 $connection->websocketDataBuffer = '';
             }
+            if ($rsv1) {
+                return static::inflate($connection, $decoded, $is_fin_frame);
+            }
             return $decoded;
         }
+    }
+
+    /**
+     * Inflate.
+     *
+     * @param $connection
+     * @param $buffer
+     * @param $is_fin_frame
+     * @return false|string
+     */
+    protected static function inflate($connection, $buffer, $is_fin_frame)
+    {
+        if (!isset($connection->inflator)) {
+            $connection->inflator = \inflate_init(
+                \ZLIB_ENCODING_RAW,
+                [
+                    'level'    => -1,
+                    'memory'   => 8,
+                    'window'   => 15,
+                    'strategy' => \ZLIB_DEFAULT_STRATEGY
+                ]
+            );
+        }
+        # websocket-sharp add \x00\x00\xff\xff
+        if ($is_fin_frame) { 
+            $buffer .= "\x00\x00\xff\xff";
+        }
+        // $buffer .= "\x00\x00\xff\xff";
+        // $buffer .= "\x00";
+        $ret = \inflate_add($connection->inflator, $buffer);
+        // if ($is_fin_frame) { 
+        //     $ret .= "\x00\x00\xff\xff";
+        // }
+        # websocket-sharp add +1  BFINAL 
+        // $ret[0]=\chr(\ord($ret[0])+1);
+        return $ret;
+    }
+
+    /**
+     * Deflate.
+     *
+     * @param $connection
+     * @param $buffer
+     * @return false|string
+     */
+    protected static function deflate($connection, $buffer)
+    {
+        if (!isset($connection->deflator)) {
+            $connection->deflator = \deflate_init(
+                \ZLIB_ENCODING_RAW,
+                [
+                    'level'    => -1,
+                    'memory'   => 8,
+                    'window'   => 15,
+                    'strategy' => \ZLIB_DEFAULT_STRATEGY
+                ]
+            );
+        }
+        return \substr(\deflate_add($connection->deflator, $buffer), 0, -4);
     }
 
     /**
@@ -357,6 +447,26 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                                 ."Sec-WebSocket-Version: 13\r\n"
                                 ."Connection: Upgrade\r\n"
                                 ."Sec-WebSocket-Accept: " . $new_key . "\r\n";
+            
+            // Increase automatic compression
+            if(
+                \defined('WORKERMAN_WEBSOCKET_DEFLATE') 
+                && WORKERMAN_WEBSOCKET_DEFLATE
+                && \preg_match("/Sec-WebSocket-Extensions: .*permessage-deflate.*\r\n/i", $buffer, $matchEX)
+            ){
+                $headExt = "Sec-WebSocket-Extensions: permessage-deflate";
+                if(\preg_match("/Sec-WebSocket-Extensions: .*server_no_context_takeover.*\r\n/i", $buffer, $matchEX))$headExt .= "; server_no_context_takeover";
+                if(\preg_match("/Sec-WebSocket-Extensions: .*client_no_context_takeover.*\r\n/i", $buffer, $matchEX))$headExt .= "; client_no_context_takeover";
+                if(\preg_match("/Sec-WebSocket-Extensions: .*server_max_window_bits.*\r\n/i", $buffer, $matchEX))$headExt .= "; server_max_window_bits=15";
+                if(\preg_match("/Sec-WebSocket-Extensions: .*client_max_window_bits.*\r\n/i", $buffer, $matchEX))$headExt .= "; client_max_window_bits=15";
+                // $handshake_message.="Sec-WebSocket-Extensions: permessage-deflate; server_no_context_takeover; client_no_context_takeover; client_max_window_bits=15; server_max_window_bits=15\r\n";
+                // if(\preg_match("/websocket-sharp/i", $buffer, $matchEX)){
+                //     # c# websocket-sharp not client_no_context_takeover
+                //     $handshake_message = str_replace('client_no_context_takeover; ','',$handshake_message);
+                // }
+                $handshake_message .= $headExt."\r\n";
+                $connection->websocketType = Websocket::BINARY_TYPE_BLOB_DEFLATE;
+            }
 
             // Websocket data buffer.
             $connection->websocketDataBuffer = '';
@@ -366,6 +476,23 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $connection->websocketCurrentFrameBuffer = '';
             // Consume handshake data.
             $connection->consumeRecvBuffer($header_length);
+
+            // Try to emit onWebSocketConnect callback.
+            $on_websocket_connect = $connection->onWebSocketConnect ?? $connection->worker->onWebSocketConnect ?? false;
+            if ($on_websocket_connect) {
+                static::parseHttpHeader($buffer);
+                try {
+                    \call_user_func($on_websocket_connect, $connection, $buffer);
+                } catch (\Exception $e) {
+                    Worker::stopAll(250, $e);
+                } catch (\Error $e) {
+                    Worker::stopAll(250, $e);
+                }
+                if (!empty($_SESSION) && \class_exists('\GatewayWorker\Lib\Context')) {
+                    $connection->session = \GatewayWorker\Lib\Context::sessionEncode($_SESSION);
+                }
+                $_GET = $_SERVER = $_SESSION = $_COOKIE = array();
+            }
 
             // blob or arraybuffer
             if (empty($connection->websocketType)) {
@@ -397,24 +524,6 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
             $connection->send($handshake_message, true);
             // Mark handshake complete..
             $connection->websocketHandshake = true;
-
-            // Try to emit onWebSocketConnect callback.
-            $on_websocket_connect = isset($connection->onWebSocketConnect) ? $connection->onWebSocketConnect :
-                (isset($connection->worker->onWebSocketConnect) ? $connection->worker->onWebSocketConnect : false);
-            if ($on_websocket_connect) {
-                static::parseHttpHeader($buffer);
-                try {
-                    \call_user_func($on_websocket_connect, $connection, $buffer);
-                } catch (\Exception $e) {
-                    Worker::stopAll(250, $e);
-                } catch (\Error $e) {
-                    Worker::stopAll(250, $e);
-                }
-                if (!empty($_SESSION) && \class_exists('\GatewayWorker\Lib\Context')) {
-                    $connection->session = \GatewayWorker\Lib\Context::sessionEncode($_SESSION);
-                }
-                $_GET = $_SERVER = $_SESSION = $_COOKIE = array();
-            }
 
             // There are data waiting to be sent.
             if (!empty($connection->tmpWebsocketData)) {
