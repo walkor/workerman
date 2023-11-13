@@ -88,19 +88,19 @@ class FileSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public function read(string $sessionId): string
+    public function read(string $sessionId): string|false
     {
         $sessionFile = static::sessionFile($sessionId);
         clearstatcache();
         if (is_file($sessionFile)) {
             if (time() - filemtime($sessionFile) > Session::$lifetime) {
                 unlink($sessionFile);
-                return '';
+                return false;
             }
             $data = file_get_contents($sessionFile);
-            return $data ?: '';
+            return $data ?: false;
         }
-        return '';
+        return false;
     }
 
     /**

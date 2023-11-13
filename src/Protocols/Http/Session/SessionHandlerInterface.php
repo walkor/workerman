@@ -74,14 +74,14 @@ interface SessionHandlerInterface
      * Read session data
      * @link http://php.net/manual/en/sessionhandlerinterface.read.php
      * @param string $sessionId The session id to read data for.
-     * @return string <p>
+     * @return string|false <p>
      * Returns an encoded string of the read data.
-     * If nothing was read, it must return an empty string.
+     * If nothing was read, it must return false.
      * Note this value is returned internally to PHP for processing.
      * </p>
      * @since 5.4.0
      */
-    public function read(string $sessionId): string;
+    public function read(string $sessionId): string|false;
 
     /**
      * Write session data

@@ -102,11 +102,11 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * {@inheritdoc}
      * @param string $sessionId
-     * @return string
+     * @return string|false
      * @throws RedisException
      * @throws Throwable
      */
-    public function read(string $sessionId): string
+    public function read(string $sessionId): string|false
     {
         try {
             return $this->redis->get($sessionId);

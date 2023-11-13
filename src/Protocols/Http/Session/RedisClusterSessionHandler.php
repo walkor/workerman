@@ -48,7 +48,7 @@ class RedisClusterSessionHandler extends RedisSessionHandler
     /**
      * {@inheritdoc}
      */
-    public function read(string $sessionId): string
+    public function read(string $sessionId): string|false
     {
         return $this->redis->get($sessionId);
     }
