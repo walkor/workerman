@@ -703,7 +703,7 @@ class Worker
             return;
         }
 
-        if (isset(static::$eventLoopClass)) {
+        if (!empty(static::$eventLoopClass)) {
             if (!is_subclass_of(static::$eventLoopClass, EventInterface::class)) {
                 throw new RuntimeException(sprintf('%s::$eventLoopClass must implement %s', static::class, EventInterface::class));
             }
