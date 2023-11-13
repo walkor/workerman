@@ -203,7 +203,7 @@ class Request implements Stringable
      * @param string|null $name
      * @return array|null
      */
-    public function file(string $name = null): array|null
+    public function file(string $name = null)
     {
         if (!isset($this->data['files'])) {
             $this->parsePost();
