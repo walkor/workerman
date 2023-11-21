@@ -365,7 +365,7 @@ class AsyncTcpConnection extends TcpConnection
     public function checkConnection(): void
     {
         // Remove EV_EXPECT for windows.
-        if (DIRECTORY_SEPARATOR === '\\' && method_exists($this->eventLoop, 'offExcept')) {
+        if (DIRECTORY_SEPARATOR === '\\' && $this->eventLoop && method_exists($this->eventLoop, 'offExcept')) {
             $this->eventLoop->offExcept($this->socket);
         }
         // Remove write listener.
