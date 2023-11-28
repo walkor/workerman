@@ -2209,15 +2209,12 @@ class Worker
      * Safe Echo.
      *
      * @param string $msg
+     * @param bool $decorated
      * @return void
      */
     public static function safeEcho(string $msg, bool $decorated = false): void
     {
-        if (!(static::$outputDecorated ?? false) && $decorated) {
-            return;
-        }
-
-        if (static::$outputDecorated ?? false) {
+        if ((static::$outputDecorated ?? false) && $decorated) {
             $line = "\033[1A\n\033[K";
             $white = "\033[47;30m";
             $green = "\033[32;40m";
