@@ -1221,6 +1221,8 @@ class Worker
         if (DIRECTORY_SEPARATOR !== '/') {
             return;
         }
+		pcntl_async_signals(true);
+
         $signals = [SIGINT, SIGTERM, SIGHUP, SIGTSTP, SIGQUIT, SIGUSR1, SIGUSR2, SIGIOT, SIGIO];
         foreach ($signals as $signal) {
             pcntl_signal($signal, static::signalHandler(...), false);
