@@ -1002,6 +1002,9 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         // Remove event listener.
         $this->eventLoop->offReadable($this->socket);
         $this->eventLoop->offWritable($this->socket);
+        if (DIRECTORY_SEPARATOR === '\\' && method_exists($this->eventLoop, 'offExcept')) {
+            $this->eventLoop->offExcept($this->socket);
+        }
 
         // Close socket.
         try {
