@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace Workerman\Connection;
 
 use JsonSerializable;
+use RuntimeException;
 use stdClass;
 use Throwable;
 use Workerman\Events\EventInterface;
@@ -684,7 +685,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                         }
                     } // Wrong package.
                     else {
-                        Worker::safeEcho('Error package. package_length=' . var_export($this->currentPackageLength, true));
+                        Worker::safeEcho((string)(new RuntimeException("Protocol $this->protocol Error package. package_length=" . var_export($this->currentPackageLength, true))));
                         $this->destroy();
                         return;
                     }
