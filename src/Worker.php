@@ -2597,6 +2597,7 @@ class Worker
 
         $masterIsAlive = posix_kill($masterPid, 0) && posix_getpid() !== $masterPid;
         if (!$masterIsAlive) {
+            static::log("Master pid:$masterPid is not alive");
             return false;
         }
 
