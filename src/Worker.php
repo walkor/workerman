@@ -1142,6 +1142,9 @@ class Worker
         } catch (Throwable) {
             // do nothing
         }
+        if (!is_array($workerInfo)) {
+            $workerInfo = [];
+        }
         ksort($workerInfo, SORT_NUMERIC);
         unset($info[0]);
         $dataWaitingSort = [];
