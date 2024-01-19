@@ -468,6 +468,9 @@ class Response implements Stringable
         if (!isset($headers['Transfer-Encoding'])) {
             $head .= "Content-Length: $bodyLen\r\n\r\n";
         } else {
+            if (isset($headers['Connection']) && $headers['Connection'] == 'close') {
+                return $bodyLen ? "$head\r\n" . dechex($bodyLen) . "\r\n{$this->body}\r\n0\r\n\r\n" : "$head\r\n";
+            }
             return $bodyLen ? "$head\r\n" . dechex($bodyLen) . "\r\n{$this->body}\r\n" : "$head\r\n";
         }
 
