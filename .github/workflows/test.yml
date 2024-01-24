@@ -12,7 +12,7 @@ on:
 
 jobs:
   linux_tests:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
