@@ -943,7 +943,7 @@ class Worker
             exit;
         }
 
-        $statistics_file =  static::$statusFile ? static::$statusFile : __DIR__ . "/../workerman-$master_pid.$command";
+        $statistics_file =  static::$statusFile ? static::$statusFile : __DIR__ . "/../workerman-$master_pid.status";
 
         // execute command.
         switch ($command) {
