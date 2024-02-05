@@ -1064,6 +1064,9 @@ class Worker
         try {
             $workerInfo = unserialize($info[0], ['allowed_classes' => false]);
         } catch (Throwable $exception) {}
+        if (!is_array($workerInfo)) {
+            $workerInfo = [];
+        }
         \ksort($workerInfo, SORT_NUMERIC);
         unset($info[0]);
         $data_waiting_sort = array();
