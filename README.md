@@ -24,7 +24,7 @@ composer require workerman/workerman
 
 ## Documentation
 
-Documentation: [https://manual.workerman.net](https://manual.workerman.net)
+[https://manual.workerman.net](https://manual.workerman.net)
 
 ## Basic Usage
 
