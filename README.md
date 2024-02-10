@@ -22,6 +22,10 @@ Event extension recommended for better performance
 composer require workerman/workerman
 ```
 
+## Documentation
+
+Documentation: [https://manual.workerman.net](https://manual.workerman.net)
+
 ## Basic Usage
 
 ### A websocket server 
@@ -381,10 +385,6 @@ proxy supports TLS1.3, no Sniproxy channel
 ```php start.php restart  ```  
 ```php start.php reload  ```  
 ```php start.php reload -g  ```
-
-## Documentation
-
-Documentation: [https://manual.workerman.net](https://manual.workerman.net)
 
 # Benchmarks
 https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=plaintext&l=zik073-1r
