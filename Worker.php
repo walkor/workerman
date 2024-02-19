@@ -34,7 +34,7 @@ class Worker
      *
      * @var string
      */
-    const VERSION = '4.1.11';
+    const VERSION = '4.1.14';
 
     /**
      * Status starting.
@@ -569,8 +569,8 @@ class Worker
      */
     protected static function checkSapiEnv()
     {
-        // Only for cli.
-        if (\PHP_SAPI !== 'cli') {
+        // Only for cli and micro.
+        if (!in_array(\PHP_SAPI, ['cli', 'micro'])) {
             exit("Only run in command line mode \n");
         }
         if (\DIRECTORY_SEPARATOR === '\\') {
@@ -943,7 +943,7 @@ class Worker
             exit;
         }
 
-        $statistics_file =  static::$statusFile ? static::$statusFile : __DIR__ . "/../workerman-$master_pid.$command";
+        $statistics_file =  static::$statusFile ? static::$statusFile : __DIR__ . "/../workerman-$master_pid.status";
 
         // execute command.
         switch ($command) {
@@ -1060,8 +1060,14 @@ class Worker
         }
         $status_str = '';
         $current_total_request = array();
-        $worker_info = \unserialize($info[0]);
-        \ksort($worker_info, SORT_NUMERIC);
+        $workerInfo = [];
+        try {
+            $workerInfo = unserialize($info[0], ['allowed_classes' => false]);
+        } catch (Throwable $exception) {}
+        if (!is_array($workerInfo)) {
+            $workerInfo = [];
+        }
+        \ksort($workerInfo, SORT_NUMERIC);
         unset($info[0]);
         $data_waiting_sort = array();
         $read_process_status = false;
@@ -1096,7 +1102,7 @@ class Worker
                 }
             }
         }
-        foreach($worker_info as $pid => $info) {
+        foreach($workerInfo as $pid => $info) {
             if (!isset($data_waiting_sort[$pid])) {
                 $status_str .= "$pid\t" . \str_pad('N/A', 7) . " "
                     . \str_pad($info['listen'], static::$_maxSocketNameLength) . " "
@@ -1471,6 +1477,9 @@ class Worker
             Timer::init(static::$globalEvent);
 
             \restore_error_handler();
+
+            // Add an empty timer to prevent the event-loop from exiting.
+            Timer::add(1000000, function (){});
 
             // Display UI.
             static::safeEcho(\str_pad($worker->name, 48) . \str_pad($worker->getSocketName(), 36) . \str_pad('1', 10) . "  [ok]\n");

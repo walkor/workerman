@@ -174,9 +174,7 @@ class Ev implements EventInterface
      */
     public function destroy()
     {
-        foreach ($this->_allEvents as $event) {
-            $event->stop();
-        }
+        \Ev::stop(\Ev::BREAK_ALL);
     }
 
     /**
