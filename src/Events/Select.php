@@ -367,8 +367,8 @@ final class Select implements EventInterface
                 // Waiting read/write/signal/timeout events.
                 try {
                     if (@stream_select($read, $write, $except, 0, $this->selectTimeout) === false) {
-						continue;
-					}
+                        continue;
+                    }
                 } catch (\Throwable) {
                     // do nothing
                 }

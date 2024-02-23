@@ -1214,21 +1214,22 @@ class Worker
     /**
      * Install signal handler.
      *
+     * @param bool $restartSysCalls
      * @return void
      */
-    protected static function installSignal(): void
+    protected static function installSignal(bool $restartSysCalls = false): void
     {
         if (DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-		pcntl_async_signals(true);
+        pcntl_async_signals(true);
 
         $signals = [SIGINT, SIGTERM, SIGHUP, SIGTSTP, SIGQUIT, SIGUSR1, SIGUSR2, SIGIOT, SIGIO];
         foreach ($signals as $signal) {
-            pcntl_signal($signal, static::signalHandler(...), false);
+            pcntl_signal($signal, static::signalHandler(...), $restartSysCalls);
         }
         // ignore
-        pcntl_signal(SIGPIPE, SIG_IGN, false);
+        pcntl_signal(SIGPIPE, SIG_IGN, $restartSysCalls);
     }
 
     /**
@@ -1242,15 +1243,7 @@ class Worker
         if (DIRECTORY_SEPARATOR !== '/') {
             return;
         }
-		pcntl_async_signals(true);
-
-        $signals = [SIGINT, SIGTERM, SIGHUP, SIGTSTP, SIGQUIT, SIGUSR1, SIGUSR2, SIGIOT, SIGIO];
-        foreach ($signals as $signal) {
-            // Rewrite master process signal.
-            static::$globalEvent->onSignal($signal, static::signalHandler(...));
-        }
-		// ignore
-		pcntl_signal(SIGPIPE, SIG_IGN, false);
+        self::installSignal(true);
     }
 
     /**
