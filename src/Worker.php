@@ -662,7 +662,7 @@ class Worker
         // Log file.
         static::$logFile ??= sprintf('%s/workerman.log', dirname(__DIR__, 2));
 
-        if (!is_file(static::$logFile)) {
+        if (!is_file(static::$logFile) && static::$logFile !== '/dev/null') {
             // if /runtime/logs  default folder not exists
             if (!is_dir(dirname(static::$logFile))) {
                 @mkdir(dirname(static::$logFile), 0777, true);
@@ -1141,6 +1141,9 @@ class Worker
             $workerInfo = unserialize($info[0], ['allowed_classes' => false]);
         } catch (Throwable) {
             // do nothing
+        }
+        if (!is_array($workerInfo)) {
+            $workerInfo = [];
         }
         ksort($workerInfo, SORT_NUMERIC);
         unset($info[0]);
@@ -2599,6 +2602,7 @@ class Worker
 
         $masterIsAlive = posix_kill($masterPid, 0) && posix_getpid() !== $masterPid;
         if (!$masterIsAlive) {
+            static::log("Master pid:$masterPid is not alive");
             return false;
         }
 
