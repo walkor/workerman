@@ -336,7 +336,7 @@ class Ws
         }
         // Get Host.
         $port = $connection->getRemotePort();
-        $host = $port === 80 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
+        $host = $port === 80 || $port === 443 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
         // Handshake header.
         $connection->context->websocketSecKey = \base64_encode(random_bytes(16));
         $userHeader = $connection->headers ?? null;
