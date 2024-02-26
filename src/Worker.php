@@ -51,7 +51,7 @@ class Worker
      *
      * @var string
      */
-    public const VERSION = '5.0.0-beta.7';
+    final public const VERSION = '5.0.0-beta.7';
 
     /**
      * Status starting.
