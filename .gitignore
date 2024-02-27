@@ -9,3 +9,5 @@ vendor/
 composer.lock
 phpunit.xml
 /phpstan.neon
+/*.pid
+/*.pid.lock
