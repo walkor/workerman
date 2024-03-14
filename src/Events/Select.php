@@ -187,9 +187,9 @@ final class Select implements EventInterface
     {
         $count = count($this->readFds);
         if ($count >= 1024) {
-            echo "Warning: system call select exceeded the maximum number of connections 1024, please install event/libevent extension for more connections.\n";
+            trigger_error("System call select exceeded the maximum number of connections 1024, please install event/libevent extension for more connections.", E_USER_WARNING);
         } else if (DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
-            echo "Warning: system call select exceeded the maximum number of connections 256.\n";
+            trigger_error("System call select exceeded the maximum number of connections 256.", E_USER_WARNING);
         }
         $fdKey = (int)$stream;
         $this->readEvents[$fdKey] = $func;
@@ -216,9 +216,9 @@ final class Select implements EventInterface
     {
         $count = count($this->writeFds);
         if ($count >= 1024) {
-            echo "Warning: system call select exceeded the maximum number of connections 1024, please install event/libevent extension for more connections.\n";
+            trigger_error("System call select exceeded the maximum number of connections 1024, please install event/libevent extension for more connections.", E_USER_WARNING);
         } else if (DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
-            echo "Warning: system call select exceeded the maximum number of connections 256.\n";
+            trigger_error("System call select exceeded the maximum number of connections 256.", E_USER_WARNING);
         }
         $fdKey = (int)$stream;
         $this->writeEvents[$fdKey] = $func;

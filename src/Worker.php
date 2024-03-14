@@ -1265,12 +1265,12 @@ class Worker
             case SIGHUP:
             case SIGTSTP:
                 static::$gracefulStop = false;
-                static::stopAll();
+                static::stopAll(0, "received signal: $signal");
                 break;
             // Graceful stop.
             case SIGQUIT:
                 static::$gracefulStop = true;
-                static::stopAll();
+                static::stopAll(0, "received signal: $signal");
                 break;
             // Reload.
             case SIGUSR2:
@@ -1791,8 +1791,8 @@ class Worker
                 }
             }
 
-            // If shutdown state and all child processes exited then master process exit.
-            if (static::$status === static::STATUS_SHUTDOWN && !static::getAllWorkerPids()) {
+            // If shutdown state and all child processes exited, then master process exit.
+            if (static::$status === static::STATUS_SHUTDOWN && empty(static::getAllWorkerPids())) {
                 static::exitAndClearAll();
             }
         }
@@ -1926,7 +1926,7 @@ class Worker
         static::$status = static::STATUS_SHUTDOWN;
         // For master process.
         if (DIRECTORY_SEPARATOR === '/' && static::$masterPid === posix_getpid()) {
-            static::log("Workerman[" . basename(static::$startFile) . "] stopping ...");
+            static::log("Workerman[" . basename(static::$startFile) . "] stopping, code [$code]");
             $workerPidArray = static::getAllWorkerPids();
             // Send stop signal to all child processes.
             $sig = static::getGracefulStop() ? SIGQUIT : SIGINT;
