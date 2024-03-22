@@ -2233,8 +2233,12 @@ class Worker
 
         $msg = str_replace(['<n>', '<w>', '<g>'], [$line, $white, $green], $msg);
         $msg = str_replace(['</n>', '</w>', '</g>'], $end, $msg);
-        fwrite(self::$outputStream, $msg);
-        fflush(self::$outputStream);
+        set_error_handler(static fn (): bool => true);
+        if (!feof(self::$outputStream)) {
+            fwrite(self::$outputStream, $msg);
+            fflush(self::$outputStream);
+        }
+        restore_error_handler();
     }
 
     /**
