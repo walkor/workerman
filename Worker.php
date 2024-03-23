@@ -2261,9 +2261,9 @@ class Worker
             return false;
         }
         set_error_handler(function(){});
-        if (!feof(self::$outputStream)) {
-            fwrite(self::$outputStream, $msg);
-            fflush(self::$outputStream);
+        if (!feof($stream)) {
+            fwrite($stream, $msg);
+            fflush($stream);
         }
         restore_error_handler();
         return true;
