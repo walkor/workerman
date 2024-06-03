@@ -777,13 +777,14 @@ class TcpConnection extends ConnectionInterface
      * This method pulls all the data out of a readable stream, and writes it to the supplied destination.
      *
      * @param self $dest
+     * @param bool $raw
      * @return void
      */
-    public function pipe(self $dest)
+    public function pipe(self $dest, $raw = false)
     {
         $source              = $this;
-        $this->onMessage     = function ($source, $data) use ($dest) {
-            $dest->send($data);
+        $this->onMessage     = function ($source, $data) use ($dest, $raw) {
+            $dest->send($data, $raw);
         };
         $this->onClose       = function ($source) use ($dest) {
             $dest->close();
