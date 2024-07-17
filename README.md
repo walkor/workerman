@@ -396,7 +396,7 @@ https://www.techempower.com/benchmarks/#section=data-r19&hw=ph&test=plaintext&l=
 [AdapterMan](https://github.com/joanhey/AdapterMan)
 
 ## Donate
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UQGGS9UB35WWG"><img src="http://donate.workerman.net/img/donate.png"></a>
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UQGGS9UB35WWG">PayPal</a>
 
 ## LICENSE
 
