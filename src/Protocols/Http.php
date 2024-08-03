@@ -73,7 +73,7 @@ class Http
      * @param class-string|null $className
      * @return string
      */
-    public static function requestClass(string $className = null): string
+    public static function requestClass(?string $className = null): string
     {
         if ($className !== null) {
             static::$requestClass = $className;
