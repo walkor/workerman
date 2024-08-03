@@ -78,7 +78,7 @@ class Timer
      * @param EventInterface|null $event
      * @return void
      */
-    public static function init(EventInterface $event = null): void
+    public static function init(?EventInterface $event = null): void
     {
         if ($event) {
             self::$event = $event;
