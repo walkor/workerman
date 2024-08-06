@@ -27,20 +27,10 @@ use function str_replace;
 class ServerSentEvents implements Stringable
 {
     /**
-     * Data.
-     * @var array
-     */
-    protected array $data;
-
-    /**
      * ServerSentEvents constructor.
      * $data for example ['event'=>'ping', 'data' => 'some thing', 'id' => 1000, 'retry' => 5000]
-     * @param array $data
      */
-    public function __construct(array $data)
-    {
-        $this->data = $data;
-    }
+    public function __construct(protected array $data) {}
 
     /**
      * __toString.
