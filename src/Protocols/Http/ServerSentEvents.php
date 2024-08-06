@@ -32,11 +32,6 @@ class ServerSentEvents implements Stringable
      */
     public function __construct(protected array $data) {}
 
-    /**
-     * __toString.
-     *
-     * @return string
-     */
     public function __toString(): string
     {
         $buffer = '';
