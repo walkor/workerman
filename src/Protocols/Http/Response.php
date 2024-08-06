@@ -39,19 +39,6 @@ use const FILE_SKIP_EMPTY_LINES;
  */
 class Response implements Stringable
 {
-    /**
-     * Header data.
-     *
-     * @var array
-     */
-    protected array $headers = [];
-
-    /**
-     * Http status.
-     *
-     * @var int
-     */
-    protected int $status;
 
     /**
      * Http reason.
@@ -66,13 +53,6 @@ class Response implements Stringable
      * @var string
      */
     protected string $version = '1.1';
-
-    /**
-     * Http body.
-     *
-     * @var string
-     */
-    protected string $body = '';
 
     /**
      * Send file info
@@ -177,20 +157,15 @@ class Response implements Stringable
     /**
      * Response constructor.
      *
-     * @param int $status
-     * @param array|null $headers
+     * @param int    $status
+     * @param array  $headers
      * @param string $body
      */
     public function __construct(
-        int     $status = 200,
-        ?array  $headers = [],
-        string  $body = ''
-    )
-    {
-        $this->status = $status;
-        $this->headers = $headers;
-        $this->body = $body;
-    }
+        protected int    $status = 200,
+        protected array  $headers = [],
+        protected string $body = ''
+    ) {}
 
     /**
      * Set header.
