@@ -28,16 +28,8 @@ use function strlen;
 class Chunk implements Stringable
 {
 
-    /**
-     * Chunk constructor.
-     *
-     */
     public function __construct(protected string $buffer) {}
 
-    /**
-     * __toString
-     *
-     */
     public function __toString(): string
     {
         return dechex(strlen($this->buffer)) . "\r\n$this->buffer\r\n";
