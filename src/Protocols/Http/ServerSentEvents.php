@@ -56,6 +56,6 @@ class ServerSentEvents implements Stringable
         if (isset($data['data'])) {
             $buffer .= 'data: ' . str_replace("\n", "\ndata: ", $data['data']) . "\n";
         }
-        return $buffer . "\n";
+        return "$buffer\n";
     }
 }
