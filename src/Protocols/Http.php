@@ -248,7 +248,7 @@ class Http
             }
             $handler = fopen($file, 'r');
             if (false === $handler) {
-                $connection->close(new Response(403, null, '403 Forbidden'));
+                $connection->close(new Response(403, [], '403 Forbidden'));
                 return '';
             }
             $connection->send((string)$response, true);
