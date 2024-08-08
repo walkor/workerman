@@ -27,26 +27,11 @@ use function str_replace;
 class ServerSentEvents implements Stringable
 {
     /**
-     * Data.
-     * @var array
-     */
-    protected array $data;
-
-    /**
      * ServerSentEvents constructor.
      * $data for example ['event'=>'ping', 'data' => 'some thing', 'id' => 1000, 'retry' => 5000]
-     * @param array $data
      */
-    public function __construct(array $data)
-    {
-        $this->data = $data;
-    }
+    public function __construct(protected array $data) {}
 
-    /**
-     * __toString.
-     *
-     * @return string
-     */
     public function __toString(): string
     {
         $buffer = '';
@@ -66,6 +51,6 @@ class ServerSentEvents implements Stringable
         if (isset($data['data'])) {
             $buffer .= 'data: ' . str_replace("\n", "\ndata: ", $data['data']) . "\n";
         }
-        return $buffer . "\n";
+        return "$buffer\n";
     }
 }

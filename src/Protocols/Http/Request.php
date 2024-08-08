@@ -79,13 +79,6 @@ class Request implements Stringable
     public array $properties = [];
 
     /**
-     * Http buffer.
-     *
-     * @var string
-     */
-    protected string $buffer;
-
-    /**
      * Request data.
      *
      * @var array
@@ -116,12 +109,8 @@ class Request implements Stringable
     /**
      * Request constructor.
      *
-     * @param string $buffer
      */
-    public function __construct(string $buffer)
-    {
-        $this->buffer = $buffer;
-    }
+    public function __construct(protected string $buffer) {}
 
     /**
      * Get query.
