@@ -383,16 +383,6 @@ class Websocket
             // Consume handshake data.
             $connection->consumeRecvBuffer($headerLength);
 
-            // Try to emit onWebSocketConnect callback.
-            $onWebsocketConnect = $connection->onWebSocketConnect ?? $connection->worker->onWebSocketConnect ?? false;
-            if ($onWebsocketConnect) {
-                try {
-                    $onWebsocketConnect($connection, new Request($buffer));
-                } catch (Throwable $e) {
-                    Worker::stopAll(250, $e);
-                }
-            }
-
             // blob or arraybuffer
             if (empty($connection->websocketType)) {
                 $connection->websocketType = static::BINARY_TYPE_BLOB;
@@ -416,6 +406,16 @@ class Websocket
             $connection->send($handshakeMessage, true);
             // Mark handshake complete.
             $connection->context->websocketHandshake = true;
+
+            // Try to emit onWebSocketConnect callback.
+            $onWebsocketConnect = $connection->onWebSocketConnect ?? $connection->worker->onWebSocketConnect ?? false;
+            if ($onWebsocketConnect) {
+                try {
+                    $onWebsocketConnect($connection, new Request($buffer));
+                } catch (Throwable $e) {
+                    Worker::stopAll(250, $e);
+                }
+            }
 
             // There are data waiting to be sent.
             if (!empty($connection->context->tmpWebsocketData)) {
