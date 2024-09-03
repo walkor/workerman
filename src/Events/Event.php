@@ -140,7 +140,7 @@ final class Event implements EventInterface
     {
         $className = $this->eventClassName;
         $timerId = $this->timerId++;
-        $event = new $className($this->eventBase, -1, $className::TIMEOUT | $className::PERSIST, fn () => $this->safeCall($func, $args));
+        $event = new $className($this->eventBase, -1, $className::TIMEOUT | $className::PERSIST, $func);
         if (!$event->addTimer($interval)) {
             throw new \RuntimeException("Event::addTimer($interval) failed");
         }
@@ -155,7 +155,7 @@ final class Event implements EventInterface
     {
         $className = $this->eventClassName;
         $fdKey = (int)$stream;
-        $event = new $className($this->eventBase, $stream, $className::READ | $className::PERSIST, fn () => $this->safeCall($func, [$stream]));
+        $event = new $className($this->eventBase, $stream, $className::READ | $className::PERSIST, $func);
         if ($event->add()) {
             $this->readEvents[$fdKey] = $event;
         }
@@ -182,7 +182,7 @@ final class Event implements EventInterface
     {
         $className = $this->eventClassName;
         $fdKey = (int)$stream;
-        $event = new $className($this->eventBase, $stream, $className::WRITE | $className::PERSIST, fn () => $this->safeCall($func, [$stream]));
+        $event = new $className($this->eventBase, $stream, $className::WRITE | $className::PERSIST, $func);
         if ($event->add()) {
             $this->writeEvents[$fdKey] = $event;
         }

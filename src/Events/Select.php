@@ -381,21 +381,21 @@ final class Select implements EventInterface
             foreach ($read as $fd) {
                 $fdKey = (int)$fd;
                 if (isset($this->readEvents[$fdKey])) {
-                    $this->safeCall($this->readEvents[$fdKey], [$fd]);
+                    $this->readEvents[$fdKey]($fd);
                 }
             }
 
             foreach ($write as $fd) {
                 $fdKey = (int)$fd;
                 if (isset($this->writeEvents[$fdKey])) {
-                    $this->safeCall($this->writeEvents[$fdKey], [$fd]);
+                    $this->writeEvents[$fdKey]($fd);
                 }
             }
 
             foreach ($except as $fd) {
                 $fdKey = (int)$fd;
                 if (isset($this->exceptEvents[$fdKey])) {
-                    $this->safeCall($this->exceptEvents[$fdKey], [$fd]);
+                    $this->exceptEvents[$fdKey]($fd);
                 }
             }
 
