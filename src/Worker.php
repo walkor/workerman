@@ -1032,7 +1032,7 @@ class Worker
                     // Master process will send SIGIOT signal to all child processes.
                     posix_kill($masterPid, SIGIOT);
                     // Waiting a moment.
-                    usleep(500000);
+                    sleep(1);
                     // Clear terminal.
                     if ($mode === '-d') {
                         static::safeEcho("\33[H\33[2J\33(B\33[m", true);
@@ -1265,12 +1265,12 @@ class Worker
             case SIGHUP:
             case SIGTSTP:
                 static::$gracefulStop = false;
-                static::stopAll(0, "received signal: $signal");
+                static::stopAll(0, "received signal $signal");
                 break;
             // Graceful stop.
             case SIGQUIT:
                 static::$gracefulStop = true;
-                static::stopAll(0, "received signal: $signal");
+                static::stopAll(0, "received signal $signal");
                 break;
             // Reload.
             case SIGUSR2:
@@ -1919,14 +1919,13 @@ class Worker
      */
     public static function stopAll(int $code = 0, mixed $log = ''): void
     {
-        if ($log) {
-            static::log($log);
-        }
-
         static::$status = static::STATUS_SHUTDOWN;
         // For master process.
         if (DIRECTORY_SEPARATOR === '/' && static::$masterPid === posix_getpid()) {
-            static::log("Workerman[" . basename(static::$startFile) . "] stopping, code [$code]");
+            if ($log) {
+                static::log("Workerman[" . basename(static::$startFile) . "] $log");
+            }
+            static::log("Workerman[" . basename(static::$startFile) . "] stopping" . ($code ? ", code [$code]" : ''));
             $workerPidArray = static::getAllWorkerPids();
             // Send stop signal to all child processes.
             $sig = static::getGracefulStop() ? SIGQUIT : SIGINT;
@@ -1944,6 +1943,9 @@ class Worker
             Timer::add(1, static::checkIfChildRunning(...));
         } // For child processes.
         else {
+            if ($code && $log) {
+                static::log($log);
+            }
             // Execute exit.
             $workers = array_reverse(static::$workers);
             array_walk($workers, static fn (Worker $worker) => $worker->stop());
