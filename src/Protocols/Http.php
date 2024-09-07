@@ -102,7 +102,7 @@ class Http
     public static function input(string $buffer, TcpConnection $connection): int
     {
         static $input = [];
-        if (!isset($buffer[512]) && isset($input[$buffer])) {
+        if (isset($input[$buffer])) {
             return $input[$buffer];
         }
         $crlfPos = strpos($buffer, "\r\n\r\n");
@@ -148,9 +148,9 @@ class Http
             return 0;
         }
 
-        if (!isset($buffer[512])) {
+        if (!isset($buffer[TcpConnection::MAX_CACHE_STRING_LENGTH])) {
             $input[$buffer] = $length;
-            if (count($input) > 512) {
+            if (count($input) > TcpConnection::MAX_CACHE_SIZE) {
                 unset($input[key($input)]);
             }
         }
@@ -168,8 +168,8 @@ class Http
     public static function decode(string $buffer, TcpConnection $connection): Request
     {
         static $requests = [];
-        $cacheable = static::$enableCache && !isset($buffer[512]);
-        if (true === $cacheable && isset($requests[$buffer])) {
+        $cacheable = static::$enableCache && !isset($buffer[TcpConnection::MAX_CACHE_STRING_LENGTH]);
+        if (isset($requests[$buffer])) {
             $request = clone $requests[$buffer];
             $request->connection = $connection;
             $connection->request = $request;
@@ -181,7 +181,7 @@ class Http
         $connection->request = $request;
         if (true === $cacheable) {
             $requests[$buffer] = $request;
-            if (count($requests) > 512) {
+            if (count($requests) > TcpConnection::MAX_CACHE_SIZE) {
                 unset($requests[key($requests)]);
             }
         }

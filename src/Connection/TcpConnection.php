@@ -103,6 +103,20 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public const STATUS_CLOSED = 8;
 
     /**
+     * Maximum string length for cache
+     *
+     * @var int
+     */
+    public const MAX_CACHE_STRING_LENGTH = 2048;
+
+    /**
+     * Maximum cache size.
+     *
+     * @var int
+     */
+    public const MAX_CACHE_SIZE = 512;
+
+    /**
      * Emitted when socket connection is successfully established.
      *
      * @var ?callable
@@ -635,7 +649,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         } else {
             $this->bytesRead += strlen($buffer);
             if ($this->recvBuffer === '') {
-                if (static::$enableCache && !isset($buffer[512]) && isset($requests[$buffer])) {
+                if (static::$enableCache && isset($requests[$buffer])) {
                     ++self::$statistics['total_request'];
                     $request = $requests[$buffer];
                     if ($request instanceof Request) {
@@ -710,9 +724,9 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                     /** @var ProtocolInterface $parser */
                     $parser = $this->protocol;
                     $request = $parser::decode($oneRequestBuffer, $this);
-                    if (static::$enableCache && (!is_object($request) || $request instanceof Request) && $one && !isset($oneRequestBuffer[512])) {
+                    if (static::$enableCache && (!is_object($request) || $request instanceof Request) && $one && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
                         $requests[$oneRequestBuffer] = $request;
-                        if (count($requests) > 512) {
+                        if (count($requests) > static::MAX_CACHE_SIZE) {
                             unset($requests[key($requests)]);
                         }
                     }
