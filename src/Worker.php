@@ -861,16 +861,17 @@ class Worker
         if (in_array('-q', $tmpArgv)) {
             return;
         }
+        $jitStatus = function_exists('opcache_get_status') && (opcache_get_status()['jit']['on'] ?? false) === true ? 'on' : 'off';
         if (DIRECTORY_SEPARATOR !== '/') {
             static::safeEcho("---------------------------------------------- WORKERMAN -----------------------------------------------\r\n");
-            static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. \PHP_VERSION. "\r\n");
+            static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. \PHP_VERSION . " (Jit $jitStatus)\r\n");
             static::safeEcho("----------------------------------------------- WORKERS ------------------------------------------------\r\n");
             static::safeEcho("worker                                          listen                              processes   status\r\n");
             return;
         }
 
         //show version
-        $lineVersion = 'Workerman version:' . static::VERSION . str_pad('PHP version:', 16, ' ', STR_PAD_LEFT) . PHP_VERSION . str_pad('Event-loop:', 16, ' ', STR_PAD_LEFT) . static::getEventLoopName() . PHP_EOL;
+        $lineVersion = 'Workerman version:' . static::VERSION . str_pad('PHP version:', 16, ' ', STR_PAD_LEFT) . PHP_VERSION . " (Jit $jitStatus)" . str_pad('Event-loop:', 16, ' ', STR_PAD_LEFT) . static::getEventLoopName() . PHP_EOL;
         !defined('LINE_VERSION_LENGTH') && define('LINE_VERSION_LENGTH', strlen($lineVersion));
         $totalLength = static::getSingleLineTotalLength();
         $lineOne = '<n>' . str_pad('<w> WORKERMAN </w>', $totalLength + strlen('<w></w>'), '-', STR_PAD_BOTH) . '</n>' . PHP_EOL;
