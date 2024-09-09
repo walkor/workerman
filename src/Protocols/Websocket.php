@@ -51,11 +51,25 @@ class Websocket
     public const BINARY_TYPE_BLOB = "\x81";
 
     /**
+     * Websocket blob type.
+     *
+     * @var string
+     */
+    const BINARY_TYPE_BLOB_DEFLATE = "\xc1";
+
+    /**
      * Websocket arraybuffer type.
      *
      * @var string
      */
     public const BINARY_TYPE_ARRAYBUFFER = "\x82";
+
+    /**
+     * Websocket arraybuffer type.
+     *
+     * @var string
+     */
+    const BINARY_TYPE_ARRAYBUFFER_DEFLATE = "\xc2";
 
     /**
      * Check the integrity of the package.
@@ -250,12 +264,16 @@ class Websocket
             throw new Exception("You can't send(" . gettype($buffer) . ") to client, you need to convert it to string. ");
         }
 
-        $len = strlen($buffer);
         if (empty($connection->websocketType)) {
             $connection->websocketType = static::BINARY_TYPE_BLOB;
         }
 
+        if (\ord($connection->websocketType) & 64) {
+            $buffer = static::deflate($connection, $buffer);
+        }
+
         $firstByte = $connection->websocketType;
+        $len = strlen($buffer);
 
         if ($len <= 125) {
             $encodeBuffer = $firstByte . chr($len) . $buffer;
@@ -308,8 +326,11 @@ class Websocket
      */
     public static function decode(string $buffer, TcpConnection $connection): string
     {
-        $firstByte = ord($buffer[1]);
-        $len = $firstByte & 127;
+        $firstByte = ord($buffer[0]);
+        $secondByte = ord($buffer[1]);
+        $len = $secondByte & 127;
+        $isFinFrame = (bool)($firstByte >> 7);
+        $rsv1 = 64 === ($firstByte & 64);
 
         if ($len === 126) {
             $masks = substr($buffer, 4, 4);
@@ -328,14 +349,69 @@ class Websocket
         $decoded = $data ^ $masks;
         if ($connection->context->websocketCurrentFrameLength) {
             $connection->context->websocketDataBuffer .= $decoded;
+            if ($rsv1) {
+                return static::inflate($connection, $connection->context->websocketDataBuffer, $isFinFrame);
+            }
             return $connection->context->websocketDataBuffer;
         }
-
         if ($connection->context->websocketDataBuffer !== '') {
             $decoded = $connection->context->websocketDataBuffer . $decoded;
             $connection->context->websocketDataBuffer = '';
         }
+        if ($rsv1) {
+            return static::inflate($connection, $decoded, $isFinFrame);
+        }
         return $decoded;
+    }
+
+    /**
+     * Inflate.
+     *
+     * @param TcpConnection $connection
+     * @param string $buffer
+     * @param bool $isFinFrame
+     * @return false|string
+     */
+    protected static function inflate(TcpConnection $connection, string $buffer, bool $isFinFrame)
+    {
+        if (!isset($connection->context->inflator)) {
+            $connection->context->inflator = \inflate_init(
+                \ZLIB_ENCODING_RAW,
+                [
+                    'level'    => -1,
+                    'memory'   => 8,
+                    'window'   => 15,
+                    'strategy' => \ZLIB_DEFAULT_STRATEGY
+                ]
+            );
+        }
+        if ($isFinFrame) {
+            $buffer .= "\x00\x00\xff\xff";
+        }
+        return \inflate_add($connection->context->inflator, $buffer);
+    }
+
+    /**
+     * Deflate.
+     *
+     * @param TcpConnection $connection
+     * @param string $buffer
+     * @return false|string
+     */
+    protected static function deflate(TcpConnection $connection, string $buffer)
+    {
+        if (!isset($connection->context->deflator)) {
+            $connection->context->deflator = \deflate_init(
+                \ZLIB_ENCODING_RAW,
+                [
+                    'level'    => -1,
+                    'memory'   => 8,
+                    'window'   => 15,
+                    'strategy' => \ZLIB_DEFAULT_STRATEGY
+                ]
+            );
+        }
+        return \substr(\deflate_add($connection->context->deflator, $buffer), 0, -4);
     }
 
     /**
