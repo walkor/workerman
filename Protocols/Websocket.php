@@ -363,7 +363,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 [
                     'level'    => -1,
                     'memory'   => 8,
-                    'window'   => 9,
+                    'window'   => 15,
                     'strategy' => \ZLIB_DEFAULT_STRATEGY
                 ]
             );
@@ -389,7 +389,7 @@ class Websocket implements \Workerman\Protocols\ProtocolInterface
                 [
                     'level'    => -1,
                     'memory'   => 8,
-                    'window'   => 9,
+                    'window'   => 15,
                     'strategy' => \ZLIB_DEFAULT_STRATEGY
                 ]
             );
