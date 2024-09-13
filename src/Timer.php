@@ -90,6 +90,32 @@ class Timer
     }
 
     /**
+     * Repeat.
+     *
+     * @param float $timeInterval
+     * @param callable $func
+     * @param array $args
+     * @return int
+     */
+    public static function repeat(float $timeInterval, callable $func, array $args = []): int
+    {
+        return self::$event->repeat($timeInterval, $func, $args);
+    }
+
+    /**
+     * Delay.
+     *
+     * @param float $timeInterval
+     * @param callable $func
+     * @param array $args
+     * @return int
+     */
+    public static function delay(float $timeInterval, callable $func, array $args = []): int
+    {
+        return self::$event->delay($timeInterval, $func, $args);
+    }
+
+    /**
      * ALARM signal handler.
      *
      * @return void
@@ -111,7 +137,7 @@ class Timer
      * @param bool $persistent
      * @return int
      */
-    public static function add(float $timeInterval, callable $func, null|array $args = [], bool $persistent = true): int
+    public static function add(float $timeInterval, callable $func, ?array $args = [], bool $persistent = true): int
     {
         if ($timeInterval < 0) {
             throw new RuntimeException('$timeInterval can not less than 0');
@@ -180,7 +206,7 @@ class Timer
      *
      * @return void
      */
-    public static function tick(): void
+    protected static function tick(): void
     {
         if (empty(self::$tasks)) {
             pcntl_alarm(0);
