@@ -195,13 +195,14 @@ class Request implements Stringable
     public function file(string $name = null)
     {
         clearstatcache();
-        foreach ($this->data['files'] ?? [] as $file) {
-            if (!is_file($file['tmp_name'])) {
-                unset($this->data['files']);
-                break;
-            }
+        if (!empty($this->data['files'])) {
+            array_walk_recursive($this->data['files'], function ($value, $key) {
+                if ($key === 'tmp_name' && !is_file($value)) {
+                    $this->data['files'] = [];
+                }
+            });
         }
-        if (!isset($this->data['files'])) {
+        if (empty($this->data['files'])) {
             $this->parsePost();
         }
         if (null === $name) {
