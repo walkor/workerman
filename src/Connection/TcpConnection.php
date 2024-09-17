@@ -124,11 +124,18 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public $onConnect = null;
 
     /**
-     * Emitted when websocket handshake completed (Only work when protocol is ws).
+     * Emitted before websocket handshake (Only works when protocol is ws).
      *
      * @var ?callable
      */
     public $onWebSocketConnect = null;
+
+    /**
+     * Emitted after websocket handshake (Only works when protocol is ws).
+     *
+     * @var ?callable
+     */
+    public $onWebSocketConnected = null;
 
     /**
      * Emitted when data is received.

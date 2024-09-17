@@ -159,11 +159,18 @@ class Worker
     public $onConnect = null;
 
     /**
-     * Emitted when websocket handshake did complete (Only called when protocol is ws).
+     * Emitted before websocket handshake (Only works when protocol is ws).
      *
      * @var ?callable
      */
     public $onWebSocketConnect = null;
+
+    /**
+     * Emitted after websocket handshake (Only works when protocol is ws).
+     *
+     * @var ?callable
+     */
+    public $onWebSocketConnected = null;
 
     /**
      * Emitted when data is received.
