@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Workerman\Events;
 
+use Swoole\Coroutine;
 use Swoole\Event;
 use Swoole\Process;
 use Swoole\Timer;
@@ -211,6 +212,10 @@ final class Swoole implements EventInterface
      */
     public function stop(): void
     {
+        // cancel all coroutines before Event::exit
+        foreach (Coroutine::listCoroutines() as $coroutine) {
+            Coroutine::cancel($coroutine);
+        }
         Event::exit();
         posix_kill(posix_getpid(), SIGINT);
     }
