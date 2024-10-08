@@ -93,6 +93,13 @@ class Request implements Stringable
     protected bool $isSafe = true;
 
     /**
+     * Is dirty.
+     *
+     * @var bool
+     */
+    protected bool $isDirty = false;
+
+    /**
      * Enable cache.
      *
      * @var bool
@@ -131,6 +138,19 @@ class Request implements Stringable
     }
 
     /**
+     * Set get.
+     *
+     * @param array $get
+     * @return Request
+     */
+    public function setGet(array $get): Request
+    {
+        $this->isDirty = true;
+        $this->data['get'] = $get;
+        return $this;
+    }
+
+    /**
      * Get post.
      *
      * @param string|null $name
@@ -146,6 +166,19 @@ class Request implements Stringable
             return $this->data['post'];
         }
         return $this->data['post'][$name] ?? $default;
+    }
+
+    /**
+     * Set post.
+     *
+     * @param array $post
+     * @return Request
+     */
+    public function setPost(array $post): Request
+    {
+        $this->isDirty = true;
+        $this->data['post'] = $post;
+        return $this;
     }
 
     /**
@@ -165,6 +198,18 @@ class Request implements Stringable
         }
         $name = strtolower($name);
         return $this->data['headers'][$name] ?? $default;
+    }
+
+    /**
+     * Set headers.
+     * @param array $headers
+     * @return $this
+     */
+    public function setHeaders(array $headers): Request
+    {
+        $this->isDirty = true;
+        $this->data['headers'] = $headers;
+        return $this;
     }
 
     /**
@@ -747,4 +792,15 @@ class Request implements Stringable
             });
         }
     }
+
+    /**
+     * @return void
+     */
+    public function __clone()
+    {
+        if ($this->isDirty) {
+            unset($this->data['get'], $this->data['post'], $this->data['headers']);
+        }
+    }
+
 }
