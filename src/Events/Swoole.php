@@ -217,7 +217,6 @@ final class Swoole implements EventInterface
             Coroutine::cancel($coroutine);
         }
         Event::exit();
-        posix_kill(posix_getpid(), SIGINT);
     }
 
     /**
