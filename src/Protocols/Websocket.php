@@ -458,12 +458,14 @@ class Websocket
             $connection->context->websocketCurrentFrameBuffer = '';
             // Consume handshake data.
             $connection->consumeRecvBuffer($headerLength);
+            // Request from buffer
+            $request = new Request($buffer);
 
             // Try to emit onWebSocketConnect callback.
             $onWebsocketConnect = $connection->onWebSocketConnect ?? $connection->worker->onWebSocketConnect ?? false;
             if ($onWebsocketConnect) {
                 try {
-                    $onWebsocketConnect($connection, new Request($buffer));
+                    $onWebsocketConnect($connection, $request);
                 } catch (Throwable $e) {
                     Worker::stopAll(250, $e);
                 }
@@ -489,9 +491,19 @@ class Websocket
             }
             $handshakeMessage .= "\r\n";
             // Send handshake response.
-            $connection->send($handshakeMessage, true);
+            $status = $connection->send($handshakeMessage, true);
             // Mark handshake complete.
             $connection->context->websocketHandshake = true;
+
+            // Try to emit onWebSocketConnected callback.
+            $onWebsocketConnected = $connection->onWebSocketConnected ?? $connection->worker->onWebSocketConnected ?? false;
+            if ($status && $onWebsocketConnected) {
+                try {
+                    $onWebsocketConnected($connection, $request);
+                } catch (Throwable $e) {
+                    Worker::stopAll(250, $e);
+                }
+            }
 
             // There are data waiting to be sent.
             if (!empty($connection->context->tmpWebsocketData)) {
