@@ -154,7 +154,6 @@ class AsyncTcpConnection extends TcpConnection
      *
      * @param string $remoteAddress
      * @param array $socketContext
-     * @throws Exception
      */
     public function __construct(string $remoteAddress, array $socketContext = [])
     {
@@ -195,7 +194,7 @@ class AsyncTcpConnection extends TcpConnection
             if (!class_exists($this->protocol)) {
                 $this->protocol = "\\Workerman\\Protocols\\$scheme";
                 if (!class_exists($this->protocol)) {
-                    throw new Exception("class \\Protocols\\$scheme not exist");
+                    throw new RuntimeException("class \\Protocols\\$scheme not exist");
                 }
             }
         } else {
@@ -216,7 +215,6 @@ class AsyncTcpConnection extends TcpConnection
      *
      * @param int $after
      * @return void
-     * @throws Throwable
      */
     public function reconnect(int $after = 0): void
     {
@@ -236,7 +234,6 @@ class AsyncTcpConnection extends TcpConnection
      * Do connect.
      *
      * @return void
-     * @throws Throwable
      */
     public function connect(): void
     {
@@ -302,7 +299,6 @@ class AsyncTcpConnection extends TcpConnection
      * @param int $code
      * @param mixed $msg
      * @return void
-     * @throws Throwable
      */
     protected function emitError(int $code, mixed $msg): void
     {
@@ -351,7 +347,6 @@ class AsyncTcpConnection extends TcpConnection
      * Check connection is successfully established or failed.
      *
      * @return void
-     * @throws Throwable
      */
     public function checkConnection(): void
     {

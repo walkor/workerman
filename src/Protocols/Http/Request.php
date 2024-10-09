@@ -226,7 +226,7 @@ class Request implements Stringable
             $mapped = array();
 
             foreach ($cookies as $cookie) {
-                $cookie = explode('=', $cookie);
+                $cookie = explode('=', $cookie, 2);
                 if (count($cookie) !== 2) {
                     continue;
                 }
@@ -678,7 +678,7 @@ class Request implements Stringable
                     break;
 
                 case "webkitrelativepath":
-                    $file['full_path'] = \trim($value);
+                    $file['full_path'] = trim($value);
                     break;
             }
         }

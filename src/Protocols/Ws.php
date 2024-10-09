@@ -16,7 +16,6 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols;
 
-use Exception;
 use Throwable;
 use Workerman\Connection\AsyncTcpConnection;
 use Workerman\Connection\ConnectionInterface;
@@ -25,10 +24,8 @@ use Workerman\Timer;
 use Workerman\Worker;
 use function base64_encode;
 use function bin2hex;
+use function explode;
 use function floor;
-use function gettype;
-use function is_array;
-use function is_scalar;
 use function ord;
 use function pack;
 use function preg_match;
@@ -65,7 +62,6 @@ class Ws
      * @param string $buffer
      * @param AsyncTcpConnection $connection
      * @return int|false
-     * @throws Throwable
      */
     public static function input(string $buffer, AsyncTcpConnection $connection): bool|int
     {
@@ -393,7 +389,6 @@ class Ws
      * @param string $buffer
      * @param AsyncTcpConnection $connection
      * @return bool|int
-     * @throws Throwable
      */
     public static function dealHandshake(string $buffer, AsyncTcpConnection $connection): bool|int
     {
@@ -455,9 +450,9 @@ class Ws
      */
     protected static function parseResponse(string $buffer): Response
     {
-        [$http_header, ] = \explode("\r\n\r\n", $buffer, 2);
-        $header_data = \explode("\r\n", $http_header);
-        [$protocol, $status, $phrase] = \explode(' ', $header_data[0], 3);
+        [$http_header, ] = explode("\r\n\r\n", $buffer, 2);
+        $header_data = explode("\r\n", $http_header);
+        [$protocol, $status, $phrase] = explode(' ', $header_data[0], 3);
         $protocolVersion = substr($protocol, 5);
         unset($header_data[0]);
         $headers = [];
@@ -466,8 +461,8 @@ class Ws
             if (empty($content)) {
                 continue;
             }
-            list($key, $value) = \explode(':', $content, 2);
-            $value = \trim($value);
+            list($key, $value) = explode(':', $content, 2);
+            $value = trim($value);
             $headers[$key] = $value;
         }
         return (new Response())->withStatus((int)$status, $phrase)->withHeaders($headers)->withProtocolVersion($protocolVersion);

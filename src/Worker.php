@@ -21,6 +21,7 @@ use Exception;
 use Revolt\EventLoop;
 use RuntimeException;
 use stdClass;
+use Stringable;
 use Throwable;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
@@ -30,6 +31,9 @@ use Workerman\Events\EventInterface;
 use Workerman\Events\Revolt;
 use Workerman\Events\Select;
 use Workerman\Protocols\ProtocolInterface;
+use function defined;
+use function function_exists;
+use function is_resource;
 use function method_exists;
 use function restore_error_handler;
 use function set_error_handler;
@@ -38,6 +42,10 @@ use function stream_socket_recvfrom;
 use function substr;
 use function array_walk;
 use function get_class;
+use const DIRECTORY_SEPARATOR;
+use const PHP_SAPI;
+use const PHP_VERSION;
+use const STDOUT;
 
 /**
  * Worker class
@@ -369,14 +377,6 @@ class Worker
     protected string $socketName = '';
 
     /**
-     * parse from socketName avoid parse again in master or worker
-     * LocalSocket The format is like tcp://0.0.0.0:8080
-     *
-     * @var ?string
-     */
-    protected ?string $localSocket = null;
-
-    /**
      * Context of socket.
      *
      * @var resource
@@ -566,7 +566,6 @@ class Worker
      * Run all worker instances.
      *
      * @return void
-     * @throws Throwable
      */
     public static function runAll(): void
     {
@@ -585,7 +584,7 @@ class Worker
             static::forkWorkers();
             static::resetStd();
             static::monitorWorkers();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             static::log($e);
         }
     }
@@ -598,19 +597,19 @@ class Worker
     protected static function checkSapiEnv(): void
     {
         // Only for cli and micro.
-        if (!in_array(\PHP_SAPI, ['cli', 'micro'])) {
+        if (!in_array(PHP_SAPI, ['cli', 'micro'])) {
             exit("Only run in command line mode\n");
         }
     }
 
     private static function initStdOut(): void
     {
-        $defaultStream = fn () => \defined('STDOUT') ? \STDOUT : (@fopen('php://stdout', 'w') ?: fopen('php://output', 'w'));
+        $defaultStream = fn () => defined('STDOUT') ? STDOUT : (@fopen('php://stdout', 'w') ?: fopen('php://output', 'w'));
         static::$outputStream ??= $defaultStream(); //@phpstan-ignore-line
-        if (!\is_resource(self::$outputStream) || get_resource_type(self::$outputStream) !== 'stream') {
+        if (!is_resource(self::$outputStream) || get_resource_type(self::$outputStream) !== 'stream') {
             $type = get_debug_type(self::$outputStream);
             static::$outputStream = $defaultStream();
-            throw new \RuntimeException(sprintf('The $outputStream must to be a stream, %s given', $type));
+            throw new RuntimeException(sprintf('The $outputStream must to be a stream, %s given', $type));
         }
 
         static::$outputDecorated ??= self::hasColorSupport();
@@ -631,8 +630,8 @@ class Worker
             return true;
         }
 
-        if (\DIRECTORY_SEPARATOR === '\\') {
-            return (\function_exists('sapi_windows_vt100_support') && @sapi_windows_vt100_support(self::$outputStream))
+        if (DIRECTORY_SEPARATOR === '\\') {
+            return (function_exists('sapi_windows_vt100_support') && @sapi_windows_vt100_support(self::$outputStream))
                 || getenv('ANSICON') !== false
                 || getenv('ConEmuANSI') === 'ON'
                 || getenv('TERM') === 'xterm';
@@ -755,7 +754,6 @@ class Worker
      * Init All worker instances.
      *
      * @return void
-     * @throws Exception
      */
     protected static function initWorkers(): void
     {
@@ -871,7 +869,7 @@ class Worker
         $jitStatus = function_exists('opcache_get_status') && (opcache_get_status()['jit']['on'] ?? false) === true ? 'on' : 'off';
         if (DIRECTORY_SEPARATOR !== '/') {
             static::safeEcho("---------------------------------------------- WORKERMAN -----------------------------------------------\r\n");
-            static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. \PHP_VERSION . " (Jit $jitStatus)\r\n");
+            static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. PHP_VERSION . " (Jit $jitStatus)\r\n");
             static::safeEcho("----------------------------------------------- WORKERS ------------------------------------------------\r\n");
             static::safeEcho("worker                                          listen                              processes   status\r\n");
             return;
@@ -1244,7 +1242,6 @@ class Worker
      * Reinstall signal handler.
      *
      * @return void
-     * @throws Throwable
      */
     protected static function reinstallSignal(): void
     {
@@ -1262,7 +1259,6 @@ class Worker
      * Signal handler.
      *
      * @param int $signal
-     * @throws Throwable
      */
     protected static function signalHandler(int $signal): void
     {
@@ -1303,8 +1299,6 @@ class Worker
 
     /**
      * Run as daemon mode.
-     *
-     * @throws Exception
      */
     protected static function daemonize(): void
     {
@@ -1373,8 +1367,6 @@ class Worker
 
     /**
      * Save pid.
-     *
-     * @throws Exception
      */
     protected static function saveMasterPid(): void
     {
@@ -1418,7 +1410,6 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
-     * @throws Throwable
      */
     protected static function forkWorkers(): void
     {
@@ -1433,7 +1424,6 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
-     * @throws Throwable
      */
     protected static function forkWorkersForLinux(): void
     {
@@ -1458,7 +1448,6 @@ class Worker
      * Fork some worker processes.
      *
      * @return void
-     * @throws Throwable
      */
     protected static function forkWorkersForWindows(): void
     {
@@ -1509,7 +1498,7 @@ class Worker
             $worker->run();
             static::$globalEvent->run();
             if (static::$status !== self::STATUS_SHUTDOWN) {
-                $err = new Exception('event-loop exited');
+                $err = new RuntimeException('event-loop exited');
                 static::log($err);
                 exit(250);
             }
@@ -1589,7 +1578,6 @@ class Worker
      * Fork one worker process.
      *
      * @param self $worker
-     * @throws Exception|Throwable
      */
     protected static function forkOneWorkerForLinux(self $worker): void
     {
@@ -1736,7 +1724,6 @@ class Worker
      * Monitor all child processes.
      *
      * @return void
-     * @throws Throwable
      */
     protected static function monitorWorkersForLinux(): void
     {
@@ -1810,7 +1797,6 @@ class Worker
      * Monitor all child processes.
      *
      * @return void
-     * @throws Throwable
      */
     protected static function monitorWorkersForWindows(): void
     {
@@ -1844,7 +1830,6 @@ class Worker
      * Execute reload.
      *
      * @return void
-     * @throws Throwable
      */
     protected static function reload(): void
     {
@@ -1923,7 +1908,6 @@ class Worker
      *
      * @param int $code
      * @param mixed $log
-     * @throws Throwable
      */
     public static function stopAll(int $code = 0, mixed $log = ''): void
     {
@@ -1966,7 +1950,7 @@ class Worker
                     // Ignore Swoole ExitException: Swoole exit.
                     exit($code);
                     /** @phpstan-ignore-next-line */
-                } catch (\Exception) {
+                } catch (Throwable) {
                     // do nothing
                 }
             }
@@ -2202,11 +2186,11 @@ class Worker
     /**
      * Log.
      *
-     * @param \Stringable|string $msg
+     * @param Stringable|string $msg
      * @param bool $decorated
      * @return void
      */
-    public static function log(\Stringable|string $msg, bool $decorated = false): void
+    public static function log(Stringable|string $msg, bool $decorated = false): void
     {
         $msg = trim((string)$msg);
 
@@ -2298,8 +2282,6 @@ class Worker
 
     /**
      * Listen.
-     *
-     * @throws Exception
      */
     public function listen(): void
     {
@@ -2323,7 +2305,7 @@ class Worker
             // Create an Internet or Unix domain server socket.
             $this->mainSocket = stream_socket_server($localSocket, $errno, $errmsg, $flags, $this->socketContext);
             if (!$this->mainSocket) {
-                throw new Exception($errmsg);
+                throw new RuntimeException($errmsg);
             }
 
             if ($this->transport === 'ssl') {
@@ -2372,8 +2354,6 @@ class Worker
 
     /**
      * Parse local socket address.
-     *
-     * @throws Exception
      */
     protected function parseSocketAddress(): ?string
     {
@@ -2448,7 +2428,6 @@ class Worker
      * Run worker instance.
      *
      * @return void
-     * @throws Throwable
      */
     public function run(): void
     {
@@ -2470,7 +2449,6 @@ class Worker
      * Stop current worker instance.
      *
      * @return void
-     * @throws Throwable
      */
     public function stop(): void
     {
@@ -2509,7 +2487,6 @@ class Worker
      *
      * @param resource $socket
      * @return void
-     * @throws Throwable
      */
     protected function acceptTcpConnection(mixed $socket): void
     {
@@ -2550,7 +2527,6 @@ class Worker
      *
      * @param resource $socket
      * @return void
-     * @throws Throwable
      */
     protected function acceptUdpConnection(mixed $socket): void
     {

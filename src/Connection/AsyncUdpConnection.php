@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Workerman\Connection;
 
 use Exception;
+use RuntimeException;
 use Throwable;
 use Workerman\Protocols\ProtocolInterface;
 use Workerman\Worker;
@@ -70,7 +71,7 @@ class AsyncUdpConnection extends UdpConnection
      * Construct.
      *
      * @param string $remoteAddress
-     * @throws Exception
+     * @throws Throwable
      */
     public function __construct($remoteAddress, $contextOption = [])
     {
@@ -83,7 +84,7 @@ class AsyncUdpConnection extends UdpConnection
             if (!class_exists($this->protocol)) {
                 $this->protocol = "\\Workerman\\Protocols\\$scheme";
                 if (!class_exists($this->protocol)) {
-                    throw new Exception("class \\Protocols\\$scheme not exist");
+                    throw new RuntimeException("class \\Protocols\\$scheme not exist");
                 }
             }
         }
@@ -97,7 +98,6 @@ class AsyncUdpConnection extends UdpConnection
      *
      * @param resource $socket
      * @return void
-     * @throws Throwable
      */
     public function baseRead($socket): void
     {
@@ -127,7 +127,6 @@ class AsyncUdpConnection extends UdpConnection
      * @param mixed $data
      * @param bool $raw
      * @return void
-     * @throws Throwable
      */
     public function close(mixed $data = null, bool $raw = false): void
     {
@@ -154,7 +153,6 @@ class AsyncUdpConnection extends UdpConnection
      * @param mixed $sendBuffer
      * @param bool $raw
      * @return bool|null
-     * @throws Throwable
      */
     public function send(mixed $sendBuffer, bool $raw = false): bool|null
     {
@@ -176,7 +174,6 @@ class AsyncUdpConnection extends UdpConnection
      * Connect.
      *
      * @return void
-     * @throws Throwable
      */
     public function connect(): void
     {

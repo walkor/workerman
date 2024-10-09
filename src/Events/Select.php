@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace Workerman\Events;
 
+use SplPriorityQueue;
+use Throwable;
 use function count;
 use function max;
 use function microtime;
@@ -86,9 +88,9 @@ final class Select implements EventInterface
      * Timer scheduler.
      * {['data':timer_id, 'priority':run_timestamp], ..}
      *
-     * @var \SplPriorityQueue
+     * @var SplPriorityQueue
      */
-    private \SplPriorityQueue $scheduler;
+    private SplPriorityQueue $scheduler;
 
     /**
      * All timer event listeners.
@@ -122,8 +124,8 @@ final class Select implements EventInterface
      */
     public function __construct()
     {
-        $this->scheduler = new \SplPriorityQueue();
-        $this->scheduler->setExtractFlags(\SplPriorityQueue::EXTR_BOTH);
+        $this->scheduler = new SplPriorityQueue();
+        $this->scheduler->setExtractFlags(SplPriorityQueue::EXTR_BOTH);
     }
 
     /**
@@ -299,7 +301,6 @@ final class Select implements EventInterface
      * Tick for timer.
      *
      * @return void
-     * @throws \Throwable
      */
     protected function tick(): void
     {
@@ -349,8 +350,8 @@ final class Select implements EventInterface
      */
     public function deleteAllTimer(): void
     {
-        $this->scheduler = new \SplPriorityQueue();
-        $this->scheduler->setExtractFlags(\SplPriorityQueue::EXTR_BOTH);
+        $this->scheduler = new SplPriorityQueue();
+        $this->scheduler->setExtractFlags(SplPriorityQueue::EXTR_BOTH);
         $this->eventTimer = [];
     }
 
@@ -367,7 +368,7 @@ final class Select implements EventInterface
                 // Waiting read/write/signal/timeout events.
                 try {
                     @stream_select($read, $write, $except, 0, $this->selectTimeout);
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     // do nothing
                 }
             } else {
@@ -450,7 +451,7 @@ final class Select implements EventInterface
     {
         try {
             $func(...$args);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             if ($this->errorHandler === null) {
                 echo $e;
             } else {

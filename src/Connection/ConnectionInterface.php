@@ -170,7 +170,6 @@ abstract class ConnectionInterface
     /**
      * @param Throwable $exception
      * @return void
-     * @throws Throwable
      */
     public function error(Throwable $exception): void
     {
@@ -181,11 +180,8 @@ abstract class ConnectionInterface
         try {
             ($this->errorHandler)($exception);
         } catch (Throwable $exception) {
-            if ($this->eventLoop instanceof Event) {
-                echo $exception;
-                return;
-            }
-            throw $exception;
+            Worker::stopAll(250, $exception);
+            return;
         }
     }
 }

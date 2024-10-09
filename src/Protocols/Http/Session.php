@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Workerman\Protocols\Http;
 
 use Exception;
+use Random\RandomException;
 use RuntimeException;
 use Workerman\Protocols\Http\Session\FileSessionHandler;
 use Workerman\Protocols\Http\Session\SessionHandlerInterface;
@@ -153,7 +154,7 @@ class Session
      *
      * @var bool
      */
-    protected $isSafe = true;
+    protected bool $isSafe = true;
 
     /**
      * Session constructor.
@@ -437,7 +438,7 @@ class Session
      * __destruct.
      *
      * @return void
-     * @throws Exception
+     * @throws RandomException
      */
     public function __destruct()
     {

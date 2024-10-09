@@ -86,7 +86,7 @@ class Http
      *
      * @param bool $value
      */
-    public static function enableCache(bool $value)
+    public static function enableCache(bool $value): void
     {
         static::$enableCache = $value;
     }
@@ -97,7 +97,6 @@ class Http
      * @param string $buffer
      * @param TcpConnection $connection
      * @return int
-     * @throws Throwable
      */
     public static function input(string $buffer, TcpConnection $connection): int
     {
@@ -194,7 +193,6 @@ class Http
      * @param string|Response $response
      * @param TcpConnection $connection
      * @return string
-     * @throws Throwable
      */
     public static function encode(mixed $response, TcpConnection $connection): string
     {
@@ -266,7 +264,6 @@ class Http
      * @param resource $handler
      * @param int $offset
      * @param int $length
-     * @throws Throwable
      */
     protected static function sendStream(TcpConnection $connection, $handler, int $offset = 0, int $length = 0): void
     {
