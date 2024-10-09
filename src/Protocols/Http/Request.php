@@ -222,8 +222,17 @@ class Request implements Stringable
     public function cookie(string $name = null, mixed $default = null): mixed
     {
         if (!isset($this->data['cookie'])) {
-            $this->data['cookie'] = [];
-            parse_str(preg_replace('/; ?/', '&', $this->header('cookie', '')), $this->data['cookie']);
+            $cookies = explode(';', $this->header('cookie', ''));
+            $mapped = array();
+
+            foreach ($cookies as $cookie) {
+                $cookie = explode('=', $cookie);
+                if (count($cookie) !== 2) {
+                    continue;
+                }
+                $mapped[trim($cookie[0])] = $cookie[1];
+            }
+            $this->data['cookie'] = $mapped;
         }
         if ($name === null) {
             return $this->data['cookie'];
