@@ -658,15 +658,15 @@ class Worker
         $startFilePrefix = hash('xxh64', static::$startFile);
 
         // Pid file.
-        static::$pidFile ??= sprintf('%s/workerman.%s.pid', dirname(__DIR__), $startFilePrefix);
+        static::$pidFile = empty(static::$pidFile) ? sprintf('%s/workerman.%s.pid', dirname(__DIR__), $startFilePrefix) : static::$pidFile;
 
         // Status file.
-        static::$statusFile ??= sprintf('%s/workerman.%s.status', dirname(__DIR__), $startFilePrefix);
+        static::$statusFile = empty(static::$statusFile) ? sprintf('%s/workerman.%s.status', dirname(__DIR__), $startFilePrefix) : static::$statusFile;
         static::$statisticsFile ??= static::$statusFile;
         static::$connectionsFile ??= static::$statusFile . '.connection';
 
         // Log file.
-        static::$logFile ??= sprintf('%s/workerman.log', dirname(__DIR__, 2));
+        static::$logFile = empty(static::$logFile) ? sprintf('%s/workerman.log', dirname(__DIR__, 2)) : static::$logFile;
 
         if (!is_file(static::$logFile) && static::$logFile !== '/dev/null') {
             // if /runtime/logs  default folder not exists
