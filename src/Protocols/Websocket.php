@@ -492,13 +492,13 @@ class Websocket
             }
             $handshakeMessage .= "\r\n";
             // Send handshake response.
-            $status = $connection->send($handshakeMessage, true);
+            $connection->send($handshakeMessage, true);
             // Mark handshake complete.
             $connection->context->websocketHandshake = true;
 
             // Try to emit onWebSocketConnected callback.
             $onWebsocketConnected = $connection->onWebSocketConnected ?? $connection->worker->onWebSocketConnected ?? false;
-            if ($status && $onWebsocketConnected) {
+            if ($onWebsocketConnected) {
                 try {
                     $onWebsocketConnected($connection, $request);
                 } catch (Throwable $e) {
