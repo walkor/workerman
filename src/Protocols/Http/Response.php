@@ -244,7 +244,7 @@ class Response implements Stringable
      * @param string|null $reasonPhrase
      * @return $this
      */
-    public function withStatus(int $code, string $reasonPhrase = null): static
+    public function withStatus(int $code, ?string $reasonPhrase = null): static
     {
         $this->status = $code;
         $this->reason = $reasonPhrase;
