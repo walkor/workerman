@@ -126,7 +126,7 @@ class Request implements Stringable
      * @param mixed $default
      * @return mixed
      */
-    public function get(string $name = null, mixed $default = null): mixed
+    public function get(?string $name = null, mixed $default = null): mixed
     {
         if (!isset($this->data['get'])) {
             $this->parseGet();
@@ -157,7 +157,7 @@ class Request implements Stringable
      * @param mixed $default
      * @return mixed
      */
-    public function post(string $name = null, mixed $default = null): mixed
+    public function post(?string $name = null, mixed $default = null): mixed
     {
         if (!isset($this->data['post'])) {
             $this->parsePost();
@@ -188,7 +188,7 @@ class Request implements Stringable
      * @param mixed $default
      * @return mixed
      */
-    public function header(string $name = null, mixed $default = null): mixed
+    public function header(?string $name = null, mixed $default = null): mixed
     {
         if (!isset($this->data['headers'])) {
             $this->parseHeaders();
@@ -219,7 +219,7 @@ class Request implements Stringable
      * @param mixed $default
      * @return mixed
      */
-    public function cookie(string $name = null, mixed $default = null): mixed
+    public function cookie(?string $name = null, mixed $default = null): mixed
     {
         if (!isset($this->data['cookie'])) {
             $cookies = explode(';', $this->header('cookie', ''));
@@ -246,7 +246,7 @@ class Request implements Stringable
      * @param string|null $name
      * @return array|null
      */
-    public function file(string $name = null)
+    public function file(?string $name = null)
     {
         clearstatcache();
         if (!empty($this->data['files'])) {
@@ -357,7 +357,7 @@ class Request implements Stringable
      * @return string
      * @throws Exception
      */
-    public function sessionId(string $sessionId = null): string
+    public function sessionId(?string $sessionId = null): string
     {
         if ($sessionId) {
             unset($this->sid);

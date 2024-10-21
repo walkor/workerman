@@ -42,7 +42,7 @@ function something()
     // ..
 }
 
-function testWithConnectionClose(Closure $closure, string $dataContains = null, $connectionClass = TcpConnection::class): void
+function testWithConnectionClose(Closure $closure, ?string $dataContains = null, $connectionClass = TcpConnection::class): void
 {
     $tcpConnection = Mockery::spy($connectionClass);
     $closure($tcpConnection);
