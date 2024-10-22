@@ -657,11 +657,15 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                     ++self::$statistics['total_request'];
                     $request = $requests[$buffer];
                     if ($request instanceof Request) {
-                        $request = clone $request;
-                        $requests[$buffer] = $request;
                         $request->connection = $this;
                         $this->request = $request;
-                        $request->properties = [];
+                        try {
+                            ($this->onMessage)($this, $request);
+                        } catch (Throwable $e) {
+                            $this->error($e);
+                        }
+                        $requests[$buffer] = clone $request;
+                        return;
                     }
                     try {
                         ($this->onMessage)($this, $request);
@@ -729,10 +733,16 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                     $parser = $this->protocol;
                     $request = $parser::decode($oneRequestBuffer, $this);
                     if (static::$enableCache && (!is_object($request) || $request instanceof Request) && $one && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
-                        $requests[$oneRequestBuffer] = $request;
+                        ($this->onMessage)($this, $request);
+                        if ($request instanceof Request) {
+                            $requests[$oneRequestBuffer] = clone $request;
+                        } else {
+                            $requests[$oneRequestBuffer] = $request;
+                        }
                         if (count($requests) > static::MAX_CACHE_SIZE) {
                             unset($requests[key($requests)]);
                         }
+                        return;
                     }
                     ($this->onMessage)($this, $request);
                 } catch (Throwable $e) {

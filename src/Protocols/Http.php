@@ -61,13 +61,6 @@ class Http
     protected static string $uploadTmpDir = '';
 
     /**
-     * Cache.
-     *
-     * @var bool.
-     */
-    protected static bool $enableCache = true;
-
-    /**
      * Get or set the request class name.
      *
      * @param class-string|null $className
@@ -79,16 +72,6 @@ class Http
             static::$requestClass = $className;
         }
         return static::$requestClass;
-    }
-
-    /**
-     * Enable or disable Cache.
-     *
-     * @param bool $value
-     */
-    public static function enableCache(bool $value): void
-    {
-        static::$enableCache = $value;
     }
 
     /**
@@ -166,24 +149,9 @@ class Http
      */
     public static function decode(string $buffer, TcpConnection $connection): Request
     {
-        static $requests = [];
-        $cacheable = static::$enableCache && !isset($buffer[TcpConnection::MAX_CACHE_STRING_LENGTH]);
-        if (isset($requests[$buffer])) {
-            $request = clone $requests[$buffer];
-            $request->connection = $connection;
-            $connection->request = $request;
-            $request->properties = [];
-            return $request;
-        }
         $request = new static::$requestClass($buffer);
         $request->connection = $connection;
         $connection->request = $request;
-        if (true === $cacheable) {
-            $requests[$buffer] = $request;
-            if (count($requests) > TcpConnection::MAX_CACHE_SIZE) {
-                unset($requests[key($requests)]);
-            }
-        }
         return $request;
     }
 

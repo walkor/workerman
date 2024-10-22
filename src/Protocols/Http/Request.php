@@ -72,6 +72,20 @@ class Request implements Stringable
     public static int $maxFileUploads = 1024;
 
     /**
+     * Maximum string length for cache
+     *
+     * @var int
+     */
+    public const MAX_CACHE_STRING_LENGTH = 4096;
+
+    /**
+     * Maximum cache size.
+     *
+     * @var int
+     */
+    public const MAX_CACHE_SIZE = 256;
+
+    /**
      * Properties.
      *
      * @var array
@@ -98,13 +112,6 @@ class Request implements Stringable
      * @var bool
      */
     protected bool $isDirty = false;
-
-    /**
-     * Enable cache.
-     *
-     * @var bool
-     */
-    protected static bool $enableCache = true;
 
     /**
      * Session id.
@@ -432,16 +439,6 @@ class Request implements Stringable
     }
 
     /**
-     * Enable or disable cache.
-     *
-     * @param bool $value
-     */
-    public static function enableCache(bool $value): void
-    {
-        static::$enableCache = $value;
-    }
-
-    /**
      * Parse first line of http header buffer.
      *
      * @return void
@@ -481,7 +478,7 @@ class Request implements Stringable
             return;
         }
         $headBuffer = substr($rawHead, $endLinePosition + 2);
-        $cacheable = static::$enableCache && !isset($headBuffer[4096]);
+        $cacheable = !isset($headBuffer[static::MAX_CACHE_STRING_LENGTH]);
         if ($cacheable && isset($cache[$headBuffer])) {
             $this->data['headers'] = $cache[$headBuffer];
             return;
@@ -504,7 +501,7 @@ class Request implements Stringable
         }
         if ($cacheable) {
             $cache[$headBuffer] = $this->data['headers'];
-            if (count($cache) > 128) {
+            if (count($cache) > static::MAX_CACHE_SIZE) {
                 unset($cache[key($cache)]);
             }
         }
@@ -523,7 +520,7 @@ class Request implements Stringable
         if ($queryString === '') {
             return;
         }
-        $cacheable = static::$enableCache && !isset($queryString[1024]);
+        $cacheable = !isset($queryString[static::MAX_CACHE_STRING_LENGTH]);
         if ($cacheable && isset($cache[$queryString])) {
             $this->data['get'] = $cache[$queryString];
             return;
@@ -531,7 +528,7 @@ class Request implements Stringable
         parse_str($queryString, $this->data['get']);
         if ($cacheable) {
             $cache[$queryString] = $this->data['get'];
-            if (count($cache) > 256) {
+            if (count($cache) > static::MAX_CACHE_SIZE) {
                 unset($cache[key($cache)]);
             }
         }
@@ -556,7 +553,7 @@ class Request implements Stringable
         if ($bodyBuffer === '') {
             return;
         }
-        $cacheable = static::$enableCache && !isset($bodyBuffer[1024]);
+        $cacheable = !isset($bodyBuffer[static::MAX_CACHE_STRING_LENGTH]);
         if ($cacheable && isset($cache[$bodyBuffer])) {
             $this->data['post'] = $cache[$bodyBuffer];
             return;
@@ -568,7 +565,7 @@ class Request implements Stringable
         }
         if ($cacheable) {
             $cache[$bodyBuffer] = $this->data['post'];
-            if (count($cache) > 256) {
+            if (count($cache) > static::MAX_CACHE_SIZE) {
                 unset($cache[key($cache)]);
             }
         }
@@ -807,6 +804,7 @@ class Request implements Stringable
      */
     public function __clone()
     {
+        $this->properties = [];
         if ($this->isDirty) {
             unset($this->data['get'], $this->data['post'], $this->data['headers']);
         }
