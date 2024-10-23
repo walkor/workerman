@@ -515,7 +515,6 @@ class Worker
         \E_USER_ERROR        => 'E_USER_ERROR',        // 256
         \E_USER_WARNING      => 'E_USER_WARNING',      // 512
         \E_USER_NOTICE       => 'E_USER_NOTICE',       // 1024
-        \E_STRICT            => 'E_STRICT',            // 2048
         \E_RECOVERABLE_ERROR => 'E_RECOVERABLE_ERROR', // 4096
         \E_DEPRECATED        => 'E_DEPRECATED',        // 8192
         \E_USER_DEPRECATED   => 'E_USER_DEPRECATED'   // 16384
