@@ -539,6 +539,8 @@ class Worker
      */
     protected static $_outputDecorated = null;
 
+    protected static $liveVersionLength = null;
+
     /**
      * Run all worker instances.
      *
@@ -688,10 +690,8 @@ class Worker
 
             // Get column mapping for UI
             foreach(static::getUiColumns() as $column_name => $prop){
-                !isset($worker->{$prop}) && $worker->{$prop} = 'NNNN';
-                $prop_length = \strlen((string) $worker->{$prop});
-                $key = '_max' . \ucfirst(\strtolower($column_name)) . 'NameLength';
-                static::$$key = \max(static::$$key, $prop_length);
+                $prop_length = \strlen((string) static::getWorkerProperty($worker, $prop));
+                static::updateMaxNameLength($column_name, $prop_length);
             }
 
             // Listen.
@@ -699,6 +699,86 @@ class Worker
                 $worker->listen();
             }
         }
+    }
+
+    /**
+     * @param Worker $worker
+     * @param string $prop
+     * @return mixed
+     */
+    protected static function getWorkerProperty($worker, $prop)
+    {
+        switch ($prop) {
+            case 'transport':
+                return $worker->transport;
+            case 'user':
+                return $worker->user;
+            case 'name':
+                return $worker->name;
+            case 'socket':
+                return $worker->socket;
+            case 'count':
+                return $worker->count;
+            case 'status':
+                return $worker->status;
+        }
+        return null;
+    }
+
+    /**
+     * Update specified column name length
+     *
+     * @param string $column_name
+     * @param int $length
+     * @return void
+     */
+    protected static function updateMaxNameLength($column_name, $length)
+    {
+        switch ($column_name) {
+            case 'processes':
+                static::$_maxProcessesNameLength = max(static::$_maxProcessesNameLength, $length);
+                break;
+            case 'proto':
+                static::$_maxProtoNameLength = max(static::$_maxProtoNameLength, $length);
+                break;
+            case 'listen':
+            case 'socket':
+                static::$_maxSocketNameLength = max(static::$_maxSocketNameLength, $length);
+                break;
+            case 'status':
+                static::$_maxStatusNameLength = max(static::$_maxStatusNameLength, $length);
+                break;
+            case 'user':
+                static::$_maxUserNameLength = max(static::$_maxUserNameLength, $length);
+                break;
+            case 'worker':
+                static::$_maxWorkerNameLength = max(static::$_maxWorkerNameLength, $length);
+                break;
+        }
+    }
+
+    /**
+     * @param string $column_name
+     * @return int
+     */
+    protected static function getMaxNameLength($column_name)
+    {
+        switch ($column_name) {
+            case 'processes':
+                return static::$_maxProcessesNameLength;
+            case 'proto':
+                return static::$_maxProtoNameLength;
+            case 'listen':
+            case 'socket':
+                return static::$_maxSocketNameLength;
+            case 'status':
+                return static::$_maxStatusNameLength;
+            case 'user':
+                return static::$_maxUserNameLength;
+            case 'worker':
+                return static::$_maxWorkerNameLength;
+        }
+        return 0;
     }
 
     /**
@@ -791,7 +871,9 @@ class Worker
         //show version
         $line_version = 'Workerman version:' . static::VERSION . \str_pad('PHP version:', 22, ' ', \STR_PAD_LEFT) . \PHP_VERSION;
         $line_version .= \str_pad('Event-Loop:', 22, ' ', \STR_PAD_LEFT) . static::getEventLoopName() . \PHP_EOL;
-        !\defined('LINE_VERSIOIN_LENGTH') && \define('LINE_VERSIOIN_LENGTH', \strlen($line_version));
+        if (static::$liveVersionLength === null) {
+            static::$liveVersionLength = \strlen($line_version);
+        }
         $total_length = static::getSingleLineTotalLength();
         $line_one = '<n>' . \str_pad('<w> WORKERMAN </w>', $total_length + \strlen('<w></w>'), '-', \STR_PAD_BOTH) . '</n>'. \PHP_EOL;
         $line_two = \str_pad('<w> WORKERS </w>' , $total_length  + \strlen('<w></w>'), '-', \STR_PAD_BOTH) . \PHP_EOL;
@@ -800,10 +882,10 @@ class Worker
         //Show title
         $title = '';
         foreach(static::getUiColumns() as $column_name => $prop){
-            $key = '_max' . \ucfirst(\strtolower($column_name)) . 'NameLength';
+            $length = static::getMaxNameLength($column_name);
             //just keep compatible with listen name
             $column_name === 'socket' && $column_name = 'listen';
-            $title.= "<w>{$column_name}</w>"  .  \str_pad('', static::$$key + static::UI_SAFE_LENGTH - \strlen($column_name));
+            $title.= "<w>{$column_name}</w>"  .  \str_pad('', $length + static::UI_SAFE_LENGTH - \strlen($column_name));
         }
         $title && static::safeEcho($title . \PHP_EOL);
 
@@ -811,10 +893,9 @@ class Worker
         foreach (static::$_workers as $worker) {
             $content = '';
             foreach(static::getUiColumns() as $column_name => $prop){
-                $key = '_max' . \ucfirst(\strtolower($column_name)) . 'NameLength';
-                \preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", (string) $worker->{$prop}, $matches);
+                \preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/is", (string) static::getWorkerProperty($worker, $prop), $matches);
                 $place_holder_length = !empty($matches) ? \strlen(\implode('', $matches[0])) : 0;
-                $content .= \str_pad((string) $worker->{$prop}, static::$$key + static::UI_SAFE_LENGTH + $place_holder_length);
+                $content .= \str_pad((string) static::getWorkerProperty($worker, $prop), static::getMaxNameLength($column_name) + static::UI_SAFE_LENGTH + $place_holder_length);
             }
             $content && static::safeEcho($content . \PHP_EOL);
         }
@@ -868,13 +949,14 @@ class Worker
         $total_length = 0;
 
         foreach(static::getUiColumns() as $column_name => $prop){
-            $key = '_max' . \ucfirst(\strtolower($column_name)) . 'NameLength';
-            $total_length += static::$$key + static::UI_SAFE_LENGTH;
+            $total_length += static::getMaxNameLength($column_name) + static::UI_SAFE_LENGTH;
         }
 
         //keep beauty when show less colums
-        !\defined('LINE_VERSIOIN_LENGTH') && \define('LINE_VERSIOIN_LENGTH', 0);
-        $total_length <= LINE_VERSIOIN_LENGTH && $total_length = LINE_VERSIOIN_LENGTH;
+        if (static::$liveVersionLength === null) {
+            static::$liveVersionLength = 0;
+        }
+        $total_length <= static::$liveVersionLength && $total_length = static::$liveVersionLength;
 
         return $total_length;
     }
@@ -2030,7 +2112,7 @@ class Worker
         if (static::$_masterPid === \posix_getpid()) {
             $all_worker_info = array();
             foreach(static::$_pidMap as $worker_id => $pid_array) {
-                /** @var /Workerman/Worker $worker */
+                /** @var Worker $worker */
                 $worker = static::$_workers[$worker_id];
                 foreach($pid_array as $pid) {
                     $all_worker_info[$pid] = array('name' => $worker->name, 'listen' => $worker->getSocketName());
@@ -2672,4 +2754,3 @@ class Worker
         return stripos($content, static::$processTitle) !== false || stripos($content, 'php') !== false;
     }
 }
-
