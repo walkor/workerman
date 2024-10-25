@@ -524,21 +524,20 @@ class Worker
      * @var array<int, string>
      */
     public const ERROR_TYPE = [
-        E_ERROR => 'E_ERROR',             // 1
-        E_WARNING => 'E_WARNING',           // 2
-        E_PARSE => 'E_PARSE',             // 4
-        E_NOTICE => 'E_NOTICE',            // 8
-        E_CORE_ERROR => 'E_CORE_ERROR',        // 16
-        E_CORE_WARNING => 'E_CORE_WARNING',      // 32
-        E_COMPILE_ERROR => 'E_COMPILE_ERROR',     // 64
-        E_COMPILE_WARNING => 'E_COMPILE_WARNING',   // 128
-        E_USER_ERROR => 'E_USER_ERROR',        // 256
-        E_USER_WARNING => 'E_USER_WARNING',      // 512
-        E_USER_NOTICE => 'E_USER_NOTICE',       // 1024
-        E_STRICT => 'E_STRICT',            // 2048
-        E_RECOVERABLE_ERROR => 'E_RECOVERABLE_ERROR', // 4096
-        E_DEPRECATED => 'E_DEPRECATED',        // 8192
-        E_USER_DEPRECATED => 'E_USER_DEPRECATED'   // 16384
+        E_ERROR => 'E_ERROR',
+        E_WARNING => 'E_WARNING',
+        E_PARSE => 'E_PARSE',
+        E_NOTICE => 'E_NOTICE',
+        E_CORE_ERROR => 'E_CORE_ERROR',
+        E_CORE_WARNING => 'E_CORE_WARNING',
+        E_COMPILE_ERROR => 'E_COMPILE_ERROR',
+        E_COMPILE_WARNING => 'E_COMPILE_WARNING',
+        E_USER_ERROR => 'E_USER_ERROR',
+        E_USER_WARNING => 'E_USER_WARNING',
+        E_USER_NOTICE => 'E_USER_NOTICE',
+        E_RECOVERABLE_ERROR => 'E_RECOVERABLE_ERROR',
+        E_DEPRECATED => 'E_DEPRECATED',
+        E_USER_DEPRECATED => 'E_USER_DEPRECATED'
     ];
 
     /**
