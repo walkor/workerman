@@ -1295,7 +1295,7 @@ class Worker
                     }
 
                 } elseif( preg_match('/^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(.*)/',
-                          $line, 
+                          $line,
                           $matches ) ){
 
                     if( count($processKeys) !== count($matches) - 1  || count($processKeys) < 3 ){
@@ -1329,7 +1329,7 @@ class Worker
                         $pArr[$processKeys[$i]] = ( is_numeric($matches[$i]) ? intval($matches[$i]) : $matches[$i] );
                     }
 
-                    $arr[$pKey]['Summary'] = $pArr;  
+                    $arr[$pKey]['Summary'] = $pArr;
                 }
             }
         }
