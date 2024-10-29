@@ -1267,9 +1267,9 @@ class Worker
                     $arr[$gsKey]['Event'] = $matches[2];
                 } elseif( preg_match('/^(\d+) workers\s+(\d+) processes/', $line, $matches ) &&
                         array_key_exists(1,$matches) && array_key_exists(2,$matches) ){
-                    $arr[$gsKey]['Workers'] = [ 'Count' => $matches[1], 'Processes' => $matches[2],
+                    $arr[$gsKey]['Workers'] = [ 'Count' => intval($matches[1]), 'Processes' => intval($matches[2]),
                         'Records' => [] ];
-                    $arr[$pKey]['Count'] = $matches[2];
+                    $arr[$pKey]['Count'] = intval($matches[2]);
                 }
             } elseif( $currStatus === 'WORKER' ){
 
