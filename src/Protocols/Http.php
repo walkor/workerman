@@ -93,13 +93,17 @@ class Http
         }
 
         $length = $crlfPos + 4;
-        $method = strstr($buffer, ' ', true);
-        if (!in_array($method, ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
+        $firstLine = explode(" ", strstr($buffer, "\r\n", true), 3);
+        if (!in_array($firstLine[0], ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
+            $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
+            return 0;
+        }
+        $header = substr($buffer, 0, $crlfPos);
+        if (!str_contains($header, "\r\nHost: ") && $firstLine[2] === "HTTP/1.1") {
             $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
 
-        $header = substr($buffer, 0, $crlfPos);
         if ($pos = stripos($header, "\r\nContent-Length: ")) {
             $length += (int)substr($header, $pos + 18, 10);
             $hasContentLength = true;
@@ -131,9 +135,23 @@ class Http
      */
     public static function decode(string $buffer, TcpConnection $connection): Request
     {
+        static $requests = [];
+        if (isset($requests[$buffer])) {
+            $request = clone $requests[$buffer];
+            $request->connection = $connection;
+            $connection->request = $request;
+            $request->properties = [];
+            return $request;
+        }
         $request = new static::$requestClass($buffer);
         $request->connection = $connection;
         $connection->request = $request;
+        if (!isset($buffer[TcpConnection::MAX_CACHE_STRING_LENGTH])) {
+            $requests[$buffer] = $request;
+            if (count($requests) > TcpConnection::MAX_CACHE_SIZE) {
+                unset($requests[key($requests)]);
+            }
+        }
         return $request;
     }
 
