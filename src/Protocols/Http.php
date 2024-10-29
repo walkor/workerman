@@ -16,12 +16,10 @@ declare(strict_types=1);
 
 namespace Workerman\Protocols;
 
-use Throwable;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
 use function clearstatcache;
-use function count;
 use function explode;
 use function filesize;
 use function fopen;
@@ -32,7 +30,6 @@ use function in_array;
 use function ini_get;
 use function is_array;
 use function is_object;
-use function key;
 use function preg_match;
 use function strlen;
 use function strpos;
@@ -83,10 +80,6 @@ class Http
      */
     public static function input(string $buffer, TcpConnection $connection): int
     {
-        static $input = [];
-        if (isset($input[$buffer])) {
-            return $input[$buffer];
-        }
         $crlfPos = strpos($buffer, "\r\n\r\n");
         if (false === $crlfPos) {
             // Judge whether the package length exceeds the limit.
@@ -98,14 +91,11 @@ class Http
 
         $length = $crlfPos + 4;
         $firstLine = explode(" ", strstr($buffer, "\r\n", true), 3);
-
         if (!in_array($firstLine[0], ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
             $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
-
         $header = substr($buffer, 0, $crlfPos);
-
         if (!str_contains($header, "\r\nHost: ") && $firstLine[2] === "HTTP/1.1") {
             $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
@@ -128,13 +118,6 @@ class Http
         if ($hasContentLength && $length > $connection->maxPackageSize) {
             $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
             return 0;
-        }
-
-        if (!isset($buffer[TcpConnection::MAX_CACHE_STRING_LENGTH])) {
-            $input[$buffer] = $length;
-            if (count($input) > TcpConnection::MAX_CACHE_SIZE) {
-                unset($input[key($input)]);
-            }
         }
 
         return $length;
