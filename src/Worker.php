@@ -310,8 +310,8 @@ class Worker
      *
      * @var bool
      */
-    public static bool $jsonLog = false;    
-    
+    public static bool $jsonLog = false;
+
     /**
      * Global event loop.
      *
@@ -993,7 +993,7 @@ class Worker
             '-g'
         ];
         $availableLog = ['-jl'];
-        
+
         $command = $mode = '';
         foreach (static::getArgv() as $value) {
             if (!$command && in_array($value, $availableCommands)) {
@@ -1001,7 +1001,7 @@ class Worker
             }
             if (!$mode && in_array($value, $availableMode)) {
                 $mode = $value;
-            } 
+            }
             if (in_array($value, $availableLog)) {
                 static::$jsonLog = true;
             }
@@ -1233,12 +1233,12 @@ class Worker
         $arr = [ $gsKey => [], $pKey => ['Records' => []] ];
         $currStatus = null;
         $processKeys = [];
-        
+
         $lines = explode("\n", $statusStr );
-        
+
         foreach($lines as $line){
             $matches = [];
-            
+
             if(preg_match('/GLOBAL STATUS/', $line)){
                 $currStatus = 'GLOBAL';
                 continue;
@@ -1252,7 +1252,7 @@ class Worker
                 $currStatus = 'SUMMARY';
                 continue;
             }
-            
+
             if( $currStatus === 'GLOBAL' ){
                 if( preg_match('/^Workerman version:(\S+)\s+PHP version:(\S+)/', $line, $matches ) &&
                         array_key_exists(1,$matches) && array_key_exists(2,$matches) ){
@@ -1272,72 +1272,72 @@ class Worker
                     $arr[$pKey]['Count'] = $matches[2];
                 }
             } elseif( $currStatus === 'WORKER' ){
-                
+
                 if( preg_match('/^(.*?)\s(\d)\s+(\d)/', $line, $matches ) &&
                         array_key_exists(1,$matches) && array_key_exists(2,$matches) && array_key_exists(3,$matches) ){
 
-                    $arr[$gsKey]['Workers']['Records'][] = ['Name' => rtrim($matches[1]), 
+                    $arr[$gsKey]['Workers']['Records'][] = ['Name' => rtrim($matches[1]),
                                                                     'Exit Status' => intval($matches[2]),
                                                                     'Exit Count' => intval($matches[3])];
                 }
             } elseif( $currStatus === 'PROCESS' ){
                 if(preg_match('/^pid\s+memory\s+listening/', $line)) {
-                    preg_match('/^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/', 
-                          $line, 
+                    preg_match('/^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/',
+                          $line,
                           $matches );
-                
+
                     if( count($matches) < 3 ){
                         continue;
                     }
-                    
+
                     for($i = 1; $i < count($matches); $i++ ){
                         $processKeys[$i] = $matches[$i];
                     }
-                    
-                } elseif( preg_match('/^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(.*)/', 
+
+                } elseif( preg_match('/^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(.*)/',
                           $line, 
                           $matches ) ){
-                    
+
                     if( count($processKeys) !== count($matches) - 1  || count($processKeys) < 3 ){
                         //header row column count did not match row count
                         continue;
                     }
                     $pArr = [];
-                    
+
                     for( $i = 1; $i <= count($processKeys); $i++ ){
                         $pArr[$processKeys[$i]] = ( is_numeric($matches[$i]) ? intval($matches[$i]) : $matches[$i] );
                     }
-                    $arr[$pKey]['Records'][] = $pArr;  
+                    $arr[$pKey]['Records'][] = $pArr;
                 }
 
             } elseif( $currStatus === 'SUMMARY') {
-                if( preg_match('/^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(.*)/', 
-                          $line, 
+                if( preg_match('/^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(.*)/',
+                          $line,
                           $matches ) ){
-                
+
                     if( count($processKeys) !== count($matches) - 1 || count($processKeys) < 3 ){
                         //header row column count did not match row count
                         continue;
                     }
-                    
+
                     $pArr = [];
-                    
+
                     for( $i = 2; $i < count($processKeys); $i++ ){
                         if( $matches[$i] === '-' ){
                             continue;
                         }
                         $pArr[$processKeys[$i]] = ( is_numeric($matches[$i]) ? intval($matches[$i]) : $matches[$i] );
                     }
-        
+
                     $arr[$pKey]['Summary'] = $pArr;  
                 }
             }
         }
 
         return json_encode($arr, JSON_PRETTY_PRINT);
-        
-    }    
-    
+
+    }
+
     protected static function formatConnectionStatusData(): string
     {
         return file_get_contents(static::$connectionsFile);
