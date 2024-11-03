@@ -664,6 +664,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                         } catch (Throwable $e) {
                             $this->error($e);
                         }
+                        $request->properties = [];
                         $requests[$buffer] = clone $request;
                         return;
                     }
@@ -692,10 +693,10 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 } else {
                     // Get current package length.
                     try {
-                        /** @var ProtocolInterface $parser */
-                        $parser = $this->protocol;
-                        $this->currentPackageLength = $parser::input($this->recvBuffer, $this);
-                    } catch (Throwable) {
+                        $this->currentPackageLength = $this->protocol::input($this->recvBuffer, $this);
+                    } catch (Throwable $e) {
+                        $this->currentPackageLength = -1;
+                        Worker::safeEcho((string)$e);
                     }
                     // The packet length is unknown.
                     if ($this->currentPackageLength === 0) {

@@ -27,13 +27,13 @@ interface ProtocolInterface
      * Check the integrity of the package.
      * Please return the length of package.
      * If length is unknown please return 0 that means waiting for more data.
-     * If the package has something wrong please return false the connection will be closed.
+     * If the package has something wrong please return -1 the connection will be closed.
      *
      * @param string $buffer
      * @param ConnectionInterface $connection
-     * @return int|false
+     * @return int
      */
-    public static function input(string $buffer, ConnectionInterface $connection): bool|int;
+    public static function input(string $buffer, ConnectionInterface $connection): int;
 
     /**
      * Decode package and emit onMessage($message) callback, $message is the result that decode returned.

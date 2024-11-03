@@ -61,13 +61,13 @@ class Ws
      *
      * @param string $buffer
      * @param AsyncTcpConnection $connection
-     * @return int|false
+     * @return int
      */
-    public static function input(string $buffer, AsyncTcpConnection $connection): bool|int
+    public static function input(string $buffer, AsyncTcpConnection $connection): int
     {
         if (empty($connection->context->handshakeStep)) {
             Worker::safeEcho("recv data before handshake. Buffer:" . bin2hex($buffer) . "\n");
-            return false;
+            return -1;
         }
         // Recv handshake response
         if ($connection->context->handshakeStep === 1) {

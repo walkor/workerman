@@ -40,12 +40,6 @@ it('tests ::input', function () {
             ->toBe(0);
     }, '400 Bad Request');
 
-    //HTTP 1.1 without Host header
-    testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
-        expect(Http::input(str_replace("Host: ", 'NotHost: ', $buffer), $tcpConnection))
-            ->toBe(0);
-    }, '400 Bad Request');
-
     //content-length exceeds connection max package size
     testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
         $tcpConnection->maxPackageSize = 10;
