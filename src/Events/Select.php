@@ -364,7 +364,7 @@ final class Select implements EventInterface
             $read = $this->readFds;
             $write = $this->writeFds;
             $except = $this->exceptFds;
-            if (!empty($read) || !empty($write) || !empty($except)) {
+            if ($read || $write || $except) {
                 // Waiting read/write/signal/timeout events.
                 try {
                     @stream_select($read, $write, $except, 0, $this->selectTimeout);
@@ -400,7 +400,7 @@ final class Select implements EventInterface
                 }
             }
 
-            if (!empty($this->signalEvents)) {
+            if ($this->signalEvents) {
                 // Calls signal handlers for pending signals
                 pcntl_signal_dispatch();
             }
