@@ -115,6 +115,13 @@ final class Select implements EventInterface
     private int $selectTimeout = 100000000;
 
     /**
+     * Next run time of the timer.
+     *
+     * @var float
+     */
+    private float $nextTickTime = 0;
+
+    /**
      * @var ?callable
      */
     private $errorHandler = null;
@@ -137,10 +144,8 @@ final class Select implements EventInterface
         $runTime = microtime(true) + $delay;
         $this->scheduler->insert($timerId, -$runTime);
         $this->eventTimer[$timerId] = [$func, $args];
-        $selectTimeout = ($runTime - microtime(true)) * 1000000;
-        $selectTimeout = $selectTimeout <= 0 ? 1 : (int)$selectTimeout;
-        if ($this->selectTimeout > $selectTimeout) {
-            $this->selectTimeout = $selectTimeout;
+        if ($this->nextTickTime == 0 || $this->nextTickTime > $runTime) {
+            $this->setNextTickTime($runTime);
         }
         return $timerId;
     }
@@ -154,10 +159,8 @@ final class Select implements EventInterface
         $runTime = microtime(true) + $interval;
         $this->scheduler->insert($timerId, -$runTime);
         $this->eventTimer[$timerId] = [$func, $args, $interval];
-        $selectTimeout = ($runTime - microtime(true)) * 1000000;
-        $selectTimeout = $selectTimeout <= 0 ? 1 : (int)$selectTimeout;
-        if ($this->selectTimeout > $selectTimeout) {
-            $this->selectTimeout = $selectTimeout;
+        if ($this->nextTickTime == 0 || $this->nextTickTime > $runTime) {
+            $this->setNextTickTime($runTime);
         }
         return $timerId;
     }
@@ -338,11 +341,27 @@ final class Select implements EventInterface
         if (!$this->scheduler->isEmpty()) {
             $schedulerData = $this->scheduler->top();
             $nextRunTime = -$schedulerData['priority'];
-            $timeNow = microtime(true);
-            $this->selectTimeout = max((int)(($nextRunTime - $timeNow) * 1000000), 0);
+            $this->setNextTickTime($nextRunTime);
             return;
         }
-        $this->selectTimeout = 100000000;
+        $this->setNextTickTime(0);
+    }
+
+    /**
+     * Set next tick time.
+     *
+     * @param float $nextTickTime
+     * @return void
+     */
+    protected function setNextTickTime(float $nextTickTime): void
+    {
+        $this->nextTickTime = $nextTickTime;
+        if ($nextTickTime == 0) {
+            $this->selectTimeout = 10000000;
+            return;
+        }
+        $timeNow = microtime(true);
+        $this->selectTimeout = max((int)(($nextTickTime - $timeNow) * 1000000), 0);
     }
 
     /**
@@ -375,10 +394,6 @@ final class Select implements EventInterface
                 $this->selectTimeout >= 1 && usleep($this->selectTimeout);
             }
 
-            if (!$this->scheduler->isEmpty()) {
-                $this->tick();
-            }
-
             foreach ($read as $fd) {
                 $fdKey = (int)$fd;
                 if (isset($this->readEvents[$fdKey])) {
@@ -398,6 +413,10 @@ final class Select implements EventInterface
                 if (isset($this->exceptEvents[$fdKey])) {
                     $this->exceptEvents[$fdKey]($fd);
                 }
+            }
+
+            if ($this->nextTickTime > 0 && microtime(true) >= $this->nextTickTime) {
+                $this->tick();
             }
 
             if ($this->signalEvents) {
