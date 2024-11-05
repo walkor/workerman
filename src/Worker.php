@@ -264,6 +264,12 @@ class Worker
     public bool $stopping = false;
 
     /**
+     *
+     * @var class-string<EventInterface>
+     */
+    public string $eventLoop;
+
+    /**
      * Daemonize.
      *
      * @var bool
@@ -427,46 +433,11 @@ class Worker
     protected static int $status = self::STATUS_STARTING;
 
     /**
-     * Maximum length of the worker names.
+     * UI data.
      *
-     * @var int
+     * @var array|int[]
      */
-    protected static int $maxWorkerNameLength = 12;
-
-    /**
-     * Maximum length of the socket names.
-     *
-     * @var int
-     */
-    protected static int $maxSocketNameLength = 12;
-
-    /**
-     * Maximum length of the process usernames.
-     *
-     * @var int
-     */
-    protected static int $maxUserNameLength = 12;
-
-    /**
-     * Maximum length of the Proto names.
-     *
-     * @var int
-     */
-    protected static int $maxProtoNameLength = 4;
-
-    /**
-     * Maximum length of the Processes names.
-     *
-     * @var int
-     */
-    protected static int $maxProcessesNameLength = 9;
-
-    /**
-     * Maximum length of the state names.
-     *
-     * @var int
-     */
-    protected static int $maxStateNameLength = 1;
+    protected static array $uiLengthData = [];
 
     /**
      * The file to store status info of current worker process.
@@ -778,6 +749,10 @@ class Worker
             // Socket name.
             $worker->context->statusSocket = $worker->getSocketName();
 
+            // Event-loop name.
+            $eventLoopName = $worker->eventLoop ?? static::$eventLoopClass;
+            $worker->context->eventLoopName = str_starts_with($eventLoopName, 'Workerman\\Events\\') ? strtolower(substr($eventLoopName, 17)) : $eventLoopName;
+
             // Status name.
             $worker->context->statusState = '<g> [OK] </g>';
 
@@ -786,7 +761,7 @@ class Worker
                 !isset($worker->$prop) && !isset($worker->context->$prop) && $worker->context->$prop = 'NNNN';
                 $propLength = strlen((string)($worker->$prop ?? $worker->context->$prop));
                 $key = 'max' . ucfirst(strtolower($columnName)) . 'NameLength';
-                static::$$key = max(static::$$key, $propLength);
+                static::$uiLengthData[$key] = max(static::$uiLengthData[$key] ?? 2 * static::UI_SAFE_LENGTH, $propLength);
             }
 
             // Listen.
@@ -875,7 +850,7 @@ class Worker
         }
 
         //show version
-        $lineVersion = 'Workerman version:' . static::VERSION . str_pad('PHP version:', 16, ' ', STR_PAD_LEFT) . PHP_VERSION . " (Jit $jitStatus)" . str_pad('Event-loop:', 16, ' ', STR_PAD_LEFT) . static::getEventLoopName() . PHP_EOL;
+        $lineVersion = 'Workerman version:' . static::VERSION . str_pad('PHP version:', 16, ' ', STR_PAD_LEFT) . PHP_VERSION . " (Jit $jitStatus)" . PHP_EOL;
         !defined('LINE_VERSION_LENGTH') && define('LINE_VERSION_LENGTH', strlen($lineVersion));
         $totalLength = static::getSingleLineTotalLength();
         $lineOne = '<n>' . str_pad('<w> WORKERMAN </w>', $totalLength + strlen('<w></w>'), '-', STR_PAD_BOTH) . '</n>' . PHP_EOL;
@@ -888,7 +863,7 @@ class Worker
             $key = 'max' . ucfirst(strtolower($columnName)) . 'NameLength';
             //just keep compatible with listen name
             $columnName === 'socket' && $columnName = 'listen';
-            $title .= "<w>$columnName</w>" . str_pad('', static::$$key + static::UI_SAFE_LENGTH - strlen($columnName));
+            $title .= "<w>$columnName</w>" . str_pad('', static::getUiColumnLength($key) + static::UI_SAFE_LENGTH - strlen($columnName));
         }
         $title && static::safeEcho($title . PHP_EOL);
 
@@ -900,7 +875,7 @@ class Worker
                 $key = 'max' . ucfirst(strtolower($columnName)) . 'NameLength';
                 preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/i", $propValue, $matches);
                 $placeHolderLength = !empty($matches) ? strlen(implode('', $matches[0])) : 0;
-                $content .= str_pad($propValue, static::$$key + static::UI_SAFE_LENGTH + $placeHolderLength);
+                $content .= str_pad($propValue, static::getUiColumnLength($key) + static::UI_SAFE_LENGTH + $placeHolderLength);
             }
             $content && static::safeEcho($content . PHP_EOL);
         }
@@ -929,11 +904,12 @@ class Worker
     public static function getUiColumns(): array
     {
         return [
+            'event' => 'eventLoopName',
             'proto' => 'transport',
             'user' => 'user',
             'worker' => 'name',
             'socket' => 'statusSocket',
-            'processes' => 'count',
+            'count' => 'count',
             'state' => 'statusState',
         ];
     }
@@ -949,7 +925,7 @@ class Worker
 
         foreach (static::getUiColumns() as $columnName => $prop) {
             $key = 'max' . ucfirst(strtolower($columnName)) . 'NameLength';
-            $totalLength += static::$$key + static::UI_SAFE_LENGTH;
+            $totalLength += static::getUiColumnLength($key) + static::UI_SAFE_LENGTH;
         }
 
         //Keep beauty when show less columns
@@ -1160,8 +1136,8 @@ class Worker
         $totalFails = 0;
         $totalMemory = 0;
         $totalTimers = 0;
-        $maxLen1 = static::$maxSocketNameLength;
-        $maxLen2 = static::$maxWorkerNameLength;
+        $maxLen1 = max(static::getUiColumnLength('maxSocketNameLength'), 2 * static::UI_SAFE_LENGTH);
+        $maxLen2 = max(static::getUiColumnLength('maxWorkerNameLength'), 2 * static::UI_SAFE_LENGTH);
         foreach ($info as $value) {
             if (!$readProcessStatus) {
                 $statusStr .= $value . "\n";
@@ -1188,8 +1164,8 @@ class Worker
         foreach ($workerInfo as $pid => $info) {
             if (!isset($dataWaitingSort[$pid])) {
                 $statusStr .= "$pid\t" . str_pad('N/A', 7) . " "
-                    . str_pad($info['listen'], static::$maxSocketNameLength) . " "
-                    . str_pad((string)$info['name'], static::$maxWorkerNameLength) . " "
+                    . str_pad($info['listen'], static::getUiColumnLength('maxSocketNameLength')) . " "
+                    . str_pad((string)$info['name'], static::getUiColumnLength('maxWorkerNameLength')) . " "
                     . str_pad('N/A', 11) . " " . str_pad('N/A', 9) . " "
                     . str_pad('N/A', 7) . " " . str_pad('N/A', 13) . " N/A    [busy] \n";
                 continue;
@@ -1204,7 +1180,7 @@ class Worker
             $statusStr .= $dataWaitingSort[$pid] . " " . str_pad((string)$qps, 6) . " [idle]\n";
         }
         $totalRequestCache = $currentTotalRequest;
-        $statusStr .= "----------------------------------------------PROCESS STATUS---------------------------------------------------\n";
+        $statusStr .= "---------------------------------------------------PROCESS STATUS--------------------------------------------------------\n";
         $statusStr .= "Summary\t" . str_pad($totalMemory . 'M', 7) . " "
             . str_pad('-', $maxLen1) . " "
             . str_pad('-', $maxLen2) . " "
@@ -1380,16 +1356,6 @@ class Worker
     }
 
     /**
-     * Get event loop name.
-     *
-     * @return class-string<EventInterface>
-     */
-    protected static function getEventLoopName(): string
-    {
-        return static::$eventLoopClass;
-    }
-
-    /**
      * Get all pids of worker processes.
      *
      * @return array
@@ -1431,12 +1397,7 @@ class Worker
                 if (empty($worker->name)) {
                     $worker->name = $worker->getSocketName();
                 }
-                $workerNameLength = strlen($worker->name);
-                if (static::$maxWorkerNameLength < $workerNameLength) {
-                    static::$maxWorkerNameLength = $workerNameLength;
-                }
             }
-
             while (count(static::$pidMap[$worker->workerId]) < $worker->count) {
                 static::forkOneWorkerForLinux($worker);
             }
@@ -1473,7 +1434,7 @@ class Worker
 
             // Create a global event loop.
             if (static::$globalEvent === null) {
-                $eventLoopClass = static::getEventLoopName();
+                $eventLoopClass = $worker->eventLoop ?? static::$eventLoopClass;
                 static::$globalEvent = new $eventLoopClass();
                 static::$globalEvent->setErrorHandler(function ($exception) {
                     static::stopAll(250, $exception);
@@ -1613,7 +1574,7 @@ class Worker
 
             // Create a global event loop.
             if (static::$globalEvent === null) {
-                $eventLoopClass = static::getEventLoopName();
+                $eventLoopClass = $worker->eventLoop ?? static::$eventLoopClass;
                 static::$globalEvent = new $eventLoopClass();
                 static::$globalEvent->setErrorHandler(function ($exception) {
                     static::stopAll(250, $exception);
@@ -2013,40 +1974,41 @@ class Worker
             file_put_contents(static::$statisticsFile,
                 (static::$daemonize ? "Start worker in DAEMON mode." : "Start worker in DEBUG mode.") . "\n", FILE_APPEND);
             file_put_contents(static::$statisticsFile,
-                "----------------------------------------------GLOBAL STATUS----------------------------------------------------\n", FILE_APPEND);
+                "---------------------------------------------------GLOBAL STATUS---------------------------------------------------------\n", FILE_APPEND);
             file_put_contents(static::$statisticsFile,
                 'Workerman version:' . static::VERSION . "          PHP version:" . PHP_VERSION . "\n", FILE_APPEND);
             file_put_contents(static::$statisticsFile, 'start time:' . date('Y-m-d H:i:s',
-                    static::$globalStatistics['start_timestamp']) . '   run ' . floor((time() - static::$globalStatistics['start_timestamp']) / (24 * 60 * 60)) . ' days ' . floor(((time() - static::$globalStatistics['start_timestamp']) % (24 * 60 * 60)) / (60 * 60)) . " hours   \n",
+                    static::$globalStatistics['start_timestamp'])
+                . '   run ' . floor((time() - static::$globalStatistics['start_timestamp']) / (24 * 60 * 60))
+                . ' days ' . floor(((time() - static::$globalStatistics['start_timestamp']) % (24 * 60 * 60)) / (60 * 60))
+                . " hours   " . 'load average: ' . implode(", ", $loadavg) . "\n", FILE_APPEND);
+            file_put_contents(static::$statisticsFile,
+                count(static::$pidMap) . ' workers    ' . count(static::getAllWorkerPids()) . " processes\n",
                 FILE_APPEND);
-            $loadStr = 'load average: ' . implode(", ", $loadavg);
             file_put_contents(static::$statisticsFile,
-                str_pad($loadStr, 33) . 'event-loop:' . static::getEventLoopName() . "\n", FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
-                count(static::$pidMap) . ' workers       ' . count(static::getAllWorkerPids()) . " processes\n",
-                FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
-                str_pad('worker_name', static::$maxWorkerNameLength) . " exit_status      exit_count\n", FILE_APPEND);
+                str_pad('name', static::getUiColumnLength('maxWorkerNameLength')) . "     event        exit_status     exit_count\n", FILE_APPEND);
             foreach (static::$pidMap as $workerId => $workerPidArray) {
                 $worker = static::$workers[$workerId];
                 if (isset(static::$globalStatistics['worker_exit_info'][$workerId])) {
                     foreach (static::$globalStatistics['worker_exit_info'][$workerId] as $workerExitStatus => $workerExitCount) {
                         file_put_contents(static::$statisticsFile,
-                            str_pad($worker->name, static::$maxWorkerNameLength) . " " . str_pad((string)$workerExitStatus,
-                                16) . " $workerExitCount\n", FILE_APPEND);
+                            str_pad($worker->name, static::getUiColumnLength('maxWorkerNameLength')) . "     " .
+                            str_pad($worker->context->eventLoopName, 12) . " " .
+                            str_pad((string)$workerExitStatus, 16) . str_pad((string)$workerExitCount, 16) . "\n", FILE_APPEND);
                     }
                 } else {
                     file_put_contents(static::$statisticsFile,
-                        str_pad($worker->name, static::$maxWorkerNameLength) . " " . str_pad('0', 16) . " 0\n",
-                        FILE_APPEND);
+                        str_pad($worker->name, static::getUiColumnLength('maxWorkerNameLength')) . "     " .
+                        str_pad($worker->context->eventLoopName, 12) . " " .
+                        str_pad('0', 16) . str_pad('0', 16) . "\n", FILE_APPEND);
                 }
             }
             file_put_contents(static::$statisticsFile,
-                "----------------------------------------------PROCESS STATUS---------------------------------------------------\n",
+                "---------------------------------------------------PROCESS STATUS--------------------------------------------------------\n",
                 FILE_APPEND);
             file_put_contents(static::$statisticsFile,
-                "pid\tmemory  " . str_pad('listening', static::$maxSocketNameLength) . " " . str_pad('worker_name',
-                    static::$maxWorkerNameLength) . " connections " . str_pad('send_fail', 9) . " "
+                "pid\tmemory  " . str_pad('listening', static::getUiColumnLength('maxSocketNameLength')) . " " . str_pad('name',
+                    static::getUiColumnLength('maxWorkerNameLength')) . " connections " . str_pad('send_fail', 9) . " "
                 . str_pad('timers', 8) . str_pad('total_request', 13) . " qps    status\n", FILE_APPEND);
 
             foreach (static::getAllWorkerPids() as $workerPid) {
@@ -2062,14 +2024,25 @@ class Worker
         /** @var static $worker */
         $worker = current(static::$workers);
         $workerStatusStr = posix_getpid() . "\t" . str_pad(round(memory_get_usage() / (1024 * 1024), 2) . "M", 7)
-            . " " . str_pad($worker->getSocketName(), static::$maxSocketNameLength) . " "
-            . str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name), static::$maxWorkerNameLength)
+            . " " . str_pad($worker->getSocketName(), static::getUiColumnLength('maxSocketNameLength')) . " "
+            . str_pad(($worker->name === $worker->getSocketName() ? 'none' : $worker->name), static::getUiColumnLength('maxWorkerNameLength'))
             . " ";
         $workerStatusStr .= str_pad((string)ConnectionInterface::$statistics['connection_count'], 11)
             . " " . str_pad((string)ConnectionInterface::$statistics['send_fail'], 9)
             . " " . str_pad((string)static::$globalEvent->getTimerCount(), 7)
             . " " . str_pad((string)ConnectionInterface::$statistics['total_request'], 13) . "\n";
         file_put_contents(static::$statisticsFile, $workerStatusStr, FILE_APPEND);
+    }
+
+    /**
+     * Get UI column length
+     *
+     * @param $name
+     * @return int
+     */
+    protected static function getUiColumnLength($name): int
+    {
+        return static::$uiLengthData[$name] ?? 0;
     }
 
     /**

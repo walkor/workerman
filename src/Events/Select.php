@@ -192,7 +192,7 @@ final class Select implements EventInterface
     {
         $count = count($this->readFds);
         if ($count >= 1024) {
-            trigger_error("System call select exceeded the maximum number of connections 1024, please install event/libevent extension for more connections.", E_USER_WARNING);
+            trigger_error("System call select exceeded the maximum number of connections 1024, please install event extension for more connections.", E_USER_WARNING);
         } else if (DIRECTORY_SEPARATOR !== '/' && $count >= 256) {
             trigger_error("System call select exceeded the maximum number of connections 256.", E_USER_WARNING);
         }
