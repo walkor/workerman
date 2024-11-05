@@ -259,15 +259,17 @@ class Worker
 
     /**
      * Is worker stopping ?
+     *
      * @var bool
      */
     public bool $stopping = false;
 
     /**
+     * EventLoop class.
      *
-     * @var class-string<EventInterface>
+     * @var ?string
      */
-    public string $eventLoop;
+    public ?string $eventLoop = null;
 
     /**
      * Daemonize.
@@ -750,7 +752,7 @@ class Worker
             $worker->context->statusSocket = $worker->getSocketName();
 
             // Event-loop name.
-            $eventLoopName = $worker->eventLoop ?? static::$eventLoopClass;
+            $eventLoopName = $worker->eventLoop ?: static::$eventLoopClass;
             $worker->context->eventLoopName = str_starts_with($eventLoopName, 'Workerman\\Events\\') ? strtolower(substr($eventLoopName, 17)) : $eventLoopName;
 
             // Status name.
@@ -1434,7 +1436,7 @@ class Worker
 
             // Create a global event loop.
             if (static::$globalEvent === null) {
-                $eventLoopClass = $worker->eventLoop ?? static::$eventLoopClass;
+                $eventLoopClass = $worker->eventLoop ?: static::$eventLoopClass;
                 static::$globalEvent = new $eventLoopClass();
                 static::$globalEvent->setErrorHandler(function ($exception) {
                     static::stopAll(250, $exception);
@@ -1574,7 +1576,7 @@ class Worker
 
             // Create a global event loop.
             if (static::$globalEvent === null) {
-                $eventLoopClass = $worker->eventLoop ?? static::$eventLoopClass;
+                $eventLoopClass = $worker->eventLoop ?: static::$eventLoopClass;
                 static::$globalEvent = new $eventLoopClass();
                 static::$globalEvent->setErrorHandler(function ($exception) {
                     static::stopAll(250, $exception);
