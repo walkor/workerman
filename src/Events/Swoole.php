@@ -32,7 +32,7 @@ final class Swoole implements EventInterface
     /**
      * All listeners for read event.
      *
-     * @var array<int, resource>
+     * @var array<int, array>
      */
     private array $readEvents = [];
 
