@@ -142,9 +142,9 @@ final class Swoole implements EventInterface
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
             Event::add($stream, null, fn () => $this->callWrite($fd), SWOOLE_EVENT_WRITE);
         } elseif (isset($this->readEvents[$fd])) {
-            Event::set($stream, null, fn () => $this->callWrite($func, [$stream]), SWOOLE_EVENT_WRITE | SWOOLE_EVENT_READ);
+            Event::set($stream, null, fn () => $this->callWrite($fd), SWOOLE_EVENT_WRITE | SWOOLE_EVENT_READ);
         } else {
-            Event::set($stream, null, fn () => $this->callWrite($func, [$stream]), SWOOLE_EVENT_WRITE);
+            Event::set($stream, null, fn () =>$this->callWrite($fd), SWOOLE_EVENT_WRITE);
         }
 
         $this->writeEvents[$fd] = [$func, [$stream]];
