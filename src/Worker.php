@@ -1905,9 +1905,7 @@ class Worker
             array_walk($workers, static fn (Worker $worker) => $worker->stop());
 
             if (!static::getGracefulStop() || ConnectionInterface::$statistics['connection_count'] <= 0) {
-                static::$workers = [];
                 static::$globalEvent?->stop();
-
                 try {
                     // Ignore Swoole ExitException: Swoole exit.
                     exit($code);
@@ -2443,12 +2441,6 @@ class Worker
         if (!static::getGracefulStop()) {
             foreach ($this->connections as $connection) {
                 $connection->close();
-            }
-        }
-        // Remove worker.
-        foreach (static::$workers as $key => $one_worker) {
-            if ($one_worker->workerId === $this->workerId) {
-                unset(static::$workers[$key]);
             }
         }
         // Clear callback.
