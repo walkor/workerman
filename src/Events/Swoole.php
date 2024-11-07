@@ -217,7 +217,7 @@ final class Swoole implements EventInterface
             Coroutine::cancel($coroutine);
         }
         // Wait for coroutines to exit
-        usleep(20000);
+        usleep(200000);
         Event::exit();
     }
 
