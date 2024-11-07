@@ -105,14 +105,14 @@ final class Swoole implements EventInterface
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
-            Event::add($stream, fn () => $this->safeCall($func, [$stream]), null, SWOOLE_EVENT_READ);
+            Event::add($stream, fn () => $this->callRead($fd), null, SWOOLE_EVENT_READ);
         } elseif (isset($this->writeEvents[$fd])) {
-            Event::set($stream, fn () => $this->safeCall($func, [$stream]), null, SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
+            Event::set($stream, fn () => $this->callRead($fd), null, SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
         } else {
-            Event::set($stream, fn () => $this->safeCall($func, [$stream]), null, SWOOLE_EVENT_READ);
+            Event::set($stream, fn () => $this->callRead($fd), null, SWOOLE_EVENT_READ);
         }
 
-        $this->readEvents[$fd] = $stream;
+        $this->readEvents[$fd] = [$func, [$stream]];
     }
 
     /**
@@ -140,14 +140,14 @@ final class Swoole implements EventInterface
     {
         $fd = (int)$stream;
         if (!isset($this->readEvents[$fd]) && !isset($this->writeEvents[$fd])) {
-            Event::add($stream, null, fn () => $this->safeCall($func, [$stream]), SWOOLE_EVENT_WRITE);
+            Event::add($stream, null, fn () => $this->callWrite($fd), SWOOLE_EVENT_WRITE);
         } elseif (isset($this->readEvents[$fd])) {
-            Event::set($stream, null, fn () => $this->safeCall($func, [$stream]), SWOOLE_EVENT_WRITE | SWOOLE_EVENT_READ);
+            Event::set($stream, null, fn () => $this->callWrite($func, [$stream]), SWOOLE_EVENT_WRITE | SWOOLE_EVENT_READ);
         } else {
-            Event::set($stream, null, fn () => $this->safeCall($func, [$stream]), SWOOLE_EVENT_WRITE);
+            Event::set($stream, null, fn () => $this->callWrite($func, [$stream]), SWOOLE_EVENT_WRITE);
         }
 
-        $this->writeEvents[$fd] = $stream;
+        $this->writeEvents[$fd] = [$func, [$stream]];
     }
 
     /**
@@ -235,6 +235,28 @@ final class Swoole implements EventInterface
     public function setErrorHandler(callable $errorHandler): void
     {
         $this->errorHandler = $errorHandler;
+    }
+
+    /**
+     * @param $fd
+     * @return void
+     */
+    private function callRead($fd)
+    {
+        if (isset($this->readEvents[$fd])) {
+            $this->safeCall($this->readEvents[$fd][0], $this->readEvents[$fd][1]);
+        }
+    }
+
+    /**
+     * @param $fd
+     * @return void
+     */
+    private function callWrite($fd)
+    {
+        if (isset($this->writeEvents[$fd])) {
+            $this->safeCall($this->writeEvents[$fd][0], $this->writeEvents[$fd][1]);
+        }
     }
 
     /**
