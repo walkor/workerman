@@ -267,6 +267,8 @@ class Swoole implements EventInterface
         foreach (Coroutine::listCoroutines() as $coroutine) {
             Coroutine::cancel($coroutine);
         }
+        // Wait for coroutines to exit
+        usleep(20000);
         Event::exit();
     }
 
