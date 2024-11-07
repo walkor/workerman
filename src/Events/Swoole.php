@@ -212,10 +212,12 @@ final class Swoole implements EventInterface
      */
     public function stop(): void
     {
-        // cancel all coroutines before Event::exit
+        // Cancel all coroutines before Event::exit
         foreach (Coroutine::listCoroutines() as $coroutine) {
             Coroutine::cancel($coroutine);
         }
+        // Wait for coroutines to exit
+        usleep(20000);
         Event::exit();
     }
 
