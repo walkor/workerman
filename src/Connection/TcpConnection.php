@@ -270,7 +270,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     /**
      * Cache.
      *
-     * @var bool.
+     * @var bool
      */
     protected static bool $enableCache = true;
 
@@ -409,10 +409,8 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
 
         // Try to call protocol::encode($sendBuffer) before sending.
         if (false === $raw && $this->protocol !== null) {
-            /** @var ProtocolInterface $parser */
-            $parser = $this->protocol;
             try {
-                $sendBuffer = $parser::encode($sendBuffer, $this);
+                $sendBuffer = $this->protocol::encode($sendBuffer, $this);
             } catch(Throwable $e) {
                 $this->error($e);
             }
@@ -730,9 +728,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 $this->currentPackageLength = 0;
                 try {
                     // Decode request buffer before Emitting onMessage callback.
-                    /** @var ProtocolInterface $parser */
-                    $parser = $this->protocol;
-                    $request = $parser::decode($oneRequestBuffer, $this);
+                    $request = $this->protocol::decode($oneRequestBuffer, $this);
                     if (static::$enableCache && (!is_object($request) || $request instanceof Request) && $one && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
                         ($this->onMessage)($this, $request);
                         if ($request instanceof Request) {

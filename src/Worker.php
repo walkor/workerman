@@ -876,7 +876,7 @@ class Worker
                 $propValue = (string)($worker->$prop ?? $worker->context->$prop);
                 $key = 'max' . ucfirst(strtolower($columnName)) . 'NameLength';
                 preg_match_all("/(<n>|<\/n>|<w>|<\/w>|<g>|<\/g>)/i", $propValue, $matches);
-                $placeHolderLength = !empty($matches) ? strlen(implode('', $matches[0])) : 0;
+                $placeHolderLength = !empty($matches[0]) ? strlen(implode('', $matches[0])) : 0;
                 $content .= str_pad($propValue, static::getUiColumnLength($key) + static::UI_SAFE_LENGTH + $placeHolderLength);
             }
             $content && static::safeEcho($content . PHP_EOL);
@@ -2509,9 +2509,7 @@ class Worker
         if ($messageCallback) {
             try {
                 if ($this->protocol !== null) {
-                    /** @var ProtocolInterface $parser */
                     $parser = $this->protocol;
-                    // @phpstan-ignore-next-line Left side of && is always true.
                     if ($parser && method_exists($parser, 'input')) {
                         while ($recvBuffer !== '') {
                             $len = $parser::input($recvBuffer, $connection);

@@ -65,9 +65,7 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
     public function send(mixed $sendBuffer, bool $raw = false): bool|null
     {
         if (false === $raw && $this->protocol) {
-            /** @var ProtocolInterface $parser */
-            $parser = $this->protocol;
-            $sendBuffer = $parser::encode($sendBuffer, $this);
+            $sendBuffer = $this->protocol::encode($sendBuffer, $this);
             if ($sendBuffer === '') {
                 return null;
             }
