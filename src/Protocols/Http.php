@@ -133,7 +133,7 @@ class Http
             $request = $requests[$buffer];
             $request->connection = $connection;
             $connection->request = $request;
-            $request->properties = [];
+            $request->destroy();
             return $request;
         }
         $request = new static::$requestClass($buffer);
@@ -160,7 +160,7 @@ class Http
     {
         if (isset($connection->request)) {
             $request = $connection->request;
-            $request->session = $request->connection = $connection->request = null;
+            $request->connection = $connection->request = null;
         }
 
         if (!is_object($response)) {

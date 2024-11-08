@@ -163,7 +163,6 @@ class Session
      */
     public function __construct(string $sessionId)
     {
-        static::checkSessionId($sessionId);
         if (static::$handler === null) {
             static::initHandler();
         }
@@ -449,17 +448,6 @@ class Session
         }
     }
 
-    /**
-     * Check session id.
-     *
-     * @param string $sessionId
-     */
-    protected static function checkSessionId(string $sessionId): void
-    {
-        if (!preg_match('/^[a-zA-Z0-9"]+$/', $sessionId)) {
-            throw new RuntimeException("session_id $sessionId is invalid");
-        }
-    }
 }
 
 // Init session.

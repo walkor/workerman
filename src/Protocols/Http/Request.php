@@ -107,11 +107,11 @@ class Request implements Stringable
     protected bool $isSafe = true;
 
     /**
-     * Session id.
+     * Context.
      *
-     * @var mixed
+     * @var array
      */
-    protected mixed $sid;
+    public array $context = [];
 
     /**
      * Request constructor.
@@ -309,7 +309,7 @@ class Request implements Stringable
      */
     public function session(): Session
     {
-        return $this->session ??= new Session($this->sessionId());
+        return $this->context['session'] ??= new Session($this->sessionId());
     }
 
     /**
@@ -322,12 +322,13 @@ class Request implements Stringable
     public function sessionId(?string $sessionId = null): string
     {
         if ($sessionId) {
-            unset($this->sid);
+            unset($this->context['sid']);
         }
-        if (!isset($this->sid)) {
+        if (!isset($this->context['sid'])) {
             $sessionName = Session::$name;
             $sid = $sessionId ? '' : $this->cookie($sessionName);
-            if ($sid === '' || $sid === null) {
+            $sid = $this->isValidSessionId($sid) ? $sid : '';
+            if ($sid === '') {
                 if (!$this->connection) {
                     throw new RuntimeException('Request->session() fail, header already send');
                 }
@@ -335,9 +336,20 @@ class Request implements Stringable
                 $cookieParams = Session::getCookieParams();
                 $this->setSidCookie($sessionName, $sid, $cookieParams);
             }
-            $this->sid = $sid;
+            $this->context['sid'] = $sid;
         }
-        return $this->sid;
+        return $this->context['sid'];
+    }
+
+    /**
+     * Check if session id is valid.
+     *
+     * @param mixed $sessionId
+     * @return bool
+     */
+    public function isValidSessionId(mixed $sessionId): bool
+    {
+        return is_string($sessionId) && preg_match('/^[a-zA-Z0-9"]+$/', $sessionId);
     }
 
     /**
@@ -738,12 +750,18 @@ class Request implements Stringable
     }
 
     /**
-     * __destruct.
+     * Destroy.
      *
      * @return void
      */
-    public function __destruct()
+    public function destroy(): void
     {
+        if ($this->context) {
+            $this->context  = [];
+        }
+        if ($this->properties) {
+            $this->properties = [];
+        }
         if (isset($this->data['files']) && $this->isSafe) {
             clearstatcache();
             array_walk_recursive($this->data['files'], function ($value, $key) {
