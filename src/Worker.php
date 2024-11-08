@@ -570,7 +570,53 @@ class Worker
     {
         // Only for cli and micro.
         if (!in_array(PHP_SAPI, ['cli', 'micro'])) {
-            exit("Only run in command line mode\n");
+            exit("Only run in command line mode" . PHP_EOL);
+        }
+        // Check pcntl and posix extension for unix.
+        if (DIRECTORY_SEPARATOR === '/') {
+            foreach (['pcntl', 'posix'] as $name) {
+                if (!extension_loaded($name)) {
+                    exit("Please install $name extension" . PHP_EOL);
+                }
+            }
+        }
+        // Check disable functions.
+        $disabledFunctions = explode(',', ini_get('disable_functions'));
+        $disabledFunctions = array_map('trim', $disabledFunctions);
+        $functionsToCheck = [
+            'stream_socket_server',
+            'stream_socket_accept',
+            'stream_socket_client',
+            'pcntl_signal_dispatch',
+            'pcntl_signal',
+            'pcntl_alarm',
+            'pcntl_fork',
+            'pcntl_wait',
+            'posix_getuid',
+            'posix_getpwuid',
+            'posix_kill',
+            'posix_setsid',
+            'posix_getpid',
+            'posix_getpwnam',
+            'posix_getgrnam',
+            'posix_getgid',
+            'posix_setgid',
+            'posix_initgroups',
+            'posix_setuid',
+            'posix_isatty',
+            'proc_open',
+            'proc_get_status',
+            'proc_close',
+            'shell_exec',
+            'exec',
+            'putenv',
+            'getenv',
+        ];
+        $disabled = array_intersect($functionsToCheck, $disabledFunctions);
+        if (!empty($disabled)) {
+            $iniFilePath = (string)php_ini_loaded_file();
+            exit('Notice: '. implode(',', $disabled) . " are disabled by disable_functions. " . PHP_EOL
+                . "Please remove them from disable_functions in $iniFilePath" . PHP_EOL);
         }
     }
 
