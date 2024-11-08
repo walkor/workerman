@@ -574,6 +574,11 @@ class Worker
         }
     }
 
+    /**
+     * Init stdout.
+     *
+     * @return void
+     */
     private static function initStdOut(): void
     {
         $defaultStream = fn () => defined('STDOUT') ? STDOUT : (@fopen('php://stdout', 'w') ?: fopen('php://output', 'w'));
@@ -623,6 +628,9 @@ class Worker
             static::safeEcho(sprintf("%s \"%s\" in file %s on line %d\n", static::getErrorType($code), $msg, $file, $line));
             return true;
         });
+
+        // $_SERVER.
+        $_SERVER['SERVER_SOFTWARE'] = 'Workerman/' . static::VERSION;
 
         // Start file.
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
@@ -842,17 +850,19 @@ class Worker
         if (in_array('-q', $tmpArgv)) {
             return;
         }
-        $jitStatus = function_exists('opcache_get_status') && (opcache_get_status()['jit']['on'] ?? false) === true ? 'on' : 'off';
+
+
+        $lineVersion = static::getVersionLine();
+        // For windows
         if (DIRECTORY_SEPARATOR !== '/') {
             static::safeEcho("---------------------------------------------- WORKERMAN -----------------------------------------------\r\n");
-            static::safeEcho('Workerman version:'. static::VERSION. '          PHP version:'. PHP_VERSION . " (Jit $jitStatus)\r\n");
+            static::safeEcho($lineVersion);
             static::safeEcho("----------------------------------------------- WORKERS ------------------------------------------------\r\n");
             static::safeEcho("worker                                          listen                              processes   status\r\n");
             return;
         }
 
-        //show version
-        $lineVersion = 'Workerman version:' . static::VERSION . str_pad('PHP version:', 16, ' ', STR_PAD_LEFT) . PHP_VERSION . " (Jit $jitStatus)" . PHP_EOL;
+        // For unix
         !defined('LINE_VERSION_LENGTH') && define('LINE_VERSION_LENGTH', strlen($lineVersion));
         $totalLength = static::getSingleLineTotalLength();
         $lineOne = '<n>' . str_pad('<w> WORKERMAN </w>', $totalLength + strlen('<w></w>'), '-', STR_PAD_BOTH) . '</n>' . PHP_EOL;
@@ -893,6 +903,19 @@ class Worker
         } else {
             static::safeEcho("Press Ctrl+C to stop. Start success.\n");
         }
+    }
+
+    /**
+     * @return string
+     */
+    protected static function getVersionLine(): string
+    {
+        //Show version
+        $jitStatus = function_exists('opcache_get_status') && (opcache_get_status()['jit']['on'] ?? false) === true ? 'on' : 'off';
+        $version = str_pad('Workerman/' . static::VERSION, 24);
+        $version .= str_pad('PHP/' . PHP_VERSION . ' (Jit ' . $jitStatus . ')', 30);
+        $version .= php_uname('s') . '/' . php_uname('r') . PHP_EOL;
+        return $version;
     }
 
     /**
@@ -1975,8 +1998,7 @@ class Worker
                 (static::$daemonize ? "Start worker in DAEMON mode." : "Start worker in DEBUG mode.") . "\n", FILE_APPEND);
             file_put_contents(static::$statisticsFile,
                 "---------------------------------------------------GLOBAL STATUS---------------------------------------------------------\n", FILE_APPEND);
-            file_put_contents(static::$statisticsFile,
-                'Workerman version:' . static::VERSION . "          PHP version:" . PHP_VERSION . "\n", FILE_APPEND);
+            file_put_contents(static::$statisticsFile, static::getVersionLine(), FILE_APPEND);
             file_put_contents(static::$statisticsFile, 'start time:' . date('Y-m-d H:i:s',
                     static::$globalStatistics['start_timestamp'])
                 . '   run ' . floor((time() - static::$globalStatistics['start_timestamp']) / (24 * 60 * 60))
