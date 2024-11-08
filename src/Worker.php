@@ -1189,8 +1189,8 @@ class Worker
         foreach ($workerInfo as $pid => $info) {
             if (!isset($dataWaitingSort[$pid])) {
                 $statusStr .= "$pid\t" . str_pad('N/A', 7) . " "
-                    . str_pad($info['listen'], static::getUiColumnLength('maxSocketNameLength')) . " "
-                    . str_pad((string)$info['name'], static::getUiColumnLength('maxWorkerNameLength')) . " "
+                    . str_pad($info['listen'], $maxLen1) . " "
+                    . str_pad((string)$info['name'], $maxLen2) . " "
                     . str_pad('N/A', 11) . " " . str_pad('N/A', 9) . " "
                     . str_pad('N/A', 7) . " " . str_pad('N/A', 13) . " N/A    [busy] \n";
                 continue;
