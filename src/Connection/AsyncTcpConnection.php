@@ -385,9 +385,14 @@ class AsyncTcpConnection extends TcpConnection
             }
             // Try to open keepalive for tcp and disable Nagle algorithm.
             if (function_exists('socket_import_stream') && $this->transport === 'tcp') {
-                $rawSocket = socket_import_stream($this->socket);
-                socket_set_option($rawSocket, SOL_SOCKET, SO_KEEPALIVE, 1);
-                socket_set_option($rawSocket, SOL_TCP, TCP_NODELAY, 1);
+                $socket = socket_import_stream($this->socket);
+                socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
+                socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
+                if (defined('TCP_KEEPIDLE')) {
+                    socket_set_option($socket, SOL_TCP, TCP_KEEPIDLE, static::TCP_KEEPALIVE_INTERVAL);
+                    socket_set_option($socket, SOL_TCP, TCP_KEEPINTVL, static::TCP_KEEPALIVE_INTERVAL);
+                    socket_set_option($socket, SOL_TCP, TCP_KEEPCNT, 1);
+                }
             }
             // SSL handshake.
             if ($this->transport === 'ssl') {

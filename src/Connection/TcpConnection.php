@@ -117,6 +117,11 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public const MAX_CACHE_SIZE = 512;
 
     /**
+     * Tcp keepalive interval.
+     */
+    public const TCP_KEEPALIVE_INTERVAL = 55;
+
+    /**
      * Emitted when socket connection is successfully established.
      *
      * @var ?callable
@@ -1060,6 +1065,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             if ($this->worker) {
                 unset($this->worker->connections[$this->realId]);
             }
+            $this->worker = null;
             unset(static::$connections[$this->realId]);
         }
     }

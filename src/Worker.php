@@ -555,6 +555,11 @@ class Worker
             $this->socketContext = stream_context_create($socketContext);
         }
 
+        // Set an empty onMessage callback.
+        $this->onMessage = function () {
+            // Empty.
+        };
+
     }
 
     /**
@@ -2346,6 +2351,11 @@ class Worker
                 $socket = socket_import_stream($this->mainSocket);
                 socket_set_option($socket, SOL_SOCKET, SO_KEEPALIVE, 1);
                 socket_set_option($socket, SOL_TCP, TCP_NODELAY, 1);
+                if (defined('TCP_KEEPIDLE')) {
+                    socket_set_option($socket, SOL_TCP, TCP_KEEPIDLE, TcpConnection::TCP_KEEPALIVE_INTERVAL);
+                    socket_set_option($socket, SOL_TCP, TCP_KEEPINTVL, TcpConnection::TCP_KEEPALIVE_INTERVAL);
+                    socket_set_option($socket, SOL_TCP, TCP_KEEPCNT, 1);
+                }
                 restore_error_handler();
             }
 

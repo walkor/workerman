@@ -60,13 +60,6 @@ class Request implements Stringable
     public ?TcpConnection $connection = null;
 
     /**
-     * Session instance.
-     *
-     * @var ?Session
-     */
-    public ?Session $session = null;
-
-    /**
      * @var int
      */
     public static int $maxFileUploads = 1024;
