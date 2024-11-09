@@ -713,17 +713,17 @@ class Worker
         $startFilePrefix = hash('xxh64', static::$startFile);
 
         // Pid file.
-        static::$pidFile = empty(static::$pidFile) ? sprintf('%s/workerman.%s.pid', dirname(__DIR__), $startFilePrefix) : static::$pidFile;
+        static::$pidFile ??= sprintf('%s/workerman.%s.pid', dirname(__DIR__), $startFilePrefix);
 
         // Status file.
-        static::$statusFile = empty(static::$statusFile) ? sprintf('%s/workerman.%s.status', dirname(__DIR__), $startFilePrefix) : static::$statusFile;
+        static::$statusFile ??= sprintf('%s/workerman.%s.status', dirname(__DIR__), $startFilePrefix);
         static::$statisticsFile ??= static::$statusFile;
         static::$connectionsFile ??= static::$statusFile . '.connection';
 
         // Log file.
-        static::$logFile = empty(static::$logFile) ? sprintf('%s/workerman.log', dirname(__DIR__, 2)) : static::$logFile;
+        static::$logFile ??= sprintf('%s/workerman.log', dirname(__DIR__, 2));
 
-        if (!is_file(static::$logFile) && static::$logFile !== '/dev/null') {
+        if (static::$logFile !== '/dev/null' && !is_file(static::$logFile)) {
             // if /runtime/logs  default folder not exists
             if (!is_dir(dirname(static::$logFile))) {
                 @mkdir(dirname(static::$logFile), 0777, true);
