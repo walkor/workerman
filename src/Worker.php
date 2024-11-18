@@ -314,6 +314,13 @@ class Worker
     public static string $logFile;
 
     /**
+     * Log in JSON.
+     *
+     * @var bool
+     */
+    public static bool $jsonLog = false;
+
+    /**
      * Global event loop.
      *
      * @var ?EventInterface
@@ -1048,7 +1055,7 @@ class Worker
 
         // Check argv;
         $startFile = basename(static::$startFile);
-        $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in USER mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
+        $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in USER mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse switch -d to show live status.\n\t\tUse flag -jl to print log in JSON.\\nconnections\tGet worker connections.\n";
         $availableCommands = [
             'start',
             'stop',
@@ -1061,6 +1068,8 @@ class Worker
             '-d',
             '-g'
         ];
+        $availableLog = ['-jl'];
+
         $command = $mode = '';
         foreach (static::getArgv() as $value) {
             if (!$command && in_array($value, $availableCommands)) {
@@ -1068,6 +1077,9 @@ class Worker
             }
             if (!$mode && in_array($value, $availableMode)) {
                 $mode = $value;
+            }
+            if (in_array($value, $availableLog)) {
+                static::$jsonLog = true;
             }
         }
 
@@ -1287,7 +1299,119 @@ class Worker
             . str_pad((string)$totalConnections, 11) . " " . str_pad((string)$totalFails, 9) . " "
             . str_pad((string)$totalTimers, 7) . " " . str_pad((string)$totalRequests, 13) . " "
             . str_pad((string)$totalQps, 6) . " [Summary] \n";
-        return $statusStr;
+         return ( static::$jsonLog === true ? self::formatConnectionStatusDataJson($statusStr) : $statusStr );
+    }
+
+    protected static function formatConnectionStatusDataJson( string $statusStr ): string
+    {
+        $gsKey = 'Global Status';
+        $pKey = 'Processes';
+        $arr = [ $gsKey => [], $pKey => ['Records' => []] ];
+        $currStatus = null;
+        $processKeys = [];
+
+        $lines = explode("\n", $statusStr );
+
+        foreach($lines as $line){
+            $matches = [];
+
+            if(preg_match('/GLOBAL STATUS/', $line)){
+                $currStatus = 'GLOBAL';
+                continue;
+            } elseif(preg_match('/^worker_name\s+exit_status\s+exit_count/', $line) && $currStatus === 'GLOBAL') {
+                $currStatus = 'WORKER';
+                continue;
+            } elseif(preg_match('/PROCESS STATUS/', $line) && $currStatus === 'WORKER') {
+                $currStatus = 'PROCESS';
+                continue;
+            } elseif(preg_match('/PROCESS STATUS/', $line) && $currStatus === 'PROCESS') {
+                $currStatus = 'SUMMARY';
+                continue;
+            }
+
+            if( $currStatus === 'GLOBAL' ){
+                if( preg_match('/^Workerman version:(\S+)\s+PHP version:(\S+)/', $line, $matches ) &&
+                        array_key_exists(1,$matches) && array_key_exists(2,$matches) ){
+                    $arr[$gsKey]['Versions'] = ['Workerman' => $matches[1], 'PHP' => $matches[2]];
+                } elseif( preg_match('/^start time:(.*?)\s+run(.*)/', $line, $matches ) &&
+                        array_key_exists(1,$matches) && array_key_exists(2,$matches) ){
+                    $arr[$gsKey]['Run Stats'] = [ 'Start Time' => rtrim($matches[1]),
+                        'Uptime' => trim($matches[2]) ];
+                } elseif( preg_match('/^load average:\s(\S+,\s\S+,\s\S+)\s+event-loop:(\S+)/', $line, $matches ) &&
+                        array_key_exists(1,$matches) && array_key_exists(2,$matches) ){
+                    $arr[$gsKey]['Load Average'] = $matches[1];
+                    $arr[$gsKey]['Event'] = $matches[2];
+                } elseif( preg_match('/^(\d+) workers\s+(\d+) processes/', $line, $matches ) &&
+                        array_key_exists(1,$matches) && array_key_exists(2,$matches) ){
+                    $arr[$gsKey]['Workers'] = [ 'Count' => intval($matches[1]), 'Processes' => intval($matches[2]),
+                        'Records' => [] ];
+                    $arr[$pKey]['Count'] = intval($matches[2]);
+                }
+            } elseif( $currStatus === 'WORKER' ){
+
+                if( preg_match('/^(.*?)\s(\d)\s+(\d)/', $line, $matches ) &&
+                        array_key_exists(1,$matches) && array_key_exists(2,$matches) && array_key_exists(3,$matches) ){
+
+                    $arr[$gsKey]['Workers']['Records'][] = ['Name' => rtrim($matches[1]),
+                                                                    'Exit Status' => intval($matches[2]),
+                                                                    'Exit Count' => intval($matches[3])];
+                }
+            } elseif( $currStatus === 'PROCESS' ){
+                if(preg_match('/^pid\s+memory\s+listening/', $line)) {
+                    preg_match('/^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/',
+                          $line,
+                          $matches );
+
+                    if( count($matches) < 3 ){
+                        continue;
+                    }
+
+                    for($i = 1; $i < count($matches); $i++ ){
+                        $processKeys[$i] = $matches[$i];
+                    }
+
+                } elseif( preg_match('/^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(.*)/',
+                          $line,
+                          $matches ) ){
+
+                    if( count($processKeys) !== count($matches) - 1  || count($processKeys) < 3 ){
+                        //header row column count did not match row count
+                        continue;
+                    }
+                    $pArr = [];
+
+                    for( $i = 1; $i <= count($processKeys); $i++ ){
+                        $pArr[$processKeys[$i]] = ( is_numeric($matches[$i]) ? intval($matches[$i]) : $matches[$i] );
+                    }
+                    $arr[$pKey]['Records'][] = $pArr;
+                }
+
+            } elseif( $currStatus === 'SUMMARY') {
+                if( preg_match('/^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(.*)/',
+                          $line,
+                          $matches ) ){
+
+                    if( count($processKeys) !== count($matches) - 1 || count($processKeys) < 3 ){
+                        //header row column count did not match row count
+                        continue;
+                    }
+
+                    $pArr = [];
+
+                    for( $i = 2; $i < count($processKeys); $i++ ){
+                        if( $matches[$i] === '-' ){
+                            continue;
+                        }
+                        $pArr[$processKeys[$i]] = ( is_numeric($matches[$i]) ? intval($matches[$i]) : $matches[$i] );
+                    }
+
+                    $arr[$pKey]['Summary'] = $pArr;
+                }
+            }
+        }
+
+        return json_encode($arr, JSON_PRETTY_PRINT);
+
     }
 
     protected static function formatConnectionStatusData(): string

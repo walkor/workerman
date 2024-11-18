@@ -11,3 +11,4 @@ phpunit.xml
 /phpstan.neon
 /*.pid
 /*.pid.lock
+nbproject/
