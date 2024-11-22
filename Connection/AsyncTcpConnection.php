@@ -182,8 +182,8 @@ class AsyncTcpConnection extends TcpConnection
         }
         $this->_status           = self::STATUS_CONNECTING;
         $this->_connectStartTime = \microtime(true);
-        set_error_handler(function($errno, $msg) {
-            trigger_error($msg, E_USER_WARNING);
+        set_error_handler(function() {
+            return false;
         });
         if ($this->transport !== 'unix') {
             if (!$this->_remotePort) {
