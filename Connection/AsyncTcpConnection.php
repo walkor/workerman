@@ -182,6 +182,9 @@ class AsyncTcpConnection extends TcpConnection
         }
         $this->_status           = self::STATUS_CONNECTING;
         $this->_connectStartTime = \microtime(true);
+        set_error_handler(function() {
+            return false;
+        });
         if ($this->transport !== 'unix') {
             if (!$this->_remotePort) {
                 $this->_remotePort = $this->transport === 'ssl' ? 443 : 80;
@@ -200,6 +203,7 @@ class AsyncTcpConnection extends TcpConnection
             $this->_socket = \stream_socket_client("{$this->transport}://{$this->_remoteAddress}", $errno, $errstr, 0,
                 \STREAM_CLIENT_ASYNC_CONNECT);
         }
+        restore_error_handler();
         // If failed attempt to emit onError callback.
         if (!$this->_socket || !\is_resource($this->_socket)) {
             $this->emitError(\WORKERMAN_CONNECT_FAIL, $errstr);
