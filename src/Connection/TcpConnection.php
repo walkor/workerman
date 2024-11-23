@@ -245,6 +245,13 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public ?Request $request = null;
 
     /**
+     * Is safe.
+     *
+     * @var bool
+     */
+    protected bool $isSafe = true;
+
+    /**
      * Default send buffer size.
      *
      * @var int
@@ -1103,6 +1110,16 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     }
 
     /**
+     * __wakeup.
+     *
+     * @return void
+     */
+    public function __wakeup()
+    {
+        $this->isSafe = false;
+    }
+
+    /**
      * Destruct.
      *
      * @return void
@@ -1110,6 +1127,9 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public function __destruct()
     {
         static $mod;
+        if (!$this->isSafe) {
+            return;
+        }
         self::$statistics['connection_count']--;
         if (Worker::getGracefulStop()) {
             $mod ??= ceil((self::$statistics['connection_count'] + 1) / 3);
