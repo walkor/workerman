@@ -256,6 +256,13 @@ class TcpConnection extends ConnectionInterface
     public static $connections = array();
 
     /**
+     * Is safe.
+     *
+     * @var bool
+     */
+    protected $_isSafe = true;
+
+    /**
      * Status to string.
      *
      * @var array
@@ -957,6 +964,17 @@ class TcpConnection extends ConnectionInterface
         }
     }
 
+
+    /**
+     * __wakeup.
+     *
+     * @return void
+     */
+    public function __wakeup()
+    {
+        $this->_isSafe = false;
+    }
+
     /**
      * Destruct.
      *
@@ -965,6 +983,9 @@ class TcpConnection extends ConnectionInterface
     public function __destruct()
     {
         static $mod;
+        if (!$this->_isSafe) {
+            return;
+        }
         self::$statistics['connection_count']--;
         if (Worker::getGracefulStop()) {
             if (!isset($mod)) {
