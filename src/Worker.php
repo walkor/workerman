@@ -836,7 +836,7 @@ class Worker
 
             // Event-loop name.
             $eventLoopName = $worker->eventLoop ?: static::$eventLoopClass;
-            $worker->context->eventLoopName = str_starts_with($eventLoopName, 'Workerman\\Events\\') ? strtolower(substr($eventLoopName, 17)) : $eventLoopName;
+            $worker->context->eventLoopName = strtolower(substr($eventLoopName, strrpos($eventLoopName, '\\') + 1));
 
             // Status name.
             $worker->context->statusState = '<g> [OK] </g>';
@@ -1004,7 +1004,7 @@ class Worker
     public static function getUiColumns(): array
     {
         return [
-            'event' => 'eventLoopName',
+            'event-loop' => 'eventLoopName',
             'proto' => 'transport',
             'user' => 'user',
             'worker' => 'name',
@@ -1048,7 +1048,7 @@ class Worker
 
         // Check argv;
         $startFile = basename(static::$startFile);
-        $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in USER mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
+        $usage = "Usage: php yourfile <command> [mode]\nCommands: \nstart\t\tStart worker in DEBUG mode.\n\t\tUse mode -d to start in DAEMON mode.\nstop\t\tStop worker.\n\t\tUse mode -g to stop gracefully.\nrestart\t\tRestart workers.\n\t\tUse mode -d to start in DAEMON mode.\n\t\tUse mode -g to stop gracefully.\nreload\t\tReload codes.\n\t\tUse mode -g to reload gracefully.\nstatus\t\tGet worker status.\n\t\tUse mode -d to show live status.\nconnections\tGet worker connections.\n";
         $availableCommands = [
             'start',
             'stop',
@@ -1081,7 +1081,7 @@ class Worker
             if ($mode === '-d' || static::$daemonize) {
                 $modeStr = 'in DAEMON mode';
             } else {
-                $modeStr = 'in USER mode';
+                $modeStr = 'in DEBUG mode';
             }
         }
         static::log("Workerman[$startFile] $command $modeStr");
@@ -1344,12 +1344,12 @@ class Worker
             case SIGHUP:
             case SIGTSTP:
                 static::$gracefulStop = false;
-                static::stopAll(0, "received signal $signal");
+                static::stopAll(0, 'received signal ' . static::getSignalName($signal));
                 break;
             // Graceful stop.
             case SIGQUIT:
                 static::$gracefulStop = true;
-                static::stopAll(0, "received signal $signal");
+                static::stopAll(0, 'received signal ' . static::getSignalName($signal));
                 break;
             // Reload.
             case SIGUSR2:
@@ -1370,6 +1370,28 @@ class Worker
                 static::writeConnectionsStatisticsToStatusFile();
                 break;
         }
+    }
+
+    /**
+     * Get signal name.
+     *
+     * @param int $signal
+     * @return string
+     */
+    protected static function getSignalName(int $signal): string
+    {
+        return match ($signal) {
+            SIGINT => 'SIGINT',
+            SIGTERM => 'SIGTERM',
+            SIGHUP => 'SIGHUP',
+            SIGTSTP => 'SIGTSTP',
+            SIGQUIT => 'SIGQUIT',
+            SIGUSR1 => 'SIGUSR1',
+            SIGUSR2 => 'SIGUSR2',
+            SIGIOT => 'SIGIOT',
+            SIGIO => 'SIGIO',
+            default => $signal,
+        };
     }
 
     /**
@@ -2084,20 +2106,20 @@ class Worker
                 count(static::$pidMap) . ' workers    ' . count(static::getAllWorkerPids()) . " processes\n",
                 FILE_APPEND);
             file_put_contents(static::$statisticsFile,
-                str_pad('name', static::getUiColumnLength('maxWorkerNameLength')) . "     event        exit_status     exit_count\n", FILE_APPEND);
+                str_pad('name', static::getUiColumnLength('maxWorkerNameLength')) . "     event-loop     exit_status     exit_count\n", FILE_APPEND);
             foreach (static::$pidMap as $workerId => $workerPidArray) {
                 $worker = static::$workers[$workerId];
                 if (isset(static::$globalStatistics['worker_exit_info'][$workerId])) {
                     foreach (static::$globalStatistics['worker_exit_info'][$workerId] as $workerExitStatus => $workerExitCount) {
                         file_put_contents(static::$statisticsFile,
                             str_pad($worker->name, static::getUiColumnLength('maxWorkerNameLength')) . "     " .
-                            str_pad($worker->context->eventLoopName, 12) . " " .
+                            str_pad($worker->context->eventLoopName, 14) . " " .
                             str_pad((string)$workerExitStatus, 16) . str_pad((string)$workerExitCount, 16) . "\n", FILE_APPEND);
                     }
                 } else {
                     file_put_contents(static::$statisticsFile,
                         str_pad($worker->name, static::getUiColumnLength('maxWorkerNameLength')) . "     " .
-                        str_pad($worker->context->eventLoopName, 12) . " " .
+                        str_pad($worker->context->eventLoopName, 14) . " " .
                         str_pad('0', 16) . str_pad('0', 16) . "\n", FILE_APPEND);
                 }
             }
