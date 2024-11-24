@@ -201,7 +201,7 @@ class Request implements Stringable
      * @param string|null $name
      * @return array|null
      */
-    public function file(?string $name = null)
+    public function file(?string $name = null): mixed
     {
         clearstatcache();
         if (!empty($this->data['files'])) {
