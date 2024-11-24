@@ -169,7 +169,7 @@ class Request
      * @param string|null $name
      * @return array|null
      */
-    public function file($name = null)
+    public function file(?string $name = null): mixed
     {
         if (!isset($this->_data['files'])) {
             $this->parsePost();
