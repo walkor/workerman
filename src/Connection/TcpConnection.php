@@ -19,7 +19,10 @@ use JsonSerializable;
 use RuntimeException;
 use stdClass;
 use Throwable;
+use Workerman\Events\Ev;
+use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
+use Workerman\Events\Select;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\ProtocolInterface;
 use Workerman\Worker;
@@ -349,6 +352,14 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      */
     public static array $connections = [];
 
+
+    /**
+     * Reuse request.
+     *
+     * @var bool
+     */
+    protected static bool $reuseRequest = false;
+
     /**
      * Status to string.
      *
@@ -675,7 +686,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                             $this->error($e);
                         }
                         $request->destroy();
-                        $requests[$buffer] = clone $request;
+                        $requests[$buffer] = static::$reuseRequest ? $request : clone $request;
                         return;
                     }
                     try {
@@ -1085,6 +1096,16 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public static function enableCache(bool $value = true): void
     {
         static::$enableCache = $value;
+    }
+
+    /**
+     * Init.
+     *
+     * @return void
+     */
+    public static function init(): void
+    {
+        static::$reuseRequest = in_array(get_class(Worker::$globalEvent), [Event::class, Select::class, Ev::class]);
     }
 
     /**

@@ -59,7 +59,7 @@ class Worker
      *
      * @var string
      */
-    final public const VERSION = '5.0.0-rc.3';
+    final public const VERSION = '5.0.0-rc.4';
 
     /**
      * Status starting.
@@ -1708,6 +1708,9 @@ class Worker
 
             // Init Timer.
             Timer::init(static::$globalEvent);
+
+            // Init TcpConnection.
+            TcpConnection::init();
 
             restore_error_handler();
 
