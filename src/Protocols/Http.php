@@ -20,6 +20,7 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
 use function clearstatcache;
+use function count;
 use function explode;
 use function filesize;
 use function fopen;
@@ -80,6 +81,10 @@ class Http
      */
     public static function input(string $buffer, TcpConnection $connection): int
     {
+        static $input = [];
+        if (isset($input[$buffer])) {
+            return $input[$buffer];
+        }
         $crlfPos = strpos($buffer, "\r\n\r\n");
         if (false === $crlfPos) {
             // Judge whether the package length exceeds the limit.
@@ -115,6 +120,14 @@ class Http
             $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
             return 0;
         }
+
+        if (!isset($buffer[TcpConnection::MAX_CACHE_STRING_LENGTH])) {
+            $input[$buffer] = $length;
+            if (count($input) > TcpConnection::MAX_CACHE_SIZE) {
+                unset($input[key($input)]);
+            }
+        }
+
         return $length;
     }
 
@@ -139,7 +152,7 @@ class Http
         $request = new static::$requestClass($buffer);
         if (!isset($buffer[TcpConnection::MAX_CACHE_STRING_LENGTH])) {
             $requests[$buffer] = $request;
-            if (\count($requests) > TcpConnection::MAX_CACHE_SIZE) {
+            if (count($requests) > TcpConnection::MAX_CACHE_SIZE) {
                 unset($requests[key($requests)]);
             }
             $request = clone $request;
