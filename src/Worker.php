@@ -710,23 +710,33 @@ class Worker
         // Start file.
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
         static::$startFile ??= end($backtrace)['file'];
-        $startFilePrefix = hash('xxh64', static::$startFile);
+        $startFilePrefix = basename(static::$startFile);
+        $startFileDir = dirname(static::$startFile);
+        
+        // Compatible with older workerman versions for pid file.
+        if (empty(static::$pidFile)) {
+            $unique_prefix = \str_replace('/', '_', static::$startFile);
+            $file = __DIR__ . "/../../$unique_prefix.pid";
+            if (is_file($file)) {
+                static::$pidFile = $file;
+            }
+        }
 
         // Pid file.
-        static::$pidFile ??= sprintf('%s/workerman.%s.pid', dirname(__DIR__), $startFilePrefix);
+        static::$pidFile ??= sprintf('%s/workerman.%s.pid', $startFileDir, $startFilePrefix);
 
         // Status file.
-        static::$statusFile ??= sprintf('%s/workerman.%s.status', dirname(__DIR__), $startFilePrefix);
+        static::$statusFile ??= sprintf('%s/workerman.%s.status', $startFileDir, $startFilePrefix);
         static::$statisticsFile ??= static::$statusFile;
         static::$connectionsFile ??= static::$statusFile . '.connection';
 
         // Log file.
-        static::$logFile ??= sprintf('%s/workerman.log', dirname(__DIR__, 2));
+        static::$logFile ??= sprintf('%s/workerman.log', $startFileDir);
 
         if (static::$logFile !== '/dev/null' && !is_file(static::$logFile)) {
             // if /runtime/logs  default folder not exists
             if (!is_dir(dirname(static::$logFile))) {
-                @mkdir(dirname(static::$logFile), 0777, true);
+                mkdir(dirname(static::$logFile), 0777, true);
             }
             touch(static::$logFile);
             chmod(static::$logFile, 0644);
@@ -749,6 +759,8 @@ class Worker
 
         // Timer init.
         Timer::init();
+
+        restore_error_handler();
     }
 
     /**
@@ -1895,15 +1907,20 @@ class Worker
      */
     protected static function exitAndClearAll(): void
     {
+        clearstatcache();
         foreach (static::$workers as $worker) {
             $socketName = $worker->getSocketName();
             if ($worker->transport === 'unix' && $socketName) {
                 [, $address] = explode(':', $socketName, 2);
                 $address = substr($address, strpos($address, '/') + 2);
-                @unlink($address);
+                if (file_exists($address)) {
+                    @unlink($address);
+                }
             }
         }
-        @unlink(static::$pidFile);
+        if (file_exists(static::$pidFile)) {
+            @unlink(static::$pidFile);
+        }
         static::log("Workerman[" . basename(static::$startFile) . "] has been stopped");
         if (static::$onMasterStop) {
             (static::$onMasterStop)();
