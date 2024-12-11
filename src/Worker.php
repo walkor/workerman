@@ -709,7 +709,7 @@ class Worker
 
         // Start file.
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        static::$startFile ??= end($backtrace)['file'];
+        static::$startFile = static::$startFile ?: end($backtrace)['file'];
         $startFilePrefix = basename(static::$startFile);
         $startFileDir = dirname(static::$startFile);
         
