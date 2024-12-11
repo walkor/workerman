@@ -59,7 +59,7 @@ class Worker
      *
      * @var string
      */
-    final public const VERSION = '5.0.0-rc.4';
+    final public const VERSION = '5.0.0-rc.5';
 
     /**
      * Status starting.
@@ -297,21 +297,21 @@ class Worker
      *
      * @var string
      */
-    public static string $pidFile;
+    public static string $pidFile = '';
 
     /**
      * The file used to store the master process status.
      *
      * @var string
      */
-    public static string $statusFile;
+    public static string $statusFile = '';
 
     /**
      * Log file.
      *
      * @var string
      */
-    public static string $logFile;
+    public static string $logFile = '';
 
     /**
      * Global event loop.
@@ -446,21 +446,21 @@ class Worker
      *
      * @var string
      */
-    protected static string $statisticsFile;
+    protected static string $statisticsFile = '';
 
     /**
      * The file to store status info of connections.
      *
      * @var string
      */
-    protected static string $connectionsFile;
+    protected static string $connectionsFile = '';
 
     /**
      * Start file.
      *
      * @var string
      */
-    protected static string $startFile;
+    protected static string $startFile = '';
 
     /**
      * Processes for windows.
@@ -723,15 +723,15 @@ class Worker
         }
 
         // Pid file.
-        static::$pidFile ??= sprintf('%s/workerman.%s.pid', $startFileDir, $startFilePrefix);
+        static::$pidFile = static::$pidFile ?: sprintf('%s/workerman.%s.pid', $startFileDir, $startFilePrefix);
 
         // Status file.
-        static::$statusFile ??= sprintf('%s/workerman.%s.status', $startFileDir, $startFilePrefix);
-        static::$statisticsFile ??= static::$statusFile;
-        static::$connectionsFile ??= static::$statusFile . '.connection';
+        static::$statusFile = static::$statusFile ?: sprintf('%s/workerman.%s.status', $startFileDir, $startFilePrefix);
+        static::$statisticsFile = static::$statisticsFile ?: static::$statusFile;
+        static::$connectionsFile = static::$connectionsFile ?: static::$statusFile . '.connection';
 
         // Log file.
-        static::$logFile ??= sprintf('%s/workerman.log', $startFileDir);
+        static::$logFile = static::$logFile ?: sprintf('%s/workerman.log', $startFileDir);
 
         if (static::$logFile !== '/dev/null' && !is_file(static::$logFile)) {
             // if /runtime/logs  default folder not exists
