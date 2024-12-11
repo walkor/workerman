@@ -51,4 +51,7 @@ $worker->onMessage = function (TcpConnection $connection, Request $request) {
 };
 
 Worker::$command = 'start';
+
+Worker::$pidFile = sprintf('%s/test-http-server.pid', sys_get_temp_dir());
+Worker::$logFile = sprintf('%s/test-http-server.log', sys_get_temp_dir());
 Worker::runAll();

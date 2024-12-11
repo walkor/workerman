@@ -16,5 +16,7 @@ $server->onMessage = function ($connection, $data) {
     $connection->send('received: ' . $data);
 };
 
+Worker::$pidFile = sprintf('%s/test-udp-server.pid', sys_get_temp_dir());
+Worker::$logFile = sprintf('%s/test-udp-server.log', sys_get_temp_dir());
 Worker::$command = 'start';
 Worker::runAll();

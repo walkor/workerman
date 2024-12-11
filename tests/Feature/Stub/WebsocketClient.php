@@ -19,5 +19,6 @@ $worker->onWorkerStart = function($worker) {
 };
 
 Worker::$pidFile = sprintf('%s/test-websocket-client.pid', sys_get_temp_dir());
+Worker::$logFile = sprintf('%s/test-websocket-client.log', sys_get_temp_dir());
 Worker::$command = 'start';
 Worker::runAll();

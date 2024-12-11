@@ -16,5 +16,6 @@ $worker = new Worker("websocket://127.0.0.1:8081");
 //%action%
 
 Worker::$pidFile = sprintf('%s/test-websocket-server.pid', sys_get_temp_dir());
+Worker::$logFile = sprintf('%s/test-websocket-server.log', sys_get_temp_dir());
 Worker::$command = 'start';
 Worker::runAll();
