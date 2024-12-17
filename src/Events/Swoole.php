@@ -49,6 +49,14 @@ final class Swoole implements EventInterface
     private $errorHandler = null;
 
     /**
+     * Constructor.
+     */
+    public function __construct()
+    {
+        Coroutine::set(['hook_flags' => SWOOLE_HOOK_ALL]);
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function delay(float $delay, callable $func, array $args = []): int
