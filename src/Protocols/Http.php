@@ -81,10 +81,6 @@ class Http
      */
     public static function input(string $buffer, TcpConnection $connection): int
     {
-        static $input = [];
-        if (isset($input[$buffer])) {
-            return $input[$buffer];
-        }
         $crlfPos = strpos($buffer, "\r\n\r\n");
         if (false === $crlfPos) {
             // Judge whether the package length exceeds the limit.
@@ -102,30 +98,13 @@ class Http
         }
 
         $header = substr($buffer, 0, $crlfPos);
-        if ($pos = strpos($header, "\r\nContent-Length: ")) {
-            $length += (int)substr($header, $pos + 18, 10);
-            $hasContentLength = true;
-        } else if (preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
+        if (preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
             $length += (int)$match[1];
-            $hasContentLength = true;
-        } else {
-            $hasContentLength = false;
-            if (str_contains($header, "\r\nTransfer-Encoding:")) {
-                $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
-                return 0;
-            }
         }
 
-        if ($hasContentLength && $length > $connection->maxPackageSize) {
+        if ($length > $connection->maxPackageSize) {
             $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
             return 0;
-        }
-
-        if (!isset($buffer[TcpConnection::MAX_CACHE_STRING_LENGTH])) {
-            $input[$buffer] = $length;
-            if (count($input) > TcpConnection::MAX_CACHE_SIZE) {
-                unset($input[key($input)]);
-            }
         }
 
         return $length;
