@@ -283,13 +283,6 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     protected static int $idRecorder = 1;
 
     /**
-     * Cache.
-     *
-     * @var bool
-     */
-    protected static bool $enableCache = true;
-
-    /**
      * Socket
      *
      * @var resource
@@ -674,7 +667,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         } else {
             $this->bytesRead += strlen($buffer);
             if ($this->recvBuffer === '') {
-                if (static::$enableCache && isset($requests[$buffer])) {
+                if (!isset($buffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$buffer])) {
                     ++self::$statistics['total_request'];
                     $request = $requests[$buffer];
                     if ($request instanceof Request) {
@@ -752,7 +745,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 try {
                     // Decode request buffer before Emitting onMessage callback.
                     $request = $this->protocol::decode($oneRequestBuffer, $this);
-                    if (static::$enableCache && (!is_object($request) || $request instanceof Request) && $one && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
+                    if ((!is_object($request) || $request instanceof Request) && $one && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
                         ($this->onMessage)($this, $request);
                         if ($request instanceof Request) {
                             $request->destroy();
@@ -1086,16 +1079,6 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             $this->worker = null;
             unset(static::$connections[$this->realId]);
         }
-    }
-
-    /**
-     * Enable or disable Cache.
-     *
-     * @param bool $value
-     */
-    public static function enableCache(bool $value = true): void
-    {
-        static::$enableCache = $value;
     }
 
     /**
