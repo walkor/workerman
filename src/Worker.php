@@ -1568,8 +1568,8 @@ class Worker
 
             // Create a global event loop.
             if (static::$globalEvent === null) {
-                $eventLoopClass = $worker->eventLoop ?: static::$eventLoopClass;
-                static::$globalEvent = new $eventLoopClass();
+                static::$eventLoopClass = $worker->eventLoop ?: static::$eventLoopClass;
+                static::$globalEvent = new static::$eventLoopClass();
                 static::$globalEvent->setErrorHandler(function ($exception) {
                     static::stopAll(250, $exception);
                 });
@@ -1708,8 +1708,8 @@ class Worker
 
             // Create a global event loop.
             if (static::$globalEvent === null) {
-                $eventLoopClass = $worker->eventLoop ?: static::$eventLoopClass;
-                static::$globalEvent = new $eventLoopClass();
+                static::$eventLoopClass = $worker->eventLoop ?: static::$eventLoopClass;
+                static::$globalEvent = new static::$eventLoopClass();
                 static::$globalEvent->setErrorHandler(function ($exception) {
                     static::stopAll(250, $exception);
                 });
