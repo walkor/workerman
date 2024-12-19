@@ -706,6 +706,7 @@ class Worker
 
         // $_SERVER.
         $_SERVER['SERVER_SOFTWARE'] = 'Workerman/' . static::VERSION;
+        $_SERVER['SERVER_START_TIME'] = time();
 
         // Start file.
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
