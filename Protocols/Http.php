@@ -88,61 +88,40 @@ class Http
     /**
      * Check the integrity of the package.
      *
-     * @param string $recv_buffer
+     * @param string $buffer
      * @param TcpConnection $connection
      * @return int
      */
-    public static function input($recv_buffer, TcpConnection $connection)
+    public static function input($buffer, TcpConnection $connection)
     {
-        static $input = [];
-        if (!isset($recv_buffer[512]) && isset($input[$recv_buffer])) {
-            return $input[$recv_buffer];
-        }
-        $crlf_pos = \strpos($recv_buffer, "\r\n\r\n");
-        if (false === $crlf_pos) {
+        $crlfPos = strpos($buffer, "\r\n\r\n");
+        if (false === $crlfPos) {
             // Judge whether the package length exceeds the limit.
-            if (\strlen($recv_buffer) >= 16384) {
-                $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n", true);
-                return 0;
+            if (strlen($buffer) >= 16384) {
+                $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
             }
             return 0;
         }
 
-        $length = $crlf_pos + 4;
-        $method = \strstr($recv_buffer, ' ', true);
-
-        if (!\in_array($method, ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
-            $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+        $length = $crlfPos + 4;
+        $method = strstr($buffer, ' ', true);
+        if (!in_array($method, ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
+            $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
 
-        $header = \substr($recv_buffer, 0, $crlf_pos);
-        if ($pos = \strpos($header, "\r\nContent-Length: ")) {
-            $length = $length + (int)\substr($header, $pos + 18, 10);
-            $has_content_length = true;
-        } else if (\preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
-            $length = $length + $match[1];
-            $has_content_length = true;
-        } else {
-            $has_content_length = false;
-            if (false !== stripos($header, "\r\nTransfer-Encoding:")) {
-                $connection->close("HTTP/1.1 400 Bad Request\r\n\r\n", true);
+        $header = substr($buffer, 0, $crlfPos);
+        if (preg_match('/\b(?:Transfer-Encoding\b.*)|(?:Content-Length:\s*(\d+)(?!.*\bTransfer-Encoding\b))/is', $header, $matches)) {
+            if (!isset($matches[1])) {
+                $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
                 return 0;
             }
+            $length += (int)$matches[1];
         }
 
-        if ($has_content_length) {
-            if ($length > $connection->maxPackageSize) {
-                $connection->close("HTTP/1.1 413 Request Entity Too Large\r\n\r\n", true);
-                return 0;
-            }
-        }
-
-        if (!isset($recv_buffer[512])) {
-            $input[$recv_buffer] = $length;
-            if (\count($input) > 512) {
-                unset($input[key($input)]);
-            }
+        if ($length > $connection->maxPackageSize) {
+            $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
+            return 0;
         }
 
         return $length;
@@ -151,26 +130,26 @@ class Http
     /**
      * Http decode.
      *
-     * @param string $recv_buffer
+     * @param string $buffer
      * @param TcpConnection $connection
      * @return \Workerman\Protocols\Http\Request
      */
-    public static function decode($recv_buffer, TcpConnection $connection)
+    public static function decode($buffer, TcpConnection $connection)
     {
         static $requests = array();
-        $cacheable = static::$_enableCache && !isset($recv_buffer[512]);
-        if (true === $cacheable && isset($requests[$recv_buffer])) {
-            $request = $requests[$recv_buffer];
+        $cacheable = static::$_enableCache && !isset($buffer[512]);
+        if (true === $cacheable && isset($requests[$buffer])) {
+            $request = $requests[$buffer];
             $request->connection = $connection;
             $connection->__request = $request;
             $request->properties = array();
             return $request;
         }
-        $request = new static::$_requestClass($recv_buffer);
+        $request = new static::$_requestClass($buffer);
         $request->connection = $connection;
         $connection->__request = $request;
         if (true === $cacheable) {
-            $requests[$recv_buffer] = $request;
+            $requests[$buffer] = $request;
             if (\count($requests) > 512) {
                 unset($requests[key($requests)]);
             }
