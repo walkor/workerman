@@ -98,8 +98,12 @@ class Http
         }
 
         $header = substr($buffer, 0, $crlfPos);
-        if (preg_match("/\r\ncontent-length: ?(\d+)/i", $header, $match)) {
-            $length += (int)$match[1];
+        if (preg_match('/\b(?:Transfer-Encoding\b.*)|(?:Content-Length:\s*(\d+)(?!.*\bTransfer-Encoding\b))/is', $header, $matches)) {
+            if (!isset($matches[1])) {
+                $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
+                return 0;
+            }
+            $length += (int)$matches[1];
         }
 
         if ($length > $connection->maxPackageSize) {
