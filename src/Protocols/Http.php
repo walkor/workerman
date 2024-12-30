@@ -32,6 +32,7 @@ use function ini_get;
 use function is_array;
 use function is_object;
 use function preg_match;
+use function str_starts_with;
 use function strlen;
 use function strpos;
 use function strstr;
@@ -91,13 +92,21 @@ class Http
         }
 
         $length = $crlfPos + 4;
-        $method = strstr($buffer, ' ', true);
-        if (!in_array($method, ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE', 'PUT', 'PATCH'])) {
+        $header = substr($buffer, 0, $crlfPos);
+
+        if (
+            !str_starts_with($header, 'GET ') &&
+            !str_starts_with($header, 'POST ') &&
+            !str_starts_with($header, 'OPTIONS ') &&
+            !str_starts_with($header, 'HEAD ') &&
+            !str_starts_with($header, 'DELETE ') &&
+            !str_starts_with($header, 'PUT ') &&
+            !str_starts_with($header, 'PATCH ')
+        ) {
             $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
 
-        $header = substr($buffer, 0, $crlfPos);
         if (preg_match('/\b(?:Transfer-Encoding\b.*)|(?:Content-Length:\s*(\d+)(?!.*\bTransfer-Encoding\b))/is', $header, $matches)) {
             if (!isset($matches[1])) {
                 $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
