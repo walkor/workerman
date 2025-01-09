@@ -266,7 +266,7 @@ final class Swow implements EventInterface
      */
     public function stop(): void
     {
-        Coroutine::killAll();
+        exit(0);
     }
 
     /**

@@ -48,6 +48,8 @@ final class Swoole implements EventInterface
      */
     private $errorHandler = null;
 
+    private bool $stopping = false;
+
     /**
      * Constructor.
      */
@@ -220,6 +222,10 @@ final class Swoole implements EventInterface
      */
     public function stop(): void
     {
+        if ($this->stopping) {
+            return;
+        }
+        $this->stopping = true;
         // Cancel all coroutines before Event::exit
         foreach (Coroutine::listCoroutines() as $coroutine) {
             Coroutine::cancel($coroutine);
