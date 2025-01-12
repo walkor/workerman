@@ -284,14 +284,16 @@ final class Swow implements EventInterface
      */
     private function safeCall(callable $func, array $args = []): void
     {
-        try {
-            $func(...$args);
-        } catch (\Throwable $e) {
-            if ($this->errorHandler === null) {
-                echo $e;
-            } else {
-                ($this->errorHandler)($e);
+        Coroutine::run(function () use ($func, $args): void {
+            try {
+                $func(...$args);
+            } catch (\Throwable $e) {
+                if ($this->errorHandler === null) {
+                    echo $e;
+                } else {
+                    ($this->errorHandler)($e);
+                }
             }
-        }
+        });
     }
 }
