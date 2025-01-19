@@ -610,7 +610,9 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      */
     public function pauseRecv(): void
     {
-        $this->eventLoop->offReadable($this->socket);
+        if($this->eventLoop !== null){
+            $this->eventLoop->offReadable($this->socket);
+        }
         $this->isPaused = true;
     }
 
@@ -1037,10 +1039,12 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             return;
         }
         // Remove event listener.
-        $this->eventLoop->offReadable($this->socket);
-        $this->eventLoop->offWritable($this->socket);
-        if (DIRECTORY_SEPARATOR === '\\' && method_exists($this->eventLoop, 'offExcept')) {
-            $this->eventLoop->offExcept($this->socket);
+        if($this->eventLoop !== null){
+            $this->eventLoop->offReadable($this->socket);
+            $this->eventLoop->offWritable($this->socket);
+            if (DIRECTORY_SEPARATOR === '\\' && method_exists($this->eventLoop, 'offExcept')) {
+                $this->eventLoop->offExcept($this->socket);
+            }
         }
 
         // Close socket.
