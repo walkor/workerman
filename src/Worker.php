@@ -18,7 +18,6 @@ namespace Workerman;
 
 use AllowDynamicProperties;
 use Exception;
-use Revolt\EventLoop;
 use RuntimeException;
 use stdClass;
 use Stringable;
@@ -28,9 +27,7 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
 use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
-use Workerman\Events\Fiber;
 use Workerman\Events\Select;
-use Workerman\Protocols\ProtocolInterface;
 use function defined;
 use function function_exists;
 use function is_resource;
