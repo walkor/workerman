@@ -28,7 +28,7 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
 use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
-use Workerman\Events\Revolt;
+use Workerman\Events\Fiber;
 use Workerman\Events\Select;
 use Workerman\Protocols\ProtocolInterface;
 use function defined;
@@ -59,7 +59,14 @@ class Worker
      *
      * @var string
      */
-    final public const VERSION = '5.0.1';
+    final public const VERSION = '5.1.0';
+
+    /**
+     * Status initial.
+     *
+     * @var int
+     */
+    public const STATUS_INITIAL = 0;
 
     /**
      * Status starting.
@@ -344,9 +351,9 @@ class Worker
     /**
      * EventLoopClass
      *
-     * @var class-string<EventInterface>
+     * @var ?class-string<EventInterface>
      */
-    public static string $eventLoopClass;
+    public static ?string $eventLoopClass = null;
 
     /**
      * After sending the stop command to the child process stopTimeout seconds,
@@ -432,7 +439,7 @@ class Worker
      *
      * @var int
      */
-    protected static int $status = self::STATUS_STARTING;
+    protected static int $status = self::STATUS_INITIAL;
 
     /**
      * UI data.
@@ -785,7 +792,6 @@ class Worker
         }
 
         static::$eventLoopClass = match (true) {
-            class_exists(EventLoop::class) => Revolt::class,
             extension_loaded('event') => Event::class,
             default => Select::class,
         };
@@ -2541,7 +2547,17 @@ class Worker
         // Try to emit onWorkerStart callback.
         if ($this->onWorkerStart) {
             try {
-                ($this->onWorkerStart)($this);
+                switch (Worker::$eventLoopClass) {
+                    case Events\Swoole::class:
+                        \Swoole\Coroutine::create(fn() => ($this->onWorkerStart)($this));
+                        break;
+                    case Events\Swow::class:
+                        \Swow\Coroutine::run(fn() => ($this->onWorkerStart)($this));
+                        break;
+                    default:
+                        (new \Fiber($this->onWorkerStart))->start($this);
+
+                }
             } catch (Throwable $e) {
                 // Avoid rapid infinite loop exit.
                 sleep(1);
@@ -2704,5 +2720,15 @@ class Worker
         }
 
         return str_contains($content, 'WorkerMan') || str_contains($content, 'php');
+    }
+
+    /**
+     * If worker is running.
+     *
+     * @return bool
+     */
+    public static function isRunning(): bool
+    {
+        return Worker::$status !== Worker::STATUS_INITIAL;
     }
 }

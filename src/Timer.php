@@ -19,9 +19,10 @@ namespace Workerman;
 use RuntimeException;
 use Throwable;
 use Workerman\Events\EventInterface;
-use Workerman\Events\Revolt;
+use Workerman\Events\Fiber;
 use Workerman\Events\Swoole;
-use Workerman\Events\Swow;
+use Revolt\EventLoop;
+use Swoole\Coroutine\System;
 use function function_exists;
 use function pcntl_alarm;
 use function pcntl_signal;
@@ -182,8 +183,8 @@ class Timer
     {
         switch (Worker::$eventLoopClass) {
             // Fiber
-            case Revolt::class:
-                $suspension = \Revolt\EventLoop::getSuspension();
+            case Fiber::class:
+                $suspension = EventLoop::getSuspension();
                 static::add($delay, function () use ($suspension) {
                     $suspension->resume();
                 }, null, false);
@@ -191,14 +192,10 @@ class Timer
                 return;
             // Swoole
             case Swoole::class:
-                \Swoole\Coroutine\System::sleep($delay);
-                return;
-            // Swow
-            case Swow::class:
-                usleep((int)($delay * 1000 * 1000));
+                System::sleep($delay);
                 return;
         }
-        throw new RuntimeException('Timer::sleep() require revolt/event-loop. Please run command "composer require revolt/event-loop" and restart workerman');
+        usleep((int)($delay * 1000 * 1000));
     }
 
     /**

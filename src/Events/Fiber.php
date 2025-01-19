@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Workerman\Events;
 
+use Fiber as BaseFiber;
 use Revolt\EventLoop;
 use Revolt\EventLoop\Driver;
 use function count;
@@ -25,7 +26,7 @@ use function pcntl_signal;
 /**
  * Revolt eventloop
  */
-final class Revolt implements EventInterface
+final class Fiber implements EventInterface
 {
     /**
      * @var Driver
@@ -115,7 +116,7 @@ final class Revolt implements EventInterface
         $timerId = $this->timerId++;
         $closure = function () use ($func, $args, $timerId) {
             unset($this->eventTimer[$timerId]);
-            $func(...$args);
+            $this->safeCall($func, ...$args);
         };
         $cbId = $this->driver->delay($delay, $closure);
         $this->eventTimer[$timerId] = $cbId;
@@ -128,7 +129,7 @@ final class Revolt implements EventInterface
     public function repeat(float $interval, callable $func, array $args = []): int
     {
         $timerId = $this->timerId++;
-        $cbId = $this->driver->repeat($interval, static fn () => $func(...$args));
+        $cbId = $this->driver->repeat($interval, fn() => $this->safeCall($func, ...$args));
         $this->eventTimer[$timerId] = $cbId;
         return $timerId;
     }
@@ -141,10 +142,9 @@ final class Revolt implements EventInterface
         $fdKey = (int)$stream;
         if (isset($this->readEvents[$fdKey])) {
             $this->driver->cancel($this->readEvents[$fdKey]);
-            unset($this->readEvents[$fdKey]);
         }
 
-        $this->readEvents[$fdKey] = $this->driver->onReadable($stream, static fn () => $func($stream));
+        $this->readEvents[$fdKey] = $this->driver->onReadable($stream, fn() => $this->safeCall($func, $stream));
     }
 
     /**
@@ -171,7 +171,7 @@ final class Revolt implements EventInterface
             $this->driver->cancel($this->writeEvents[$fdKey]);
             unset($this->writeEvents[$fdKey]);
         }
-        $this->writeEvents[$fdKey] = $this->driver->onWritable($stream, static fn () => $func($stream));
+        $this->writeEvents[$fdKey] = $this->driver->onWritable($stream, fn() => $this->safeCall($func, $stream));
     }
 
     /**
@@ -198,7 +198,7 @@ final class Revolt implements EventInterface
             $this->driver->cancel($this->eventSignal[$fdKey]);
             unset($this->eventSignal[$fdKey]);
         }
-        $this->eventSignal[$fdKey] = $this->driver->onSignal($signal, static fn () => $func($signal));
+        $this->eventSignal[$fdKey] = $this->driver->onSignal($signal, fn() => $this->safeCall($func, $signal));
     }
 
     /**
@@ -261,5 +261,16 @@ final class Revolt implements EventInterface
     public function setErrorHandler(callable $errorHandler): void
     {
         $this->driver->setErrorHandler($errorHandler);
+    }
+
+    /**
+     * @param callable $func
+     * @param ...$args
+     * @return void
+     * @throws \Throwable
+     */
+    protected function safeCall(callable $func, ...$args): void
+    {
+        (new BaseFiber(fn() => $func(...$args)))->start();
     }
 }
