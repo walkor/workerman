@@ -24,8 +24,8 @@ parameters:
 	            - '#Constant STREAM_POLLIN not found.#'
 	            - '#Constant STREAM_POLLNONE not found.#'
 	            - '#Constant STREAM_POLLOUT not found.#'
-	            - '#Property Workerman\\Events\\Swow::.* has unknown class Workerman\\Coroutine\\Swow as its type.#'
-	            - '#Call to static method .* on an unknown class Workerman\\Coroutine\\Swow.#'
+	            - '#Property Workerman\\Events\\Swow::.* has unknown class Workerman\\Coroutine\\Coroutine\\Swow as its type.#'
+	            - '#Call to static method .* on an unknown class Workerman\\Coroutine\\Coroutine\\Swow.#'
 	    -
 	        path: src/Events/Event.php
 	        reportUnmatched: false
