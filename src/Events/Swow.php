@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Workerman\Events;
 
-use Workerman\Coroutine\Swow as Coroutine;
+use Workerman\Coroutine\Coroutine\Swow as Coroutine;
 use Swow\Signal;
 use Swow\SignalException;
 use function Swow\Sync\waitAll;
