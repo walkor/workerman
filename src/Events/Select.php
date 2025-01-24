@@ -419,10 +419,8 @@ final class Select implements EventInterface
                 $this->tick();
             }
 
-            if ($this->signalEvents) {
-                // Calls signal handlers for pending signals
-                pcntl_signal_dispatch();
-            }
+            // Calls signal handlers for pending signals
+            pcntl_signal_dispatch();
         }
     }
 
