@@ -112,7 +112,7 @@ final class Select implements EventInterface
      *
      * @var int
      */
-    private int $selectTimeout = 100000000;
+    private int $selectTimeout = 800000;
 
     /**
      * Next run time of the timer.
@@ -357,7 +357,7 @@ final class Select implements EventInterface
     {
         $this->nextTickTime = $nextTickTime;
         if ($nextTickTime == 0) {
-            $this->selectTimeout = 10000000;
+            $this->selectTimeout = 800000;
             return;
         }
         $timeNow = microtime(true);
