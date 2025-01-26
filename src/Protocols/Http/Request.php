@@ -20,7 +20,6 @@ use Exception;
 use RuntimeException;
 use Stringable;
 use Workerman\Connection\TcpConnection;
-use Workerman\Protocols\Http;
 use function array_walk_recursive;
 use function bin2hex;
 use function clearstatcache;
@@ -605,7 +604,7 @@ class Request implements Stringable
                         $tmpFile = '';
                         $fileName = $match[1];
                         $size = strlen($boundaryValue);
-                        $tmpUploadDir = HTTP::uploadTmpDir();
+                        $tmpUploadDir = \Workerman\Protocols\Http::uploadTmpDir();
                         if (!$tmpUploadDir) {
                             $error = UPLOAD_ERR_NO_TMP_DIR;
                         } else if ($boundaryValue === '' && $fileName === '') {
