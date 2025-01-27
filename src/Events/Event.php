@@ -140,7 +140,9 @@ final class Event implements EventInterface
     {
         $className = $this->eventClassName;
         $timerId = $this->timerId++;
-        $event = new $className($this->eventBase, -1, $className::TIMEOUT | $className::PERSIST, $func);
+        $event = new $className($this->eventBase, -1, $className::TIMEOUT | $className::PERSIST, function () use ($func, $args) {
+            $this->safeCall($func, $args);
+        });
         if (!$event->addTimer($interval)) {
             throw new \RuntimeException("Event::addTimer($interval) failed");
         }
