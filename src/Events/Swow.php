@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Workerman\Events;
 
-use Swow\Coroutine;
+use Workerman\Coroutine\Coroutine\Swow as Coroutine;
 use Swow\Signal;
 use Swow\SignalException;
 use function Swow\Sync\waitAll;
@@ -296,4 +296,5 @@ final class Swow implements EventInterface
             }
         });
     }
+
 }

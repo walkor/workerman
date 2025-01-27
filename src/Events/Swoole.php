@@ -19,6 +19,7 @@ use Swoole\Coroutine;
 use Swoole\Event;
 use Swoole\Process;
 use Swoole\Timer;
+use Throwable;
 
 final class Swoole implements EventInterface
 {
@@ -282,14 +283,16 @@ final class Swoole implements EventInterface
      */
     private function safeCall(callable $func, array $args = []): void
     {
-        try {
-            $func(...$args);
-        } catch (\Throwable $e) {
-            if ($this->errorHandler === null) {
-                echo $e;
-            } else {
-                ($this->errorHandler)($e);
+        Coroutine::create(function() use ($func, $args) {
+            try {
+                $func(...$args);
+            } catch (Throwable $e) {
+                if ($this->errorHandler === null) {
+                    echo $e;
+                } else {
+                    ($this->errorHandler)($e);
+                }
             }
-        }
+        });
     }
 }
