@@ -419,8 +419,9 @@ class Request implements Stringable
     protected function parseProtocolVersion(): void
     {
         $firstLine = strstr($this->buffer, "\r\n", true);
-        $protocolVersion = substr(strstr($firstLine, 'HTTP/'), 5);
-        $this->data['protocolVersion'] = $protocolVersion ?: '1.0';
+        $httpStr = strstr($firstLine, 'HTTP/');
+        $protocolVersion = $httpStr ? substr($httpStr, 5) : '1.0';
+        $this->data['protocolVersion'] = $protocolVersion;
     }
 
     /**
