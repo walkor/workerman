@@ -2046,18 +2046,33 @@ class Worker
             }
             // Execute exit.
             $workers = array_reverse(static::$workers);
-            array_walk($workers, static fn (Worker $worker) => $worker->stop());
+            array_walk($workers, static fn (Worker $worker) => $worker->stop(false));
 
-            if (!static::getGracefulStop() || ConnectionInterface::$statistics['connection_count'] <= 0) {
-                static::$globalEvent?->stop();
-                try {
-                    // Ignore Swoole ExitException: Swoole exit.
-                    exit($code);
-                    /** @phpstan-ignore-next-line */
-                } catch (Throwable) {
-                    // do nothing
+            $callback = function () use ($code, $workers) {
+                $allWorkerConnectionClosed = true;
+                if (!static::getGracefulStop()) {
+                    foreach ($workers as $worker) {
+                        foreach ($worker->connections as $connection) {
+                            // Delay closing, waiting for data to be sent.
+                            if (!$connection->getRecvBufferQueueSize() && !isset($connection->context->closeTimer)) {
+                                $connection->context->closeTimer = Timer::delay(0.01, static fn () => $connection->close());
+                            }
+                            $allWorkerConnectionClosed = false;
+                        }
+                    }
                 }
-            }
+                if ((!static::getGracefulStop() && $allWorkerConnectionClosed) || ConnectionInterface::$statistics['connection_count'] <= 0) {
+                    static::$globalEvent?->stop();
+                    try {
+                        // Ignore Swoole ExitException: Swoole exit.
+                        exit($code);
+                        /** @phpstan-ignore-next-line */
+                    } catch (Throwable) {
+                        // do nothing
+                    }
+                }
+            };
+            Timer::repeat(0.01, $callback);
         }
     }
 
@@ -2566,9 +2581,10 @@ class Worker
     /**
      * Stop current worker instance.
      *
+     * @param bool $force
      * @return void
      */
-    public function stop(): void
+    public function stop(bool $force = true): void
     {
         if ($this->stopping === true) {
             return;
@@ -2586,7 +2602,9 @@ class Worker
         // Close all connections for the worker.
         if (!static::getGracefulStop()) {
             foreach ($this->connections as $connection) {
-                $connection->close();
+                if ($force || !$connection->getRecvBufferQueueSize()) {
+                    $connection->close();
+                }
             }
         }
         // Clear callback.
