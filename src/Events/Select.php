@@ -419,8 +419,11 @@ final class Select implements EventInterface
                 $this->tick();
             }
 
-            // Calls signal handlers for pending signals
-            pcntl_signal_dispatch();
+            // The $this->signalEvents are empty under Windows, make sure not to call pcntl_signal_dispatch.
+            if ($this->signalEvents) {
+                // Calls signal handlers for pending signals
+                pcntl_signal_dispatch();
+            }
         }
     }
 
