@@ -23,4 +23,3 @@ parameters:
 	    - path: src/Worker.php
 	      messages:
 	          - '#Constant LINE_VERSION_LENGTH not found.#'
-	          - '#Call to static method run\(\) on an unknown class Swow\\Coroutine.#'
