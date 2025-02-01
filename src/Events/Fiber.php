@@ -26,7 +26,7 @@ use function pcntl_signal;
 /**
  * Revolt eventloop
  */
-class Fiber implements EventInterface
+final class Fiber implements EventInterface
 {
     /**
      * @var Driver
