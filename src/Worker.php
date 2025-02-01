@@ -25,9 +25,13 @@ use Throwable;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
+use Workerman\Coroutine\Coroutine;
 use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
+use Workerman\Events\Fiber;
 use Workerman\Events\Select;
+use Workerman\Events\Swoole;
+use Workerman\Events\Swow;
 use function defined;
 use function function_exists;
 use function is_resource;
@@ -2551,30 +2555,35 @@ class Worker
      * Run worker instance.
      *
      * @return void
+     * @throws Throwable
      */
     public function run(): void
     {
         $this->listen();
 
-        // Try to emit onWorkerStart callback.
-        if ($this->onWorkerStart) {
-            try {
-                switch (Worker::$eventLoopClass) {
-                    case Events\Swoole::class:
-                        \Swoole\Coroutine::create(fn() => ($this->onWorkerStart)($this));
-                        break;
-                    case Events\Swow::class:
-                        \Swow\Coroutine::run(fn() => ($this->onWorkerStart)($this));
-                        break;
-                    default:
-                        (new \Fiber($this->onWorkerStart))->start($this);
+        if (!$this->onWorkerStart) {
+            return;
+        }
 
-                }
+        // Try to emit onWorkerStart callback.
+        $callback = function() {
+            try {
+                ($this->onWorkerStart)($this);
             } catch (Throwable $e) {
                 // Avoid rapid infinite loop exit.
                 sleep(1);
                 static::stopAll(250, $e);
             }
+        };
+
+        switch (Worker::$eventLoopClass) {
+            case Swoole::class:
+            case Swow::class:
+            case Fiber::class:
+                Coroutine::create($callback);
+                break;
+            default:
+                (new \Fiber($callback))->start();
         }
     }
 
