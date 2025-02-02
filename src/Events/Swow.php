@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Workerman\Events;
 
+use RuntimeException;
 use Workerman\Coroutine\Coroutine\Swow as Coroutine;
 use Swow\Signal;
 use Swow\SignalException;
@@ -141,19 +142,21 @@ final class Swow implements EventInterface
                         $this->offReadable($stream);
                         break;
                     }
-                    $rEvent = stream_poll_one($stream, STREAM_POLLIN | STREAM_POLLHUP);
+                    // Under Windows, setting a timeout is necessary; otherwise, the accept cannot be listened to.
+                    // Setting it to 1000ms will result in a 1-second delay for the first accept under Windows.
+                    $rEvent = stream_poll_one($stream, STREAM_POLLIN | STREAM_POLLHUP, 1000);
                     if (!isset($this->readEvents[$fd]) || $this->readEvents[$fd] !== Coroutine::getCurrent()) {
                         break;
                     }
                     if ($rEvent !== STREAM_POLLNONE) {
                         $this->safeCall($func, [$stream]);
                     }
-                    if ($rEvent !== STREAM_POLLIN) {
+                    if ($rEvent !== STREAM_POLLIN && $rEvent !== STREAM_POLLNONE) {
                         $this->offReadable($stream);
                         break;
                     }
                 }
-            } catch (\RuntimeException) {
+            } catch (RuntimeException) {
                 $this->offReadable($stream);
             }
         });
@@ -198,7 +201,7 @@ final class Swow implements EventInterface
                         break;
                     }
                 }
-            } catch (\RuntimeException) {
+            } catch (RuntimeException) {
                 $this->offWritable($stream);
             }
         });

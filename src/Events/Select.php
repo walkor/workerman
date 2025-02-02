@@ -357,6 +357,7 @@ final class Select implements EventInterface
     {
         $this->nextTickTime = $nextTickTime;
         if ($nextTickTime == 0) {
+            // Set a shorter timeout so that swow can timely detect the signal.
             $this->selectTimeout = 800000;
             return;
         }
