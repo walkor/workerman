@@ -112,7 +112,7 @@ final class Select implements EventInterface
      *
      * @var int
      */
-    private int $selectTimeout = 800000;
+    private int $selectTimeout = self::MAX_SELECT_TIMOUT_US;
 
     /**
      * Next run time of the timer.
@@ -125,6 +125,13 @@ final class Select implements EventInterface
      * @var ?callable
      */
     private $errorHandler = null;
+
+    /**
+     * Select timeout.
+     *
+     * @var int
+     */
+    const MAX_SELECT_TIMOUT_US = 800000;
 
     /**
      * Construct.
@@ -359,11 +366,10 @@ final class Select implements EventInterface
         if ($nextTickTime == 0) {
             // Swow will affect the signal interruption characteristics of stream_select,
             // so a shorter timeout should be used to detect signals.
-            $this->selectTimeout = 800000;
+            $this->selectTimeout = self::MAX_SELECT_TIMOUT_US;
             return;
         }
-        $timeNow = microtime(true);
-        $this->selectTimeout = max((int)(($nextTickTime - $timeNow) * 1000000), 0);
+        $this->selectTimeout = min(max((int)(($nextTickTime - microtime(true)) * 1000000), 0), self::MAX_SELECT_TIMOUT_US);
     }
 
     /**
