@@ -381,10 +381,7 @@ class AsyncTcpConnection extends TcpConnection
             }
             // Nonblocking.
             stream_set_blocking($this->socket, false);
-            // Compatible with hhvm
-            if (function_exists('stream_set_read_buffer')) {
-                stream_set_read_buffer($this->socket, 0);
-            }
+            stream_set_read_buffer($this->socket, 0);
             // Try to open keepalive for tcp and disable Nagle algorithm.
             if (function_exists('socket_import_stream') && $this->transport === 'tcp') {
                 $socket = socket_import_stream($this->socket);
