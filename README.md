@@ -188,7 +188,7 @@ Coroutine is used to create coroutines, enabling the execution of asynchronous t
 ```php
 <?php
 use Workerman\Connection\TcpConnection;
-use Workerman\Coroutine\Coroutine;
+use Workerman\Coroutine;
 use Workerman\Events\Swoole;
 use Workerman\Protocols\Http\Request;
 use Workerman\Worker;
@@ -200,7 +200,7 @@ $worker->eventLoop = Swoole::class; // Or Swow::class or Fiber::class
 
 $worker->onMessage = function (TcpConnection $connection, Request $request) {
     Coroutine::create(function () {
-        echo file_get_contents("https://www.example.com/event/notify");
+        echo file_get_contents("http://www.example.com/event/notify");
     });
     $connection->send('ok');
 };
@@ -217,7 +217,7 @@ Barrier is used to manage concurrency and synchronization in coroutines. It allo
 <?php
 use Workerman\Connection\TcpConnection;
 use Workerman\Coroutine\Barrier;
-use Workerman\Coroutine\Coroutine;
+use Workerman\Coroutine;
 use Workerman\Events\Swoole;
 use Workerman\Protocols\Http\Request;
 use Workerman\Worker;
@@ -295,7 +295,7 @@ Channel is a mechanism for communication between coroutines. One coroutine can p
 <?php
 use Workerman\Connection\TcpConnection;
 use Workerman\Coroutine\Channel;
-use Workerman\Coroutine\Coroutine;
+use Workerman\Coroutine;
 use Workerman\Events\Swoole;
 use Workerman\Protocols\Http\Request;
 use Workerman\Worker;
@@ -388,7 +388,7 @@ Worker::runAll();
 <?php
 use Workerman\Connection\TcpConnection;
 use Workerman\Coroutine\Context;
-use Workerman\Coroutine\Coroutine;
+use Workerman\Coroutine;
 use Workerman\Coroutine\Pool;
 use Workerman\Events\Swoole;
 use Workerman\Protocols\Http\Request;
