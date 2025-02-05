@@ -28,7 +28,7 @@
     "require": {
         "php": ">=8.1",
         "ext-json": "*",
-        "workerman/coroutine": "^1.0 || dev-main"
+        "workerman/coroutine": "^1.1 || dev-main"
     },
     "suggest": {
         "ext-event": "For better performance. "
