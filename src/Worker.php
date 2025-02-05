@@ -25,7 +25,7 @@ use Throwable;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
-use Workerman\Coroutine\Coroutine;
+use Workerman\Coroutine;
 use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
 use Workerman\Events\Fiber;
