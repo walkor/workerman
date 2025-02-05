@@ -382,10 +382,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         }
         $this->socket = $socket;
         stream_set_blocking($this->socket, false);
-        // Compatible with hhvm
-        if (function_exists('stream_set_read_buffer')) {
-            stream_set_read_buffer($this->socket, 0);
-        }
+        stream_set_read_buffer($this->socket, 0);
         $this->eventLoop = $eventLoop;
         $this->eventLoop->onReadable($this->socket, $this->baseRead(...));
         $this->maxSendBufferSize = self::$defaultMaxSendBufferSize;
