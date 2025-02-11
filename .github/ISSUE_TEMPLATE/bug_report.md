@@ -1,3 +1,10 @@
+---
+name: Bug Report
+about: 报告一个 bug
+title: "[BUG]"
+labels: bug
+---
+
 Please answer these questions before submitting your issue.
 
 1. What did you do? If possible, provide a simple script for reproducing the error.
