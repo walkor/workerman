@@ -8,7 +8,7 @@ types {
     application/javascript                js;
     application/atom+xml                  atom;
     application/rss+xml                   rss;
-    application/wasm                      wasm;  
+    application/wasm                      wasm;
 
     text/mathml                           mml;
     text/plain                            txt;
