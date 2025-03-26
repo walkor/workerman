@@ -2180,9 +2180,6 @@ class Worker
             return;
         }
 
-        // For child processes.
-        gc_collect_cycles();
-        gc_mem_caches();
         reset(static::$workers);
         /** @var static $worker */
         $worker = current(static::$workers);
