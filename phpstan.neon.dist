@@ -24,4 +24,4 @@ parameters:
 	      messages:
 	          - '#Constant LINE_VERSION_LENGTH not found.#'
 	    - path: src/Protocols/Http.php
-            treatPhpDocTypesAsCertain: false
+          treatPhpDocTypesAsCertain: false
