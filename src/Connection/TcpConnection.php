@@ -23,6 +23,7 @@ use Workerman\Events\Ev;
 use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
 use Workerman\Events\Select;
+use Workerman\Protocols\Http;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\ProtocolInterface;
 use Workerman\Worker;
@@ -668,8 +669,9 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             if ($this->recvBuffer === '') {
                 if (!isset($buffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$buffer])) {
                     ++self::$statistics['total_request'];
-                    $request = $requests[$buffer];
-                    if ($request instanceof Request) {
+                    if ($this->protocol === Http::class) {
+                        $request = static::$reuseRequest ? $requests[$buffer] : clone $requests[$buffer];
+                        $request->destroy();
                         $request->connection = $this;
                         $this->request = $request;
                         try {
@@ -677,9 +679,12 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                         } catch (Throwable $e) {
                             $this->error($e);
                         }
-                        $request->destroy();
-                        $requests[$buffer] = static::$reuseRequest ? $request : clone $request;
+                        if (!isset($requests[$buffer])) {
+                            $requests[$buffer] = $request;
+                        }
                         return;
+                    } else {
+                        $request = $requests[$buffer];
                     }
                     try {
                         ($this->onMessage)($this, $request);
