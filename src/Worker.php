@@ -872,6 +872,7 @@ class Worker
             // Listen.
             if (!$worker->reusePort) {
                 $worker->listen();
+                $worker->pauseAccept();
             }
         }
     }
