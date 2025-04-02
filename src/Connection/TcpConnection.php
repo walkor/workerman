@@ -346,14 +346,6 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      */
     public static array $connections = [];
 
-
-    /**
-     * Reuse request.
-     *
-     * @var bool
-     */
-    protected static bool $reuseRequest = false;
-
     /**
      * Status to string.
      *
@@ -1085,16 +1077,6 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             $this->worker = null;
             unset(static::$connections[$this->realId]);
         }
-    }
-
-    /**
-     * Init.
-     *
-     * @return void
-     */
-    public static function init(): void
-    {
-        static::$reuseRequest = in_array(get_class(Worker::$globalEvent), [Event::class, Select::class, Ev::class]);
     }
 
     /**
