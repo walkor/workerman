@@ -670,7 +670,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 if (!isset($buffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$buffer])) {
                     ++self::$statistics['total_request'];
                     if ($this->protocol === Http::class) {
-                        $request = static::$reuseRequest ? $requests[$buffer] : clone $requests[$buffer];
+                        $request = clone $requests[$buffer];
                         $request->destroy();
                         $request->connection = $this;
                         $this->request = $request;
