@@ -1729,9 +1729,6 @@ class Worker
             // Init Timer.
             Timer::init(static::$globalEvent);
 
-            // Init TcpConnection.
-            TcpConnection::init();
-
             restore_error_handler();
 
             static::setProcessTitle('WorkerMan: worker process  ' . $worker->name . ' ' . $worker->getSocketName());
