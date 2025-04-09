@@ -116,7 +116,7 @@ class Ws
                     // Try to emit onWebSocketClose callback.
                     if (isset($connection->onWebSocketClose)) {
                         try {
-                            ($connection->onWebSocketClose)($connection);
+                            ($connection->onWebSocketClose)($connection, self::decode($buffer, $connection));
                         } catch (Throwable $e) {
                             Worker::stopAll(250, $e);
                         }
