@@ -239,6 +239,8 @@ class Ws
         if (empty($connection->websocketType)) {
             $connection->websocketType = self::BINARY_TYPE_BLOB;
         }
+        $connection->websocketOrigin = $connection->websocketOrigin ?? null;
+        $connection->websocketClientProtocol = $connection->websocketClientProtocol ?? null;
         if (empty($connection->context->handshakeStep)) {
             static::sendHandshake($connection);
         }
@@ -323,6 +325,8 @@ class Ws
      */
     public static function onConnect(AsyncTcpConnection $connection): void
     {
+        $connection->websocketOrigin = $connection->websocketOrigin ?? null;
+        $connection->websocketClientProtocol = $connection->websocketClientProtocol ?? null;
         static::sendHandshake($connection);
     }
 
@@ -372,8 +376,8 @@ class Ws
             (!preg_match("/\nHost:/i", $userHeaderStr) ? "Host: $host\r\n" : '') .
             "Connection: Upgrade\r\n" .
             "Upgrade: websocket\r\n" .
-            (isset($connection->websocketOrigin) ? "Origin: " . $connection->websocketOrigin . "\r\n" : '') .
-            (isset($connection->websocketClientProtocol) ? "Sec-WebSocket-Protocol: " . $connection->websocketClientProtocol . "\r\n" : '') .
+            (($connection->websocketOrigin ?? null) ? "Origin: " . $connection->websocketOrigin . "\r\n" : '') .
+            (($connection->websocketClientProtocol ?? null) ? "Sec-WebSocket-Protocol: " . $connection->websocketClientProtocol . "\r\n" : '') .
             "Sec-WebSocket-Version: 13\r\n" .
             "Sec-WebSocket-Key: " . $connection->context->websocketSecKey . $userHeaderStr . "\r\n\r\n";
         $connection->send($header, true);
