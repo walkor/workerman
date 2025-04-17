@@ -239,6 +239,8 @@ class Ws
         if (empty($connection->websocketType)) {
             $connection->websocketType = self::BINARY_TYPE_BLOB;
         }
+        $connection->websocketOrigin = $connection->websocketOrigin ?? null;
+        $connection->websocketClientProtocol = $connection->websocketClientProtocol ?? null;
         if (empty($connection->context->handshakeStep)) {
             static::sendHandshake($connection);
         }
@@ -323,8 +325,8 @@ class Ws
      */
     public static function onConnect(AsyncTcpConnection $connection): void
     {
-        $connection->websocketOrigin = $connection->websocketOrigin ?? null;
-        $connection->websocketClientProtocol = $connection->websocketClientProtocol ?? null;
+        $connection->websocketOrigin = $connection?->websocketOrigin;
+        $connection->websocketClientProtocol = $connection?->websocketClientProtocol;
         static::sendHandshake($connection);
     }
 
