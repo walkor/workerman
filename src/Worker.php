@@ -1009,7 +1009,7 @@ class Worker
         //Show version
         $jitStatus = function_exists('opcache_get_status') && (opcache_get_status()['jit']['on'] ?? false) === true ? 'on' : 'off';
         $version = str_pad('Workerman/' . static::VERSION, 24);
-        $version .= str_pad('PHP/' . PHP_VERSION . ' (Jit ' . $jitStatus . ')', 30);
+        $version .= str_pad('PHP/' . PHP_VERSION . ' (JIT ' . $jitStatus . ')', 30);
         $version .= php_uname('s') . '/' . php_uname('r') . PHP_EOL;
         return $version;
     }
