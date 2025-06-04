@@ -423,8 +423,12 @@ final class Select implements EventInterface
                 }
             }
 
-            if ($this->nextTickTime > 0 && microtime(true) >= $this->nextTickTime) {
-                $this->tick();
+            if ($this->nextTickTime > 0) {
+                if (microtime(true) >= $this->nextTickTime) {
+                    $this->tick();
+                } else {
+                    $this->selectTimeout = (int)(($this->nextTickTime - microtime(true)) * 1000000);
+                }
             }
 
             // The $this->signalEvents are empty under Windows, make sure not to call pcntl_signal_dispatch.
