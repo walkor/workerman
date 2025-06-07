@@ -26,6 +26,7 @@ use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
 use Workerman\Coroutine;
+use Workerman\Coroutine\Context;
 use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
 use Workerman\Events\Fiber;
@@ -2568,6 +2569,8 @@ class Worker
                 // Avoid rapid infinite loop exit.
                 sleep(1);
                 static::stopAll(250, $e);
+            } finally {
+                Context::destroy();
             }
         };
 
