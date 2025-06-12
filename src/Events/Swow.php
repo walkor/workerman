@@ -144,10 +144,10 @@ final class Swow implements EventInterface
                     }
                     // Under Windows, setting a timeout is necessary; otherwise, the accept cannot be listened to.
                     // Setting it to 1000ms will result in a 1-second delay for the first accept under Windows.
-                    $rEvent = stream_poll_one($stream, STREAM_POLLIN | STREAM_POLLHUP, 1000);
                     if (!isset($this->readEvents[$fd]) || $this->readEvents[$fd] !== Coroutine::getCurrent()) {
                         break;
                     }
+                    $rEvent = stream_poll_one($stream, STREAM_POLLIN | STREAM_POLLHUP, 1000);
                     if ($rEvent !== STREAM_POLLNONE) {
                         $this->safeCall($func, [$stream]);
                     }

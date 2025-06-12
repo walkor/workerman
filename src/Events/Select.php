@@ -364,8 +364,6 @@ final class Select implements EventInterface
     {
         $this->nextTickTime = $nextTickTime;
         if ($nextTickTime == 0) {
-            // Swow will affect the signal interruption characteristics of stream_select,
-            // so a shorter timeout should be used to detect signals.
             $this->selectTimeout = self::MAX_SELECT_TIMOUT_US;
             return;
         }

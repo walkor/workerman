@@ -61,7 +61,7 @@ class Worker
      *
      * @var string
      */
-    final public const VERSION = '5.1.2';
+    final public const VERSION = '5.1.3';
 
     /**
      * Status initial.
@@ -1594,7 +1594,17 @@ class Worker
             restore_error_handler();
 
             // Add an empty timer to prevent the event-loop from exiting.
-            Timer::add(1000000, function (){});
+            Timer::add(0.8, function (){});
+
+            // Compatibility with the bug in Swow where the first request on Windows fails to trigger stream_select.
+            if (extension_loaded('swow')) {
+                Timer::delay(0.1 , function(){
+                    $stream = fopen(__FILE__, 'r');
+                    static::$globalEvent->onReadable($stream, function($stream) {
+                        static::$globalEvent->offReadable($stream);
+                    });
+                });
+            }
 
             // Display UI.
             static::safeEcho(str_pad($worker->name, 48) . str_pad($worker->getSocketName(), 36) . str_pad('1', 10) . "  [ok]\n");
