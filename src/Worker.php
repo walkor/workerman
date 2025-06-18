@@ -2352,42 +2352,48 @@ class Worker
 
             // Check the file size and truncate if it exceeds max size
             if (!empty(static::$logFileMaxSize) && ($fileSize = filesize(static::$logFile)) > static::$logFileMaxSize) {
-                $newFile = static::$logFile . '.tmp';
-
                 // Open files
                 $source = fopen(static::$logFile, 'r');
-                if (!flock($source, LOCK_EX)) {
+
+                if (!$source) {
+                    return;
+                } else if (!flock($source, LOCK_EX)) {
                     fclose($source);
                     return;
                 }
+                
+                $newFile = static::$logFile . '.tmp';
                 $destination = fopen($newFile, 'w');
 
-                if ($source && $destination) {
-                    // Move to the halfway point in the source file
-                    $halfwayPoint = (int)($fileSize / 2);
-                    fseek($source, $halfwayPoint);
-
-                    // Find the next newline character to ensure we don't cut in the middle of a line
-                    while (($char = fgetc($source)) !== false) {
-                        if ($char === "\n") {
-                            break;
-                        }
-                    }
-
-                    // Copy the second half into the new file
-                    while (!feof($source)) {
-                        fwrite($destination, fread($source, 8192)); // Read and write 8KB chunks
-                    }
-
-                    // Replace the old file with the new truncated file
-                    rename($newFile, static::$logFile);
-                }
-                // Close both files
-                if ($source) {
+                if (!$destination) {
                     flock($source, LOCK_UN);
                     fclose($source);
+                    return;
                 }
-                if ($destination) fclose($destination);
+
+                // Move to the halfway point in the source file
+                $halfwayPoint = (int)($fileSize / 2);
+                fseek($source, $halfwayPoint);
+
+                // Find the next newline character to ensure we don't cut in the middle of a line
+                while (($char = fgetc($source)) !== false) {
+                    if ($char === "\n") {
+                        break;
+                    }
+                }
+
+                // Copy the second half into the new file
+                while (!feof($source)) {
+                    fwrite($destination, fread($source, 8192)); // Read and write 8KB chunks
+                }
+
+                // Replace the old file with the new truncated file
+                rename($newFile, static::$logFile);
+                
+                // Close both files
+                flock($source, LOCK_UN);
+                fclose($source);
+                fclose($destination);
             }
         }
     }
