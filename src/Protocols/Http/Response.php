@@ -87,6 +87,7 @@ class Response implements Stringable
         'svg' => 'image/svg+xml',
         'svgz' => 'image/svg+xml',
         'webp' => 'image/webp',
+        'avif' => 'image/avif',
         'woff' => 'application/font-woff',
         'jar' => 'application/java-archive',
         'war' => 'application/java-archive',
