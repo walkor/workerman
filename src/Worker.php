@@ -2342,6 +2342,16 @@ class Worker
         if (isset(static::$logFile)) {
             $pid = DIRECTORY_SEPARATOR === '/' ? posix_getpid() : 1;
             file_put_contents(static::$logFile, sprintf("%s pid:%d %s\n", date('Y-m-d H:i:s'), $pid, $msg), FILE_APPEND | LOCK_EX);
+        } else {
+            //if logFile not set, create a default logFile
+            if (!is_file(static::$logFile) && static::$logFile !== '/dev/null') {
+                // if /runtime/logs  default folder not exists
+                if (!is_dir(dirname(static::$logFile))) {
+                    @mkdir(dirname(static::$logFile), 0777, true);
+                }
+                touch(static::$logFile);
+                chmod(static::$logFile, 0644);
+            }
         }
     }
 
