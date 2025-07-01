@@ -60,23 +60,22 @@ class Response implements Stringable
      * @var array
      */
     protected static array $mimeTypeMap = [
+        // text
         'html' => 'text/html',
         'htm' => 'text/html',
         'shtml' => 'text/html',
         'css' => 'text/css',
         'xml' => 'text/xml',
-        'gif' => 'image/gif',
-        'jpeg' => 'image/jpeg',
-        'jpg' => 'image/jpeg',
-        'js' => 'application/javascript',
-        'atom' => 'application/atom+xml',
-        'rss' => 'application/rss+xml',
-        'wasm' => 'application/wasm',
         'mml' => 'text/mathml',
         'txt' => 'text/plain',
         'jad' => 'text/vnd.sun.j2me.app-descriptor',
         'wml' => 'text/vnd.wap.wml',
         'htc' => 'text/x-component',
+
+        // image
+        'gif' => 'image/gif',
+        'jpeg' => 'image/jpeg',
+        'jpg' => 'image/jpeg',
         'png' => 'image/png',
         'tif' => 'image/tiff',
         'tiff' => 'image/tiff',
@@ -88,6 +87,12 @@ class Response implements Stringable
         'svgz' => 'image/svg+xml',
         'webp' => 'image/webp',
         'avif' => 'image/avif',
+
+        // application
+        'js' => 'application/javascript',
+        'atom' => 'application/atom+xml',
+        'rss' => 'application/rss+xml',
+        'wasm' => 'application/wasm',
         'woff' => 'application/font-woff',
         'jar' => 'application/java-archive',
         'war' => 'application/java-archive',
@@ -143,6 +148,8 @@ class Response implements Stringable
         'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+
+        // audio
         'mid' => 'audio/midi',
         'midi' => 'audio/midi',
         'kar' => 'audio/midi',
@@ -150,6 +157,8 @@ class Response implements Stringable
         'ogg' => 'audio/ogg',
         'm4a' => 'audio/x-m4a',
         'ra' => 'audio/x-realaudio',
+
+        // video
         '3gpp' => 'video/3gpp',
         '3gp' => 'video/3gpp',
         'ts' => 'video/mp2t',
@@ -165,6 +174,8 @@ class Response implements Stringable
         'asf' => 'video/x-ms-asf',
         'wmv' => 'video/x-ms-wmv',
         'avi' => 'video/x-msvideo',
+
+        // font
         'ttf' => 'font/ttf',
     ];
 
