@@ -93,7 +93,6 @@ class Response implements Stringable
         'atom' => 'application/atom+xml',
         'rss' => 'application/rss+xml',
         'wasm' => 'application/wasm',
-        'woff' => 'application/font-woff',
         'jar' => 'application/java-archive',
         'war' => 'application/java-archive',
         'ear' => 'application/java-archive',
@@ -177,6 +176,8 @@ class Response implements Stringable
 
         // font
         'ttf' => 'font/ttf',
+        'woff' => 'font/woff',
+        'woff2' => 'font/woff2',
     ];
 
     /**
