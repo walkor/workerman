@@ -2584,15 +2584,13 @@ class Worker
             }
         };
 
-        switch (Worker::$eventLoopClass) {
-            case Swoole::class:
-            case Swow::class:
-            case Fiber::class:
-                Coroutine::create($callback);
-                break;
-            default:
-                (new \Fiber($callback))->start();
-        }
+        match (Worker::$eventLoopClass) {
+            Swoole::class,
+            Swow::class,
+            Fiber::class => Coroutine::create($callback),
+    
+            default => (new \Fiber($callback))->start(),
+        };
     }
 
     /**
