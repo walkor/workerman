@@ -841,6 +841,13 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         }
         $async = $this instanceof AsyncTcpConnection;
 
+        // This fix make possible use client certificate to establish TLS connection
+        if ($async && isset($this->_contextOption) && isset($this->_contextOption['ssl'])) {
+            foreach ($this->_contextOption['ssl'] as $key => $value) {
+                \stream_context_set_option($socket, 'ssl', $key, $value);
+            }
+        }
+
         /**
          *  We disabled ssl3 because https://blog.qualys.com/ssllabs/2014/10/15/ssl-3-is-dead-killed-by-the-poodle-attack.
          *  You can enable ssl3 by the codes below.
