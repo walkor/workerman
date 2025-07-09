@@ -379,6 +379,16 @@ class AsyncTcpConnection extends TcpConnection
                 fwrite($this->socket, $str);
                 fread($this->socket, 512);
             }
+            if (!is_resource($this->socket)) {
+                $this->emitError(static::CONNECT_FAIL, 'connect ' . $this->remoteAddress . ' fail after ' . round(microtime(true) - $this->connectStartTime, 4) . ' seconds');
+                if ($this->status === self::STATUS_CLOSING) {
+                    $this->destroy();
+                }
+                if ($this->status === self::STATUS_CLOSED) {
+                    $this->onConnect = null;
+                }
+                return;
+            }
             // Nonblocking.
             stream_set_blocking($this->socket, false);
             stream_set_read_buffer($this->socket, 0);
