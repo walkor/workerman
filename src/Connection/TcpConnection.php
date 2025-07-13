@@ -835,7 +835,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      */
     public function doSslHandshake($socket): bool|int
     {
-        if (feof($socket)) {
+        if (!is_resource($socket) || feof($socket)) {
             $this->destroy();
             return false;
         }
