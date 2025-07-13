@@ -189,14 +189,18 @@ final class Swow implements EventInterface
             try {
                 $this->writeEvents[$fd] = Coroutine::getCurrent();
                 while (true) {
-                    $rEvent = stream_poll_one($stream, STREAM_POLLOUT | STREAM_POLLHUP);
+                    if (!is_resource($stream)) {
+                        $this->offWritable($stream);
+                        break;
+                    }
                     if (!isset($this->writeEvents[$fd]) || $this->writeEvents[$fd] !== Coroutine::getCurrent()) {
                         break;
                     }
+                    $rEvent = stream_poll_one($stream, STREAM_POLLOUT | STREAM_POLLHUP, 1000);
                     if ($rEvent !== STREAM_POLLNONE) {
                         $this->safeCall($func, [$stream]);
                     }
-                    if ($rEvent !== STREAM_POLLOUT) {
+                    if ($rEvent !== STREAM_POLLOUT && $rEvent !== STREAM_POLLNONE) {
                         $this->offWritable($stream);
                         break;
                     }

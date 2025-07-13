@@ -661,7 +661,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
 
         // Check connection closed.
         if ($buffer === '' || $buffer === false) {
-            if ($checkEof && (feof($socket) || !is_resource($socket) || $buffer === false)) {
+            if ($checkEof && (!is_resource($socket) || feof($socket) || $buffer === false)) {
                 $this->destroy();
                 return;
             }
