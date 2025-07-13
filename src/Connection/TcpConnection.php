@@ -661,7 +661,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
 
         // Check connection closed.
         if ($buffer === '' || $buffer === false) {
-            if ($checkEof && (feof($socket) || !is_resource($socket) || $buffer === false)) {
+            if ($checkEof && (!is_resource($socket) || feof($socket) || $buffer === false)) {
                 $this->destroy();
                 return;
             }
@@ -835,7 +835,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      */
     public function doSslHandshake($socket): bool|int
     {
-        if (feof($socket)) {
+        if (!is_resource($socket) || feof($socket)) {
             $this->destroy();
             return false;
         }
