@@ -323,6 +323,13 @@ class Worker
     public static string $logFile = '';
 
     /**
+     * Log file maximum size in bytes, default 10M.
+     *
+     * @var int
+     */
+    public static int $logFileMaxSize = 10_485_760;
+
+    /**
      * Global event loop.
      *
      * @var ?EventInterface
@@ -330,7 +337,7 @@ class Worker
     public static ?EventInterface $globalEvent = null;
 
     /**
-     * Emitted when the master process get reload signal.
+     * Emitted when the master process gets a reload signal.
      *
      * @var ?callable
      */
@@ -2344,6 +2351,52 @@ class Worker
         if (isset(static::$logFile)) {
             $pid = DIRECTORY_SEPARATOR === '/' ? posix_getpid() : 1;
             file_put_contents(static::$logFile, sprintf("%s pid:%d %s\n", date('Y-m-d H:i:s'), $pid, $msg), FILE_APPEND | LOCK_EX);
+
+            // Check the file size and truncate if it exceeds max size
+            if (!empty(static::$logFileMaxSize) && ($fileSize = filesize(static::$logFile)) > static::$logFileMaxSize) {
+                // Open files
+                $source = fopen(static::$logFile, 'r');
+
+                if (!$source) {
+                    return;
+                } else if (!flock($source, LOCK_EX)) {
+                    fclose($source);
+                    return;
+                }
+                
+                $newFile = static::$logFile . '.tmp';
+                $destination = fopen($newFile, 'w');
+
+                if (!$destination) {
+                    flock($source, LOCK_UN);
+                    fclose($source);
+                    return;
+                }
+
+                // Move to the halfway point in the source file
+                $halfwayPoint = (int)($fileSize / 2);
+                fseek($source, $halfwayPoint);
+
+                // Find the next newline character to ensure we don't cut in the middle of a line
+                while (($char = fgetc($source)) !== false) {
+                    if ($char === "\n") {
+                        break;
+                    }
+                }
+
+                // Copy the second half into the new file
+                while (!feof($source)) {
+                    fwrite($destination, fread($source, 8192)); // Read and write 8KB chunks
+                }
+
+                // Replace the old file with the new truncated file
+                rename($newFile, static::$logFile);
+                
+                // Close both files
+                flock($source, LOCK_UN);
+                fclose($source);
+                fclose($destination);
+            }
         }
     }
 
