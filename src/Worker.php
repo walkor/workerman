@@ -1884,7 +1884,9 @@ class Worker
 
                         // Mark id is available.
                         $id = static::getId($workerId, $pid);
-                        static::$idMap[$workerId][$id] = 0;
+                        if ($id !== false) {
+                            static::$idMap[$workerId][$id] = 0;
+                        }
 
                         break;
                     }
