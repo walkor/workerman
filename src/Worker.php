@@ -2449,7 +2449,7 @@ class Worker
             $errNo = 0;
             $errMsg = '';
             // SO_REUSEPORT.
-            if ($this->reusePort) {
+            if ($this->reusePort && DIRECTORY_SEPARATOR !== '\\') {
                 stream_context_set_option($this->socketContext, 'socket', 'so_reuseport', 1);
             }
 
