@@ -163,6 +163,7 @@ class Http
      */
     public static function encode(mixed $response, TcpConnection $connection): string
     {
+        $request = null;
         if (isset($connection->request)) {
             $request = $connection->request;
             $request->connection = $connection->request = null;
@@ -196,9 +197,19 @@ class Http
         }
 
         if (isset($response->file)) {
+            $requestRange = [0, 0];
+            if ($value = $request?->header('range')) {
+                if (str_starts_with($value, 'bytes=')) {
+                    $arr = explode('-', substr($value, 6));
+                    if (count($arr) === 2) {
+                        $requestRange = [(int)$arr[0], (int)$arr[1]];
+                    }
+                }
+            }
+
             $file = $response->file['file'];
-            $offset = $response->file['offset'];
-            $length = $response->file['length'];
+            $offset = $response->file['offset'] ?: $requestRange[0];
+            $length = $response->file['length'] ?: $requestRange[1];
             clearstatcache();
             $fileSize = (int)filesize($file);
             $bodyLen = $length > 0 ? $length : $fileSize - $offset;
@@ -206,9 +217,11 @@ class Http
                 'Content-Length' => $bodyLen,
                 'Accept-Ranges' => 'bytes',
             ]);
+
             if ($offset || $length) {
                 $offsetEnd = $offset + $bodyLen - 1;
                 $response->header('Content-Range', "bytes $offset-$offsetEnd/$fileSize");
+                $response->withStatus(206);
             }
             if ($bodyLen < 2 * 1024 * 1024) {
                 $connection->send($response . file_get_contents($file, false, null, $offset, $bodyLen), true);
