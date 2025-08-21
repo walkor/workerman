@@ -163,17 +163,9 @@ class Http
      */
     public static function encode(mixed $response, TcpConnection $connection): string
     {
-        $requestRange = [0, 0];
+        $request = null;
         if (isset($connection->request)) {
             $request = $connection->request;
-            if ($value = $request->header('range')) {
-                if (str_starts_with($value, 'bytes=')) {
-                    $arr = explode('-', substr($value, 6));
-                    if (count($arr) === 2) {
-                        $requestRange = [(int)$arr[0], (int)$arr[1]];
-                    }
-                }
-            }
             $request->connection = $connection->request = null;
         }
 
@@ -205,6 +197,16 @@ class Http
         }
 
         if (isset($response->file)) {
+            $requestRange = [0, 0];
+            if ($value = $request?->header('range')) {
+                if (str_starts_with($value, 'bytes=')) {
+                    $arr = explode('-', substr($value, 6));
+                    if (count($arr) === 2) {
+                        $requestRange = [(int)$arr[0], (int)$arr[1]];
+                    }
+                }
+            }
+
             $file = $response->file['file'];
             $offset = $response->file['offset'] ?: $requestRange[0];
             $length = $response->file['length'] ?: $requestRange[1];
