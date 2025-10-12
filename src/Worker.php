@@ -61,7 +61,7 @@ class Worker
      *
      * @var string
      */
-    final public const VERSION = '5.1.3';
+    final public const VERSION = '5.1.4';
 
     /**
      * Status initial.
@@ -879,8 +879,7 @@ class Worker
 
             // Listen.
             if (!$worker->reusePort) {
-                $worker->listen();
-                $worker->pauseAccept();
+                $worker->listen(false);
             }
         }
     }
@@ -1615,7 +1614,6 @@ class Worker
 
             // Display UI.
             static::safeEcho(str_pad($worker->name, 48) . str_pad($worker->getSocketName(), 36) . str_pad('1', 10) . "  [ok]\n");
-            $worker->listen();
             $worker->run();
             static::$globalEvent->run();
             if (static::$status !== self::STATUS_SHUTDOWN) {
@@ -2433,8 +2431,11 @@ class Worker
 
     /**
      * Listen.
+     *
+     * @param $autoAccept
+     * @return void
      */
-    public function listen(): void
+    public function listen($autoAccept = true): void
     {
         if (!$this->socketName) {
             return;
@@ -2489,7 +2490,9 @@ class Worker
             stream_set_blocking($this->mainSocket, false);
         }
 
-        $this->resumeAccept();
+        if ($autoAccept) {
+            $this->resumeAccept();
+        }
     }
 
     /**
@@ -2620,7 +2623,7 @@ class Worker
      */
     public function run(): void
     {
-        $this->listen();
+        $this->listen(!$this->onWorkerStart);
 
         if (!$this->onWorkerStart) {
             return;
@@ -2635,6 +2638,7 @@ class Worker
                 sleep(1);
                 static::stopAll(250, $e);
             } finally {
+                $this->resumeAccept();
                 Context::destroy();
             }
         };
