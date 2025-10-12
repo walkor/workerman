@@ -264,7 +264,7 @@ class Worker
      *
      * @var bool
      */
-    protected bool $pauseAccept = true;
+    protected ?bool $pauseAccept = null;
 
     /**
      * Is worker stopping ?
@@ -2432,10 +2432,10 @@ class Worker
     /**
      * Listen.
      *
-     * @param $autoAccept
+     * @param bool $autoAccept
      * @return void
      */
-    public function listen($autoAccept = true): void
+    public function listen(bool $autoAccept = true): void
     {
         if (!$this->socketName) {
             return;
@@ -2581,7 +2581,7 @@ class Worker
      */
     public function pauseAccept(): void
     {
-        if (static::$globalEvent !== null && $this->pauseAccept === false && $this->mainSocket !== null) {
+        if (static::$globalEvent !== null && !$this->pauseAccept && $this->mainSocket !== null) {
             static::$globalEvent->offReadable($this->mainSocket);
             $this->pauseAccept = true;
         }
@@ -2595,7 +2595,7 @@ class Worker
     public function resumeAccept(): void
     {
         // Register a listener to be notified when server socket is ready to read.
-        if (static::$globalEvent !== null && $this->pauseAccept === true && $this->mainSocket !== null) {
+        if (static::$globalEvent !== null && ($this->pauseAccept === null || $this->pauseAccept === true) && $this->mainSocket !== null) {
             if ($this->transport !== 'udp') {
                 static::$globalEvent->onReadable($this->mainSocket, $this->acceptTcpConnection(...));
             } else {
@@ -2638,7 +2638,9 @@ class Worker
                 sleep(1);
                 static::stopAll(250, $e);
             } finally {
-                $this->resumeAccept();
+                if ($this->pauseAccept === null) {
+                    $this->resumeAccept();
+                }
                 Context::destroy();
             }
         };
