@@ -21,8 +21,13 @@ use RedisCluster;
 use RedisException;
 use RuntimeException;
 use Throwable;
+use Workerman\Coroutine\Utils\DestructionWatcher;
+use Workerman\Events\Fiber;
 use Workerman\Protocols\Http\Session;
 use Workerman\Timer;
+use Workerman\Coroutine\Pool;
+use Workerman\Coroutine\Context;
+use Workerman\Worker;
 
 /**
  * Class RedisSessionHandler
@@ -33,12 +38,17 @@ class RedisSessionHandler implements SessionHandlerInterface
     /**
      * @var Redis|RedisCluster
      */
-    protected Redis|RedisCluster $redis;
+    protected Redis|RedisCluster|null $connection = null;
 
     /**
      * @var array
      */
     protected array $config;
+
+    /**
+     * @var Pool|null
+     */
+    protected static ?Pool $pool = null;
 
     /**
      * RedisSessionHandler constructor.
@@ -61,34 +71,87 @@ class RedisSessionHandler implements SessionHandlerInterface
 
         $config['timeout'] ??= 2;
         $this->config = $config;
-        $this->connect();
-
-        Timer::add($config['ping'] ?? 55, function () {
-            $this->redis->get('ping');
-        });
     }
 
     /**
-     * @throws RedisException
+     * Get connection.
+     * @return Redis
+     * @throws Throwable
      */
-    public function connect()
+    protected function connection(): Redis|RedisCluster
     {
-        $config = $this->config;
+        // Cannot switch fibers in current execution context when PHP < 8.4
+        if (Worker::$eventLoopClass === Fiber::class && PHP_VERSION_ID < 80400) {
+            if (!$this->connection) {
+                $this->connection = $this->createRedisConnection($this->config);
+                Timer::delay($this->config['pool']['heartbeat_interval'] ?? 55, function () {
+                    $this->connection->ping();
+                });
+            }
+            return $this->connection;
+        }
+        
+        $key = 'session.redis.connection';
+        /** @var Redis|null $connection */
+        $connection = Context::get($key);
+        if (!$connection) {
+            if (!static::$pool) {
+                $poolConfig = $this->config['pool'] ?? [];
+                static::$pool = new Pool($poolConfig['max_connections'] ?? 10, $poolConfig);
+                static::$pool->setConnectionCreator(function () {
+                    return $this->createRedisConnection($this->config);
+                });
+                static::$pool->setConnectionCloser(function (Redis|RedisCluster $connection) {
+                    $connection->close();
+                });
+                static::$pool->setHeartbeatChecker(function (Redis|RedisCluster $connection) {
+                    $connection->ping();
+                });
+            }
+            try {
+                $connection = static::$pool->get();
+                Context::set($key, $connection);
+            } finally {
+                $closure = function () use ($connection) {
+                    try {
+                        $connection && static::$pool && static::$pool->put($connection);
+                    } catch (Throwable) {
+                        // ignore
+                    }
+                };
+                $obj = Context::get('context.onDestroy');
+                if (!$obj) {
+                    $obj = new \stdClass();
+                    Context::set('context.onDestroy', $obj);
+                }
+                DestructionWatcher::watch($obj, $closure);
+            }
+        }
+        return $connection;
+    }
 
-        $this->redis = new Redis();
-        if (false === $this->redis->connect($config['host'], $config['port'], $config['timeout'])) {
+    /**
+     * Create redis connection.
+     * @param array $config
+     * @return Redis
+     */
+    protected function createRedisConnection(array $config): Redis|RedisCluster
+    {
+        $redis = new Redis();
+        if (false === $redis->connect($config['host'], $config['port'], $config['timeout'])) {
             throw new RuntimeException("Redis connect {$config['host']}:{$config['port']} fail.");
         }
         if (!empty($config['auth'])) {
-            $this->redis->auth($config['auth']);
+            $redis->auth($config['auth']);
         }
         if (!empty($config['database'])) {
-            $this->redis->select($config['database']);
+            $redis->select((int)$config['database']);
         }
         if (empty($config['prefix'])) {
             $config['prefix'] = 'redis_session_';
         }
-        $this->redis->setOption(Redis::OPT_PREFIX, $config['prefix']);
+        $redis->setOption(Redis::OPT_PREFIX, $config['prefix']);
+        return $redis;
     }
 
     /**
@@ -108,16 +171,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      */
     public function read(string $sessionId): string|false
     {
-        try {
-            return $this->redis->get($sessionId);
-        } catch (Throwable $e) {
-            $msg = strtolower($e->getMessage());
-            if ($msg === 'connection lost' || strpos($msg, 'went away')) {
-                $this->connect();
-                return $this->redis->get($sessionId);
-            }
-            throw $e;
-        }
+        return $this->connection()->get($sessionId);
     }
 
     /**
@@ -126,7 +180,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      */
     public function write(string $sessionId, string $sessionData): bool
     {
-        return true === $this->redis->setex($sessionId, Session::$lifetime, $sessionData);
+        return true === $this->connection()->setex($sessionId, Session::$lifetime, $sessionData);
     }
 
     /**
@@ -135,7 +189,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      */
     public function updateTimestamp(string $sessionId, string $data = ""): bool
     {
-        return true === $this->redis->expire($sessionId, Session::$lifetime);
+        return true === $this->connection()->expire($sessionId, Session::$lifetime);
     }
 
     /**
@@ -144,7 +198,7 @@ class RedisSessionHandler implements SessionHandlerInterface
      */
     public function destroy(string $sessionId): bool
     {
-        $this->redis->del($sessionId);
+        $this->connection()->del($sessionId);
         return true;
     }
 
