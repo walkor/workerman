@@ -1,7 +1,5 @@
 parameters:
 	level: 5
-	bootstrapFiles:
-		- vendor/autoload.php
 	paths:
 		- src
 		- tests
@@ -23,5 +21,7 @@ parameters:
 	    - path: src/Timer.php
 	      message: '#Call to static method getSuspension\(\) on an unknown class Revolt\\EventLoop.#'
 	    - path: src/Worker.php
+	      reportUnmatched: false
 	      messages:
 	          - '#Constant LINE_VERSION_LENGTH not found.#'
+	          - '#Call to static method create\(\) on an unknown class Workerman\\Coroutine\\Coroutine.#'
