@@ -161,7 +161,7 @@ class Timer
             pcntl_alarm(1);
         }
 
-        $runTime = time() + $timeInterval;
+        $runTime = (int)floor(time() + $timeInterval);
         if (!isset(self::$tasks[$runTime])) {
             self::$tasks[$runTime] = [];
         }
@@ -223,7 +223,7 @@ class Timer
                         Worker::safeEcho((string)$e);
                     }
                     if ($persistent && !empty(self::$status[$index])) {
-                        $newRunTime = time() + $timeInterval;
+                        $newRunTime = (int)floor(time() + $timeInterval);
                         if (!isset(self::$tasks[$newRunTime])) {
                             self::$tasks[$newRunTime] = [];
                         }

@@ -51,8 +51,11 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      * @param resource $socket
      * @param string $remoteAddress
      */
+    /**
+     * @param resource|null $socket
+     */
     public function __construct(
-        protected $socket,
+        /** @var resource|null */ protected $socket,
         protected string $remoteAddress) {}
 
     /**
@@ -147,7 +150,7 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      */
     public function getLocalAddress(): string
     {
-        return (string)@stream_socket_get_name($this->socket, false);
+        return is_resource($this->socket) ? (string)@stream_socket_get_name($this->socket, false) : '';
     }
 
 
@@ -163,6 +166,13 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
         if ($data !== null) {
             $this->send($data, $raw);
         }
+        if ($this->eventLoop) {
+            $this->eventLoop->offReadable($this->socket);
+        }
+        if (is_resource($this->socket)) {
+            @fclose($this->socket);
+        }
+        $this->socket = null;
         $this->eventLoop = $this->errorHandler = null;
     }
 
@@ -196,6 +206,9 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      * Get the real socket.
      *
      * @return resource
+     */
+    /**
+     * @return resource|null
      */
     public function getSocket()
     {

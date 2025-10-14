@@ -136,9 +136,9 @@ class Http
         static $requests = [];
         if (isset($requests[$buffer])) {
             $request = $requests[$buffer];
+            $request->destroy();
             $request->connection = $connection;
             $connection->request = $request;
-            $request->destroy();
             return $request;
         }
         $request = new static::$requestClass($buffer);
@@ -259,6 +259,7 @@ class Http
         // Read file content from disk piece by piece and send to client.
         $doWrite = function () use ($connection, $handler, $length, $offsetEnd) {
             // Send buffer not full.
+            /** @phpstan-ignore-next-line */
             while ($connection->context->bufferFull === false) {
                 // Read from disk.
                 $size = 1024 * 1024;
