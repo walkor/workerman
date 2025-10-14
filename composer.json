@@ -54,7 +54,7 @@
         }
     },
     "scripts": {
-        "analyze": "phpstan",
+        "analyze": "php -d memory_limit=1G vendor/phpstan/phpstan/phpstan.phar",
         "test": "pest --colors=always"
     }
 }
