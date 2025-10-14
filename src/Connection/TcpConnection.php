@@ -1060,6 +1060,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 $this->error($e);
             }
         }
+        $this->request = null;
         $this->sendBuffer = $this->recvBuffer = '';
         $this->currentPackageLength = 0;
         $this->isPaused = $this->sslHandshakeCompleted = false;

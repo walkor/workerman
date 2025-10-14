@@ -756,6 +756,7 @@ class Request implements Stringable
         if ($this->properties) {
             $this->properties = [];
         }
+        $this->connection = null;
         if (isset($this->data['files']) && $this->isSafe) {
             clearstatcache();
             array_walk_recursive($this->data['files'], function ($value, $key) {
