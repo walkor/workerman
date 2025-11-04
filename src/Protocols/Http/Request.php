@@ -748,7 +748,7 @@ class Request implements Stringable
      *
      * @return void
      */
-    public function __clone(): void
+    public function __clone()
     {
         if ($this->context) {
             $this->context  = [];
