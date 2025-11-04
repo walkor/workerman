@@ -734,7 +734,7 @@ class Request implements Stringable
     }
 
     /**
-     * __wakeup.
+     * Wakeup.
      *
      * @return void
      */
@@ -744,11 +744,11 @@ class Request implements Stringable
     }
 
     /**
-     * Destroy.
+     * Clone.
      *
      * @return void
      */
-    public function destroy(): void
+    public function __clone(): void
     {
         if ($this->context) {
             $this->context  = [];
@@ -757,6 +757,15 @@ class Request implements Stringable
             $this->properties = [];
         }
         $this->connection = null;
+    }
+
+    /**
+     * Destructor.
+     *
+     * @return void
+     */
+    public function __destruct()
+    {
         if (isset($this->data['files']) && $this->isSafe) {
             clearstatcache();
             array_walk_recursive($this->data['files'], function ($value, $key) {

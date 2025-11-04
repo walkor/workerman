@@ -19,13 +19,9 @@ use JsonSerializable;
 use RuntimeException;
 use stdClass;
 use Throwable;
-use Workerman\Events\Ev;
-use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
-use Workerman\Events\Select;
 use Workerman\Protocols\Http;
 use Workerman\Protocols\Http\Request;
-use Workerman\Protocols\ProtocolInterface;
 use Workerman\Worker;
 
 use function ceil;
@@ -251,11 +247,6 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      * @var array
      */
     public array $headers = [];
-
-    /**
-     * @var ?Request
-     */
-    public ?Request $request = null;
 
     /**
      * Is safe.
@@ -672,9 +663,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                     ++self::$statistics['total_request'];
                     if ($this->protocol === Http::class) {
                         $request = clone $requests[$buffer];
-                        $request->destroy();
                         $request->connection = $this;
-                        $this->request = $request;
                         try {
                             ($this->onMessage)($this, $request);
                         } catch (Throwable $e) {
@@ -750,7 +739,6 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                         ($this->onMessage)($this, $request);
                         if ($request instanceof Request) {
                             $requests[$oneRequestBuffer] = clone $request;
-                            $requests[$oneRequestBuffer]->destroy();
                         } else {
                             $requests[$oneRequestBuffer] = $request;
                         }
@@ -771,7 +759,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             return;
         }
 
-        // Applications protocol is not set.
+        // Application protocol is not set.
         ++self::$statistics['total_request'];
         try {
             ($this->onMessage)($this, $this->recvBuffer);
@@ -1060,7 +1048,6 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 $this->error($e);
             }
         }
-        $this->request = null;
         $this->sendBuffer = $this->recvBuffer = '';
         $this->currentPackageLength = 0;
         $this->isPaused = $this->sslHandshakeCompleted = false;

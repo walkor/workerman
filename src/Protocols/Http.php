@@ -136,9 +136,7 @@ class Http
         static $requests = [];
         if (isset($requests[$buffer])) {
             $request = $requests[$buffer];
-            $request->destroy();
             $request->connection = $connection;
-            $connection->request = $request;
             return $request;
         }
         $request = new static::$requestClass($buffer);
@@ -150,7 +148,6 @@ class Http
             $request = clone $request;
         }
         $request->connection = $connection;
-        $connection->request = $request;
         return $request;
     }
 
@@ -163,11 +160,6 @@ class Http
      */
     public static function encode(mixed $response, TcpConnection $connection): string
     {
-        $request = null;
-        if (isset($connection->request)) {
-            $request = $connection->request;
-            $request->connection = $connection->request = null;
-        }
 
         if (!is_object($response)) {
             $extHeader = '';
@@ -197,19 +189,9 @@ class Http
         }
 
         if (isset($response->file)) {
-            $requestRange = [0, 0];
-            if ($value = $request?->header('range')) {
-                if (str_starts_with($value, 'bytes=')) {
-                    $arr = explode('-', substr($value, 6));
-                    if (count($arr) === 2) {
-                        $requestRange = [(int)$arr[0], (int)$arr[1]];
-                    }
-                }
-            }
-
             $file = $response->file['file'];
-            $offset = $response->file['offset'] ?: $requestRange[0];
-            $length = $response->file['length'] ?: $requestRange[1];
+            $offset = $response->file['offset'] ?: 0;
+            $length = $response->file['length'] ?: 0;
             clearstatcache();
             $fileSize = (int)filesize($file);
             $bodyLen = $length > 0 ? $length : $fileSize - $offset;

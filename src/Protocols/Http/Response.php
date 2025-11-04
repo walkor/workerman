@@ -550,7 +550,10 @@ class Response implements Stringable
         if (!isset($headers['Content-Type'])) {
             $head .= "Content-Type: text/html;charset=utf-8\r\n";
         } else if ($headers['Content-Type'] === 'text/event-stream') {
-            return $head . $this->body;
+            // For Server-Sent Events, send headers once and keep the connection open.
+            // Headers must be terminated by an empty line; ignore any preset body to avoid
+            // polluting the event stream with extra bytes or OS-specific newlines.
+            return $head . "\r\n";
         }
 
         if (!isset($headers['Transfer-Encoding'])) {
