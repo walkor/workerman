@@ -744,11 +744,11 @@ class Request implements Stringable
     }
 
     /**
-     * Clone.
+     * Destroy.
      *
      * @return void
      */
-    public function __clone()
+    public function destroy(): void
     {
         if ($this->context) {
             $this->context  = [];
@@ -766,7 +766,7 @@ class Request implements Stringable
      */
     public function __destruct()
     {
-        if (isset($this->data['files']) && $this->isSafe) {
+        if (!empty($this->data['files']) && $this->isSafe) {
             clearstatcache();
             array_walk_recursive($this->data['files'], function ($value, $key) {
                 if ($key === 'tmp_name' && is_file($value)) {

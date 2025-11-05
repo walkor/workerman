@@ -662,13 +662,16 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 if (!isset($buffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$buffer])) {
                     ++self::$statistics['total_request'];
                     if ($this->protocol === Http::class) {
-                        $request = clone $requests[$buffer];
+                        $request = $requests[$buffer];
                         $request->connection = $this;
                         try {
                             ($this->onMessage)($this, $request);
                         } catch (Throwable $e) {
                             $this->error($e);
                         }
+                        $request = clone $request;
+                        $request->destroy();
+                        $requests[$buffer] = $request;
                         return;
                     }
                     $request = $requests[$buffer];
@@ -738,10 +741,10 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                     if ((!is_object($request) || $request instanceof Request) && $one && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
                         ($this->onMessage)($this, $request);
                         if ($request instanceof Request) {
-                            $requests[$oneRequestBuffer] = clone $request;
-                        } else {
-                            $requests[$oneRequestBuffer] = $request;
+                            $request = clone $request;
+                            $request->destroy();
                         }
+                        $requests[$oneRequestBuffer] = $request;
                         if (count($requests) > static::MAX_CACHE_SIZE) {
                             unset($requests[key($requests)]);
                         }

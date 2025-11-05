@@ -20,14 +20,11 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
 use function clearstatcache;
-use function count;
-use function explode;
 use function filesize;
 use function fopen;
 use function fread;
 use function fseek;
 use function ftell;
-use function in_array;
 use function ini_get;
 use function is_array;
 use function is_object;
@@ -35,7 +32,6 @@ use function preg_match;
 use function str_starts_with;
 use function strlen;
 use function strpos;
-use function strstr;
 use function substr;
 use function sys_get_temp_dir;
 
@@ -133,20 +129,7 @@ class Http
      */
     public static function decode(string $buffer, TcpConnection $connection): Request
     {
-        static $requests = [];
-        if (isset($requests[$buffer])) {
-            $request = $requests[$buffer];
-            $request->connection = $connection;
-            return $request;
-        }
         $request = new static::$requestClass($buffer);
-        if (!isset($buffer[TcpConnection::MAX_CACHE_STRING_LENGTH])) {
-            $requests[$buffer] = $request;
-            if (count($requests) > TcpConnection::MAX_CACHE_SIZE) {
-                unset($requests[key($requests)]);
-            }
-            $request = clone $request;
-        }
         $request->connection = $connection;
         return $request;
     }
@@ -160,7 +143,6 @@ class Http
      */
     public static function encode(mixed $response, TcpConnection $connection): string
     {
-
         if (!is_object($response)) {
             $extHeader = '';
             $contentType = 'text/html;charset=utf-8';
