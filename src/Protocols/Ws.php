@@ -368,16 +368,29 @@ class Ws
         $userHeaderStr = '';
         if (!empty($userHeader)) {
             foreach ($userHeader as $k => $v) {
+                // Skip unsafe header names or values containing CR/LF
+                if (strpbrk((string)$k, ":\r\n") !== false) {
+                    continue;
+                }
+                if (strpbrk((string)$v, "\r\n") !== false) {
+                    continue;
+                }
                 $userHeaderStr .= "$k: $v\r\n";
             }
-            $userHeaderStr = "\r\n" . trim($userHeaderStr);
+            $userHeaderStr = $userHeaderStr !== '' ? "\r\n" . trim($userHeaderStr) : '';
         }
-        $header = 'GET ' . $connection->getRemoteURI() . " HTTP/1.1\r\n" .
+        $requestUri = str_replace(["\r", "\n"], '', $connection->getRemoteURI());
+        // Sanitize Origin and Sec-WebSocket-Protocol
+        $origin = $connection->websocketOrigin ?? null;
+        $origin = $origin !== null ? str_replace(["\r", "\n"], '', $origin) : null;
+        $clientProtocol = $connection->websocketClientProtocol ?? null;
+        $clientProtocol = $clientProtocol !== null ? str_replace(["\r", "\n"], '', $clientProtocol) : null;
+        $header = 'GET ' . $requestUri . " HTTP/1.1\r\n" .
             (!preg_match("/\nHost:/i", $userHeaderStr) ? "Host: $host\r\n" : '') .
             "Connection: Upgrade\r\n" .
             "Upgrade: websocket\r\n" .
-            (($connection->websocketOrigin ?? null) ? "Origin: " . $connection->websocketOrigin . "\r\n" : '') .
-            (($connection->websocketClientProtocol ?? null) ? "Sec-WebSocket-Protocol: " . $connection->websocketClientProtocol . "\r\n" : '') .
+            ($origin ? "Origin: " . $origin . "\r\n" : '') .
+            ($clientProtocol ? "Sec-WebSocket-Protocol: " . $clientProtocol . "\r\n" : '') .
             "Sec-WebSocket-Version: 13\r\n" .
             "Sec-WebSocket-Key: " . $connection->context->websocketSecKey . $userHeaderStr . "\r\n\r\n";
         $connection->send($header, true);

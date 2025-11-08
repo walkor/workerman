@@ -483,6 +483,9 @@ class Websocket
 
             if ($connection->headers) {
                 foreach ($connection->headers as $header) {
+                    if (strpbrk($header, "\r\n") !== false) {
+                        continue;
+                    }
                     if (stripos($header, 'Server:') === 0) {
                         $hasServerHeader = true;
                     }

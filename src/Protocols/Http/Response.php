@@ -258,16 +258,6 @@ class Response implements Stringable
     ];
 
     /**
-     * Init.
-     *
-     * @return void
-     */
-    public static function init(): void
-    {
-        // Mime types are now statically defined
-    }
-
-    /**
      * Response constructor.
      *
      * @param int    $status
@@ -360,7 +350,7 @@ class Response implements Stringable
     public function withStatus(int $code, ?string $reasonPhrase = null): static
     {
         $this->status = $code;
-        $this->reason = $reasonPhrase;
+        $this->reason = $reasonPhrase !== null ? str_replace(["\r", "\n"], '', $reasonPhrase) : null;
         return $this;
     }
 
@@ -392,7 +382,7 @@ class Response implements Stringable
      */
     public function withProtocolVersion(string $version): static
     {
-        $this->version = $version;
+        $this->version = str_replace(["\r", "\n"], '', $version);
         return $this;
     }
 
@@ -476,10 +466,22 @@ class Response implements Stringable
             $head .= "Server: workerman\r\n";
         }
         foreach ($headers as $name => $value) {
+            // Skip unsafe header names
+            if (strpbrk($name, ":\r\n") !== false) {
+                continue;
+            }
             if (is_array($value)) {
                 foreach ($value as $item) {
+                    // Skip unsafe header values
+                    if (strpbrk($item, "\r\n") !== false) {
+                        continue;
+                    }
                     $head .= "$name: $item\r\n";
                 }
+                continue;
+            }
+            // Skip unsafe header values
+            if (strpbrk($value, "\r\n") !== false) {
                 continue;
             }
             $head .= "$name: $value\r\n";
@@ -492,6 +494,11 @@ class Response implements Stringable
         $fileInfo = pathinfo($file);
         $extension = $fileInfo['extension'] ?? '';
         $baseName = $fileInfo['basename'] ?: 'unknown';
+        // Remove ASCII control characters (0x00-0x1F, 0x7F) and unsafe quotes/backslashes to avoid breaking header formatting
+        $baseName = preg_replace('/["\\\\\x00-\x1F\x7F]/', '', $baseName);
+        if ($baseName === '') {
+            $baseName = 'unknown';
+        }
         if (!isset($headers['Content-Type'])) {
             if (isset(self::$mimeTypeMap[$extension])) {
                 $head .= "Content-Type: " . self::$mimeTypeMap[$extension] . "\r\n";
@@ -534,10 +541,22 @@ class Response implements Stringable
             $head .= "Server: workerman\r\n";
         }
         foreach ($headers as $name => $value) {
+            // Skip unsafe header names
+            if (strpbrk($name, ":\r\n") !== false) {
+                continue;
+            }
             if (is_array($value)) {
                 foreach ($value as $item) {
+                    // Skip unsafe header values
+                    if (strpbrk($item, "\r\n") !== false) {
+                        continue;
+                    }
                     $head .= "$name: $item\r\n";
                 }
+                continue;
+            }
+            // Skip unsafe header values
+            if (strpbrk($value, "\r\n") !== false) {
                 continue;
             }
             $head .= "$name: $value\r\n";
@@ -559,7 +578,7 @@ class Response implements Stringable
         if (!isset($headers['Transfer-Encoding'])) {
             $head .= "Content-Length: $bodyLen\r\n\r\n";
         } else {
-            return $bodyLen ? "$head\r\n" . dechex($bodyLen) . "\r\n{$this->body}\r\n" : "$head\r\n";
+            return $bodyLen ? "$head\r\n" . dechex($bodyLen) . "\r\n$this->body\r\n" : "$head\r\n";
         }
 
         // The whole http package
@@ -567,5 +586,3 @@ class Response implements Stringable
     }
 
 }
-
-Response::init();
