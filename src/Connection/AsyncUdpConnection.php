@@ -182,9 +182,9 @@ class AsyncUdpConnection extends UdpConnection
         if ($this->connected === true) {
             return;
         }
-        if (!$this->eventLoop) {
-            $this->eventLoop = Worker::$globalEvent;
-        }
+
+        $this->eventLoop ??= Worker::getEventLoop();
+
         if ($this->contextOption) {
             $context = stream_context_create($this->contextOption);
             $this->socket = stream_socket_client("udp://$this->remoteAddress", $errno, $errmsg,
@@ -198,6 +198,8 @@ class AsyncUdpConnection extends UdpConnection
             $this->eventLoop = null;
             return;
         }
+
+        $this->eventLoop ??= Worker::getEventLoop();
 
         stream_set_blocking($this->socket, false);
         if ($this->onMessage) {

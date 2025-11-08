@@ -242,9 +242,7 @@ class AsyncTcpConnection extends TcpConnection
             return;
         }
 
-        if (!$this->eventLoop) {
-            $this->eventLoop = Worker::$globalEvent;
-        }
+        $this->eventLoop ??= Worker::getEventLoop();
 
         $this->status = self::STATUS_CONNECTING;
         $this->connectStartTime = microtime(true);
@@ -287,6 +285,9 @@ class AsyncTcpConnection extends TcpConnection
             }
             return;
         }
+
+        $this->eventLoop ??= Worker::getEventLoop();
+
         // Add socket to global event loop waiting connection is successfully established or failed.
         $this->eventLoop->onWritable($this->socket, $this->checkConnection(...));
         // For windows.
