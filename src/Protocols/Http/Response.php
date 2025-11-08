@@ -467,13 +467,13 @@ class Response implements Stringable
         }
         foreach ($headers as $name => $value) {
             // Skip unsafe header names
-            if (strpbrk($name, ":\r\n") !== false) {
+            if (strpbrk((string)$name, ":\r\n") !== false) {
                 continue;
             }
             if (is_array($value)) {
                 foreach ($value as $item) {
                     // Skip unsafe header values
-                    if (strpbrk($item, "\r\n") !== false) {
+                    if (strpbrk((string)$item, "\r\n") !== false) {
                         continue;
                     }
                     $head .= "$name: $item\r\n";
@@ -481,7 +481,7 @@ class Response implements Stringable
                 continue;
             }
             // Skip unsafe header values
-            if (strpbrk($value, "\r\n") !== false) {
+            if (strpbrk((string)$value, "\r\n") !== false) {
                 continue;
             }
             $head .= "$name: $value\r\n";
@@ -542,13 +542,13 @@ class Response implements Stringable
         }
         foreach ($headers as $name => $value) {
             // Skip unsafe header names
-            if (strpbrk($name, ":\r\n") !== false) {
+            if (strpbrk((string)$name, ":\r\n") !== false) {
                 continue;
             }
             if (is_array($value)) {
                 foreach ($value as $item) {
                     // Skip unsafe header values
-                    if (strpbrk($item, "\r\n") !== false) {
+                    if (strpbrk((string)$item, "\r\n") !== false) {
                         continue;
                     }
                     $head .= "$name: $item\r\n";
@@ -556,7 +556,7 @@ class Response implements Stringable
                 continue;
             }
             // Skip unsafe header values
-            if (strpbrk($value, "\r\n") !== false) {
+            if (strpbrk((string)$value, "\r\n") !== false) {
                 continue;
             }
             $head .= "$name: $value\r\n";
