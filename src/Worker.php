@@ -25,7 +25,7 @@ use Throwable;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Connection\TcpConnection;
 use Workerman\Connection\UdpConnection;
-use Workerman\Coroutine\Coroutine as Coroutine;
+use Workerman\Coroutine;
 use Workerman\Coroutine\Context;
 use Workerman\Events\Event;
 use Workerman\Events\EventInterface;
@@ -61,7 +61,7 @@ class Worker
      *
      * @var string
      */
-    final public const VERSION = '5.1.5';
+    final public const VERSION = '5.1.6';
 
     /**
      * Status initial.
