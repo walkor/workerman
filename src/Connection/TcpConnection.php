@@ -244,6 +244,10 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public ?stdClass $context = null;
 
     /**
+     * Internal use only. Do not access or modify from application code.
+     *
+     * @internal Framework internal API
+     * @deprecated Do not set this property, use $response->header() or $response->widthHeaders() instead
      * @var array
      */
     public array $headers = [];
