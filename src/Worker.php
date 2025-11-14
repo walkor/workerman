@@ -61,7 +61,7 @@ class Worker
      *
      * @var string
      */
-    final public const VERSION = '5.1.6';
+    final public const VERSION = '5.1.7';
 
     /**
      * Status initial.
@@ -247,6 +247,8 @@ class Worker
 
     /**
      * Store all connections of clients.
+     *
+     * @internal Framework internal API
      *
      * @var TcpConnection[]
      */
