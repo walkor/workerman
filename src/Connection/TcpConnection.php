@@ -1093,11 +1093,12 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     }
 
     /**
-     * __wakeup.
+     * __unserialize.
      *
+     * @param array $data
      * @return void
      */
-    public function __wakeup()
+    public function __unserialize(array $data): void
     {
         $this->isSafe = false;
     }

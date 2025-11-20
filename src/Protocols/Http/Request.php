@@ -734,11 +734,12 @@ class Request implements Stringable
     }
 
     /**
-     * Wakeup.
+     * __unserialize.
      *
+     * @param array $data
      * @return void
      */
-    public function __wakeup(): void
+    public function __unserialize(array $data): void
     {
         $this->isSafe = false;
     }
