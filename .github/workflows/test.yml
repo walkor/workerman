@@ -44,9 +44,10 @@ jobs:
           command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress --ansi
 
       - name: Static analysis
-        #run: composer analyze
+        run: composer analyze
 
       - name: Execute tests
         run: composer test
+
 
 
