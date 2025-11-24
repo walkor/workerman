@@ -6,6 +6,7 @@ parameters:
 	excludePaths:
 	    - src/Events/Swow.php
 	ignoreErrors:
+        - '#PHPDoc tag @throws with type RedisClusterException is not subtype of Throwable#'
 	    -
 	        path: src/Events/Fiber.php
 	        messages:
