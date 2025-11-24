@@ -43,10 +43,10 @@
         "ext-swow": "<v1.0.0"
     },
     "require-dev": {
-        "pestphp/pest": "2.x-dev",
-        "mockery/mockery": "2.0.x-dev",
+        "pestphp/pest": "^4",
+        "mockery/mockery": "^1.6",
         "guzzlehttp/guzzle": "^7.0",
-        "phpstan/phpstan": "2.1.x-dev"
+        "phpstan/phpstan": "^2.1"
     },
     "config": {
         "allow-plugins": {
