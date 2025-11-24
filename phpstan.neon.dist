@@ -6,7 +6,6 @@ parameters:
 	excludePaths:
 	    - src/Events/Swow.php
 	ignoreErrors:
-		- '#PHPDoc tag @throws with type RedisClusterException is not subtype of Throwable#'
 		- path: src/Events/Fiber.php
 			messages:
 				- '#Property Workerman\\Events\\Fiber::\$driver has unknown class Revolt\\EventLoop\\Driver as its type.#'
@@ -24,3 +23,4 @@ parameters:
 			messages:
 				- '#Constant LINE_VERSION_LENGTH not found.#'
 	    		- '#Call to static method create\(\) on an unknown class Workerman\\Coroutine\\Coroutine.#'
+		- '#PHPDoc tag @throws with type RedisClusterException is not subtype of Throwable#'
