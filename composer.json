@@ -48,7 +48,7 @@
         "ext-swow": "<v1.0.0"
     },
     "require-dev": {
-        "pestphp/pest": "^2 || ^3 || ^4",
+        "pestphp/pest": "^2.1 || ^3 || ^4",
         "mockery/mockery": "^1.6",
         "guzzlehttp/guzzle": "^7.0",
         "phpstan/phpstan": "2.1.x-dev"
