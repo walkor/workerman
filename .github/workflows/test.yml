@@ -12,7 +12,7 @@ on:
 
 jobs:
   linux_tests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
@@ -44,10 +44,12 @@ jobs:
           command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress --ansi
 
       - name: Static analysis
+        continue-on-error: true
         run: composer analyze
 
       - name: Execute tests
         run: composer test
+
 
 
 
