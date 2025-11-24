@@ -25,5 +25,3 @@ parameters:
 	      messages:
 	          - '#Constant LINE_VERSION_LENGTH not found.#'
 	          - '#Call to static method create\(\) on an unknown class Workerman\\Coroutine\\Coroutine.#'
-		-
-			'#PHPDoc tag @throws with type RedisClusterException is not subtype of Throwable#'
