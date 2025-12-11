@@ -125,9 +125,9 @@ class Http
      *
      * @param string $buffer
      * @param TcpConnection $connection
-     * @return Request
+     * @return mixed
      */
-    public static function decode(string $buffer, TcpConnection $connection): Request
+    public static function decode(string $buffer, TcpConnection $connection): mixed
     {
         $request = new static::$requestClass($buffer);
         $request->connection = $connection;
