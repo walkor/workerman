@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of workerman.
  *
@@ -50,7 +51,7 @@ use function urlencode;
  * Class Request
  * @package Workerman\Protocols\Http
  */
-class Request implements Stringable
+class Request implements Stringable, RequestInterface
 {
     /**
      * Connection.
@@ -630,7 +631,7 @@ class Request implements Stringable
                         $postEncodeString .= urlencode($k) . "=" . urlencode($boundaryValue) . '&';
                     }
                     return $sectionEndOffset + strlen($boundary) + 2;
-                
+
                 case "content-type":
                     $file['type'] = trim($value);
                     break;
@@ -776,5 +777,4 @@ class Request implements Stringable
             });
         }
     }
-
 }

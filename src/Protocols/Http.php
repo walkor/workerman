@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of workerman.
  *
@@ -18,6 +19,7 @@ namespace Workerman\Protocols;
 
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
+use Workerman\Protocols\Http\RequestInterface;
 use Workerman\Protocols\Http\Response;
 use function clearstatcache;
 use function filesize;
@@ -127,7 +129,7 @@ class Http
      * @param TcpConnection $connection
      * @return Request
      */
-    public static function decode(string $buffer, TcpConnection $connection): Request
+    public static function decode(string $buffer, TcpConnection $connection): RequestInterface
     {
         $request = new static::$requestClass($buffer);
         $request->connection = $connection;
