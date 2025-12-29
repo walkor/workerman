@@ -88,26 +88,41 @@ class Http
         }
 
         $length = $crlfPos + 4;
-        $header = substr($buffer, 0, $crlfPos);
+        // Only slice when necessary (avoid extra string copy).
+        // Keep the trailing "\r\n\r\n" in $header for simpler/faster validation patterns.
+        $header = isset($buffer[$length]) ? substr($buffer, 0, $length) : $buffer;
 
-        if (
-            !str_starts_with($header, 'GET ') &&
-            !str_starts_with($header, 'POST ') &&
-            !str_starts_with($header, 'OPTIONS ') &&
-            !str_starts_with($header, 'HEAD ') &&
-            !str_starts_with($header, 'DELETE ') &&
-            !str_starts_with($header, 'PUT ') &&
-            !str_starts_with($header, 'PATCH ')
-        ) {
+        // Validate request line: METHOD SP request-target SP HTTP/1.0|1.1 CRLF
+        // Request-target validation:
+        // - Allow origin-form only (must start with "/") for all methods below.
+        // - Do NOT support asterisk-form ("*") for OPTIONS.
+        // - For compatibility, allow any bytes except ASCII control characters, spaces and DEL in request-target.
+        //   (Strictly speaking, URI should be ASCII and non-ASCII should be percent-encoded; but many clients send UTF-8.)
+        // - Disallow "Transfer-Encoding" header (case-insensitive; line-start must be "\r\n" to avoid matching "x-Transfer-Encoding").
+        // - Optionally capture Content-Length (case-insensitive; line-start must be "\r\n" to avoid matching "x-Content-Length").
+        // - If Content-Length exists, it must be a valid decimal number and the whole field-value must be digits + optional OWS.
+        // - Disallow duplicate Content-Length headers.
+        // Note: All lookaheads are placed at \A so they can scan the entire header including the request line.
+        //       Use [ \t]* instead of \s* to avoid matching across lines.
+        //       The pattern uses case-insensitive modifier (~i) for header name matching.
+        $headerValidatePattern = '~\A'
+            // Optional: capture Content-Length value (must be at \A to scan entire header)
+            . '(?:(?=[\s\S]*\r\nContent-Length[ \t]*:[ \t]*(\d+)[ \t]*\r\n))?'
+            // Disallow Transfer-Encoding header
+            . '(?![\s\S]*\r\nTransfer-Encoding[ \t]*:)'
+            // If Content-Length header exists, its value must be pure digits + optional OWS
+            . '(?![\s\S]*\r\nContent-Length[ \t]*:(?![ \t]*\d+[ \t]*\r\n)[^\r]*\r\n)'
+            // Disallow duplicate Content-Length headers (adjacent or separated)
+            . '(?![\s\S]*\r\nContent-Length[ \t]*:[^\r\n]*\r\n(?:[\s\S]*?\r\n)?Content-Length[ \t]*:)'
+            // Match request line: METHOD SP request-target SP HTTP-version CRLF
+            . '(?:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) +\/[^\x00-\x20\x7f]* +HTTP\/1\.[01]\r\n~i';
+
+        if (!preg_match($headerValidatePattern, $header, $matches)) {
             $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
 
-        if (preg_match('/\b(?:Transfer-Encoding\b.*)|(?:Content-Length:\s*(\d+)(?!.*\bTransfer-Encoding\b))/is', $header, $matches)) {
-            if (!isset($matches[1])) {
-                $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
-                return 0;
-            }
+        if (isset($matches[1])) {
             $length += (int)$matches[1];
         }
 
