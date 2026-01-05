@@ -1607,7 +1607,7 @@ class Worker
             // Compatibility with the bug in Swow where the first request on Windows fails to trigger stream_select.
             if (extension_loaded('swow')) {
                 Timer::delay(0.1 , function(){
-                    $stream = fopen('php://memory', 'r');
+                    $stream = tmpfile();
                     static::$globalEvent->onReadable($stream, function($stream) {
                         static::$globalEvent->offReadable($stream);
                     });
