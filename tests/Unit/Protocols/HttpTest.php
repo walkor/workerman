@@ -21,7 +21,7 @@ it('customizes request class', function () {
 
 it('tests ::input', function () {
     //test 413 payload too large
-    testWithConnectionClose(function (TcpConnection $tcpConnection) {
+    testWithConnectionEnd(function (TcpConnection $tcpConnection) {
         expect(Http::input(str_repeat('jhdxr', 3333), $tcpConnection))
             ->toBe(0);
     }, '413 Payload Too Large');
@@ -41,11 +41,20 @@ it('tests ::input', function () {
     }, '400 Bad Request');
 
     //content-length exceeds connection max package size
-    testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
+    testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
         $tcpConnection->maxPackageSize = 10;
         expect(Http::input($buffer, $tcpConnection))
             ->toBe(0);
     }, '413 Payload Too Large');
+});
+
+it('sends 413 with Connection: close header', function () {
+    /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+    $tcpConnection = Mockery::spy(TcpConnection::class);
+    Http::input(str_repeat('a', 16384), $tcpConnection);
+    $tcpConnection->shouldHaveReceived('end', function ($actual) {
+        return str_contains($actual, '413 Payload Too Large') && str_contains($actual, "Connection: close\r\n");
+    });
 });
 
 it('tests ::input request-line and header validation matrix', function (string $buffer, int $expectedLength) {
@@ -120,7 +129,10 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
 ]);
 
 it('rejects Transfer-Encoding and bad/duplicate Content-Length in ::input', function (string $buffer, ?string $expectedCloseContains = '400 Bad Request') {
-    testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
+    $helper = ($expectedCloseContains && str_contains($expectedCloseContains, '413'))
+        ? 'testWithConnectionEnd'
+        : 'testWithConnectionClose';
+    $helper(function (TcpConnection $tcpConnection) use ($buffer) {
         expect(Http::input($buffer, $tcpConnection))->toBe(0);
     }, $expectedCloseContains);
 })->with([

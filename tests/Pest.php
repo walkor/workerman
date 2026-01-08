@@ -56,6 +56,19 @@ function testWithConnectionClose(Closure $closure, ?string $dataContains = null,
     }
 }
 
+function testWithConnectionEnd(Closure $closure, ?string $dataContains = null, $connectionClass = TcpConnection::class): void
+{
+    $tcpConnection = Mockery::spy($connectionClass);
+    $closure($tcpConnection);
+    if ($dataContains) {
+        $tcpConnection->shouldHaveReceived('end', function ($actual) use ($dataContains) {
+            return str_contains($actual, $dataContains);
+        });
+    } else {
+        $tcpConnection->shouldHaveReceived('end');
+    }
+}
+
 function getNonFrameOutput(string $output): string
 {
     $end = "Start success.\n";

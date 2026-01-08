@@ -82,7 +82,7 @@ class Http
         if (false === $crlfPos) {
             // Judge whether the package length exceeds the limit.
             if (strlen($buffer) >= 16384) {
-                $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
+                $connection->end("HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\nContent-Length: 0\r\n\r\n", true);
             }
             return 0;
         }
@@ -127,7 +127,7 @@ class Http
         }
 
         if ($length > $connection->maxPackageSize) {
-            $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
+            $connection->end("HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
 
