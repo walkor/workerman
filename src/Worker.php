@@ -61,7 +61,7 @@ class Worker
      *
      * @var string
      */
-    final public const VERSION = '5.1.8';
+    final public const VERSION = '5.1.9';
 
     /**
      * Status initial.
