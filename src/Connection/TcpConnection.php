@@ -1001,8 +1001,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         // Enter ending mode: stop protocol parsing and only drain incoming data.
         $this->status = self::STATUS_ENDING;
         // Disable business callback after end().
-        $this->onMessage = static function (self $connection, mixed $data = null): void {
-        };
+        $this->onMessage = static function (self $connection, mixed $data = null): void {};
         $this->recvBuffer = '';
         $this->currentPackageLength = 0;
 
