@@ -35,7 +35,7 @@ it('tests ::input', function () {
         '{"key": "value", "foo": "bar"}';
 
     //unrecognized method
-    testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
+    testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
         expect(Http::input(str_replace('POST', 'MIAOWU', $buffer), $tcpConnection))
             ->toBe(0);
     }, '400 Bad Request');
@@ -95,7 +95,7 @@ it('tests ::input request-line and header validation matrix', function (string $
 ]);
 
 it('rejects invalid request-line cases in ::input', function (string $buffer) {
-    testWithConnectionClose(function (TcpConnection $tcpConnection) use ($buffer) {
+    testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
         expect(Http::input($buffer, $tcpConnection))->toBe(0);
     }, '400 Bad Request');
 })->with([
@@ -129,10 +129,7 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
 ]);
 
 it('rejects Transfer-Encoding and bad/duplicate Content-Length in ::input', function (string $buffer, ?string $expectedCloseContains = '400 Bad Request') {
-    $helper = ($expectedCloseContains && str_contains($expectedCloseContains, '413'))
-        ? 'testWithConnectionEnd'
-        : 'testWithConnectionClose';
-    $helper(function (TcpConnection $tcpConnection) use ($buffer) {
+    testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
         expect(Http::input($buffer, $tcpConnection))->toBe(0);
     }, $expectedCloseContains);
 })->with([
