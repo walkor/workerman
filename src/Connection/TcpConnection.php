@@ -98,21 +98,21 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      *
      * @var int
      */
-    public const STATUS_ENDING = 16;
+    public const STATUS_ENDING = 4;
 
     /**
      * Status closing.
      *
      * @var int
      */
-    public const STATUS_CLOSING = 4;
+    public const STATUS_CLOSING = 8;
 
     /**
      * Status closed.
      *
      * @var int
      */
-    public const STATUS_CLOSED = 8;
+    public const STATUS_CLOSED = 16;
 
     /**
      * Maximum string length for cache
