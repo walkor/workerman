@@ -41,7 +41,7 @@ jobs:
         with:
           timeout_minutes: 5
           max_attempts: 5
-          command: composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress --ansi
+          command: composer update --${{ matrix.stability }} --prefer-lowest --prefer-dist --no-interaction --no-progress --ansi
 
       - name: Static analysis
         #continue-on-error: true
@@ -49,6 +49,7 @@ jobs:
 
       - name: Execute tests
         run: composer test
+
 
 
 
