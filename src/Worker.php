@@ -2558,11 +2558,12 @@ class Worker
         // Check application layer protocol class.
         if (!isset(self::BUILD_IN_TRANSPORTS[$scheme])) {
             $scheme = ucfirst($scheme);
-            $this->protocol = $scheme[0] === '\\' ? $scheme : 'Protocols\\' . $scheme;
+            $protocolNs='Workerman\\Protocols\\';
+            $this->protocol = $scheme[0] === '\\' ? $scheme : $protocolNs . $scheme;
             if (!class_exists($this->protocol)) {
-                $this->protocol = "Workerman\\Protocols\\$scheme";
+                $this->protocol = $protocolNs . $scheme;
                 if (!class_exists($this->protocol)) {
-                    throw new RuntimeException("class \\Protocols\\$scheme not exist");
+                    throw new RuntimeException("class $protocolNs$scheme not exist");
                 }
             }
 
