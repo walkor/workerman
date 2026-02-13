@@ -80,6 +80,10 @@ class AsyncUdpConnection extends UdpConnection
         [$scheme, $address] = explode(':', $remoteAddress, 2);
         // Check application layer protocol class.
         if ($scheme !== 'udp') {
+            // Validate scheme contains only safe characters for class name resolution.
+            if (!preg_match('/^[a-zA-Z][a-zA-Z0-9]*$/', $scheme)) {
+                throw new RuntimeException("Invalid protocol scheme '$scheme'");
+            }
             $scheme = ucfirst($scheme);
             $this->protocol = '\\Protocols\\' . $scheme;
             if (!class_exists($this->protocol)) {

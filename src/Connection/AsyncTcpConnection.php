@@ -189,6 +189,10 @@ class AsyncTcpConnection extends TcpConnection
         }
         // Check application layer protocol class.
         if (!isset(self::BUILD_IN_TRANSPORTS[$scheme])) {
+            // Validate scheme contains only safe characters for class name resolution.
+            if (!preg_match('/^[a-zA-Z][a-zA-Z0-9]*$/', $scheme)) {
+                throw new RuntimeException("Invalid protocol scheme '$scheme'");
+            }
             $scheme = ucfirst($scheme);
             $this->protocol = '\\Protocols\\' . $scheme;
             if (!class_exists($this->protocol)) {

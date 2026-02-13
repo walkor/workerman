@@ -392,7 +392,14 @@ class Websocket
         if ($isFinFrame) {
             $buffer .= "\x00\x00\xff\xff";
         }
-        return inflate_add($connection->context->inflator, $buffer);
+        $result = inflate_add($connection->context->inflator, $buffer);
+        // Guard against decompression bomb: check inflated size against maxPackageSize.
+        if ($result !== false && strlen($result) > $connection->maxPackageSize) {
+            Worker::safeEcho("WebSocket inflate data exceeds maxPackageSize limit\n");
+            $connection->close();
+            return false;
+        }
+        return $result;
     }
 
     /**

@@ -741,7 +741,8 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 // The current packet length is known.
                 if ($this->currentPackageLength) {
                     // Data is not enough for a package.
-                    if ($this->currentPackageLength > strlen($this->recvBuffer)) {
+                    $recvBufferLength = strlen($this->recvBuffer);
+                    if ($this->currentPackageLength > $recvBufferLength) {
                         break;
                     }
                 } else {
@@ -757,7 +758,9 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                         break;
                     } elseif ($this->currentPackageLength > 0 && $this->currentPackageLength <= $this->maxPackageSize) {
                         // Data is not enough for a package.
-                        if ($this->currentPackageLength > strlen($this->recvBuffer)) {
+                        // Note: recalculate length here since protocol::input() may call consumeRecvBuffer().
+                        $recvBufferLength = strlen($this->recvBuffer);
+                        if ($this->currentPackageLength > $recvBufferLength) {
                             break;
                         }
                     } // Wrong package.
@@ -771,7 +774,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 // The data is enough for a packet.
                 ++self::$statistics['total_request'];
                 // The current packet length is equal to the length of the buffer.
-                if ($one = (strlen($this->recvBuffer) === $this->currentPackageLength)) {
+                if ($one = ($recvBufferLength === $this->currentPackageLength)) {
                     $oneRequestBuffer = $this->recvBuffer;
                     $this->recvBuffer = '';
                 } else {

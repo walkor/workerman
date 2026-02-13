@@ -174,7 +174,7 @@ class Session
         }
         $this->sessionId = $sessionId;
         if ($data = static::$handler->read($sessionId)) {
-            $this->data = $this->serializer[1]($data);
+            $this->data = $this->safeDeserialize($data);
         }
     }
 
@@ -415,6 +415,22 @@ class Session
         } else {
             static::$handler = new static::$handlerClass(static::$handlerConfig);
         }
+    }
+
+    /**
+     * Safely deserialize session data, preventing object instantiation.
+     *
+     * @param string $data
+     * @return array
+     */
+    protected function safeDeserialize(string $data): array
+    {
+        if ($this->serializer[1] === 'unserialize') {
+            $result = unserialize($data, ['allowed_classes' => false]);
+        } else {
+            $result = ($this->serializer[1])($data);
+        }
+        return is_array($result) ? $result : [];
     }
 
     /**
