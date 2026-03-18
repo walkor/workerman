@@ -248,13 +248,11 @@ class Ws
         $maskKey = "\x00\x00\x00\x00";
         $length = strlen($payload);
 
-        if (strlen($payload) < 126) {
-            $head = chr(0x80 | $length);
-        } elseif ($length < 0xFFFF) {
-            $head = chr(0x80 | 126) . pack("n", $length);
-        } else {
-            $head = chr(0x80 | 127) . pack("N", 0) . pack("N", $length);
-        }
+        $head = match(true) {
+            $length < 126    => chr(0x80 | $length),
+            $lenght < 0xFFFF => chr(0x80 | 126) . pack("n", $length),
+            default => chr(0x80 | 127) . pack("N", 0) . pack("N", $length),
+        };
 
         $frame = $connection->websocketType . $head . $maskKey;
         // append payload to frame:
