@@ -297,13 +297,12 @@ class Ws
     {
         $dataLength = ord($bytes[1]);
 
-        if ($dataLength === 126) {
-            $decodedData = substr($bytes, 4);
-        } else if ($dataLength === 127) {
-            $decodedData = substr($bytes, 10);
-        } else {
-            $decodedData = substr($bytes, 2);
-        }
+        $decodedData = match($dataLength) {
+            126 => substr($bytes, 4),
+            127 => substr($bytes, 10),
+            default => substr($bytes, 2),
+        };
+
         if ($connection->context->websocketCurrentFrameLength) {
             $connection->context->websocketDataBuffer .= $decodedData;
             return $connection->context->websocketDataBuffer;
