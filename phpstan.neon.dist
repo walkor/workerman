@@ -23,5 +23,3 @@ parameters:
 	      messages:
 	          - '#Constant LINE_VERSION_LENGTH not found.#'
 	          - '#Call to static method create\(\) on an unknown class Workerman\\Coroutine\\Coroutine.#'
-	    - path: src/Protocols/Http.php
-	      treatPhpDocTypesAsCertain: false
