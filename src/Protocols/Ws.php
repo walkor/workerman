@@ -295,9 +295,7 @@ class Ws
      */
     public static function decode(string $bytes, AsyncTcpConnection $connection): string
     {
-        $dataLength = ord($bytes[1]);
-
-        $decodedData = match($dataLength) {
+        $decodedData = match(ord($bytes[1])) { // data length
             126 => substr($bytes, 4),
             127 => substr($bytes, 10),
             default => substr($bytes, 2),
