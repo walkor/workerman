@@ -51,7 +51,7 @@
         "pestphp/pest": "^2.36 || ^3 || ^4",
         "mockery/mockery": "^1.6",
         "guzzlehttp/guzzle": "^7.10",
-        "phpstan/phpstan": "2.1.x-dev"
+        "phpstan/phpstan": "^2.1"
     },
     "config": {
         "allow-plugins": {
