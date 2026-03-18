@@ -300,8 +300,7 @@ class Ws
         };
 
         if ($connection->context->websocketCurrentFrameLength) {
-            $connection->context->websocketDataBuffer .= $decodedData;
-            return $connection->context->websocketDataBuffer;
+            return $connection->context->websocketDataBuffer .= $decodedData;
         }
 
         if ($connection->context->websocketDataBuffer !== '') {
