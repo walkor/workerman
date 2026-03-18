@@ -23,5 +23,5 @@ parameters:
 	      messages:
 	          - '#Constant LINE_VERSION_LENGTH not found.#'
 	          - '#Call to static method create\(\) on an unknown class Workerman\\Coroutine\\Coroutine.#'
-        - identifier: throws.unusedType
-          message: 'RedisClusterException in PHPDoc @throws tag but it's not thrown'
+	    - identifier: throws.unusedType
+	      message: 'RedisClusterException in PHPDoc @throws tag but it's not thrown'
