@@ -364,8 +364,6 @@ final class Select implements EventInterface
     {
         $this->nextTickTime = $nextTickTime;
         if ($nextTickTime == 0) {
-            // Swow will affect the signal interruption characteristics of stream_select,
-            // so a shorter timeout should be used to detect signals.
             $this->selectTimeout = self::MAX_SELECT_TIMOUT_US;
             return;
         }
@@ -423,8 +421,12 @@ final class Select implements EventInterface
                 }
             }
 
-            if ($this->nextTickTime > 0 && microtime(true) >= $this->nextTickTime) {
-                $this->tick();
+            if ($this->nextTickTime > 0) {
+                if (microtime(true) >= $this->nextTickTime) {
+                    $this->tick();
+                } else {
+                    $this->selectTimeout = (int)(($this->nextTickTime - microtime(true)) * 1000000);
+                }
             }
 
             // The $this->signalEvents are empty under Windows, make sure not to call pcntl_signal_dispatch.

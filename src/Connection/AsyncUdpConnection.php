@@ -22,6 +22,7 @@ use Throwable;
 use Workerman\Protocols\ProtocolInterface;
 use Workerman\Worker;
 use function class_exists;
+use function is_resource;
 use function explode;
 use function fclose;
 use function stream_context_create;
@@ -79,6 +80,10 @@ class AsyncUdpConnection extends UdpConnection
         [$scheme, $address] = explode(':', $remoteAddress, 2);
         // Check application layer protocol class.
         if ($scheme !== 'udp') {
+            // Validate scheme contains only safe characters for class name resolution.
+            if (!preg_match('/^[a-zA-Z][a-zA-Z0-9]*$/', $scheme)) {
+                throw new RuntimeException("Invalid protocol scheme '$scheme'");
+            }
             $scheme = ucfirst($scheme);
             $this->protocol = '\\Protocols\\' . $scheme;
             if (!class_exists($this->protocol)) {
@@ -131,8 +136,13 @@ class AsyncUdpConnection extends UdpConnection
         if ($data !== null) {
             $this->send($data, $raw);
         }
-        $this->eventLoop->offReadable($this->socket);
-        fclose($this->socket);
+        if ($this->eventLoop) {
+            $this->eventLoop->offReadable($this->socket);
+        }
+        if (is_resource($this->socket)) {
+            fclose($this->socket);
+        }
+        $this->socket = null; // intentionally nullable to mark closed state
         $this->connected = false;
         // Try to emit onClose callback.
         if ($this->onClose) {
@@ -176,9 +186,9 @@ class AsyncUdpConnection extends UdpConnection
         if ($this->connected === true) {
             return;
         }
-        if (!$this->eventLoop) {
-            $this->eventLoop = Worker::$globalEvent;
-        }
+
+        $this->eventLoop ??= Worker::getEventLoop();
+
         if ($this->contextOption) {
             $context = stream_context_create($this->contextOption);
             $this->socket = stream_socket_client("udp://$this->remoteAddress", $errno, $errmsg,
@@ -192,6 +202,8 @@ class AsyncUdpConnection extends UdpConnection
             $this->eventLoop = null;
             return;
         }
+
+        $this->eventLoop ??= Worker::getEventLoop();
 
         stream_set_blocking($this->socket, false);
         if ($this->onMessage) {

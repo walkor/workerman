@@ -84,6 +84,8 @@ class Websocket
      */
     public static function input(string $buffer, TcpConnection $connection): int
     {
+        $connection->websocketOrigin = $connection->websocketOrigin ?? null;
+        $connection->websocketClientProtocol = $connection->websocketClientProtocol ?? null;
         // Receive length.
         $recvLen = strlen($buffer);
         // We need more data.
@@ -390,7 +392,14 @@ class Websocket
         if ($isFinFrame) {
             $buffer .= "\x00\x00\xff\xff";
         }
-        return inflate_add($connection->context->inflator, $buffer);
+        $result = inflate_add($connection->context->inflator, $buffer);
+        // Guard against decompression bomb: check inflated size against maxPackageSize.
+        if ($result !== false && strlen($result) > $connection->maxPackageSize) {
+            Worker::safeEcho("WebSocket inflate data exceeds maxPackageSize limit\n");
+            $connection->close();
+            return false;
+        }
+        return $result;
     }
 
     /**
@@ -481,6 +490,9 @@ class Websocket
 
             if ($connection->headers) {
                 foreach ($connection->headers as $header) {
+                    if (strpbrk($header, "\r\n") !== false) {
+                        continue;
+                    }
                     if (stripos($header, 'Server:') === 0) {
                         $hasServerHeader = true;
                     }

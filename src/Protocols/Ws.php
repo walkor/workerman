@@ -116,7 +116,7 @@ class Ws
                     // Try to emit onWebSocketClose callback.
                     if (isset($connection->onWebSocketClose)) {
                         try {
-                            ($connection->onWebSocketClose)($connection);
+                            ($connection->onWebSocketClose)($connection, self::decode($buffer, $connection));
                         } catch (Throwable $e) {
                             Worker::stopAll(250, $e);
                         }
@@ -239,6 +239,8 @@ class Ws
         if (empty($connection->websocketType)) {
             $connection->websocketType = self::BINARY_TYPE_BLOB;
         }
+        $connection->websocketOrigin = $connection->websocketOrigin ?? null;
+        $connection->websocketClientProtocol = $connection->websocketClientProtocol ?? null;
         if (empty($connection->context->handshakeStep)) {
             static::sendHandshake($connection);
         }
@@ -323,6 +325,8 @@ class Ws
      */
     public static function onConnect(AsyncTcpConnection $connection): void
     {
+        $connection->websocketOrigin = $connection->websocketOrigin ?? null;
+        $connection->websocketClientProtocol = $connection->websocketClientProtocol ?? null;
         static::sendHandshake($connection);
     }
 
@@ -364,16 +368,29 @@ class Ws
         $userHeaderStr = '';
         if (!empty($userHeader)) {
             foreach ($userHeader as $k => $v) {
+                // Skip unsafe header names or values containing CR/LF
+                if (strpbrk((string)$k, ":\r\n") !== false) {
+                    continue;
+                }
+                if (strpbrk((string)$v, "\r\n") !== false) {
+                    continue;
+                }
                 $userHeaderStr .= "$k: $v\r\n";
             }
-            $userHeaderStr = "\r\n" . trim($userHeaderStr);
+            $userHeaderStr = $userHeaderStr !== '' ? "\r\n" . trim($userHeaderStr) : '';
         }
-        $header = 'GET ' . $connection->getRemoteURI() . " HTTP/1.1\r\n" .
+        $requestUri = str_replace(["\r", "\n"], '', $connection->getRemoteURI());
+        // Sanitize Origin and Sec-WebSocket-Protocol
+        $origin = $connection->websocketOrigin ?? null;
+        $origin = $origin !== null ? str_replace(["\r", "\n"], '', $origin) : null;
+        $clientProtocol = $connection->websocketClientProtocol ?? null;
+        $clientProtocol = $clientProtocol !== null ? str_replace(["\r", "\n"], '', $clientProtocol) : null;
+        $header = 'GET ' . $requestUri . " HTTP/1.1\r\n" .
             (!preg_match("/\nHost:/i", $userHeaderStr) ? "Host: $host\r\n" : '') .
             "Connection: Upgrade\r\n" .
             "Upgrade: websocket\r\n" .
-            (isset($connection->websocketOrigin) ? "Origin: " . $connection->websocketOrigin . "\r\n" : '') .
-            (isset($connection->websocketClientProtocol) ? "Sec-WebSocket-Protocol: " . $connection->websocketClientProtocol . "\r\n" : '') .
+            ($origin ? "Origin: " . $origin . "\r\n" : '') .
+            ($clientProtocol ? "Sec-WebSocket-Protocol: " . $clientProtocol . "\r\n" : '') .
             "Sec-WebSocket-Version: 13\r\n" .
             "Sec-WebSocket-Key: " . $connection->context->websocketSecKey . $userHeaderStr . "\r\n\r\n";
         $connection->send($header, true);

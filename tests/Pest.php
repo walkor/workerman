@@ -11,6 +11,7 @@
 |
 */
 
+uses(\Tests\TestCase::class);
 // uses(Tests\TestCase::class)->in('Feature');
 
 /*
@@ -52,6 +53,19 @@ function testWithConnectionClose(Closure $closure, ?string $dataContains = null,
         });
     } else {
         $tcpConnection->shouldHaveReceived('close');
+    }
+}
+
+function testWithConnectionEnd(Closure $closure, ?string $dataContains = null, $connectionClass = TcpConnection::class): void
+{
+    $tcpConnection = Mockery::spy($connectionClass);
+    $closure($tcpConnection);
+    if ($dataContains) {
+        $tcpConnection->shouldHaveReceived('end', function ($actual) use ($dataContains) {
+            return str_contains($actual, $dataContains);
+        });
+    } else {
+        $tcpConnection->shouldHaveReceived('end');
     }
 }
 

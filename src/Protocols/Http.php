@@ -20,14 +20,11 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
 use function clearstatcache;
-use function count;
-use function explode;
 use function filesize;
 use function fopen;
 use function fread;
 use function fseek;
 use function ftell;
-use function in_array;
 use function ini_get;
 use function is_array;
 use function is_object;
@@ -35,7 +32,6 @@ use function preg_match;
 use function str_starts_with;
 use function strlen;
 use function strpos;
-use function strstr;
 use function substr;
 use function sys_get_temp_dir;
 
@@ -86,37 +82,52 @@ class Http
         if (false === $crlfPos) {
             // Judge whether the package length exceeds the limit.
             if (strlen($buffer) >= 16384) {
-                $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
+                $connection->end("HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\nContent-Length: 0\r\n\r\n", true);
             }
             return 0;
         }
 
         $length = $crlfPos + 4;
-        $header = substr($buffer, 0, $crlfPos);
+        // Only slice when necessary (avoid extra string copy).
+        // Keep the trailing "\r\n\r\n" in $header for simpler/faster validation patterns.
+        $header = isset($buffer[$length]) ? substr($buffer, 0, $length) : $buffer;
 
-        if (
-            !str_starts_with($header, 'GET ') &&
-            !str_starts_with($header, 'POST ') &&
-            !str_starts_with($header, 'OPTIONS ') &&
-            !str_starts_with($header, 'HEAD ') &&
-            !str_starts_with($header, 'DELETE ') &&
-            !str_starts_with($header, 'PUT ') &&
-            !str_starts_with($header, 'PATCH ')
-        ) {
-            $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
+        // Validate request line: METHOD SP request-target SP HTTP/1.0|1.1 CRLF
+        // Request-target validation:
+        // - Allow origin-form only (must start with "/") for all methods below.
+        // - Do NOT support asterisk-form ("*") for OPTIONS.
+        // - For compatibility, allow any bytes except ASCII control characters, spaces and DEL in request-target.
+        //   (Strictly speaking, URI should be ASCII and non-ASCII should be percent-encoded; but many clients send UTF-8.)
+        // - Disallow "Transfer-Encoding" header (case-insensitive; line-start must be "\r\n" to avoid matching "x-Transfer-Encoding").
+        // - Optionally capture Content-Length (case-insensitive; line-start must be "\r\n" to avoid matching "x-Content-Length").
+        // - If Content-Length exists, it must be a valid decimal number and the whole field-value must be digits + optional OWS.
+        // - Disallow duplicate Content-Length headers.
+        // Note: All lookaheads are placed at \A so they can scan the entire header including the request line.
+        //       Use [ \t]* instead of \s* to avoid matching across lines.
+        //       The pattern uses case-insensitive modifier (~i) for header name matching.
+        $headerValidatePattern = '~\A'
+            // Optional: capture Content-Length value (must be at \A to scan entire header)
+            . '(?:(?=[\s\S]*\r\nContent-Length[ \t]*:[ \t]*(\d+)[ \t]*\r\n))?'
+            // Disallow Transfer-Encoding header
+            . '(?![\s\S]*\r\nTransfer-Encoding[ \t]*:)'
+            // If Content-Length header exists, its value must be pure digits + optional OWS
+            . '(?![\s\S]*\r\nContent-Length[ \t]*:(?![ \t]*\d+[ \t]*\r\n)[^\r]*\r\n)'
+            // Disallow duplicate Content-Length headers (adjacent or separated)
+            . '(?![\s\S]*\r\nContent-Length[ \t]*:[^\r\n]*\r\n(?:[\s\S]*?\r\n)?Content-Length[ \t]*:)'
+            // Match request line: METHOD SP request-target SP HTTP-version CRLF
+            . '(?:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) +\/[^\x00-\x20\x7f]* +HTTP\/1\.[01]\r\n~i';
+
+        if (!preg_match($headerValidatePattern, $header, $matches)) {
+            $connection->end("HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
 
-        if (preg_match('/\b(?:Transfer-Encoding\b.*)|(?:Content-Length:\s*(\d+)(?!.*\bTransfer-Encoding\b))/is', $header, $matches)) {
-            if (!isset($matches[1])) {
-                $connection->close("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n", true);
-                return 0;
-            }
+        if (isset($matches[1])) {
             $length += (int)$matches[1];
         }
 
         if ($length > $connection->maxPackageSize) {
-            $connection->close("HTTP/1.1 413 Payload Too Large\r\n\r\n", true);
+            $connection->end("HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\nContent-Length: 0\r\n\r\n", true);
             return 0;
         }
 
@@ -129,28 +140,12 @@ class Http
      *
      * @param string $buffer
      * @param TcpConnection $connection
-     * @return Request
+     * @return mixed
      */
-    public static function decode(string $buffer, TcpConnection $connection): Request
+    public static function decode(string $buffer, TcpConnection $connection): mixed
     {
-        static $requests = [];
-        if (isset($requests[$buffer])) {
-            $request = $requests[$buffer];
-            $request->connection = $connection;
-            $connection->request = $request;
-            $request->destroy();
-            return $request;
-        }
         $request = new static::$requestClass($buffer);
-        if (!isset($buffer[TcpConnection::MAX_CACHE_STRING_LENGTH])) {
-            $requests[$buffer] = $request;
-            if (count($requests) > TcpConnection::MAX_CACHE_SIZE) {
-                unset($requests[key($requests)]);
-            }
-            $request = clone $request;
-        }
         $request->connection = $connection;
-        $connection->request = $request;
         return $request;
     }
 
@@ -163,11 +158,6 @@ class Http
      */
     public static function encode(mixed $response, TcpConnection $connection): string
     {
-        if (isset($connection->request)) {
-            $request = $connection->request;
-            $request->connection = $connection->request = null;
-        }
-
         if (!is_object($response)) {
             $extHeader = '';
             $contentType = 'text/html;charset=utf-8';
@@ -197,8 +187,8 @@ class Http
 
         if (isset($response->file)) {
             $file = $response->file['file'];
-            $offset = $response->file['offset'];
-            $length = $response->file['length'];
+            $offset = $response->file['offset'] ?: 0;
+            $length = $response->file['length'] ?: 0;
             clearstatcache();
             $fileSize = (int)filesize($file);
             $bodyLen = $length > 0 ? $length : $fileSize - $offset;
@@ -206,9 +196,11 @@ class Http
                 'Content-Length' => $bodyLen,
                 'Accept-Ranges' => 'bytes',
             ]);
+
             if ($offset || $length) {
                 $offsetEnd = $offset + $bodyLen - 1;
                 $response->header('Content-Range', "bytes $offset-$offsetEnd/$fileSize");
+                $response->withStatus(206);
             }
             if ($bodyLen < 2 * 1024 * 1024) {
                 $connection->send($response . file_get_contents($file, false, null, $offset, $bodyLen), true);
@@ -246,6 +238,7 @@ class Http
         // Read file content from disk piece by piece and send to client.
         $doWrite = function () use ($connection, $handler, $length, $offsetEnd) {
             // Send buffer not full.
+            /** @phpstan-ignore-next-line */
             while ($connection->context->bufferFull === false) {
                 // Read from disk.
                 $size = 1024 * 1024;

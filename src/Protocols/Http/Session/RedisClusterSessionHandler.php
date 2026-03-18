@@ -24,11 +24,22 @@ use RedisException;
 class RedisClusterSessionHandler extends RedisSessionHandler
 {
     /**
-     * @param $config
+     * @param array $config
      * @throws RedisClusterException
      * @throws RedisException
      */
-    public function __construct($config)
+    public function __construct(array $config)
+    {
+        parent::__construct($config);
+    }
+
+    /**
+     * Create redis connection.
+     * @param array $config
+     * @return Redis|RedisCluster
+     * @throws RedisClusterException
+     */
+    protected function createRedisConnection(array $config): Redis|RedisCluster
     {
         $timeout = $config['timeout'] ?? 2;
         $readTimeout = $config['read_timeout'] ?? $timeout;
@@ -38,18 +49,11 @@ class RedisClusterSessionHandler extends RedisSessionHandler
         if ($auth) {
             $args[] = $auth;
         }
-        $this->redis = new RedisCluster(...$args);
+        $redis = new RedisCluster(...$args);
         if (empty($config['prefix'])) {
             $config['prefix'] = 'redis_session_';
         }
-        $this->redis->setOption(Redis::OPT_PREFIX, $config['prefix']);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function read(string $sessionId): string|false
-    {
-        return $this->redis->get($sessionId);
+        $redis->setOption(Redis::OPT_PREFIX, $config['prefix']);
+        return $redis;
     }
 }

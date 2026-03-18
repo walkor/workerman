@@ -13,7 +13,7 @@ it('tests websocket connection', function () use ($serverCode, $clientCode) {
         \$worker->onMessage = function () {};
     PHP));
     $serverProcess->start();
-    usleep(250000);
+    usleep(600000);
 
     $clientProcess = new PhpProcess(str_replace(subject: $clientCode, search: '//%action%', replace: <<<PHP
         \$con->onWebSocketConnect = function(AsyncTcpConnection \$con) {
@@ -21,13 +21,15 @@ it('tests websocket connection', function () use ($serverCode, $clientCode) {
         };
     PHP));
     $clientProcess->start();
-    usleep(250000);
+    usleep(600000);
 
-    expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('connected')
-        ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('');
-
-    $serverProcess->stop();
-    $clientProcess->stop();
+    try {
+        expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('connected')
+            ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('');
+    } finally {
+        $serverProcess->stop();
+        $clientProcess->stop();
+    }
 });
 
 it('tests server and client sending and receiving messages', function () use ($serverCode, $clientCode) {
@@ -38,7 +40,7 @@ it('tests server and client sending and receiving messages', function () use ($s
         };
     PHP));
     $serverProcess->start();
-    usleep(250000);
+    usleep(600000);
 
     $clientProcess = new PhpProcess(str_replace(subject: $clientCode, search: '//%action%', replace: <<<PHP
         \$con->onWebSocketConnect = function(AsyncTcpConnection \$con) {
@@ -49,13 +51,15 @@ it('tests server and client sending and receiving messages', function () use ($s
         };
     PHP));
     $clientProcess->start();
-    usleep(250000);
+    usleep(600000);
 
-    expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('Hello Chance')
-        ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('Hi');
-
-    $serverProcess->stop();
-    $clientProcess->stop();
+    try {
+        expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('Hello Chance')
+            ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('Hi');
+    } finally {
+        $serverProcess->stop();
+        $clientProcess->stop();
+    }
 });
 
 it('tests server close connection', function () use ($serverCode, $clientCode) {
@@ -67,7 +71,7 @@ it('tests server close connection', function () use ($serverCode, $clientCode) {
         \$worker->onMessage = function () {};
     PHP));
     $serverProcess->start();
-    usleep(250000);
+    usleep(600000);
 
     $clientProcess = new PhpProcess(str_replace(subject: $clientCode, search: '//%action%', replace: <<<PHP
         \$con->onWebSocketConnect = function(AsyncTcpConnection \$con) {
@@ -78,13 +82,15 @@ it('tests server close connection', function () use ($serverCode, $clientCode) {
         };
     PHP));
     $clientProcess->start();
-    usleep(250000);
+    usleep(600000);
 
-    expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('close connection')
-        ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('closed');
-
-    $serverProcess->stop();
-    $clientProcess->stop();
+    try {
+        expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('close connection')
+            ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('closed');
+    } finally {
+        $serverProcess->stop();
+        $clientProcess->stop();
+    }
 });
 
 it('tests client close connection', function () use ($serverCode, $clientCode) {
@@ -95,7 +101,7 @@ it('tests client close connection', function () use ($serverCode, $clientCode) {
         };
     PHP));
     $serverProcess->start();
-    usleep(250000);
+    usleep(600000);
 
     $clientProcess = new PhpProcess(str_replace(subject: $clientCode, search: '//%action%', replace: <<<PHP
         \$con->onWebSocketConnect = function(AsyncTcpConnection \$con) {
@@ -105,11 +111,13 @@ it('tests client close connection', function () use ($serverCode, $clientCode) {
         };
     PHP));
     $clientProcess->start();
-    usleep(250000);
+    usleep(600000);
 
-    expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('closed')
-        ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('close connection');
-
-    $serverProcess->stop();
-    $clientProcess->stop();
+    try {
+        expect(getNonFrameOutput($serverProcess->getOutput()))->toBe('closed')
+            ->and(getNonFrameOutput($clientProcess->getOutput()))->toBe('close connection');
+    } finally {
+        $serverProcess->stop();
+        $clientProcess->stop();
+    }
 });

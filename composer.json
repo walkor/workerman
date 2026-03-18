@@ -38,15 +38,20 @@
             "Workerman\\": "src"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "minimum-stability": "dev",
     "conflict": {
         "ext-swow": "<v1.0.0"
     },
     "require-dev": {
-        "pestphp/pest": "^2.0",
+        "pestphp/pest": "^2.36 || ^3 || ^4",
         "mockery/mockery": "^1.6",
         "guzzlehttp/guzzle": "^7.0",
-        "phpstan/phpstan": "^2.0"
+        "phpstan/phpstan": "2.1.x-dev"
     },
     "config": {
         "allow-plugins": {
@@ -54,7 +59,7 @@
         }
     },
     "scripts": {
-        "analyze": "phpstan",
+        "analyze": "php -d memory_limit=1G vendor/phpstan/phpstan/phpstan.phar",
         "test": "pest --colors=always"
     }
 }
