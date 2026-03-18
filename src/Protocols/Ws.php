@@ -251,7 +251,7 @@ class Ws
         $head = match(true) {
             $length < 126    => chr(0x80 | $length),
             $length < 0xFFFF => chr(0x80 | 126) . pack("n", $length),
-            default => chr(0x80 | 127) . pack("N", 0) . pack("N", $length),
+            default          => chr(0x80 | 127) . pack("N", 0) . pack("N", $length),
         };
 
         $frame = $connection->websocketType . $head . $maskKey;
