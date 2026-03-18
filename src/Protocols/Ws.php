@@ -301,9 +301,8 @@ class Ws
             default => substr($bytes, 2),
         };
 
-        if ($connection->context->websocketCurrentFrameLength) {
-            $connection->context->websocketDataBuffer .= $decodedData;
-            return $connection->context->websocketDataBuffer;
+        if ($connection->context->websocketCurrentFrameLength) {           
+            return $connection->context->websocketDataBuffer .= $decodedData;
         }
 
         if ($connection->context->websocketDataBuffer !== '') {
