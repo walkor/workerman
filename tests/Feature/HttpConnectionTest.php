@@ -85,7 +85,7 @@ it('tests http connection', function () {
     while (!$stream->eof()) {
         if ($i >= 5) {
             expect($stream->read(1024))->toBeEmpty();
-            continue;
+            break;
         }
         $i++;
         expect($stream->read(1024))->toBe("data: hello$i\n\n");

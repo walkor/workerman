@@ -334,7 +334,7 @@ class Request implements Stringable
     public function sessionId(?string $sessionId = null): string
     {
         if ($sessionId) {
-            unset($this->context['sid']);
+            unset($this->context['sid'], $this->context['session']);
         }
         if (!isset($this->context['sid'])) {
             $sessionName = Session::$name;
