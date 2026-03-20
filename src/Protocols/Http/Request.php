@@ -388,6 +388,8 @@ class Request implements Stringable
         $cookieParams = Session::getCookieParams();
         $sessionName = Session::$name;
         $this->setSidCookie($sessionName, $newSid, $cookieParams);
+        $this->context['sid'] = $newSid;
+        $this->context['session'] = $session;
         return $newSid;
     }
 
