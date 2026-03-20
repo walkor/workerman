@@ -248,13 +248,11 @@ class Ws
         $maskKey = "\x00\x00\x00\x00";
         $length = strlen($payload);
 
-        if (strlen($payload) < 126) {
-            $head = chr(0x80 | $length);
-        } elseif ($length < 0xFFFF) {
-            $head = chr(0x80 | 126) . pack("n", $length);
-        } else {
-            $head = chr(0x80 | 127) . pack("N", 0) . pack("N", $length);
-        }
+        $head = match(true) {
+            $length < 126    => chr(0x80 | $length),
+            $length < 0xFFFF => chr(0x80 | 126) . pack("n", $length),
+            default          => chr(0x80 | 127) . pack("N", 0) . pack("N", $length),
+        };
 
         $frame = $connection->websocketType . $head . $maskKey;
         // append payload to frame:
@@ -295,18 +293,14 @@ class Ws
      */
     public static function decode(string $bytes, AsyncTcpConnection $connection): string
     {
-        $dataLength = ord($bytes[1]);
+        $decodedData = match(ord($bytes[1])) { // data length
+            126 => substr($bytes, 4),
+            127 => substr($bytes, 10),
+            default => substr($bytes, 2),
+        };
 
-        if ($dataLength === 126) {
-            $decodedData = substr($bytes, 4);
-        } else if ($dataLength === 127) {
-            $decodedData = substr($bytes, 10);
-        } else {
-            $decodedData = substr($bytes, 2);
-        }
         if ($connection->context->websocketCurrentFrameLength) {
-            $connection->context->websocketDataBuffer .= $decodedData;
-            return $connection->context->websocketDataBuffer;
+            return $connection->context->websocketDataBuffer .= $decodedData;
         }
 
         if ($connection->context->websocketDataBuffer !== '') {
