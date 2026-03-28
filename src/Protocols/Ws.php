@@ -113,9 +113,9 @@ class Ws
                         } catch (Throwable $e) {
                             Worker::stopAll(250, $e);
                         }
+                    } else { // Close connection.
+                        $connection->close();
                     }
-                    // Close connection.
-                    $connection->close();
                     
                     return 0;
                 // Wrong opcode.
