@@ -446,7 +446,7 @@ class Websocket
                     if (strpbrk($header, "\r\n") !== false) {
                         continue;
                     }
-                    if (str_starts_with($header, 'Server:')) {
+                    if (stripos($header, 'Server:') === 0) {
                         $hasServerHeader = true;
                     }
                     $handshakeMessage .= "$header\r\n";
