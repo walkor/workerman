@@ -350,7 +350,14 @@ class Websocket
         if ($isFinFrame) {
             $buffer .= "\x00\x00\xff\xff";
         }
-        return inflate_add($connection->context->inflator, $buffer);
+        $result = inflate_add($connection->context->inflator, $buffer);
+        // Guard against decompression bomb: check inflated size against maxPackageSize.
+        if ($result !== false && strlen($result) > $connection->maxPackageSize) {
+            Worker::safeEcho("WebSocket inflate data exceeds maxPackageSize limit\n");
+            $connection->close();
+            return false;
+        }
+        return $result;
     }
 
     protected static function deflate(TcpConnection $connection, string $buffer): false|string
@@ -435,12 +442,15 @@ class Websocket
         $hasServerHeader = false;
 
         if ($connection->headers) {
-            foreach ($connection->headers as $header) {
-                if (str_starts_with($header, 'Server:')) {
-                    $hasServerHeader = true;
+                foreach ($connection->headers as $header) {
+                    if (strpbrk($header, "\r\n") !== false) {
+                        continue;
+                    }
+                    if (str_starts_with($header, 'Server:')) {
+                        $hasServerHeader = true;
+                    }
+                    $handshakeMessage .= "$header\r\n";
                 }
-                $handshakeMessage .= "$header\r\n";
-            }
         }
         if (!$hasServerHeader) {
             $handshakeMessage .= "Server: workerman\r\n";
