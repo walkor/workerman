@@ -107,10 +107,30 @@ class Request implements Stringable
     public array $context = [];
 
     /**
-     * Request constructor.
+     * HTTP/1.1 chunked trailers (field names lowercased), set once by the protocol layer.
      *
+     * @var ?array<string, string>
+     */
+    protected ?array $chunkTrailers = null;
+
+    /**
+     * Request constructor.
      */
     public function __construct(protected string $buffer) {}
+
+    /**
+     * @internal Set by {@see Http::decode()} for chunked requests; first call wins.
+     *
+     * @param array<string, string> $trailers
+     * @return void
+     */
+    public function setChunkTrailers(array $trailers): void
+    {
+        if ($this->chunkTrailers !== null) {
+            return;
+        }
+        $this->chunkTrailers = $trailers;
+    }
 
     /**
      * Get query.
@@ -165,6 +185,22 @@ class Request implements Stringable
         }
         $name = strtolower($name);
         return $this->data['headers'][$name] ?? $default;
+    }
+
+    /**
+     * Get trailer item by name.
+     *
+     * @param string|null $name
+     * @param mixed $default
+     * @return mixed
+     */
+    public function trailer(?string $name = null, mixed $default = null): mixed
+    {
+        $all = $this->chunkTrailers ?? [];
+        if (null === $name) {
+            return $all;
+        }
+        return $all[strtolower($name)] ?? $default;
     }
 
     /**

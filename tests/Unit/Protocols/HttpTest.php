@@ -133,8 +133,16 @@ it('rejects Transfer-Encoding and bad/duplicate Content-Length in ::input', func
         expect(Http::input($buffer, $tcpConnection))->toBe(0);
     }, $expectedCloseContains);
 })->with([
-    'Transfer-Encoding is forbidden (case-insensitive)' => [
-        "GET / HTTP/1.1\r\ntransfer-encoding: chunked\r\n\r\n",
+    'Transfer-Encoding with Content-Length is forbidden (request smuggling)' => [
+        "POST / HTTP/1.1\r\nContent-Length: 5\r\nTransfer-Encoding: chunked\r\n\r\nhello",
+        '400 Bad Request',
+    ],
+    'Transfer-Encoding with non-chunked value is forbidden' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: gzip\r\n\r\n",
+        '400 Bad Request',
+    ],
+    'Duplicate Transfer-Encoding headers are forbidden' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
         '400 Bad Request',
     ],
     'Content-Length must be digits (not a number)' => [
@@ -166,6 +174,275 @@ it('rejects Transfer-Encoding and bad/duplicate Content-Length in ::input', func
         '413 Payload Too Large',
     ],
 ]);
+
+it('tests ::input for chunked transfer-encoding', function (string $buffer, int $expectedLength) {
+    /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+    $tcpConnection = Mockery::spy(TcpConnection::class);
+    $tcpConnection->maxPackageSize = 1024 * 1024;
+    expect(Http::input($buffer, $tcpConnection))->toBe($expectedLength);
+})->with([
+    'simple chunked body' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n"),
+    ],
+    'multiple chunks' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n"),
+    ],
+    'chunked with trailers' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\nChecksum: abc\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\nChecksum: abc\r\n\r\n"),
+    ],
+    'chunked with chunk extension' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5;ext=val\r\nhello\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5;ext=val\r\nhello\r\n0\r\n\r\n"),
+    ],
+    'incomplete chunked body returns 0' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhel",
+        0,
+    ],
+    'chunked header only returns 0' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n",
+        0,
+    ],
+    'case-insensitive transfer-encoding' => [
+        "POST / HTTP/1.1\r\ntransfer-encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\ntransfer-encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n"),
+    ],
+]);
+
+it('tests ::input for chunked boundary cases', function (string $buffer, int $expectedLength) {
+    /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+    $tcpConnection = Mockery::spy(TcpConnection::class);
+    $tcpConnection->maxPackageSize = 1024 * 1024;
+    expect(Http::input($buffer, $tcpConnection))->toBe($expectedLength);
+})->with([
+    'empty body (only zero chunk)' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n"),
+    ],
+    'leading zeros in chunk-size' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n05\r\nhello\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n05\r\nhello\r\n0\r\n\r\n"),
+    ],
+    'HTTP/1.0 with chunked' => [
+        "POST / HTTP/1.0\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.0\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n"),
+    ],
+    'uppercase hex chunk-size' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nA\r\n" . str_repeat('x', 10) . "\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nA\r\n" . str_repeat('x', 10) . "\r\n0\r\n\r\n"),
+    ],
+    'chunk extension with multiple params' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n4;a=1;b=2\r\nwiki\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n4;a=1;b=2\r\nwiki\r\n0\r\n\r\n"),
+    ],
+    'multiple trailers then terminating empty line' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\r\n0\r\nX-One: a\r\nX-Two: b\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\r\n0\r\nX-One: a\r\nX-Two: b\r\n\r\n"),
+    ],
+    'trailer field-value with leading OWS' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum:   abc   \r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum:   abc   \r\n\r\n"),
+    ],
+    'incomplete after zero chunk (no blank line after trailers)' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum: abc\r\n",
+        0,
+    ],
+    'incomplete mid-trailer block' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum:",
+        0,
+    ],
+]);
+
+it('rejects malformed chunked framing in ::input', function (string $buffer) {
+    testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+        expect(Http::input($buffer, $tcpConnection))->toBe(0);
+    }, '400 Bad Request');
+})->with([
+    'invalid hex in chunk-size' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n\r\n",
+    ],
+    'chunk-size longer than 16 hex digits' => [
+        'POST / HTTP/1.1' . "\r\nTransfer-Encoding: chunked\r\n\r\n" . str_repeat('1', 17) . "\r\n\r\n",
+    ],
+    'chunk-size overflows int (hexdec float)' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n8000000000000000\r\n\r\n",
+    ],
+    'missing CRLF after chunk data' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\n0\r\n\r\n",
+    ],
+    'wrong bytes where CRLF must follow chunk data' => [
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabcXX0\r\n\r\n",
+    ],
+]);
+
+it('rejects chunked message over maxPackageSize in ::input', function () {
+    $buffer = "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n";
+    testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+        $tcpConnection->maxPackageSize = strlen($buffer) - 1;
+        expect(Http::input($buffer, $tcpConnection))->toBe(0);
+    }, '413 Payload Too Large');
+});
+
+it('rejects chunked body that exceeds maxPackageSize in ::input', function () {
+    $body = str_repeat('a', 100);
+    $hex = dechex(strlen($body));
+    $buffer = "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n{$hex}\r\n{$body}\r\n0\r\n\r\n";
+    testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+        $tcpConnection->maxPackageSize = strlen($buffer) - 1;
+        expect(Http::input($buffer, $tcpConnection))->toBe(0);
+    }, '413 Payload Too Large');
+});
+
+it('tests ::decode for chunked transfer-encoding', function () {
+    /** @var TcpConnection $tcpConnection */
+    $tcpConnection = Mockery::mock(TcpConnection::class);
+    $tcpConnection->context = new stdClass();
+    $tcpConnection->context->chunked = true;
+
+    $buffer = "POST /api HTTP/1.1\r\nHost: example.com\r\nTransfer-Encoding: chunked\r\n\r\n"
+        . "5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n";
+
+    $request = Http::decode($buffer, $tcpConnection);
+
+    expect($request)->toBeInstanceOf(Request::class)
+        ->and($request->rawBody())->toBe('hello world')
+        ->and($request->header('content-length'))->toBe('11')
+        ->and($request->header('transfer-encoding'))->toBeNull()
+        ->and($request->trailer())->toBe([]);
+});
+
+it('tests ::decode for chunked with trailers', function () {
+    /** @var TcpConnection $tcpConnection */
+    $tcpConnection = Mockery::mock(TcpConnection::class);
+    $tcpConnection->context = new stdClass();
+    $tcpConnection->context->chunked = true;
+
+    $buffer = "POST /api HTTP/1.1\r\nHost: example.com\r\nTransfer-Encoding: chunked\r\n\r\n"
+        . "5\r\nhello\r\n0\r\nChecksum: abc123\r\nExpires: Wed\r\n\r\n";
+
+    $request = Http::decode($buffer, $tcpConnection);
+
+    expect($request)->toBeInstanceOf(Request::class)
+        ->and($request->rawBody())->toBe('hello')
+        ->and($request->trailer('checksum'))->toBe('abc123')
+        ->and($request->trailer('expires'))->toBe('Wed')
+        ->and($request->trailer('nonexistent', 'default'))->toBe('default')
+        ->and($request->trailer())->toBe(['checksum' => 'abc123', 'expires' => 'Wed']);
+});
+
+it('tests ::decode for chunked with JSON post body', function () {
+    /** @var TcpConnection $tcpConnection */
+    $tcpConnection = Mockery::mock(TcpConnection::class);
+    $tcpConnection->context = new stdClass();
+    $tcpConnection->context->chunked = true;
+
+    $json = '{"key":"value"}';
+    $hex = dechex(strlen($json));
+    $buffer = "POST /api HTTP/1.1\r\nHost: example.com\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n\r\n"
+        . "{$hex}\r\n{$json}\r\n0\r\n\r\n";
+
+    $request = Http::decode($buffer, $tcpConnection);
+
+    expect($request->post('key'))->toBe('value')
+        ->and($request->header('transfer-encoding'))->toBeNull();
+});
+
+it('tests ::decode for chunked edge cases', function (string $buffer, array $expect) {
+    /** @var TcpConnection $tcpConnection */
+    $tcpConnection = Mockery::mock(TcpConnection::class);
+    $tcpConnection->context = new stdClass();
+    $tcpConnection->context->chunked = true;
+
+    $request = Http::decode($buffer, $tcpConnection);
+
+    expect($request->rawBody())->toBe($expect['body'])
+        ->and($request->trailer())->toBe($expect['trailers']);
+})->with([
+    'empty body (zero chunk only)' => [
+        "POST /z HTTP/1.1\r\nHost: a\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
+        ['body' => '', 'trailers' => []],
+    ],
+    'leading zero chunk-size' => [
+        "POST /z HTTP/1.1\r\nHost: a\r\nTransfer-Encoding: chunked\r\n\r\n03\r\nabc\r\n0\r\n\r\n",
+        ['body' => 'abc', 'trailers' => []],
+    ],
+    'trailer names lowercased; field-value ltrim only' => [
+        "POST /z HTTP/1.1\r\nHost: a\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n"
+            . "X-Checksum:   sig   \r\nAnother-Trailer:\t v \r\n\r\n",
+        ['body' => '', 'trailers' => ['x-checksum' => 'sig   ', 'another-trailer' => 'v ']],
+    ],
+    'multiple data chunks then trailers' => [
+        "POST /z HTTP/1.1\r\nHost: a\r\nTransfer-Encoding: chunked\r\n\r\n"
+            . "2\r\nab\r\n2\r\ncd\r\n0\r\nEtag: \"x\"\r\n\r\n",
+        ['body' => 'abcd', 'trailers' => ['etag' => '"x"']],
+    ],
+]);
+
+it('tests ::input then ::decode for chunked with trailers', function () {
+    $buffer = "POST /r HTTP/1.1\r\nHost: t\r\nTransfer-Encoding: chunked\r\n\r\n"
+        . "4\r\nfour\r\n0\r\nX-T: one\r\n\r\n";
+
+    /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+    $tcpConnection = Mockery::mock(TcpConnection::class)->makePartial();
+    $tcpConnection->context = new stdClass();
+    $tcpConnection->maxPackageSize = 1024 * 1024;
+
+    expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
+    expect(isset($tcpConnection->context->chunked))->toBeTrue();
+
+    $request = Http::decode($buffer, $tcpConnection);
+
+    expect($request->rawBody())->toBe('four')
+        ->and($request->trailer('x-t'))->toBe('one')
+        ->and(isset($tcpConnection->context->chunked))->toBeFalse();
+});
+
+describe('Request chunked trailers (trailer / setChunkTrailers)', function () {
+    it('Request::trailer() returns all trailers and case-insensitive names after Http::decode', function () {
+        /** @var TcpConnection $tcpConnection */
+        $tcpConnection = Mockery::mock(TcpConnection::class);
+        $tcpConnection->context = new stdClass();
+        $tcpConnection->context->chunked = true;
+
+        $buffer = "POST / HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n"
+            . "0\r\n"
+            . "Alpha: one\r\n"
+            . "Beta: two\r\n"
+            . "\r\n";
+
+        $request = Http::decode($buffer, $tcpConnection);
+
+        expect($request->trailer())->toBe(['alpha' => 'one', 'beta' => 'two'])
+            ->and($request->trailer('ALPHA'))->toBe('one')
+            ->and($request->trailer('beta'))->toBe('two')
+            ->and($request->trailer('missing', 'default'))->toBe('default');
+    });
+
+    it('Request::trailer() is empty when the request was not chunked-decoded', function () {
+        /** @var TcpConnection $tcpConnection */
+        $tcpConnection = Mockery::mock(TcpConnection::class);
+        $tcpConnection->context = new stdClass();
+
+        $request = Http::decode("GET / HTTP/1.1\r\n\r\n", $tcpConnection);
+
+        expect($request->trailer())->toBe([])
+            ->and($request->trailer('any', 'fallback'))->toBe('fallback');
+    });
+
+    it('Request::setChunkTrailers() only applies the first call; trailer() stays unchanged', function () {
+        $request = new Request("GET / HTTP/1.1\r\n\r\n");
+        $request->setChunkTrailers(['checksum' => 'abc']);
+        expect($request->trailer('checksum'))->toBe('abc')
+            ->and($request->trailer())->toBe(['checksum' => 'abc']);
+
+        $request->setChunkTrailers(['other' => 'nope']);
+        expect($request->trailer('checksum'))->toBe('abc')
+            ->and($request->trailer('other'))->toBeNull()
+            ->and($request->trailer())->toBe(['checksum' => 'abc']);
+    });
+});
 
 it('tests ::encode for non-object response', function () {
     /** @var TcpConnection $tcpConnection */
