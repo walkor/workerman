@@ -75,17 +75,10 @@ class Websocket
      */
     const BINARY_TYPE_ARRAYBUFFER_DEFLATE = "\xc2";
 
-    /**
-     * Check the integrity of the package.
-     *
-     * @param string $buffer
-     * @param TcpConnection $connection
-     * @return int
-     */
     public static function input(string $buffer, TcpConnection $connection): int
     {
-        $connection->websocketOrigin = $connection->websocketOrigin ?? null;
-        $connection->websocketClientProtocol = $connection->websocketClientProtocol ?? null;
+        $connection->websocketOrigin ??= null;
+        $connection->websocketClientProtocol ??= null;
         // Receive length.
         $recvLen = strlen($buffer);
         // We need more data.
@@ -159,8 +152,7 @@ class Websocket
                 if ($headLen > $recvLen) {
                     return 0;
                 }
-                $pack = unpack('nn/ntotal_len', $buffer);
-                $dataLen = $pack['total_len'];
+                $dataLen = unpack('nn/ntotal_len', $buffer)['total_len'];
             } else {
                 if ($dataLen === 127) {
                     $headLen = 14;
@@ -255,22 +247,13 @@ class Websocket
         return 0;
     }
 
-    /**
-     * Websocket encode.
-     *
-     * @param mixed $buffer
-     * @param TcpConnection $connection
-     * @return string
-     */
     public static function encode(mixed $buffer, TcpConnection $connection): string
     {
         if (!is_scalar($buffer)) {
             $buffer = json_encode($buffer, JSON_UNESCAPED_UNICODE);
         }
 
-        if (empty($connection->websocketType)) {
-            $connection->websocketType = static::BINARY_TYPE_BLOB;
-        }
+        $connection->websocketType ??= static::BINARY_TYPE_BLOB;
 
         if (ord($connection->websocketType) & 64) {
             $buffer = static::deflate($connection, $buffer);
@@ -279,15 +262,11 @@ class Websocket
         $firstByte = $connection->websocketType;
         $len = strlen($buffer);
 
-        if ($len <= 125) {
-            $encodeBuffer = $firstByte . chr($len) . $buffer;
-        } else {
-            if ($len <= 65535) {
-                $encodeBuffer = $firstByte . chr(126) . pack("n", $len) . $buffer;
-            } else {
-                $encodeBuffer = $firstByte . chr(127) . pack("xxxxN", $len) . $buffer;
-            }
-        }
+        $encodeBuffer = match(true) {
+            $len <= 125   => $firstByte . chr($len) . $buffer,
+            $len <= 65535 => $firstByte . chr(126) . pack("n", $len) . $buffer,
+            default       => $firstByte . chr(127) . pack("xxxxN", $len) . $buffer,
+        };
 
         // Handshake not completed so temporary buffer websocket data waiting for send.
         if (empty($connection->context->websocketHandshake)) {
@@ -321,13 +300,6 @@ class Websocket
         return $encodeBuffer;
     }
 
-    /**
-     * Websocket decode.
-     *
-     * @param string $buffer
-     * @param TcpConnection $connection
-     * @return string
-     */
     public static function decode(string $buffer, TcpConnection $connection): string
     {
         $firstByte = ord($buffer[0]);
@@ -336,18 +308,12 @@ class Websocket
         $isFinFrame = (bool)($firstByte >> 7);
         $rsv1 = 64 === ($firstByte & 64);
 
-        if ($len === 126) {
-            $masks = substr($buffer, 4, 4);
-            $data = substr($buffer, 8);
-        } else {
-            if ($len === 127) {
-                $masks = substr($buffer, 10, 4);
-                $data = substr($buffer, 14);
-            } else {
-                $masks = substr($buffer, 2, 4);
-                $data = substr($buffer, 6);
-            }
-        }
+        [$masks, $data] = match(true) {
+             $len === 126 => [substr($buffer,  4, 4), substr($buffer, 8)],
+             $len === 127 => [substr($buffer, 10, 4), substr($buffer, 14)],
+             default      => [substr($buffer,  2, 4), substr($buffer, 6)],
+        };
+
         $dataLength = strlen($data);
         $masks = str_repeat($masks, (int)floor($dataLength / 4)) . substr($masks, 0, $dataLength % 4);
         $decoded = $data ^ $masks;
@@ -368,18 +334,10 @@ class Websocket
         return $decoded;
     }
 
-    /**
-     * Inflate.
-     *
-     * @param TcpConnection $connection
-     * @param string $buffer
-     * @param bool $isFinFrame
-     * @return false|string
-     */
-    protected static function inflate(TcpConnection $connection, string $buffer, bool $isFinFrame): bool|string
+    protected static function inflate(TcpConnection $connection, string $buffer, bool $isFinFrame): false|string
     {
-        if (!isset($connection->context->inflator)) {
-            $connection->context->inflator = inflate_init(
+        $connection->context->inflator ??= 
+            inflate_init(
                 ZLIB_ENCODING_RAW,
                 [
                     'level'    => -1,
@@ -388,7 +346,7 @@ class Websocket
                     'strategy' => ZLIB_DEFAULT_STRATEGY
                 ]
             );
-        }
+        
         if ($isFinFrame) {
             $buffer .= "\x00\x00\xff\xff";
         }
@@ -402,17 +360,11 @@ class Websocket
         return $result;
     }
 
-    /**
-     * Deflate.
-     *
-     * @param TcpConnection $connection
-     * @param string $buffer
-     * @return false|string
-     */
-    protected static function deflate(TcpConnection $connection, string $buffer): bool|string
+    protected static function deflate(TcpConnection $connection, string $buffer): false|string
     {
-        if (!isset($connection->context->deflator)) {
-            $connection->context->deflator = deflate_init(
+        
+        $connection->context->deflator ??= 
+             deflate_init(
                 ZLIB_ENCODING_RAW,
                 [
                     'level'    => -1,
@@ -421,74 +373,75 @@ class Websocket
                     'strategy' => ZLIB_DEFAULT_STRATEGY
                 ]
             );
-        }
+        
         return substr(deflate_add($connection->context->deflator, $buffer), 0, -4);
     }
 
     /**
      * Websocket handshake.
      *
-     * @param string $buffer
-     * @param TcpConnection $connection
-     * @return int
      */
     public static function dealHandshake(string $buffer, TcpConnection $connection): int
     {
         // HTTP protocol.
-        if (str_starts_with($buffer, 'GET')) {
-            // Find \r\n\r\n.
-            $headerEndPos = strpos($buffer, "\r\n\r\n");
-            if (!$headerEndPos) {
-                return 0;
+        if (!str_starts_with($buffer, 'GET')) {
+            // Bad websocket handshake request.
+            $connection->close(
+                "HTTP/1.1 400 Bad Request\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>400 Bad Request</h1><hr>workerman</div>", true);
+            return 0;
+        }
+
+        // Find \r\n\r\n.
+        $headerEndPos = strpos($buffer, "\r\n\r\n");
+        if (!$headerEndPos) {
+            return 0;
+        }
+        $headerLength = $headerEndPos + 4;
+
+        // Get Sec-WebSocket-Key.
+        if (preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
+            $SecWebSocketKey = $match[1];
+        } else {
+            $connection->close(
+                "HTTP/1.1 400 Bad Request\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman</div>", true);
+            return 0;
+        }
+        // Calculation websocket key.
+        $newKey = base64_encode(sha1($SecWebSocketKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true));
+        // Handshake response data.
+        $handshakeMessage = "HTTP/1.1 101 Switching Protocol\r\n"
+            . "Upgrade: websocket\r\n"
+            . "Sec-WebSocket-Version: 13\r\n"
+            . "Connection: Upgrade\r\n"
+            . "Sec-WebSocket-Accept: $newKey\r\n";
+
+        // Websocket data buffer.
+        $connection->context->websocketDataBuffer = '';
+        // Current websocket frame length.
+        $connection->context->websocketCurrentFrameLength = 0;
+        // Current websocket frame data.
+        $connection->context->websocketCurrentFrameBuffer = '';
+        // Consume handshake data.
+        $connection->consumeRecvBuffer($headerLength);
+        // Request from buffer
+        $request = new Request($buffer);
+
+        // Try to emit onWebSocketConnect callback.
+        $onWebsocketConnect = $connection->onWebSocketConnect ?? $connection->worker->onWebSocketConnect ?? false;
+        if ($onWebsocketConnect) {
+            try {
+                $onWebsocketConnect($connection, $request);
+            } catch (Throwable $e) {
+                Worker::stopAll(250, $e);
             }
-            $headerLength = $headerEndPos + 4;
+        }
 
-            // Get Sec-WebSocket-Key.
-            if (preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
-                $SecWebSocketKey = $match[1];
-            } else {
-                $connection->close(
-                    "HTTP/1.0 400 Bad Request\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman</div>", true);
-                return 0;
-            }
-            // Calculation websocket key.
-            $newKey = base64_encode(sha1($SecWebSocketKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true));
-            // Handshake response data.
-            $handshakeMessage = "HTTP/1.1 101 Switching Protocol\r\n"
-                . "Upgrade: websocket\r\n"
-                . "Sec-WebSocket-Version: 13\r\n"
-                . "Connection: Upgrade\r\n"
-                . "Sec-WebSocket-Accept: " . $newKey . "\r\n";
+        // blob or arraybuffer
+        $connection->websocketType ??= static::BINARY_TYPE_BLOB;
 
-            // Websocket data buffer.
-            $connection->context->websocketDataBuffer = '';
-            // Current websocket frame length.
-            $connection->context->websocketCurrentFrameLength = 0;
-            // Current websocket frame data.
-            $connection->context->websocketCurrentFrameBuffer = '';
-            // Consume handshake data.
-            $connection->consumeRecvBuffer($headerLength);
-            // Request from buffer
-            $request = new Request($buffer);
+        $hasServerHeader = false;
 
-            // Try to emit onWebSocketConnect callback.
-            $onWebsocketConnect = $connection->onWebSocketConnect ?? $connection->worker->onWebSocketConnect ?? false;
-            if ($onWebsocketConnect) {
-                try {
-                    $onWebsocketConnect($connection, $request);
-                } catch (Throwable $e) {
-                    Worker::stopAll(250, $e);
-                }
-            }
-
-            // blob or arraybuffer
-            if (empty($connection->websocketType)) {
-                $connection->websocketType = static::BINARY_TYPE_BLOB;
-            }
-
-            $hasServerHeader = false;
-
-            if ($connection->headers) {
+        if ($connection->headers) {
                 foreach ($connection->headers as $header) {
                     if (strpbrk($header, "\r\n") !== false) {
                         continue;
@@ -498,39 +451,34 @@ class Websocket
                     }
                     $handshakeMessage .= "$header\r\n";
                 }
-            }
-            if (!$hasServerHeader) {
-                $handshakeMessage .= "Server: workerman\r\n";
-            }
-            $handshakeMessage .= "\r\n";
-            // Send handshake response.
-            $connection->send($handshakeMessage, true);
-            // Mark handshake complete.
-            $connection->context->websocketHandshake = true;
-
-            // Try to emit onWebSocketConnected callback.
-            $onWebsocketConnected = $connection->onWebSocketConnected ?? $connection->worker->onWebSocketConnected ?? false;
-            if ($onWebsocketConnected) {
-                try {
-                    $onWebsocketConnected($connection, $request);
-                } catch (Throwable $e) {
-                    Worker::stopAll(250, $e);
-                }
-            }
-
-            // There are data waiting to be sent.
-            if (!empty($connection->context->tmpWebsocketData)) {
-                $connection->send($connection->context->tmpWebsocketData, true);
-                $connection->context->tmpWebsocketData = '';
-            }
-            if (strlen($buffer) > $headerLength) {
-                return static::input(substr($buffer, $headerLength), $connection);
-            }
-            return 0;
         }
-        // Bad websocket handshake request.
-        $connection->close(
-            "HTTP/1.0 400 Bad Request\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>400 Bad Request</h1><hr>workerman</div>", true);
+        if (!$hasServerHeader) {
+            $handshakeMessage .= "Server: workerman\r\n";
+        }
+        $handshakeMessage .= "\r\n";
+        // Send handshake response.
+        $connection->send($handshakeMessage, true);
+        // Mark handshake complete.
+        $connection->context->websocketHandshake = true;
+
+        // Try to emit onWebSocketConnected callback.
+        $onWebsocketConnected = $connection->onWebSocketConnected ?? $connection->worker->onWebSocketConnected ?? false;
+        if ($onWebsocketConnected) {
+            try {
+                $onWebsocketConnected($connection, $request);
+            } catch (Throwable $e) {
+                Worker::stopAll(250, $e);
+            }
+        }
+
+        // There are data waiting to be sent.
+        if (!empty($connection->context->tmpWebsocketData)) {
+            $connection->send($connection->context->tmpWebsocketData, true);
+            $connection->context->tmpWebsocketData = '';
+        }
+        if (strlen($buffer) > $headerLength) {
+            return static::input(substr($buffer, $headerLength), $connection);
+        }
         return 0;
     }
 }
