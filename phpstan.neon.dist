@@ -25,3 +25,9 @@ parameters:
 	          - '#Call to static method create\(\) on an unknown class Workerman\\Coroutine\\Coroutine.#'
 	    - identifier: throws.unusedType
 	      message: "#RedisClusterException in PHPDoc @throws tag but it's not thrown.#"
+	      reportUnmatched: false
+	    # Mockery: shouldReceive() returns CompositeExpectation; once()/with() are delegated via __call().
+	    - path: tests/Unit/Protocols/WebsocketTest.php
+	      message: '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::(once|with)\(\)#'
+	    - path: tests/Unit/Protocols/WsTest.php
+	      message: '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::(once|with)\(\)#'
