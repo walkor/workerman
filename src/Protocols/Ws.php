@@ -56,16 +56,9 @@ class Ws
      */
     public const BINARY_TYPE_ARRAYBUFFER = "\x82";
 
-    /**
-     * Check the integrity of the package.
-     *
-     * @param string $buffer
-     * @param AsyncTcpConnection $connection
-     * @return int
-     */
     public static function input(string $buffer, AsyncTcpConnection $connection): int
     {
-        if (empty($connection->context->handshakeStep)) {
+        if (!isset($connection->context->handshakeStep)) {
             Worker::safeEcho("recv data before handshake. Buffer:" . bin2hex($buffer) . "\n");
             return -1;
         }
@@ -120,10 +113,10 @@ class Ws
                         } catch (Throwable $e) {
                             Worker::stopAll(250, $e);
                         }
-                    } // Close connection.
-                    else {
+                    } else { // Close connection.
                         $connection->close();
                     }
+                    
                     return 0;
                 // Wrong opcode.
                 default :
@@ -136,8 +129,7 @@ class Ws
                 if (strlen($buffer) < 4) {
                     return 0;
                 }
-                $pack = unpack('nn/ntotal_len', $buffer);
-                $currentFrameLength = $pack['total_len'] + 4;
+                $currentFrameLength = unpack('nn/ntotal_len', $buffer)['total_len'] + 4;
             } else if ($dataLen === 127) {
                 if (strlen($buffer) < 10) {
                     return 0;
@@ -213,7 +205,7 @@ class Ws
             $connection->context->websocketCurrentFrameLength = 0;
             return 0;
         } // The length of the received data is greater than the length of a frame.
-        elseif ($connection->context->websocketCurrentFrameLength < $recvLen) {
+        else if ($connection->context->websocketCurrentFrameLength < $recvLen) {
             self::decode(substr($buffer, 0, $connection->context->websocketCurrentFrameLength), $connection);
             $connection->consumeRecvBuffer($connection->context->websocketCurrentFrameLength);
             $currentFrameLength = $connection->context->websocketCurrentFrameLength;
@@ -221,9 +213,9 @@ class Ws
             // Continue to read next frame.
             return self::input(substr($buffer, $currentFrameLength), $connection);
         } // The length of the received data is less than the length of a frame.
-        else {
-            return 0;
-        }
+
+        return 0;
+
     }
 
     /**
@@ -236,12 +228,11 @@ class Ws
      */
     public static function encode(string $payload, AsyncTcpConnection $connection): string
     {
-        if (empty($connection->websocketType)) {
-            $connection->websocketType = self::BINARY_TYPE_BLOB;
-        }
-        $connection->websocketOrigin = $connection->websocketOrigin ?? null;
-        $connection->websocketClientProtocol = $connection->websocketClientProtocol ?? null;
-        if (empty($connection->context->handshakeStep)) {
+        $connection->websocketType ??= self::BINARY_TYPE_BLOB;
+        
+        $connection->websocketOrigin ??= null;
+        $connection->websocketClientProtocol ??= null;
+        if (!isset($connection->context->handshakeStep)) {
             static::sendHandshake($connection);
         }
 
@@ -331,7 +322,7 @@ class Ws
      */
     public static function onClose(AsyncTcpConnection $connection): void
     {
-        $connection->context->handshakeStep = null;
+        unset($connection->context->handshakeStep);
         $connection->context->websocketCurrentFrameLength = 0;
         $connection->context->tmpWebsocketData = '';
         $connection->context->websocketDataBuffer = '';
@@ -344,8 +335,6 @@ class Ws
     /**
      * Send websocket handshake.
      *
-     * @param AsyncTcpConnection $connection
-     * @return void
      * @throws Throwable
      */
     public static function sendHandshake(AsyncTcpConnection $connection): void
@@ -355,7 +344,10 @@ class Ws
         }
         // Get Host.
         $port = $connection->getRemotePort();
-        $host = $port === 80 || $port === 443 ? $connection->getRemoteHost() : $connection->getRemoteHost() . ':' . $port;
+        $host = match($port) {
+            80, 443 => $connection->getRemoteHost(),
+            default => $connection->getRemoteHost() . ":$port",
+        };
         // Handshake header.
         $connection->context->websocketSecKey = base64_encode(random_bytes(16));
         $userHeader = $connection->headers ?? null;
@@ -384,9 +376,9 @@ class Ws
             "Connection: Upgrade\r\n" .
             "Upgrade: websocket\r\n" .
             ($origin ? "Origin: " . $origin . "\r\n" : '') .
-            ($clientProtocol ? "Sec-WebSocket-Protocol: " . $clientProtocol . "\r\n" : '') .
+            ($clientProtocol ? "Sec-WebSocket-Protocol: $clientProtocol\r\n" : '') .
             "Sec-WebSocket-Version: 13\r\n" .
-            "Sec-WebSocket-Key: " . $connection->context->websocketSecKey . $userHeaderStr . "\r\n\r\n";
+            "Sec-WebSocket-Key: " . $connection->context->websocketSecKey . "$userHeaderStr\r\n\r\n";
         $connection->send($header, true);
         $connection->context->handshakeStep = 1;
         $connection->context->websocketCurrentFrameLength = 0;
@@ -404,52 +396,55 @@ class Ws
     public static function dealHandshake(string $buffer, AsyncTcpConnection $connection): bool|int
     {
         $pos = strpos($buffer, "\r\n\r\n");
-        if ($pos) {
-            //checking Sec-WebSocket-Accept
-            if (preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $buffer, $match)) {
-                if ($match[1] !== base64_encode(sha1($connection->context->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
-                    Worker::safeEcho("Sec-WebSocket-Accept not match. Header:\n" . substr($buffer, 0, $pos) . "\n");
-                    $connection->close();
-                    return 0;
-                }
-            } else {
-                Worker::safeEcho("Sec-WebSocket-Accept not found. Header:\n" . substr($buffer, 0, $pos) . "\n");
+        if (!$pos) {
+            return 0;
+        }
+
+        //checking Sec-WebSocket-Accept
+        if (preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $buffer, $match)) {
+            if ($match[1] !== base64_encode(sha1($connection->context->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
+                Worker::safeEcho("Sec-WebSocket-Accept not match. Header:\n" . substr($buffer, 0, $pos) . "\n");
                 $connection->close();
                 return 0;
             }
+        } else {
+            Worker::safeEcho("Sec-WebSocket-Accept not found. Header:\n" . substr($buffer, 0, $pos) . "\n");
+            $connection->close();
+            return 0;
+        }
 
-            // handshake complete
-            $connection->context->handshakeStep = 2;
-            $handshakeResponseLength = $pos + 4;
-            $buffer = substr($buffer, 0, $handshakeResponseLength);
-            $response = static::parseResponse($buffer);
-            // Try to emit onWebSocketConnect callback.
-            if (isset($connection->onWebSocketConnect)) {
-                try {
-                    ($connection->onWebSocketConnect)($connection, $response);
-                } catch (Throwable $e) {
-                    Worker::stopAll(250, $e);
-                }
-            }
-            // Headbeat.
-            if (!empty($connection->websocketPingInterval)) {
-                $connection->context->websocketPingTimer = Timer::add($connection->websocketPingInterval, function () use ($connection) {
-                    if (false === $connection->send(pack('H*', '898000000000'), true)) {
-                        Timer::del($connection->context->websocketPingTimer);
-                        $connection->context->websocketPingTimer = null;
-                    }
-                });
-            }
-
-            $connection->consumeRecvBuffer($handshakeResponseLength);
-            if (!empty($connection->context->tmpWebsocketData)) {
-                $connection->send($connection->context->tmpWebsocketData, true);
-                $connection->context->tmpWebsocketData = '';
-            }
-            if (strlen($buffer) > $handshakeResponseLength) {
-                return self::input(substr($buffer, $handshakeResponseLength), $connection);
+        // handshake complete
+        $connection->context->handshakeStep = 2;
+        $handshakeResponseLength = $pos + 4;
+        $buffer = substr($buffer, 0, $handshakeResponseLength);
+        $response = static::parseResponse($buffer);
+        // Try to emit onWebSocketConnect callback.
+        if (isset($connection->onWebSocketConnect)) {
+            try {
+                ($connection->onWebSocketConnect)($connection, $response);
+            } catch (Throwable $e) {
+                Worker::stopAll(250, $e);
             }
         }
+        // Headbeat.
+        if (!empty($connection->websocketPingInterval)) {
+            $connection->context->websocketPingTimer = Timer::add($connection->websocketPingInterval, function () use ($connection) {
+                if (false === $connection->send(pack('H*', '898000000000'), true)) {
+                    Timer::del($connection->context->websocketPingTimer);
+                    $connection->context->websocketPingTimer = null;
+                }
+            });
+        }
+
+        $connection->consumeRecvBuffer($handshakeResponseLength);
+        if (!empty($connection->context->tmpWebsocketData)) {
+            $connection->send($connection->context->tmpWebsocketData, true);
+            $connection->context->tmpWebsocketData = '';
+        }
+        if (strlen($buffer) > $handshakeResponseLength) {
+            return self::input(substr($buffer, $handshakeResponseLength), $connection);
+        }
+
         return 0;
     }
 
@@ -472,9 +467,8 @@ class Ws
             if (empty($content)) {
                 continue;
             }
-            list($key, $value) = explode(':', $content, 2);
-            $value = trim($value);
-            $headers[$key] = $value;
+            [$key, $value] = explode(':', $content, 2);
+            $headers[$key] = trim($value);
         }
         return (new Response())->withStatus((int)$status, $phrase)->withHeaders($headers)->withProtocolVersion($protocolVersion);
     }
