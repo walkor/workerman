@@ -359,7 +359,7 @@ class Http
             $connection->headers = [];
             $response = (string)$response;
             $bodyLen = strlen($response);
-            return "HTTP/1.1 200 OK\r\nServer: workerman\r\n{$extHeader}Connection: keep-alive\r\nContent-Type: $contentType\r\nContent-Length: $bodyLen\r\n\r\n$response";
+            return "HTTP/1.1 200 OK\r\n{$extHeader}Connection: keep-alive\r\nContent-Type: $contentType\r\nContent-Length: $bodyLen\r\n\r\n$response";
         }
 
         if ($connection->headers) {

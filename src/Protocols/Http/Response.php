@@ -462,9 +462,6 @@ class Response implements Stringable
         $reason = $this->reason ?: self::PHRASES[$this->status];
         $head = "HTTP/$this->version $this->status $reason\r\n";
         $headers = $this->headers;
-        if (!isset($headers['Server'])) {
-            $head .= "Server: workerman\r\n";
-        }
         foreach ($headers as $name => $value) {
             // Skip unsafe header names
             if (strpbrk((string)$name, ":\r\n") !== false) {
@@ -532,14 +529,11 @@ class Response implements Stringable
         $reason = $this->reason ?: self::PHRASES[$this->status] ?? '';
         $bodyLen = strlen($this->body);
         if (empty($this->headers)) {
-            return "HTTP/$this->version $this->status $reason\r\nServer: workerman\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $bodyLen\r\nConnection: keep-alive\r\n\r\n$this->body";
+            return "HTTP/$this->version $this->status $reason\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: $bodyLen\r\nConnection: keep-alive\r\n\r\n$this->body";
         }
 
         $head = "HTTP/$this->version $this->status $reason\r\n";
         $headers = $this->headers;
-        if (!isset($headers['Server'])) {
-            $head .= "Server: workerman\r\n";
-        }
         foreach ($headers as $name => $value) {
             // Skip unsafe header names
             if (strpbrk((string)$name, ":\r\n") !== false) {

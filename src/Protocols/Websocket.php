@@ -387,7 +387,7 @@ class Websocket
         if (!str_starts_with($buffer, 'GET')) {
             // Bad websocket handshake request.
             $connection->close(
-                "HTTP/1.1 400 Bad Request\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>400 Bad Request</h1><hr>workerman</div>", true);
+                "HTTP/1.1 400 Bad Request\r\n\r\n<div style=\"text-align:center\"><h1>400 Bad Request</h1><hr>workerman</div>", true);
             return 0;
         }
 
@@ -403,7 +403,7 @@ class Websocket
             $SecWebSocketKey = $match[1];
         } else {
             $connection->close(
-                "HTTP/1.1 400 Bad Request\r\nServer: workerman\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman</div>", true);
+                "HTTP/1.1 400 Bad Request\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman</div>", true);
             return 0;
         }
         // Calculation websocket key.
@@ -439,21 +439,13 @@ class Websocket
         // blob or arraybuffer
         $connection->websocketType ??= static::BINARY_TYPE_BLOB;
 
-        $hasServerHeader = false;
-
         if ($connection->headers) {
                 foreach ($connection->headers as $header) {
                     if (strpbrk($header, "\r\n") !== false) {
                         continue;
                     }
-                    if (stripos($header, 'Server:') === 0) {
-                        $hasServerHeader = true;
-                    }
                     $handshakeMessage .= "$header\r\n";
                 }
-        }
-        if (!$hasServerHeader) {
-            $handshakeMessage .= "Server: workerman\r\n";
         }
         $handshakeMessage .= "\r\n";
         // Send handshake response.
