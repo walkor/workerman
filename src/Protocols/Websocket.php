@@ -75,6 +75,16 @@ class Websocket
      */
     const BINARY_TYPE_ARRAYBUFFER_DEFLATE = "\xc2";
 
+    private const ZLIB_INIT_OPTIONS = [
+        ZLIB_ENCODING_RAW,
+            [
+                'level'    => -1,
+                'memory'   => 8,
+                'window'   => 15,
+                'strategy' => ZLIB_DEFAULT_STRATEGY
+            ]
+    ];
+
     public static function input(string $buffer, TcpConnection $connection): int
     {
         $connection->websocketOrigin ??= null;
@@ -336,16 +346,7 @@ class Websocket
 
     protected static function inflate(TcpConnection $connection, string $buffer, bool $isFinFrame): false|string
     {
-        $connection->context->inflator ??= 
-            inflate_init(
-                ZLIB_ENCODING_RAW,
-                [
-                    'level'    => -1,
-                    'memory'   => 8,
-                    'window'   => 15,
-                    'strategy' => ZLIB_DEFAULT_STRATEGY
-                ]
-            );
+        $connection->context->inflator ??= inflate_init(...self::ZLIB_INIT_OPTIONS);
         
         if ($isFinFrame) {
             $buffer .= "\x00\x00\xff\xff";
@@ -363,16 +364,7 @@ class Websocket
     protected static function deflate(TcpConnection $connection, string $buffer): false|string
     {
         
-        $connection->context->deflator ??= 
-             deflate_init(
-                ZLIB_ENCODING_RAW,
-                [
-                    'level'    => -1,
-                    'memory'   => 8,
-                    'window'   => 15,
-                    'strategy' => ZLIB_DEFAULT_STRATEGY
-                ]
-            );
+        $connection->context->deflator ??= deflate_init(...self::ZLIB_INIT_OPTIONS);
         
         return substr(deflate_add($connection->context->deflator, $buffer), 0, -4);
     }
