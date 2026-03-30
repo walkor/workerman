@@ -214,7 +214,7 @@ class Request implements Stringable
     {
         if (!isset($this->data['cookie'])) {
             $cookies = explode(';', $this->header('cookie', ''));
-            $mapped = array();
+            $mapped = [];
 
             foreach ($cookies as $cookie) {
                 $cookie = explode('=', $cookie, 2);
@@ -580,7 +580,7 @@ class Request implements Stringable
             $this->data['post'] = $cache[$bodyBuffer];
             return;
         }
-        if (preg_match('/\bjson\b/i', $contentType)) {
+        if (str_contains($contentType, 'json')) {
             $this->data['post'] = (array)json_decode($bodyBuffer, true);
         } else {
             parse_str($bodyBuffer, $this->data['post']);
