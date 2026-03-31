@@ -48,13 +48,45 @@ it('tests ::input', function () {
     }, '413 Payload Too Large');
 });
 
-it('sends 413 with Connection: close header', function () {
+it('sends 413 with Connection: close when header end is missing and buffered length reaches at least 16384 bytes', function (int $incompleteLength) {
     /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
     $tcpConnection = Mockery::spy(TcpConnection::class);
-    Http::input(str_repeat('a', 16384), $tcpConnection);
+    Http::input(str_repeat('a', $incompleteLength), $tcpConnection);
     $tcpConnection->shouldHaveReceived('end', function ($actual) {
         return str_contains($actual, '413 Payload Too Large') && str_contains($actual, "Connection: close\r\n");
     });
+})->with([
+    'exactly 16384' => [16384],
+    'strictly greater than 16384' => [16385],
+]);
+
+it('does not send 413 for completed headers whose total size before body exceeds 16384 bytes', function () {
+    /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+    $tcpConnection = Mockery::spy(TcpConnection::class);
+    $tcpConnection->maxPackageSize = 2 * 1024 * 1024;
+    $prefix = "GET / HTTP/1.1\r\nX: ";
+    $suffix = "\r\n\r\n";
+    $padding = str_repeat('x', 16400 - strlen($prefix) - strlen($suffix));
+    $buffer = $prefix . $padding . $suffix;
+    expect(strlen($buffer))->toBeGreaterThan(16384);
+    expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
+    $tcpConnection->shouldNotHaveReceived('end');
+});
+
+it('accepts ::input for POST with 500-character request-target and small body (forum long-path noise)', function () {
+    /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+    $tcpConnection = Mockery::spy(TcpConnection::class);
+    $tcpConnection->maxPackageSize = 1024 * 1024;
+    $path = '/' . str_repeat('A', 500);
+    $buffer = "POST {$path} HTTP/1.1\r\n"
+        . "Host: localhost:8080\r\n"
+        . "User-Agent: Mozilla/5.0\r\n"
+        . "Content-Type: text/plain\r\n"
+        . "Content-Length: 5\r\n"
+        . "\r\n"
+        . 'hello';
+    expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
+    $tcpConnection->shouldNotHaveReceived('end');
 });
 
 it('tests ::input request-line and header validation matrix', function (string $buffer, int $expectedLength) {
