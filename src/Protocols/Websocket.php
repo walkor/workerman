@@ -87,8 +87,6 @@ class Websocket
 
     public static function input(string $buffer, TcpConnection $connection): int
     {
-        $connection->websocketOrigin ??= null;
-        $connection->websocketClientProtocol ??= null;
         // Receive length.
         $recvLen = strlen($buffer);
         // We need more data.
