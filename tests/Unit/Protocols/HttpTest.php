@@ -534,3 +534,72 @@ it('tests ::decode', function () {
     expect($value == Http::decode($buffer, $tcpConnection))
         ->toBeTrue();
 });
+
+describe('HTTP/1.1 pipelining (Http::input)', function () {
+    it('returns only the first message length when two GET requests are concatenated', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $buffer = "GET / HTTP/1.1\r\n\r\nGET /b HTTP/1.1\r\n\r\n";
+        expect(Http::input($buffer, $tcpConnection))->toBe(18);
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+
+    it('returns the second message length when the buffer starts at the second request', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $second = "GET /b HTTP/1.1\r\n\r\n";
+        $buffer = "GET / HTTP/1.1\r\n\r\n" . $second;
+        expect(Http::input(substr($buffer, 18), $tcpConnection))->toBe(strlen($second));
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+
+    it('handles POST with body followed by GET', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $first = "POST /a HTTP/1.1\r\nHost: x\r\nContent-Length: 4\r\n\r\nbody";
+        $second = "GET /b HTTP/1.1\r\nHost: x\r\n\r\n";
+        $buffer = $first . $second;
+        expect(Http::input($buffer, $tcpConnection))->toBe(strlen($first));
+        expect(Http::input(substr($buffer, strlen($first)), $tcpConnection))->toBe(strlen($second));
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+
+    it('returns 0 when the first request line is incomplete', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        expect(Http::input("GET / HTTP/1.1\r\n", $tcpConnection))->toBe(0);
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+
+    it('returns 0 when a pipelined second request has incomplete headers', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $buffer = "GET / HTTP/1.1\r\n\r\nGET /b HTTP/1.1\r\n";
+        expect(Http::input($buffer, $tcpConnection))->toBe(18);
+        $rest = substr($buffer, 18);
+        expect(Http::input($rest, $tcpConnection))->toBe(0);
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+
+    it('parses three pipelined GETs in sequence', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $a = "GET /a HTTP/1.1\r\nHost: h\r\n\r\n";
+        $b = "GET /b HTTP/1.1\r\nHost: h\r\n\r\n";
+        $c = "GET /c HTTP/1.1\r\nHost: h\r\n\r\n";
+        $buffer = $a . $b . $c;
+        $pos = 0;
+        foreach ([$a, $b, $c] as $part) {
+            $len = strlen($part);
+            expect(Http::input(substr($buffer, $pos), $tcpConnection))->toBe($len);
+            $pos += $len;
+        }
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+});

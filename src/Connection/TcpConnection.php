@@ -774,7 +774,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 // The data is enough for a packet.
                 ++self::$statistics['total_request'];
                 // The current packet length is equal to the length of the buffer.
-                if ($one = ($recvBufferLength === $this->currentPackageLength)) {
+                if ($recvBufferLength === $this->currentPackageLength) {
                     $oneRequestBuffer = $this->recvBuffer;
                     $this->recvBuffer = '';
                 } else {
@@ -786,9 +786,22 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 // Reset the current packet length to 0.
                 $this->currentPackageLength = 0;
                 try {
+                    if (!isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$oneRequestBuffer])) {
+                        $request = $requests[$oneRequestBuffer];
+                        if ($request instanceof Request) {
+                            $request->connection = $this;
+                            ($this->onMessage)($this, $request);
+                            $request = clone $request;
+                            $request->destroy();
+                            $requests[$oneRequestBuffer] = $request;
+                        } else {
+                            ($this->onMessage)($this, $request);
+                        }
+                        continue;
+                    }
                     // Decode request buffer before Emitting onMessage callback.
                     $request = $this->protocol::decode($oneRequestBuffer, $this);
-                    if ((!is_object($request) || $request instanceof Request) && $one && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
+                    if ((!is_object($request) || $request instanceof Request) && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
                         ($this->onMessage)($this, $request);
                         if ($request instanceof Request) {
                             $request = clone $request;
@@ -798,7 +811,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                         if (count($requests) > static::MAX_CACHE_SIZE) {
                             unset($requests[key($requests)]);
                         }
-                        return;
+                        continue;
                     }
                     ($this->onMessage)($this, $request);
                 } catch (Throwable $e) {

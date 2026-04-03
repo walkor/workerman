@@ -97,6 +97,8 @@ class Http
      */
     public static function input(string $buffer, TcpConnection $connection): int
     {
+        static $cache = [];
+        
         $crlfPos = strpos($buffer, "\r\n\r\n");
         if (false === $crlfPos) {
             // Judge whether the package length exceeds the limit.
@@ -110,6 +112,10 @@ class Http
         // Only slice when necessary (avoid extra string copy).
         // Keep the trailing "\r\n\r\n" in $header for simpler/faster validation patterns.
         $header = isset($buffer[$length]) ? substr($buffer, 0, $length) : $buffer;
+
+        if ($length <= TcpConnection::MAX_CACHE_STRING_LENGTH && isset($cache[$header])) {
+            return $cache[$header];
+        }
 
         // Validate request line: METHOD SP request-target SP HTTP/1.0|1.1 CRLF
         // Request-target validation:
@@ -153,6 +159,12 @@ class Http
             return 0;
         }
 
+        if ($length <= TcpConnection::MAX_CACHE_STRING_LENGTH) {
+            $cache[$header] = $length;
+            if (count($cache) > TcpConnection::MAX_CACHE_SIZE) {
+                unset($cache[key($cache)]);
+            }
+        }
         return $length;
     }
 
