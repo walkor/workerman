@@ -132,18 +132,18 @@ class Http
         //       The pattern uses case-insensitive modifier (~i) for header name matching.
         $headerValidatePattern = '~\A'
             // Optional: capture Content-Length value (must be at \A to scan entire header)
-            . '(?:(?=[\s\S]*\r\nContent-Length[ \t]*:[ \t]*(\d+)[ \t]*\r\n))?'
+            . '(?:(?=[\s\S]*\r\nContent-Length:[ \t]*(\d+)[ \t]*\r\n))?'
             // Disallow Transfer-Encoding header
-            . '(?![\s\S]*\r\nTransfer-Encoding[ \t]*:)'
+            . '(?![\s\S]*\r\nTransfer-Encoding:)'
             // If Content-Length header exists, its value must be pure digits + optional OWS
-            . '(?![\s\S]*\r\nContent-Length[ \t]*:(?![ \t]*\d+[ \t]*\r\n)[^\r]*\r\n)'
+            . '(?![\s\S]*\r\nContent-Length:(?![ \t]*\d+[ \t]*\r\n)[^\r]*\r\n)'
             // Disallow duplicate Content-Length headers (adjacent or separated)
-            . '(?![\s\S]*\r\nContent-Length[ \t]*:[^\r\n]*\r\n(?:[\s\S]*?\r\n)?Content-Length[ \t]*:)'
+            . '(?![\s\S]*\r\nContent-Length:[^\r\n]*\r\n(?:[\s\S]*?\r\n)?Content-Length[ \t]*:)'
             // Match request line: METHOD SP request-target SP HTTP-version CRLF
             . '(?:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) +\/[^\x00-\x20\x7f]* +HTTP\/1\.[01]\r\n~i';
 
         if (!preg_match($headerValidatePattern, $header, $matches)) {
-            if (preg_match('~\r\nTransfer-Encoding[ \t]*:~i', $header)) {
+            if (preg_match('~\r\nTransfer-Encoding:~i', $header)) {
                 return static::inputChunked($buffer, $connection, $header, $length);
             }
             $connection->end(static::HTTP_400, true);
@@ -181,9 +181,9 @@ class Http
     protected static function inputChunked(string $buffer, TcpConnection $connection, string $header, int $headerLength): int
     {
         $pattern = '~\A'
-            . '(?![\s\S]*\r\nContent-Length[ \t]*:)'
-            . '(?![\s\S]*\r\nTransfer-Encoding[ \t]*:[\s\S]*\r\nTransfer-Encoding[ \t]*:)'
-            . '(?=[\s\S]*\r\nTransfer-Encoding[ \t]*:[ \t]*chunked[ \t]*\r\n)'
+            . '(?![\s\S]*\r\nContent-Length:)'
+            . '(?![\s\S]*\r\nTransfer-Encoding:[\s\S]*\r\nTransfer-Encoding[ \t]*:)'
+            . '(?=[\s\S]*\r\nTransfer-Encoding:[ \t]*chunked[ \t]*\r\n)'
             . '(?:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) +\/[^\x00-\x20\x7f]* +HTTP\/1\.[01]\r\n~i';
 
         if (!preg_match($pattern, $header)) {
@@ -286,7 +286,7 @@ class Http
      */
     protected static function decodeChunked(string $buffer, int $headerEnd): array
     {
-        $header = preg_replace('~\r\nTransfer-Encoding[ \t]*:[^\r]*~i', '', substr($buffer, 0, $headerEnd), 1);
+        $header = preg_replace('~\r\nTransfer-Encoding:[^\r]*~i', '', substr($buffer, 0, $headerEnd), 1);
         $body = '';
         $trailers = [];
         $pos = $headerEnd + 4;
