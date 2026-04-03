@@ -401,7 +401,8 @@ class Websocket
                 return 0;
              }
         } else {
-            $connection->close($_400, true);
+            $connection->close(
+                "HTTP/1.1 400 Bad Request\r\nSec-WebSocket-Version: 13\r\n\r\n", true);
             return 0;
         }
         
