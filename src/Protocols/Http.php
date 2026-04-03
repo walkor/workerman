@@ -131,6 +131,8 @@ class Http
         //       Use [ \t]* instead of \s* to avoid matching across lines.
         //       The pattern uses case-insensitive modifier (~i) for header name matching.
         $headerValidatePattern = '~\A'
+            // Missing the host header and value for HTTP/1.1 requests (case-insensitive; line-start must be "\r\n" to avoid matching "x-Host").
+            . '(?![\s\S]*\r\nHost[ \t]*:[ \t]*[^\r]+)'
             // Optional: capture Content-Length value (must be at \A to scan entire header)
             . '(?:(?=[\s\S]*\r\nContent-Length[ \t]*:[ \t]*(\d+)[ \t]*\r\n))?'
             // Disallow Transfer-Encoding header
