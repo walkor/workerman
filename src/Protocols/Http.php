@@ -138,7 +138,7 @@ class Http
             // If Content-Length header exists, its value must be pure digits + optional OWS
             . '(?![\s\S]*\r\nContent-Length:(?![ \t]*\d+[ \t]*\r\n)[^\r]*\r\n)'
             // Disallow duplicate Content-Length headers (adjacent or separated)
-            . '(?![\s\S]*\r\nContent-Length:[^\r\n]*\r\n(?:[\s\S]*?\r\n)?Content-Length[ \t]*:)'
+            . '(?![\s\S]*\r\nContent-Length:[^\r\n]*\r\n(?:[\s\S]*?\r\n)?Content-Length:)'
             // Match request line: METHOD SP request-target SP HTTP-version CRLF
             . '(?:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) +\/[^\x00-\x20\x7f]* +HTTP\/1\.[01]\r\n~i';
 
