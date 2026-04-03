@@ -108,7 +108,7 @@ class Websocket
             }
         } else {
             $firstByte = ord($buffer[0]);
-            $secondByte = ord($buffer[1]);
+            $secondByte = ord($buffer[1]);Sec-WebSocket-Version
             $dataLen = $secondByte & 127;
             $isFinFrame = $firstByte >> 7;
             $masked = $secondByte >> 7;
@@ -373,11 +373,12 @@ class Websocket
      */
     public static function dealHandshake(string $buffer, TcpConnection $connection): int
     {
+        $_400 = "HTTP/1.1 400 Bad Request\r\n\r\n<div style=\"text-align:center\"><h1>400 Bad Request</h1><hr>workerman</div>";
+        
         // HTTP protocol.
         if (!str_starts_with($buffer, 'GET')) {
             // Bad websocket handshake request.
-            $connection->close(
-                "HTTP/1.1 400 Bad Request\r\n\r\n<div style=\"text-align:center\"><h1>400 Bad Request</h1><hr>workerman</div>", true);
+            $connection->close($_400, true);
             return 0;
         }
 
@@ -388,12 +389,27 @@ class Websocket
         }
         $headerLength = $headerEndPos + 4;
 
+        // Check WebSocket version - RFC 6455 Section 4.4
+        if (preg_match("/Sec-WebSocket-Version: *(.*?)\r\n/i", $buffer, $match)) {
+            if($match[1] !== '13') {
+                $_426 = "HTTP/1.1 426 Upgrade Required\r\n"
+                    . "Connection: Upgrade\r\n"
+                    . "Upgrade: WebSocket\r\n"
+                    . "Sec-WebSocket-Version: 13\r\n\r\n";
+                
+                $connection->close($_426, true);
+                return 0;
+             }
+        } else {
+            $connection->close($_400, true);
+            return 0;
+        }
+        
         // Get Sec-WebSocket-Key.
         if (preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
             $SecWebSocketKey = $match[1];
         } else {
-            $connection->close(
-                "HTTP/1.1 400 Bad Request\r\n\r\n<div style=\"text-align:center\"><h1>WebSocket</h1><hr>workerman</div>", true);
+            $connection->close($_400, true);
             return 0;
         }
         // Calculation websocket key.
