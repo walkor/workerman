@@ -373,12 +373,12 @@ class Websocket
      */
     public static function dealHandshake(string $buffer, TcpConnection $connection): int
     {
-        $_400 = "HTTP/1.1 400 Bad Request\r\n\r\n<div style=\"text-align:center\"><h1>400 Bad Request</h1><hr>workerman</div>";
+        $HTTP_400 = "HTTP/1.1 400 Bad Request\r\n\r\n<div style=\"text-align:center\"><h1>400 Bad Request</h1><hr>workerman</div>";
         
         // HTTP protocol.
         if (!str_starts_with($buffer, 'GET')) {
             // Bad websocket handshake request.
-            $connection->close($_400, true);
+            $connection->close($HTTP_400, true);
             return 0;
         }
 
@@ -410,7 +410,7 @@ class Websocket
         if (preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
             $SecWebSocketKey = $match[1];
         } else {
-            $connection->close($_400, true);
+            $connection->close($HTTP_400, true);
             return 0;
         }
         // Calculation websocket key.
