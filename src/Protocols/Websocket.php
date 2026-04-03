@@ -108,7 +108,7 @@ class Websocket
             }
         } else {
             $firstByte = ord($buffer[0]);
-            $secondByte = ord($buffer[1]);Sec-WebSocket-Version
+            $secondByte = ord($buffer[1]);
             $dataLen = $secondByte & 127;
             $isFinFrame = $firstByte >> 7;
             $masked = $secondByte >> 7;
