@@ -158,6 +158,14 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
     'CRLF injection attempt in request-target' => [
         "GET /foo\r\nX: y HTTP/1.1\r\n\r\n",
     ],
+    // OWS is not allowed between the field name and colon because it would interfere with header parsing and validation regexes. (OWS is allowed after the colon and around the value, but not before the colon.)
+    'OWS between Content-Length :' => [
+        "GET / HTTP/1.1\r\n\Content-Length : 0\r\n\r\n",
+    ],
+    'OWS between Transfer-Encoding :' => [
+        "GET / HTTP/1.1\r\n\Transfer-Encoding : chunked\r\n\r\n",
+    ],
+    // We need more tests about leading OWS before other headers to ensure it is properly rejected and does not interfere with header parsing and validation. For example, if leading OWS before Content-Length is not rejected, it could allow smuggling of a second Content-Length header that would be parsed by the regexes as the only Content-Length header, bypassing the duplicate Content-Length header check and allowing a request with multiple Content-Length headers, which is forbidden by the HTTP spec and can cause security issues. 
 ]);
 
 it('rejects Transfer-Encoding and bad/duplicate Content-Length in ::input', function (string $buffer, ?string $expectedCloseContains = '400 Bad Request') {
