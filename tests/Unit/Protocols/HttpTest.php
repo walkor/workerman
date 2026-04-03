@@ -48,6 +48,15 @@ it('tests ::input', function () {
     }, '413 Payload Too Large');
 });
 
+it('missing Host header causes 400 Bad Request for HTTP/1.1', function () {
+    /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+    $tcpConnection = Mockery::spy(TcpConnection::class);
+    expect(Http::input("GET / HTTP/1.1\r\n\r\n", $tcpConnection))->toBe(0);
+    $tcpConnection->shouldHaveReceived('end', function ($actual) {
+        return str_starts_with($actual, '400 Bad Request') && str_contains($actual, "Connection: close\r\n");
+    });
+});
+
 it('sends 413 with Connection: close when header end is missing and buffered length reaches at least 16384 bytes', function (int $incompleteLength) {
     /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
     $tcpConnection = Mockery::spy(TcpConnection::class);
