@@ -132,7 +132,7 @@ class Http
         //       The pattern uses case-insensitive modifier (~i) for header name matching.
         $headerValidatePattern = '~\A'
             // Optional: capture Content-Length value (must be at \A to scan entire header)
-            . '(?:(?=[\s\S]*\r\nContent-Length[ \t]*:[ \t]*(\d+)[ \t]*\r\n))?'
+            . '(?:(?=[\s\S]*\r\nContent-Length[ \t]*:[ \t]*(?<length>\d+)[ \t]*\r\n))?'
             // Disallow Transfer-Encoding header
             . '(?![\s\S]*\r\nTransfer-Encoding[ \t]*:)'
             // If Content-Length header exists, its value must be pure digits + optional OWS
@@ -150,8 +150,8 @@ class Http
             return 0;
         }
 
-        if (isset($matches[1])) {
-            $length += (int)$matches[1];
+        if (isset($matches['length'])) {
+            $length += (int)$matches['length'];
         }
 
         if ($length > $connection->maxPackageSize) {
