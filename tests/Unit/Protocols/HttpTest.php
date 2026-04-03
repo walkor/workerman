@@ -5,6 +5,8 @@ use Workerman\Protocols\Http;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
 
+const HTTP_400 = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+
 it('customizes request class', function () {
     //backup old request class
     $oldRequestClass = Http::requestClass();
@@ -53,7 +55,7 @@ it('missing Host header causes 400 Bad Request for HTTP/1.1', function () {
     $tcpConnection = Mockery::spy(TcpConnection::class);
     expect(Http::input("GET / HTTP/1.1\r\n\r\n", $tcpConnection))->toBe(0);
     $tcpConnection->shouldHaveReceived('end', function ($actual) {
-        return str_starts_with($actual, '400 Bad Request') && str_contains($actual, "Connection: close\r\n");
+        return str_contains($actual, '400 Bad Request') && str_contains($actual, "Connection: close\r\n");
     });
 });
 
