@@ -353,7 +353,7 @@ class Http
      */
     public static function encode(string|Stringable $response, TcpConnection $connection): string
     {
-        if (!is_object($response)) {
+        if (is_string($response)) {
             $extHeader = '';
             $contentType = 'text/html;charset=utf-8';
             foreach ($connection->headers as $name => $value) {
