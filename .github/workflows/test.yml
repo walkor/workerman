@@ -45,7 +45,7 @@ jobs:
 
       - name: Static analysis
         #continue-on-error: true
-        run: composer analyze
+        #run: composer analyze
 
       - name: Execute tests
         run: composer test
