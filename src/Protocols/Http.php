@@ -140,7 +140,7 @@ class Http
             // Disallow duplicate Content-Length headers (adjacent or separated)
             . '(?![\s\S]*\r\nContent-Length[ \t]*:[^\r\n]*\r\n(?:[\s\S]*?\r\n)?Content-Length[ \t]*:)'
             // Match request line: METHOD SP request-target SP HTTP-version CRLF
-            . '((?-i:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH)[ \t])+(/[^\x00-\x20\x7f]*)+([ \t](?-i:HTTP)/1.[01])\r\n'
+            . '(?:(?-i:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH)[ \t])+(?:/[^\x00-\x20\x7f]*)+(?:[ \t](?-i:HTTP)/1.[01])\r\n'
             // Flag case-insensitive
             . '~i';
 
