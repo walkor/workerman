@@ -351,7 +351,7 @@ class Http
      * @param TcpConnection $connection
      * @return string
      */
-    public static function encode(string|Response $response, TcpConnection $connection): string
+    public static function encode(string|Response|ServerSentEvents $response, TcpConnection $connection): string
     {
         if (!is_object($response)) {
             $extHeader = '';
