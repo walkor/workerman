@@ -120,6 +120,10 @@ it('tests ::input request-line and header validation matrix', function (string $
         "GET / HTTP/1.1\r\nX-Transfer-Encoding: chunked\r\n\r\n",
         18 + strlen("X-Transfer-Encoding: chunked\r\n"),
     ],
+    'allow minor version in HTTP/1.1' => [
+        "GET / HTTP/1.2\r\n\r\n",
+        18, // strlen("GET / HTTP/1.2\r\n\r\n")
+    ],
 ]);
 
 it('rejects invalid request-line cases in ::input', function (string $buffer) {
