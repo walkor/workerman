@@ -19,6 +19,7 @@ namespace Workerman\Protocols;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
+use Workerman\Protocols\Http\ServerSentEvents;
 use function clearstatcache;
 use function ctype_xdigit;
 use function filesize;
@@ -346,11 +347,11 @@ class Http
     /**
      * Http encode.
      *
-     * @param string|Response $response
+     * @param string|Response|ServerSentEvents $response
      * @param TcpConnection $connection
      * @return string
      */
-    public static function encode(string|Response $response, TcpConnection $connection): string
+    public static function encode(string|Response|ServerSentEvents $response, TcpConnection $connection): string
     {
         if (!is_object($response)) {
             $extHeader = '';
