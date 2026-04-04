@@ -160,16 +160,16 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
     'lowercase version is not allowed' => [
         "GET / http/1.1\r\n\r\n",
     ],
-    'leading OWS is not allowed' => [
+    'leading spaces are not allowed' => [
         " GET / http/1.1\r\n\r\n",
     ],
-    'only 1 OWS after method is allowed' => [
+    'only 1 space after method is allowed' => [
         "GET  / http/1.1\r\n\r\n",
     ],
-    'only 1 OWS after path is allowed' => [
+    'only 1 space after path is allowed' => [
         "GET /  http/1.1\r\n\r\n",
     ],
-    'OWS after version is not allowed' => [
+    'space after version is not allowed' => [
         "GET / http/1.1 \r\n\r\n",
     ],
 
