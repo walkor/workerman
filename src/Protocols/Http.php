@@ -140,7 +140,7 @@ class Http
             // Disallow duplicate Content-Length headers (adjacent or separated)
             . '(?![\s\S]*\r\nContent-Length[ \t]*:[^\r\n]*\r\n(?:[\s\S]*?\r\n)?Content-Length[ \t]*:)'
             // Match request line: METHOD SP request-target SP HTTP-version CRLF
-            . '(?:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) +\/[^\x00-\x20\x7f]* +HTTP\/1\.[01]\r\n~i';
+            . '(?-i:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) +\/[^\x00-\x20\x7f]* +(?-i:HTTP)\/1\.[01]\r\n~i';
 
         if (!preg_match($headerValidatePattern, $header, $matches)) {
             if (preg_match('~\r\nTransfer-Encoding[ \t]*:~i', $header)) {

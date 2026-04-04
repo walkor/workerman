@@ -100,10 +100,6 @@ it('tests ::input request-line and header validation matrix', function (string $
         "GET / HTTP/1.1\r\n\r\n",
         18, // strlen("GET / HTTP/1.1\r\n\r\n")
     ],
-    'lowercase method and version is allowed' => [
-        "get / http/1.1\r\n\r\n",
-        18,
-    ],
     'all supported methods' => [
         "PATCH /a HTTP/1.0\r\n\r\n",
         21, // PATCH(5) + space + /a(2) + space + HTTP/1.0(8) + \r\n\r\n(4) = 21
@@ -157,6 +153,9 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
     ],
     'CRLF injection attempt in request-target' => [
         "GET /foo\r\nX: y HTTP/1.1\r\n\r\n",
+    ],
+    'lowercase method and version is not allowed' => [
+        "get / http/1.1\r\n\r\n",
     ],
 ]);
 
