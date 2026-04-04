@@ -154,9 +154,13 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
     'CRLF injection attempt in request-target' => [
         "GET /foo\r\nX: y HTTP/1.1\r\n\r\n",
     ],
-    'lowercase method and version is not allowed' => [
-        "get / http/1.1\r\n\r\n",
+    'lowercase method is not allowed' => [
+        "get / HTTP/1.1\r\n\r\n",
     ],
+    'lowercase version is not allowed' => [
+        "GET / http/1.1\r\n\r\n",
+    ],
+
 ]);
 
 it('rejects Transfer-Encoding and bad/duplicate Content-Length in ::input', function (string $buffer, ?string $expectedCloseContains = '400 Bad Request') {
