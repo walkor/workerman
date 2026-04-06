@@ -65,14 +65,14 @@ class Http
      *
      * @var string
      */
-    protected const HTTP_400 = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+    protected const HTTP_400 = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n";
 
     /**
      * Payload too large.
      *
      * @var string
      */
-    protected const HTTP_413 = "HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+    protected const HTTP_413 = "HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\n\r\n";
 
     /**
      * Get or set the request class name.
