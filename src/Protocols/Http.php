@@ -134,7 +134,7 @@ class Http
             // Missing the host header or value for HTTP/1.1 requests (case-insensitive; line-start must be "\r\n" to avoid matching "x-Host").
             . '(?:(?=[\s\S]*\r\nHost[ \t]*:[ \t]*(?:[^\r\n]+)?\r\n))?'
             // Optional: capture Content-Length value (must be at \A to scan entire header)
-            . '(?:(?=[\s\S]*\r\nContent-Length[ \t]*:[ \t]*(\d+)[ \t]*\r\n))?'
+            . '(?:(?=[\s\S]*\r\nContent-Length[ \t]*:[ \t]*(?<length>\d+)[ \t]*\r\n))?'
             // Disallow Transfer-Encoding header
             . '(?![\s\S]*\r\nTransfer-Encoding[ \t]*:)'
             // If Content-Length header exists, its value must be pure digits + optional OWS
@@ -152,8 +152,8 @@ class Http
             return 0;
         }
 
-        if (isset($matches[1])) {
-            $length += (int)$matches[1];
+        if (isset($matches['length'])) {
+            $length += (int)$matches['length'];
         }
 
         if ($length > $connection->maxPackageSize) {
