@@ -135,6 +135,26 @@ it('tests ::input request-line and header validation matrix', function (string $
         "GET / HTTP/1.2\r\n\r\n",
         18, // strlen("GET / HTTP/1.2\r\n\r\n")
     ],
+    'allow full url in request-target (compatibility)' => [
+        "GET http://example.com/ HTTP/1.1\r\n\r\n",
+        strlen("GET http://example.com/ HTTP/1.1\r\n\r\n"),
+    ],
+    'allow full url with port in request-target (compatibility)' => [
+        "GET http://example.com:8080/ HTTP/1.1\r\n\r\n",
+        strlen("GET http://example.com:8080/ HTTP/1.1\r\n\r\n"),
+    ],
+    'allow full url with query in request-target (compatibility)' => [
+        "GET http://example.com/search?q=workerman HTTP/1.1\r\n\r\n",
+        strlen("GET http://example.com/search?q=workerman HTTP/1.1\r\n\r\n"),
+    ],
+    'allow full url with uppercase scheme in request-target (compatibility)' => [
+        "GET HTTP://example.com/ HTTP/1.1\r\n\r\n",
+        strlen("GET HTTP://example.com/ HTTP/1.1\r\n\r\n"),
+    ],
+    'allow full url with path in request-target (compatibility)' => [
+        "GET https://example.com/foo/bar HTTP/1.1\r\n\r\n",
+        strlen("GET https://example.com/foo/bar HTTP/1.1\r\n\r\n"),
+    ],
 ]);
 
 it('rejects invalid request-line cases in ::input', function (string $buffer) {
@@ -150,9 +170,6 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
     ],
     'leading whitespace before method is not allowed' => [
         " GET / HTTP/1.1\r\n\r\n",
-    ],
-    'absolute-form request-target is not supported' => [
-        "GET http://example.com/ HTTP/1.1\r\n\r\n",
     ],
     'asterisk-form request-target is not supported (including OPTIONS *)' => [
         "OPTIONS * HTTP/1.1\r\n\r\n",
@@ -186,6 +203,66 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
     ],
     'space after version is not allowed' => [
         "GET / http/1.1 \r\n\r\n",
+    ],
+    'missing space between method and path' => [
+        "GET/ HTTP/1.1\r\n\r\n",
+    ],
+    'missing space between path and version' => [
+        "GET /HTTP/1.1\r\n\r\n",
+    ],
+    'missing version' => [
+        "GET / \r\n\r\n",
+    ],
+    'missing path' => [
+        "GET  HTTP/1.1\r\n\r\n",
+    ],
+    'missing method' => [
+        " / HTTP/1.1\r\n\r\n",
+    ],
+    'empty request-line' => [
+        "\r\n\r\n",
+    ],
+    'bad scheme' => [
+        "GET ftp://example.com/ HTTP/1.1\r\nHost: example.com\r\n\r\n",
+    ],
+    'bad authority in absolute-form request-target' => [
+        "GET http://exa mple.com/ HTTP/1.1\r\n\r\n",
+    ],
+    'bad path in absolute-form request-target' => [
+        "GET http://example.com/fo o HTTP/1.1\r\n\r\n",
+    ],
+    'bad query in absolute-form request-target' => [
+        "GET http://example.com/search?q=wor k HTTP/1.1\r\n\r\n",
+    ],
+    'bad fragment in absolute-form request-target' => [
+        "GET http://example.com/#frag ment HTTP/1.1\r\n\r\n",
+    ],
+    'bad port in absolute-form request-target' => [
+         "GET http://example.com:80 80/ HTTP/1.1\r\n\r\n",
+     ],
+    // 'bad port number in absolute-form request-target' => [
+    //     "GET http://example.com:abc/ HTTP/1.1\r\n\r\n",
+    // ],
+    // 'bad port number in absolute-form request-target (too large)' => [
+    //     "GET http://example.com:99999/ HTTP/1.1\r\n\r\n",
+    // ],
+    // 'bad port number in absolute-form request-target (negative)' => [
+    //     "GET http://example.com:-80/ HTTP/1.1\r\n\r\n",
+    // ],
+    // 'bad port number in absolute-form request-target (non-digit characters)' => [
+    //     "GET http://example.com:8o80/ HTTP/1.1\r\n\r\n",
+    // ],
+    // 'bad port number in absolute-form request-target (empty)' => [
+    //     "GET http://example.com:/ HTTP/1.1\r\n\r\n",
+    // ],
+    // 'bad port number in absolute-form request-target (leading zero)' => [
+    //     "GET http://example.com:080/ HTTP/1.1\r\n\r\n",
+    // ],
+    'bad full url in request-target (invalid characters in host)' => [
+        "GET http://exa mple.com/ HTTP/1.1\r\n\r\n",
+    ],
+    'bad full url in request-target' => [
+        "GET htp://example.com/foo HTTP/1.1\r\n\r\n",
     ],
 
 ]);
