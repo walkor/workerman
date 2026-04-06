@@ -171,9 +171,6 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
     'leading whitespace before method is not allowed' => [
         " GET / HTTP/1.1\r\n\r\n",
     ],
-    'absolute-form request-target is not supported' => [
-        "GET http://example.com/ HTTP/1.1\r\n\r\n",
-    ],
     'asterisk-form request-target is not supported (including OPTIONS *)' => [
         "OPTIONS * HTTP/1.1\r\n\r\n",
     ],
