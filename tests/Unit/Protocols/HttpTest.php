@@ -111,10 +111,6 @@ it('tests ::input request-line and header validation matrix', function (string $
         "GET / HTTP/1.1\r\n\r\n",
         18, // strlen("GET / HTTP/1.1\r\n\r\n")
     ],
-    'lowercase method and version is allowed' => [
-        "get / http/1.1\r\n\r\n",
-        18,
-    ],
     'all supported methods' => [
         "PATCH /a HTTP/1.0\r\n\r\n",
         21, // PATCH(5) + space + /a(2) + space + HTTP/1.0(8) + \r\n\r\n(4) = 21
@@ -134,6 +130,10 @@ it('tests ::input request-line and header validation matrix', function (string $
     'X-Transfer-Encoding does not trigger Transfer-Encoding ban' => [
         "GET / HTTP/1.1\r\nX-Transfer-Encoding: chunked\r\n\r\n",
         18 + strlen("X-Transfer-Encoding: chunked\r\n"),
+    ],
+    'allow minor version in HTTP/1.1' => [
+        "GET / HTTP/1.2\r\n\r\n",
+        18, // strlen("GET / HTTP/1.2\r\n\r\n")
     ],
 ]);
 
@@ -169,6 +169,25 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
     'CRLF injection attempt in request-target' => [
         "GET /foo\r\nX: y HTTP/1.1\r\n\r\n",
     ],
+    'lowercase method is not allowed' => [
+        "get / HTTP/1.1\r\n\r\n",
+    ],
+    'lowercase version is not allowed' => [
+        "GET / http/1.1\r\n\r\n",
+    ],
+    'leading spaces are not allowed' => [
+        " GET / http/1.1\r\n\r\n",
+    ],
+    'only 1 space after method is allowed' => [
+        "GET  / http/1.1\r\n\r\n",
+    ],
+    'only 1 space after path is allowed' => [
+        "GET /  http/1.1\r\n\r\n",
+    ],
+    'space after version is not allowed' => [
+        "GET / http/1.1 \r\n\r\n",
+    ],
+
 ]);
 
 it('rejects Transfer-Encoding and bad/duplicate Content-Length in ::input', function (string $buffer, ?string $expectedCloseContains = '400 Bad Request') {
