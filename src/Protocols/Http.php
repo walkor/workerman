@@ -65,14 +65,14 @@ class Http
      *
      * @var string
      */
-    protected const HTTP_400 = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+    protected const HTTP_400 = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n";
 
     /**
      * Payload too large.
      *
      * @var string
      */
-    protected const HTTP_413 = "HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+    protected const HTTP_413 = "HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\n\r\n";
 
     /**
      * Get or set the request class name.
@@ -131,8 +131,10 @@ class Http
         //       Use [ \t]* instead of \s* to avoid matching across lines.
         //       The pattern uses case-insensitive modifier (~i) for header name matching.
         $headerValidatePattern = '~\A'
+            // Missing the host header or value for HTTP/1.1 requests (case-insensitive; line-start must be "\r\n" to avoid matching "x-Host").
+            . '(?:(?=[\s\S]*\r\nHost[ \t]*:[ \t]*(?:[^\r\n]+)?\r\n))?'
             // Optional: capture Content-Length value (must be at \A to scan entire header)
-            . '(?:(?=[\s\S]*\r\nContent-Length:[ \t]*(\d+)[ \t]*\r\n))?'
+            . '(?:(?=[\s\S]*\r\nContent-Length:[ \t]*(?<length>\d+)[ \t]*\r\n))?'
             // Disallow Transfer-Encoding header
             . '(?![\s\S]*\r\nTransfer-Encoding:)'
             // If Content-Length header exists, its value must be pure digits + optional OWS
@@ -140,7 +142,9 @@ class Http
             // Disallow duplicate Content-Length headers (adjacent or separated)
             . '(?![\s\S]*\r\nContent-Length:[^\r\n]*\r\n(?:[\s\S]*?\r\n)?Content-Length:)'
             // Match request line: METHOD SP request-target SP HTTP-version CRLF
-            . '(?:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) +\/[^\x00-\x20\x7f]* +HTTP\/1\.[01]\r\n~i';
+            . '(?:(?-i:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) )+(?:/[^\x00-\x20\x7f]*)+(?: (?-i:HTTP)/1.[0-9])\r\n'
+            // Flag case-insensitive
+            . '~i';
 
         if (!preg_match($headerValidatePattern, $header, $matches)) {
             if (preg_match('~\r\nTransfer-Encoding:~i', $header)) {
@@ -150,8 +154,8 @@ class Http
             return 0;
         }
 
-        if (isset($matches[1])) {
-            $length += (int)$matches[1];
+        if (isset($matches['length'])) {
+            $length += (int)$matches['length'];
         }
 
         if ($length > $connection->maxPackageSize) {
