@@ -507,14 +507,15 @@ class Request implements Stringable
         }
         $headData = explode("\r\n", $headBuffer);
         foreach ($headData as $content) {
-            if (str_contains($content, ':')) {
-                [$key, $value] = explode(':', $content, 2);
-                $key = strtolower($key);
-                $value = ltrim($value);
-            } else {
-                $key = strtolower($content);
-                $value = '';
+            if ($content === '') {
+                continue;
             }
+            $parts = explode(':', $content, 2);
+            if (!isset($parts[1])) {
+                continue;
+            }
+            $key = strtolower($parts[0]);
+            $value = trim($parts[1], " \t");
             if (isset($this->data['headers'][$key])) {
                 $this->data['headers'][$key] = "{$this->data['headers'][$key]},$value";
             } else {

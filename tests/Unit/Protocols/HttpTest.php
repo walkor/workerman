@@ -59,6 +59,73 @@ it('missing Host header causes 400 Bad Request for HTTP/1.1', function () {
     });
 });
 
+describe('HTTP/1.0', function () {
+    it('accepts minimal GET without Host header', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $buffer = "GET / HTTP/1.0\r\n\r\n";
+        expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+
+    it('accepts GET with Connection: keep-alive', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $buffer = "GET / HTTP/1.0\r\nConnection: keep-alive\r\n\r\n";
+        expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+
+    it('accepts GET with Connection: close', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $buffer = "GET / HTTP/1.0\r\nConnection: close\r\n\r\n";
+        expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+
+    it('Request exposes protocol 1.0 and Connection: keep-alive after decode', function () {
+        /** @var TcpConnection $tcpConnection */
+        $tcpConnection = Mockery::mock(TcpConnection::class);
+        $buffer = "GET / HTTP/1.0\r\nConnection: keep-alive\r\n\r\n";
+        $request = Http::decode($buffer, $tcpConnection);
+        expect($request)->toBeInstanceOf(Request::class)
+            ->and($request->protocolVersion())->toBe('1.0')
+            ->and($request->header('connection'))->toBe('keep-alive');
+    });
+
+    it('Request exposes Connection: close after decode', function () {
+        /** @var TcpConnection $tcpConnection */
+        $tcpConnection = Mockery::mock(TcpConnection::class);
+        $buffer = "GET / HTTP/1.0\r\nConnection: close\r\n\r\n";
+        $request = Http::decode($buffer, $tcpConnection);
+        expect($request->protocolVersion())->toBe('1.0')
+            ->and($request->header('connection'))->toBe('close');
+    });
+
+    it('accepts POST with body and Connection: keep-alive', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $buffer = "POST / HTTP/1.0\r\nContent-Length: 3\r\nConnection: keep-alive\r\n\r\nabc";
+        expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+
+    it('returns first message length when two HTTP/1.0 requests are pipelined with keep-alive', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $first = "GET /a HTTP/1.0\r\nConnection: keep-alive\r\n\r\n";
+        $second = "GET /b HTTP/1.0\r\nConnection: keep-alive\r\n\r\n";
+        expect(Http::input($first . $second, $tcpConnection))->toBe(strlen($first));
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+});
+
 it('sends 413 with Connection: close when header end is missing and buffered length reaches at least 16384 bytes', function (int $incompleteLength) {
     /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
     $tcpConnection = Mockery::spy(TcpConnection::class);
@@ -71,17 +138,32 @@ it('sends 413 with Connection: close when header end is missing and buffered len
     'strictly greater than 16384' => [16385],
 ]);
 
-it('does not send 413 for completed headers whose total size before body exceeds 16384 bytes', function () {
+it('accepts completed headers when header data is just under 16384 bytes', function () {
     /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
     $tcpConnection = Mockery::spy(TcpConnection::class);
     $tcpConnection->maxPackageSize = 2 * 1024 * 1024;
-    $prefix = "GET / HTTP/1.1\r\nX: ";
+    $prefix = "GET / HTTP/1.1\r\nHost: h\r\nX: ";
     $suffix = "\r\n\r\n";
-    $padding = str_repeat('x', 16400 - strlen($prefix) - strlen($suffix));
+    $padding = str_repeat('x', 16383 - strlen($prefix));
     $buffer = $prefix . $padding . $suffix;
-    expect(strlen($buffer))->toBeGreaterThan(16384);
+    expect(strpos($buffer, "\r\n\r\n"))->toBe(16383);
     expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
     $tcpConnection->shouldNotHaveReceived('end');
+});
+
+it('sends 413 when completed header data reaches 16384 bytes', function () {
+    /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+    $tcpConnection = Mockery::spy(TcpConnection::class);
+    $tcpConnection->maxPackageSize = 2 * 1024 * 1024;
+    $prefix = "GET / HTTP/1.1\r\nHost: h\r\nX: ";
+    $suffix = "\r\n\r\n";
+    $padding = str_repeat('x', 16384 - strlen($prefix));
+    $buffer = $prefix . $padding . $suffix;
+    expect(strpos($buffer, "\r\n\r\n"))->toBe(16384);
+    expect(Http::input($buffer, $tcpConnection))->toBe(0);
+    $tcpConnection->shouldHaveReceived('end', function ($actual) {
+        return str_contains($actual, '413 Payload Too Large');
+    });
 });
 
 it('accepts ::input for POST with 500-character request-target and small body (forum long-path noise)', function () {
@@ -108,32 +190,28 @@ it('tests ::input request-line and header validation matrix', function (string $
     $tcpConnection->shouldNotHaveReceived('close');
 })->with([
     'minimal GET / HTTP/1.1' => [
-        "GET / HTTP/1.1\r\n\r\n",
-        18, // strlen("GET / HTTP/1.1\r\n\r\n")
+        "GET / HTTP/1.1\r\nHost: h\r\n\r\n",
+        27, // strlen("GET / HTTP/1.1\r\nHost: h\r\n\r\n")
     ],
     'all supported methods' => [
         "PATCH /a HTTP/1.0\r\n\r\n",
         21, // PATCH(5) + space + /a(2) + space + HTTP/1.0(8) + \r\n\r\n(4) = 21
     ],
     'GET with Content-Length is allowed and affects package length' => [
-        "GET / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello",
-        strlen("GET / HTTP/1.1\r\nContent-Length: 5\r\n\r\n") + 5, // header length + body length
+        "GET / HTTP/1.1\r\nHost: h\r\nContent-Length: 5\r\n\r\nhello",
+        strlen("GET / HTTP/1.1\r\nHost: h\r\nContent-Length: 5\r\n\r\n") + 5,
     ],
     'request-target allows UTF-8 bytes (compatibility)' => [
-        "GET /中文 HTTP/1.1\r\n\r\n",
-        strlen("GET /中文 HTTP/1.1\r\n\r\n"),
+        "GET /中文 HTTP/1.1\r\nHost: h\r\n\r\n",
+        strlen("GET /中文 HTTP/1.1\r\nHost: h\r\n\r\n"),
     ],
     'pipeline: first request length is returned' => [
-        "GET / HTTP/1.1\r\n\r\nGET /b HTTP/1.1\r\n\r\n",
-        18,
+        "GET / HTTP/1.1\r\nHost: h\r\n\r\nGET /b HTTP/1.1\r\nHost: h\r\n\r\n",
+        27,
     ],
     'X-Transfer-Encoding does not trigger Transfer-Encoding ban' => [
-        "GET / HTTP/1.1\r\nX-Transfer-Encoding: chunked\r\n\r\n",
-        18 + strlen("X-Transfer-Encoding: chunked\r\n"),
-    ],
-    'allow minor version in HTTP/1.1' => [
-        "GET / HTTP/1.2\r\n\r\n",
-        18, // strlen("GET / HTTP/1.2\r\n\r\n")
+        "GET / HTTP/1.1\r\nHost: h\r\nX-Transfer-Encoding: chunked\r\n\r\n",
+        strlen("GET / HTTP/1.1\r\nHost: h\r\nX-Transfer-Encoding: chunked\r\n\r\n"),
     ],
 ]);
 
@@ -159,6 +237,9 @@ it('rejects invalid request-line cases in ::input', function (string $buffer) {
     ],
     'invalid http version' => [
         "GET / HTTP/2.0\r\n\r\n",
+    ],
+    'unsupported http minor version 1.2' => [
+        "GET / HTTP/1.2\r\n\r\n",
     ],
     'invalid path contains space' => [
         "GET /a b HTTP/1.1\r\n\r\n",
@@ -200,11 +281,11 @@ it('rejects Transfer-Encoding and bad/duplicate Content-Length in ::input', func
         '400 Bad Request',
     ],
     'Transfer-Encoding with non-chunked value is forbidden' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: gzip\r\n\r\n",
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: gzip\r\n\r\n",
         '400 Bad Request',
     ],
     'Duplicate Transfer-Encoding headers are forbidden' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
         '400 Bad Request',
     ],
     'Content-Length must be digits (not a number)' => [
@@ -232,7 +313,7 @@ it('rejects Transfer-Encoding and bad/duplicate Content-Length in ::input', func
         '400 Bad Request',
     ],
     'very large numeric Content-Length should be rejected by maxPackageSize (413)' => [
-        "GET / HTTP/1.1\r\nContent-Length: 999999999999999999999999999999999999\r\n\r\n",
+        "GET / HTTP/1.1\r\nHost: h\r\nContent-Length: 999999999999999999999999999999999999\r\n\r\n",
         '413 Payload Too Large',
     ],
 ]);
@@ -244,32 +325,32 @@ it('tests ::input for chunked transfer-encoding', function (string $buffer, int 
     expect(Http::input($buffer, $tcpConnection))->toBe($expectedLength);
 })->with([
     'simple chunked body' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n",
-        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n"),
     ],
     'multiple chunks' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n",
-        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n"),
     ],
     'chunked with trailers' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\nChecksum: abc\r\n\r\n",
-        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\nChecksum: abc\r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\nChecksum: abc\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\nChecksum: abc\r\n\r\n"),
     ],
     'chunked with chunk extension' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5;ext=val\r\nhello\r\n0\r\n\r\n",
-        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5;ext=val\r\nhello\r\n0\r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n5;ext=val\r\nhello\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n5;ext=val\r\nhello\r\n0\r\n\r\n"),
     ],
     'incomplete chunked body returns 0' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhel",
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhel",
         0,
     ],
     'chunked header only returns 0' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n",
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n",
         0,
     ],
     'case-insensitive transfer-encoding' => [
-        "POST / HTTP/1.1\r\ntransfer-encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n",
-        strlen("POST / HTTP/1.1\r\ntransfer-encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\ntransfer-encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\ntransfer-encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n"),
     ],
 ]);
 
@@ -280,39 +361,39 @@ it('tests ::input for chunked boundary cases', function (string $buffer, int $ex
     expect(Http::input($buffer, $tcpConnection))->toBe($expectedLength);
 })->with([
     'empty body (only zero chunk)' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
-        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n"),
     ],
     'leading zeros in chunk-size' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n05\r\nhello\r\n0\r\n\r\n",
-        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n05\r\nhello\r\n0\r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n05\r\nhello\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n05\r\nhello\r\n0\r\n\r\n"),
     ],
     'HTTP/1.0 with chunked' => [
         "POST / HTTP/1.0\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n",
         strlen("POST / HTTP/1.0\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n"),
     ],
     'uppercase hex chunk-size' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nA\r\n" . str_repeat('x', 10) . "\r\n0\r\n\r\n",
-        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nA\r\n" . str_repeat('x', 10) . "\r\n0\r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\nA\r\n" . str_repeat('x', 10) . "\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\nA\r\n" . str_repeat('x', 10) . "\r\n0\r\n\r\n"),
     ],
     'chunk extension with multiple params' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n4;a=1;b=2\r\nwiki\r\n0\r\n\r\n",
-        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n4;a=1;b=2\r\nwiki\r\n0\r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n4;a=1;b=2\r\nwiki\r\n0\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n4;a=1;b=2\r\nwiki\r\n0\r\n\r\n"),
     ],
     'multiple trailers then terminating empty line' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\r\n0\r\nX-One: a\r\nX-Two: b\r\n\r\n",
-        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\r\n0\r\nX-One: a\r\nX-Two: b\r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\r\n0\r\nX-One: a\r\nX-Two: b\r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\r\n0\r\nX-One: a\r\nX-Two: b\r\n\r\n"),
     ],
     'trailer field-value with leading OWS' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum:   abc   \r\n\r\n",
-        strlen("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum:   abc   \r\n\r\n"),
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum:   abc   \r\n\r\n",
+        strlen("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum:   abc   \r\n\r\n"),
     ],
     'incomplete after zero chunk (no blank line after trailers)' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum: abc\r\n",
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum: abc\r\n",
         0,
     ],
     'incomplete mid-trailer block' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum:",
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nChecksum:",
         0,
     ],
 ]);
@@ -323,24 +404,24 @@ it('rejects malformed chunked framing in ::input', function (string $buffer) {
     }, '400 Bad Request');
 })->with([
     'invalid hex in chunk-size' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n\r\n",
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n\r\n",
     ],
     'chunk-size longer than 16 hex digits' => [
-        'POST / HTTP/1.1' . "\r\nTransfer-Encoding: chunked\r\n\r\n" . str_repeat('1', 17) . "\r\n\r\n",
+        'POST / HTTP/1.1' . "\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n" . str_repeat('1', 17) . "\r\n\r\n",
     ],
     'chunk-size overflows int (hexdec float)' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n8000000000000000\r\n\r\n",
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n8000000000000000\r\n\r\n",
     ],
     'missing CRLF after chunk data' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\n0\r\n\r\n",
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\n0\r\n\r\n",
     ],
     'wrong bytes where CRLF must follow chunk data' => [
-        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabcXX0\r\n\r\n",
+        "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabcXX0\r\n\r\n",
     ],
 ]);
 
 it('rejects chunked message over maxPackageSize in ::input', function () {
-    $buffer = "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n";
+    $buffer = "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n";
     testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
         $tcpConnection->maxPackageSize = strlen($buffer) - 1;
         expect(Http::input($buffer, $tcpConnection))->toBe(0);
@@ -350,7 +431,7 @@ it('rejects chunked message over maxPackageSize in ::input', function () {
 it('rejects chunked body that exceeds maxPackageSize in ::input', function () {
     $body = str_repeat('a', 100);
     $hex = dechex(strlen($body));
-    $buffer = "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n{$hex}\r\n{$body}\r\n0\r\n\r\n";
+    $buffer = "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n{$hex}\r\n{$body}\r\n0\r\n\r\n";
     testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
         $tcpConnection->maxPackageSize = strlen($buffer) - 1;
         expect(Http::input($buffer, $tcpConnection))->toBe(0);
@@ -570,8 +651,8 @@ describe('HTTP/1.1 pipelining (Http::input)', function () {
         /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
         $tcpConnection = Mockery::spy(TcpConnection::class);
         $tcpConnection->maxPackageSize = 1024 * 1024;
-        $buffer = "GET / HTTP/1.1\r\n\r\nGET /b HTTP/1.1\r\n\r\n";
-        expect(Http::input($buffer, $tcpConnection))->toBe(18);
+        $buffer = "GET / HTTP/1.1\r\nHost: h\r\n\r\nGET /b HTTP/1.1\r\nHost: h\r\n\r\n";
+        expect(Http::input($buffer, $tcpConnection))->toBe(27);
         $tcpConnection->shouldNotHaveReceived('end');
     });
 
@@ -579,9 +660,9 @@ describe('HTTP/1.1 pipelining (Http::input)', function () {
         /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
         $tcpConnection = Mockery::spy(TcpConnection::class);
         $tcpConnection->maxPackageSize = 1024 * 1024;
-        $second = "GET /b HTTP/1.1\r\n\r\n";
-        $buffer = "GET / HTTP/1.1\r\n\r\n" . $second;
-        expect(Http::input(substr($buffer, 18), $tcpConnection))->toBe(strlen($second));
+        $second = "GET /b HTTP/1.1\r\nHost: h\r\n\r\n";
+        $buffer = "GET / HTTP/1.1\r\nHost: h\r\n\r\n" . $second;
+        expect(Http::input(substr($buffer, 27), $tcpConnection))->toBe(strlen($second));
         $tcpConnection->shouldNotHaveReceived('end');
     });
 
@@ -609,9 +690,9 @@ describe('HTTP/1.1 pipelining (Http::input)', function () {
         /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
         $tcpConnection = Mockery::spy(TcpConnection::class);
         $tcpConnection->maxPackageSize = 1024 * 1024;
-        $buffer = "GET / HTTP/1.1\r\n\r\nGET /b HTTP/1.1\r\n";
-        expect(Http::input($buffer, $tcpConnection))->toBe(18);
-        $rest = substr($buffer, 18);
+        $buffer = "GET / HTTP/1.1\r\nHost: h\r\n\r\nGET /b HTTP/1.1\r\n";
+        expect(Http::input($buffer, $tcpConnection))->toBe(27);
+        $rest = substr($buffer, 27);
         expect(Http::input($rest, $tcpConnection))->toBe(0);
         $tcpConnection->shouldNotHaveReceived('end');
     });

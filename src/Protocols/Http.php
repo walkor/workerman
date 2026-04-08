@@ -20,7 +20,10 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
 use function clearstatcache;
+use function count;
+use function ctype_digit;
 use function ctype_xdigit;
+use function explode;
 use function filesize;
 use function fopen;
 use function fread;
@@ -33,12 +36,12 @@ use function is_object;
 use function ltrim;
 use function preg_match;
 use function preg_replace;
-use function str_starts_with;
 use function strlen;
 use function strpos;
 use function strtolower;
 use function substr;
 use function sys_get_temp_dir;
+use function trim;
 
 /**
  * Class Http.
@@ -75,6 +78,11 @@ class Http
     protected const HTTP_413 = "HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\n\r\n";
 
     /**
+     * Max bytes buffered while waiting for end of headers, and max offset of "\r\n\r\n" (header block size limit).
+     */
+    protected const MAX_HEADER_LENGTH = 16384;
+
+    /**
      * Get or set the request class name.
      *
      * @param class-string|null $className
@@ -98,64 +106,78 @@ class Http
     public static function input(string $buffer, TcpConnection $connection): int
     {
         static $cache = [];
-        
+
         $crlfPos = strpos($buffer, "\r\n\r\n");
         if (false === $crlfPos) {
-            // Judge whether the package length exceeds the limit.
-            if (strlen($buffer) >= 16384) {
+            if (strlen($buffer) >= static::MAX_HEADER_LENGTH) {
                 $connection->end(static::HTTP_413, true);
             }
             return 0;
         }
 
         $length = $crlfPos + 4;
-        // Only slice when necessary (avoid extra string copy).
-        // Keep the trailing "\r\n\r\n" in $header for simpler/faster validation patterns.
+        if ($crlfPos >= static::MAX_HEADER_LENGTH) {
+            $connection->end(static::HTTP_413, true);
+            return 0;
+        }
         $header = isset($buffer[$length]) ? substr($buffer, 0, $length) : $buffer;
 
         if ($length <= TcpConnection::MAX_CACHE_STRING_LENGTH && isset($cache[$header])) {
             return $cache[$header];
         }
 
-        // Validate request line: METHOD SP request-target SP HTTP/1.0|1.1 CRLF
-        // Request-target validation:
-        // - Allow origin-form only (must start with "/") for all methods below.
-        // - Do NOT support asterisk-form ("*") for OPTIONS.
-        // - For compatibility, allow any bytes except ASCII control characters, spaces and DEL in request-target.
-        //   (Strictly speaking, URI should be ASCII and non-ASCII should be percent-encoded; but many clients send UTF-8.)
-        // - Disallow "Transfer-Encoding" header (case-insensitive; line-start must be "\r\n" to avoid matching "x-Transfer-Encoding").
-        // - Optionally capture Content-Length (case-insensitive; line-start must be "\r\n" to avoid matching "x-Content-Length").
-        // - If Content-Length exists, it must be a valid decimal number and the whole field-value must be digits + optional OWS.
-        // - Disallow duplicate Content-Length headers.
-        // Note: All lookaheads are placed at \A so they can scan the entire header including the request line.
-        //       Use [ \t]* instead of \s* to avoid matching across lines.
-        //       The pattern uses case-insensitive modifier (~i) for header name matching.
-        $headerValidatePattern = '~\A'
-            // Missing the host header or value for HTTP/1.1 requests (case-insensitive; line-start must be "\r\n" to avoid matching "x-Host").
-            . '(?:(?=[\s\S]*\r\nHost[ \t]*:[ \t]*(?:[^\r\n]+)?\r\n))?'
-            // Optional: capture Content-Length value (must be at \A to scan entire header)
-            . '(?:(?=[\s\S]*\r\nContent-Length[ \t]*:[ \t]*(?<length>\d+)[ \t]*\r\n))?'
-            // Disallow Transfer-Encoding header
-            . '(?![\s\S]*\r\nTransfer-Encoding[ \t]*:)'
-            // If Content-Length header exists, its value must be pure digits + optional OWS
-            . '(?![\s\S]*\r\nContent-Length[ \t]*:(?![ \t]*\d+[ \t]*\r\n)[^\r]*\r\n)'
-            // Disallow duplicate Content-Length headers (adjacent or separated)
-            . '(?![\s\S]*\r\nContent-Length[ \t]*:[^\r\n]*\r\n(?:[\s\S]*?\r\n)?Content-Length[ \t]*:)'
-            // Match request line: METHOD SP request-target SP HTTP-version CRLF
-            . '(?:(?-i:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) )+(?:/[^\x00-\x20\x7f]*)+(?: (?-i:HTTP)/1.[0-9])\r\n'
-            // Flag case-insensitive
-            . '~i';
-
-        if (!preg_match($headerValidatePattern, $header, $matches)) {
-            if (preg_match('~\r\nTransfer-Encoding[ \t]*:~i', $header)) {
-                return static::inputChunked($buffer, $connection, $header, $length);
-            }
+        // Validate request line: METHOD SP origin-form SP HTTP/1.x
+        $firstLineEnd = strpos($header, "\r\n");
+        if (!preg_match(
+            '~^(?-i:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) /[^\x00-\x20\x7f]* (?-i:HTTP)/1\.(?<minor>[01])$~',
+            substr($header, 0, $firstLineEnd),
+            $matches
+        )) {
             $connection->end(static::HTTP_400, true);
             return 0;
         }
 
-        if (isset($matches['length'])) {
-            $length += (int)$matches['length'];
+        // Parse headers
+        $headers = [];
+        $headerBody = substr($header, $firstLineEnd + 2, $crlfPos - $firstLineEnd - 2);
+        foreach (explode("\r\n", $headerBody) as $line) {
+            if ($line === '') {
+                continue;
+            }
+            $parts = explode(':', $line, 2);
+            // field-name must be a token: 1*tchar (RFC 7230 §3.2.6)
+            if (!isset($parts[1]) || !preg_match('/^[a-zA-Z0-9!#$%&\'*+\-.^_`|~]+$/', $parts[0])) {
+                $connection->end(static::HTTP_400, true);
+                return 0;
+            }
+            $headers[strtolower($parts[0])][] = trim($parts[1], " \t");
+        }
+
+        // Host: required for HTTP/1.1, must not be duplicated for any version (RFC 7230 §5.4)
+        $hostCount = count($headers['host'] ?? []);
+        if ($hostCount > 1 || ($matches['minor'] === '1' && $hostCount === 0)) {
+            $connection->end(static::HTTP_400, true);
+            return 0;
+        }
+
+        // Transfer-Encoding: must be sole header with value "chunked", no Content-Length
+        if (isset($headers['transfer-encoding'])) {
+            if (isset($headers['content-length'])
+                || count($headers['transfer-encoding']) !== 1
+                || strtolower($headers['transfer-encoding'][0]) !== 'chunked') {
+                $connection->end(static::HTTP_400, true);
+                return 0;
+            }
+            return static::inputChunked($buffer, $connection, $length);
+        }
+
+        // Content-Length: must be single header with pure-digit value
+        if (isset($headers['content-length'])) {
+            if (count($headers['content-length']) !== 1 || !ctype_digit($headers['content-length'][0])) {
+                $connection->end(static::HTTP_400, true);
+                return 0;
+            }
+            $length += (int)$headers['content-length'][0];
         }
 
         if ($length > $connection->maxPackageSize) {
@@ -174,27 +196,15 @@ class Http
 
 
     /**
-     * Check the integrity of a chunked transfer-encoded request.
+     * Check the integrity of a chunked transfer-encoded request body.
      *
      * @param string $buffer
      * @param TcpConnection $connection
-     * @param string $header
      * @param int $headerLength
      * @return int
      */
-    protected static function inputChunked(string $buffer, TcpConnection $connection, string $header, int $headerLength): int
+    protected static function inputChunked(string $buffer, TcpConnection $connection, int $headerLength): int
     {
-        $pattern = '~\A'
-            . '(?![\s\S]*\r\nContent-Length[ \t]*:)'
-            . '(?![\s\S]*\r\nTransfer-Encoding[ \t]*:[\s\S]*\r\nTransfer-Encoding[ \t]*:)'
-            . '(?=[\s\S]*\r\nTransfer-Encoding[ \t]*:[ \t]*chunked[ \t]*\r\n)'
-            . '(?:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) +\/[^\x00-\x20\x7f]* +HTTP\/1\.[01]\r\n~i';
-
-        if (!preg_match($pattern, $header)) {
-            $connection->end(static::HTTP_400, true);
-            return 0;
-        }
-
         $connection->context ??= new \stdClass();
         $connection->context->chunked = true;
 
