@@ -59,6 +59,86 @@ it('missing Host header causes 400 Bad Request for HTTP/1.1', function () {
     });
 });
 
+describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', function () {
+    it('rejects invalid field-name token (space, tab, empty, non-tchar) and lines without colon', function (string $buffer) {
+        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+            expect(Http::input($buffer, $tcpConnection))->toBe(0);
+        }, '400 Bad Request');
+    })->with([
+        'SP inside field-name' => [
+            "GET / HTTP/1.1\r\nHost: h\r\nBad Name: x\r\n\r\n",
+        ],
+        'trailing SP before colon (no whitespace between name and colon per RFC 7230 3.2.4)' => [
+            "GET / HTTP/1.1\r\nHost : h\r\n\r\n",
+        ],
+        'trailing HTAB before colon' => [
+            "GET / HTTP/1.1\r\nHost\t: h\r\n\r\n",
+        ],
+        'leading SP on header line (field-name must be token, not folded line)' => [
+            "GET / HTTP/1.1\r\n Host: h\r\n\r\n",
+        ],
+        'leading HTAB on header line' => [
+            "GET / HTTP/1.1\r\n\tHost: h\r\n\r\n",
+        ],
+        'HTAB inside field-name' => [
+            "GET / HTTP/1.1\r\nHost: h\r\nX\tY: z\r\n\r\n",
+        ],
+        'empty field-name' => [
+            "GET / HTTP/1.1\r\nHost: h\r\n:novalue\r\n\r\n",
+        ],
+        'non-tchar @ in field-name' => [
+            "GET / HTTP/1.1\r\nHost: h\r\nX@Y: z\r\n\r\n",
+        ],
+        'non-tchar [ bracket in field-name' => [
+            "GET / HTTP/1.1\r\nHost: h\r\nCookie[0]: a\r\n\r\n",
+        ],
+        'header line without colon (not a valid header-field)' => [
+            "GET / HTTP/1.1\r\nHost: h\r\nnot-a-header-line\r\n\r\n",
+        ],
+        'obsolete obs-fold continuation line (leading SP on folded line)' => [
+            "GET / HTTP/1.1\r\nHost: h\r\n X-Continued: bad\r\n\r\n",
+        ],
+        'unicode in field-name (not ASCII token)' => [
+            "GET / HTTP/1.1\r\nHost: h\r\n" . "头: v\r\n\r\n",
+        ],
+    ]);
+
+    it('rejects duplicate Host (RFC 7230 5.4)', function (string $buffer) {
+        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+            expect(Http::input($buffer, $tcpConnection))->toBe(0);
+        }, '400 Bad Request');
+    })->with([
+        'HTTP/1.1 two Host lines' => [
+            "GET / HTTP/1.1\r\nHost: a\r\nHost: b\r\n\r\n",
+        ],
+        'HTTP/1.0 two Host lines' => [
+            "GET / HTTP/1.0\r\nHost: a\r\nHost: b\r\n\r\n",
+        ],
+    ]);
+
+    it('rejects duplicate Transfer-Encoding header lines', function (string $buffer) {
+        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+            expect(Http::input($buffer, $tcpConnection))->toBe(0);
+        }, '400 Bad Request');
+    })->with([
+        'GET with two Transfer-Encoding: chunked' => [
+            "GET / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: chunked\r\n\r\n",
+        ],
+        'GET with Transfer-Encoding chunked then identity' => [
+            "GET / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: identity\r\n\r\n",
+        ],
+    ]);
+
+    it('accepts valid token field-names with hyphen and underscore', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $buffer = "GET / HTTP/1.1\r\nHost: h\r\nX-Custom_Header: ok\r\n\r\n";
+        expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+});
+
 describe('HTTP/1.0', function () {
     it('accepts minimal GET without Host header', function () {
         /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
