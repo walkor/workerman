@@ -46,17 +46,23 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
     public string $transport = 'udp';
 
     /**
-     * Construct.
-     *
-     * @param resource $socket
-     * @param string $remoteAddress
+     * Whether the socket is connected (created via stream_socket_client).
+     * On BSD/macOS, sendto() on a connected UDP socket with a destination address
+     * returns EISCONN(-1). We must omit the address for connected sockets.
      */
+    protected bool $connected = false;
+
     /**
      * @param resource|null $socket
      */
     public function __construct(
         /** @var resource|null */ protected $socket,
-        protected string $remoteAddress) {}
+        protected string $remoteAddress)
+    {
+        if (is_resource($socket) && stream_socket_get_name($socket, true) !== false) {
+            $this->connected = true;
+        }
+    }
 
     /**
      * Sends data on the connection.
@@ -72,6 +78,9 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
             if ($sendBuffer === '') {
                 return null;
             }
+        }
+        if ($this->connected) {
+            return strlen($sendBuffer) === stream_socket_sendto($this->socket, $sendBuffer);
         }
         return strlen($sendBuffer) === stream_socket_sendto($this->socket, $sendBuffer, 0, $this->isIpV6() ? '[' . $this->getRemoteIp() . ']:' . $this->getRemotePort() : $this->remoteAddress);
     }
