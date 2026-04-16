@@ -101,6 +101,13 @@ class AsyncTcpConnection extends TcpConnection
     public string $proxyHttp = '';
 
     /**
+     * Http proxy authorization header value.
+     *
+     * @var string
+     */
+    public string $proxyAuthorization = '';
+
+    /**
      * Status.
      *
      * @var int
@@ -371,18 +378,33 @@ class AsyncTcpConnection extends TcpConnection
         // Check socket state.
         if ($address = stream_socket_get_name($this->socket, true)) {
             // Proxy
-            if ($this->proxySocks5 && $address === $this->proxySocks5) {
+            if ($this->proxySocks5) {
                 fwrite($this->socket, chr(5) . chr(1) . chr(0));
                 fread($this->socket, 512);
                 fwrite($this->socket, chr(5) . chr(1) . chr(0) . chr(3) . chr(strlen($this->remoteHost)) . $this->remoteHost . pack("n", $this->remotePort));
                 fread($this->socket, 512);
-            }
-            if ($this->proxyHttp && $address === $this->proxyHttp) {
+            } elseif ($this->proxyHttp) {
                 $str = "CONNECT $this->remoteHost:$this->remotePort HTTP/1.1\r\n";
                 $str .= "Host: $this->remoteHost:$this->remotePort\r\n";
+                if ($this->proxyAuthorization !== '') {
+                    $str .= "Proxy-Authorization: $this->proxyAuthorization\r\n";
+                }
                 $str .= "Proxy-Connection: keep-alive\r\n\r\n";
                 fwrite($this->socket, $str);
-                fread($this->socket, 512);
+                $proxyResponse = fread($this->socket, 512);
+                if ($proxyResponse && preg_match('/^HTTP\/\d\.\d\s+(\d{3})(?:\s+([^\r\n]+))?/i', $proxyResponse, $match)) {
+                    if ((int)$match[1] !== 200) {
+                        $reason = $match[2] ?? 'Proxy CONNECT failed';
+                        $this->emitError(static::CONNECT_FAIL, "Proxy CONNECT failed: {$match[1]} $reason");
+                        if ($this->status === self::STATUS_CLOSING) {
+                            $this->destroy();
+                        }
+                        if ($this->status === self::STATUS_CLOSED) {
+                            $this->onConnect = null;
+                        }
+                        return;
+                    }
+                }
             }
             if (!is_resource($this->socket)) {
                 $this->emitError(static::CONNECT_FAIL, 'connect ' . $this->remoteAddress . ' fail after ' . round(microtime(true) - $this->connectStartTime, 4) . ' seconds');
