@@ -507,9 +507,10 @@ class Response implements Stringable
         if ($baseName === '') {
             $baseName = 'unknown';
         }
-        $mime = $this->getMimeType($extension);
+        $mime = '';
         if (!isset($headers['Content-Type'])) {
-                $head .= "Content-Type: " . $mime . "\r\n";
+            $mime = $this->getMimeType($extension);
+            $head .= "Content-Type: " . $mime . "\r\n";
         }
 
         if (!isset($headers['Content-Disposition']) && $mime === 'application/octet-stream') {
