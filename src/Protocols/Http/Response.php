@@ -56,7 +56,7 @@ class Response implements Stringable
     public ?array $file = null;
 
     /**
-     * Mine type map.
+     * Mime Type map.
      * @var array
      */
     protected static array $mimeTypeMap = [
@@ -341,6 +341,17 @@ class Response implements Stringable
     }
 
     /**
+     * Get Mime Type from extension.
+     *
+     * @param string $ext
+     * @return string
+     */
+    public function getMimeType(string $ext): string
+    {
+        return self::$mimeTypeMap[$ext] ?? 'application/octet-stream';
+    }
+
+    /**
      * Set status.
      *
      * @param int $code
@@ -496,15 +507,12 @@ class Response implements Stringable
         if ($baseName === '') {
             $baseName = 'unknown';
         }
+        $mime = $this->getMimeType($extension);
         if (!isset($headers['Content-Type'])) {
-            if (isset(self::$mimeTypeMap[$extension])) {
-                $head .= "Content-Type: " . self::$mimeTypeMap[$extension] . "\r\n";
-            } else {
-                $head .= "Content-Type: application/octet-stream\r\n";
-            }
+                $head .= "Content-Type: " . $mime . "\r\n";
         }
 
-        if (!isset($headers['Content-Disposition']) && !isset(self::$mimeTypeMap[$extension])) {
+        if (!isset($headers['Content-Disposition']) && $mime === 'application/octet-stream') {
             $head .= "Content-Disposition: attachment; filename=\"$baseName\"\r\n";
         }
 
