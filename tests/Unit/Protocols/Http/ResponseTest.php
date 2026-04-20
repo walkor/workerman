@@ -46,7 +46,7 @@ it('tests file', function (){
     // as the implementation of headers is a different function for files.
     // or actually maybe the Response is the one should be rewritten to reuse?
     $response = new Response();
-    $tmpFile = tempnam(sys_get_temp_dir(), 'test.jpg');
+    $tmpFile = sys_get_temp_dir().'test.jpg';
     file_put_contents($tmpFile, 'hello, xiami');
     $response->withFile($tmpFile, 0, 12);
     expect((string)$response)
