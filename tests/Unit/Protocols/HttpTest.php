@@ -116,6 +116,25 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
         ],
     ]);
 
+    it('rejects bad Host header | uri-host [ : port ]” - RFC 9110 Section 7.2', function (string $buffer) {
+        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+            expect(Http::input($buffer, $tcpConnection))->toBe(0);
+        }, '400 Bad Request');
+    })->with([
+        'HTTP/1.1 Host empty' => [
+            "GET / HTTP/1.1\r\nHost: \r\nHost: b\r\n\r\n",
+        ],
+        'HTTP/1.0 Host with user info' => [
+            "GET / HTTP/1.0\r\nHost: user@localhost:8080\r\nHost: b\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with invalid port' => [
+            "GET / HTTP/1.1\r\nHost: localhost:abc\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with invalid character' => [
+            "GET / HTTP/1.1\r\nHost: local host\r\n\r\n",
+        ],
+    ]);
+
     it('rejects duplicate Transfer-Encoding header lines', function (string $buffer) {
         testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
             expect(Http::input($buffer, $tcpConnection))->toBe(0);
