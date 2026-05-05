@@ -161,7 +161,7 @@ class Http
         }
         // Host header grammar | Host = uri-host [ ‘:’ port ]” – RFC 9110 Section 7.2
         if (isset($headers['host'])) {
-            if(!preg_match('/^(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])(:[0-9]+)?$/', $headers['host'])) {
+            if(!preg_match('/^(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])(:[0-9]+)?$/', $headers['host'][0])) {
                 $connection->end(static::HTTP_400, true);
                 return 0;
             }
