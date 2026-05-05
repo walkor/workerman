@@ -22,11 +22,11 @@ it('customizes request class', function () {
 });
 
 it('tests ::input', function () {
-    //test 413 payload too large
+    //test 431 Request Header Fields Too Large or not headers
     testWithConnectionEnd(function (TcpConnection $tcpConnection) {
         expect(Http::input(str_repeat('jhdxr', 3333), $tcpConnection))
             ->toBe(0);
-    }, '413 Payload Too Large');
+    }, '431 Request Header Fields Too Large');
 
     //example request from ChatGPT :)
     $buffer = "POST /path/to/resource HTTP/1.1\r\n" .
@@ -206,12 +206,12 @@ describe('HTTP/1.0', function () {
     });
 });
 
-it('sends 413 with Connection: close when header end is missing and buffered length reaches at least 16384 bytes', function (int $incompleteLength) {
+it('sends 431 with Connection: close when header end is missing and buffered length reaches at least 16384 bytes', function (int $incompleteLength) {
     /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
     $tcpConnection = Mockery::spy(TcpConnection::class);
     Http::input(str_repeat('a', $incompleteLength), $tcpConnection);
     $tcpConnection->shouldHaveReceived('end', function ($actual) {
-        return str_contains($actual, '413 Payload Too Large') && str_contains($actual, "Connection: close\r\n");
+        return str_contains($actual, '431 Request Header Fields Too Large') && str_contains($actual, "Connection: close\r\n");
     });
 })->with([
     'exactly 16384' => [16384],
@@ -231,7 +231,7 @@ it('accepts completed headers when header data is just under 16384 bytes', funct
     $tcpConnection->shouldNotHaveReceived('end');
 });
 
-it('sends 413 when completed header data reaches 16384 bytes', function () {
+it('sends 431 when completed header data reaches 16384 bytes', function () {
     /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
     $tcpConnection = Mockery::spy(TcpConnection::class);
     $tcpConnection->maxPackageSize = 2 * 1024 * 1024;
@@ -242,7 +242,7 @@ it('sends 413 when completed header data reaches 16384 bytes', function () {
     expect(strpos($buffer, "\r\n\r\n"))->toBe(16384);
     expect(Http::input($buffer, $tcpConnection))->toBe(0);
     $tcpConnection->shouldHaveReceived('end', function ($actual) {
-        return str_contains($actual, '413 Payload Too Large');
+        return str_contains($actual, '431 Request Header Fields Too Large');
     });
 });
 
