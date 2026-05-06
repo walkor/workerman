@@ -116,7 +116,31 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
         ],
     ]);
 
-    it('rejects bad Host header | uri-host [ : port ]” - RFC 9110 Section 7.2', function (string $buffer) {
+    it('rejects duplicate Transfer-Encoding header lines', function (string $buffer) {
+        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+            expect(Http::input($buffer, $tcpConnection))->toBe(0);
+        }, '400 Bad Request');
+    })->with([
+        'GET with two Transfer-Encoding: chunked' => [
+            "GET / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: chunked\r\n\r\n",
+        ],
+        'GET with Transfer-Encoding chunked then identity' => [
+            "GET / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: identity\r\n\r\n",
+        ],
+    ]);
+
+    it('accepts valid token field-names with hyphen and underscore', function () {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        $tcpConnection->maxPackageSize = 1024 * 1024;
+        $buffer = "GET / HTTP/1.1\r\nHost: h\r\nX-Custom_Header: ok\r\n\r\n";
+        expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
+        $tcpConnection->shouldNotHaveReceived('end');
+    });
+});
+
+describe('Host header', function () {
+    it('rejects bad Host header uri-host[:port] RFC 9110 Section 7.2', function (string $buffer) {
         testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
             expect(Http::input($buffer, $tcpConnection))->toBe(0);
         }, '400 Bad Request');
@@ -187,28 +211,6 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
             "GET / HTTP/1.1\r\nHost: localhost:65535\r\n\r\n",
         ],
     ]);
-
-    it('rejects duplicate Transfer-Encoding header lines', function (string $buffer) {
-        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
-            expect(Http::input($buffer, $tcpConnection))->toBe(0);
-        }, '400 Bad Request');
-    })->with([
-        'GET with two Transfer-Encoding: chunked' => [
-            "GET / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: chunked\r\n\r\n",
-        ],
-        'GET with Transfer-Encoding chunked then identity' => [
-            "GET / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: identity\r\n\r\n",
-        ],
-    ]);
-
-    it('accepts valid token field-names with hyphen and underscore', function () {
-        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
-        $tcpConnection = Mockery::spy(TcpConnection::class);
-        $tcpConnection->maxPackageSize = 1024 * 1024;
-        $buffer = "GET / HTTP/1.1\r\nHost: h\r\nX-Custom_Header: ok\r\n\r\n";
-        expect(Http::input($buffer, $tcpConnection))->toBe(strlen($buffer));
-        $tcpConnection->shouldNotHaveReceived('end');
-    });
 });
 
 describe('HTTP/1.0', function () {
