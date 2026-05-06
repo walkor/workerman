@@ -165,6 +165,9 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
         'HTTP/1.1 Host with example.com and port' => [
             "GET / HTTP/1.1\r\nHost: example.com:8080\r\n\r\n",
         ],
+        'HTTP/1.1 Host with subdomain' => [
+            "GET / HTTP/1.1\r\nHost: subdomain.example.com\r\n\r\n",
+        ],
         'HTTP/1.1 Host with 192.168.0.1' => [
             "GET / HTTP/1.1\r\nHost: 192.168.0.1\r\n\r\n",
         ],
