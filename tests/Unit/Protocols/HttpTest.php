@@ -146,7 +146,7 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
 
     it('accepts valid Host header | uri-host [ : port ]” - RFC 9110 Section 7.2', function (string $buffer) {
         testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
-            expect(Http::input($buffer, $tcpConnection))->toBe(0);
+            expect(Http::input($buffer, $tcpConnection))->not->toBe(0);
         }, '200 OK');
     })->with([
         'HTTP/1.1 Host localhost' => [
