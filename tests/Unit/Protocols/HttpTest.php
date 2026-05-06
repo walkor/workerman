@@ -122,7 +122,7 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
         }, '400 Bad Request');
     })->with([
         'HTTP/1.1 Host empty' => [
-            "GET / HTTP/1.1\r\nHost: \r\nHost: b\r\n\r\n",
+            "GET / HTTP/1.1\r\nHost: \r\n\r\n",
         ],
         'HTTP/1.0 Host with user info' => [
             "GET / HTTP/1.0\r\nHost: user@localhost:8080\r\nHost: b\r\n\r\n",
@@ -142,6 +142,43 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
         'HTTP/1.1 Host with two comma separated values' => [
             "GET / HTTP/1.1\r\nHost: localhost:8080, other.example.com\r\n\r\n",
         ]
+    ]);
+
+    it('accepts valid Host header | uri-host [ : port ]” - RFC 9110 Section 7.2', function (string $buffer) {
+        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+            expect(Http::input($buffer, $tcpConnection))->toBe(0);
+        }, '200 OK');
+    })->with([
+        'HTTP/1.1 Host localhost' => [
+            "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n",
+        ],
+        'HTTP/1.0 no Host header' => [
+            "GET / HTTP/1.0\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with example.com' => [
+            "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with www.example.com' => [
+            "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with example.com and port' => [
+            "GET / HTTP/1.1\r\nHost: example.com:8080\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with 192.168.0.1' => [
+            "GET / HTTP/1.1\r\nHost: 192.168.0.1\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with 1.1.1.1' => [
+            "GET / HTTP/1.1\r\nHost: 1.1.1.1\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with 1.1.1.1:8080' => [
+            "GET / HTTP/1.1\r\nHost: 1.1.1.1:8080\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with localhost and port 80' => [
+            "GET / HTTP/1.1\r\nHost: localhost:80\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with localhost and port 65535' => [
+            "GET / HTTP/1.1\r\nHost: localhost:65535\r\n\r\n",
+        ],
     ]);
 
     it('rejects duplicate Transfer-Encoding header lines', function (string $buffer) {
