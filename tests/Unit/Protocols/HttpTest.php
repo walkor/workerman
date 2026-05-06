@@ -145,9 +145,10 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
     ]);
 
     it('accepts valid Host header | uri-host [ : port ]” - RFC 9110 Section 7.2', function (string $buffer) {
-        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
-            expect(Http::input($buffer, $tcpConnection))->not->toBe(0);
-        }, '200 OK');
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        expect(Http::input($buffer, $tcpConnection))->not->toBe(0);
+        $tcpConnection->shouldNotHaveReceived('close');
     })->with([
         'HTTP/1.1 Host localhost' => [
             "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n",
