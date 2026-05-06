@@ -139,8 +139,8 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
     });
 });
 
-describe('Host header', function () {
-    it('rejects bad Host header uri-host[:port] RFC 9110 Section 7.2', function (string $buffer) {
+describe('Host header uri-host[:port] RFC 9110 Section 7.2', function () {
+    it('rejects bad Host header', function (string $buffer) {
         testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
             expect(Http::input($buffer, $tcpConnection))->toBe(0);
         }, '400 Bad Request');
@@ -171,7 +171,7 @@ describe('Host header', function () {
         ],
     ]);
 
-    it('accepts valid Host header uri-host[:port] RFC 9110 Section 7.2', function (string $buffer) {
+    it('accepts valid Host header', function (string $buffer) {
         /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
         $tcpConnection = Mockery::spy(TcpConnection::class);
         expect(Http::input($buffer, $tcpConnection))->not->toBe(0);
