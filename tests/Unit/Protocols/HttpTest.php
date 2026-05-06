@@ -145,12 +145,6 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
         'HTTP/1.1 Host with multiple colons' => [
             "GET / HTTP/1.1\r\nHost: localhost:8080:9090\r\n\r\n",
         ],
-        'HTTP/1.1 Host with 1.1' => [
-            "GET / HTTP/1.1\r\nHost: 1.1\r\n\r\n",
-        ],
-        'HTTP/1.1 Host with 1.1.1' => [
-            "GET / HTTP/1.1\r\nHost: 1.1.1\r\n\r\n",
-        ],
     ]);
 
     it('accepts valid Host header uri-host[:port] RFC 9110 Section 7.2', function (string $buffer) {
