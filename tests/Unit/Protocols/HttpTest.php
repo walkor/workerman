@@ -141,10 +141,19 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
         ],
         'HTTP/1.1 Host with two comma separated values' => [
             "GET / HTTP/1.1\r\nHost: localhost:8080, other.example.com\r\n\r\n",
-        ]
+        ],
+        'HTTP/1.1 Host with multiple colons' => [
+            "GET / HTTP/1.1\r\nHost: localhost:8080:9090\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with 1.1' => [
+            "GET / HTTP/1.1\r\nHost: 1.1\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with 1.1.1' => [
+            "GET / HTTP/1.1\r\nHost: 1.1.1\r\n\r\n",
+        ],
     ]);
 
-    it('accepts valid Host header | uri-host [ : port ]” - RFC 9110 Section 7.2', function (string $buffer) {
+    it('accepts valid Host header uri-host[:port] RFC 9110 Section 7.2', function (string $buffer) {
         /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
         $tcpConnection = Mockery::spy(TcpConnection::class);
         expect(Http::input($buffer, $tcpConnection))->not->toBe(0);
@@ -162,10 +171,10 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
         'HTTP/1.1 Host with www.example.com' => [
             "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
         ],
-        'HTTP/1.1 Host with example.com and port' => [
+        'HTTP/1.1 Host with example.com:8080' => [
             "GET / HTTP/1.1\r\nHost: example.com:8080\r\n\r\n",
         ],
-        'HTTP/1.1 Host with subdomain' => [
+        'HTTP/1.1 Host with subdomain.example.com' => [
             "GET / HTTP/1.1\r\nHost: subdomain.example.com\r\n\r\n",
         ],
         'HTTP/1.1 Host with 192.168.0.1' => [
@@ -177,10 +186,10 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
         'HTTP/1.1 Host with 1.1.1.1:8080' => [
             "GET / HTTP/1.1\r\nHost: 1.1.1.1:8080\r\n\r\n",
         ],
-        'HTTP/1.1 Host with localhost and port 80' => [
+        'HTTP/1.1 Host with localhost:80' => [
             "GET / HTTP/1.1\r\nHost: localhost:80\r\n\r\n",
         ],
-        'HTTP/1.1 Host with localhost and port 65535' => [
+        'HTTP/1.1 Host with localhost:65535' => [
             "GET / HTTP/1.1\r\nHost: localhost:65535\r\n\r\n",
         ],
     ]);
