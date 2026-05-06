@@ -133,6 +133,15 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
         'HTTP/1.1 Host with invalid character' => [
             "GET / HTTP/1.1\r\nHost: local host\r\n\r\n",
         ],
+        'HTTP/1.1 Host with invalid character in port' => [
+            "GET / HTTP/1.1\r\nHost: localhost:80a\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with only port' => [
+            "GET / HTTP/1.1\r\nHost: :8080\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with two comma separated values' => [
+            "GET / HTTP/1.1\r\nHost: localhost:8080, other.example.com\r\n\r\n",
+        ]
     ]);
 
     it('rejects duplicate Transfer-Encoding header lines', function (string $buffer) {
