@@ -128,7 +128,7 @@ class Http
             $connection->end(static::HTTP_431, true);
             return 0;
         }
-        $header = isset($buffer[$length]) ? substr($buffer, 0, $length) : $buffer;
+        $header = isset($buffer[$length + 1]) ? substr($buffer, 0, $length) : $buffer;
 
         if ($length <= TcpConnection::MAX_CACHE_STRING_LENGTH && isset($cache[$header])) {
             return $cache[$header];
