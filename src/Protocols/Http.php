@@ -78,8 +78,16 @@ class Http
     protected const HTTP_413 = "HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\n\r\n";
 
     /**
+     * Request Header Fields Too Large.
+     *
+     * @var string
+     */
+    protected const HTTP_431 = "HTTP/1.1 431 Request Header Fields Too Large\r\nConnection: close\r\n\r\n";
+    
+    /**
      * Max bytes buffered while waiting for end of headers, and max offset of "\r\n\r\n" (header block size limit).
      */
+    
     protected const MAX_HEADER_LENGTH = 16384;
 
     /**
@@ -110,14 +118,14 @@ class Http
         $crlfPos = strpos($buffer, "\r\n\r\n");
         if (false === $crlfPos) {
             if (strlen($buffer) >= static::MAX_HEADER_LENGTH) {
-                $connection->end(static::HTTP_413, true);
+                $connection->end(static::HTTP_431, true);
             }
             return 0;
         }
 
         $length = $crlfPos + 4;
         if ($crlfPos >= static::MAX_HEADER_LENGTH) {
-            $connection->end(static::HTTP_413, true);
+            $connection->end(static::HTTP_431, true);
             return 0;
         }
         $header = isset($buffer[$length]) ? substr($buffer, 0, $length) : $buffer;
