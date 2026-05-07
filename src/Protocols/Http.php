@@ -78,6 +78,13 @@ class Http
     protected const HTTP_413 = "HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\n\r\n";
 
     /**
+     * Method Not Allowed.
+     *
+     * @var string
+     */
+    protected const HTTP_405 = "HTTP/1.1 405 Method Not Allowed\r\nConnection: close\r\n\r\n";
+
+    /**
      * Request Header Fields Too Large.
      *
      * @var string
@@ -89,6 +96,13 @@ class Http
      */
     
     protected const MAX_HEADER_LENGTH = 16384;
+
+    /**
+     * Disabled methods.
+     *
+     * @var string[]
+     */
+    public static array $disabledMethods = ['TRACE', 'OPTIONS'];
 
     /**
      * Get or set the request class name.
@@ -137,11 +151,17 @@ class Http
         // Validate request line: METHOD SP origin-form SP HTTP/1.x
         $firstLineEnd = strpos($header, "\r\n");
         if (!preg_match(
-            '~^(?-i:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) /[^\x00-\x20\x7f]* (?-i:HTTP)/1\.(?<minor>[0-9])$~',
+            '~^(?-i:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH|TRACE) /[^\x00-\x20\x7f]* (?-i:HTTP)/1\.(?<minor>[0-9])$~',
             substr($header, 0, $firstLineEnd),
             $matches
         )) {
             $connection->end(static::HTTP_400, true);
+            return 0;
+        }
+
+        // Check if the method is disabled
+        if (in_array($matches[0], static::$disabledMethods, true)) {
+            $connection->end(static::HTTP_405, true);
             return 0;
         }
 
