@@ -49,7 +49,7 @@
     },
     "require-dev": {
         "pestphp/pest": "^2.36 || ^3 || ^4",
-        "mockery/mockery": "^1.6",
+        "mockery/mockery": "^1.6.12",
         "guzzlehttp/guzzle": "^7.10",
         "phpstan/phpstan": "^2.1"
     },

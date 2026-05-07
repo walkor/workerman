@@ -139,6 +139,80 @@ describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', functio
     });
 });
 
+describe('Host header uri-host[:port] RFC 9110 Section 7.2', function () {
+    it('rejects bad Host header', function (string $buffer) {
+        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+            expect(Http::input($buffer, $tcpConnection))->toBe(0);
+        }, '400 Bad Request');
+    })->with([
+        'HTTP/1.1 Host empty' => [
+            "GET / HTTP/1.1\r\nHost: \r\n\r\n",
+        ],
+        'HTTP/1.0 Host with user info' => [
+            "GET / HTTP/1.0\r\nHost: user@localhost:8080\r\nHost: b\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with invalid port' => [
+            "GET / HTTP/1.1\r\nHost: localhost:abc\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with invalid character' => [
+            "GET / HTTP/1.1\r\nHost: local host\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with invalid character in port' => [
+            "GET / HTTP/1.1\r\nHost: localhost:80a\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with only port' => [
+            "GET / HTTP/1.1\r\nHost: :8080\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with two comma separated values' => [
+            "GET / HTTP/1.1\r\nHost: localhost:8080, other.example.com\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with multiple colons' => [
+            "GET / HTTP/1.1\r\nHost: localhost:8080:9090\r\n\r\n",
+        ],
+    ]);
+
+    it('accepts valid Host header', function (string $buffer) {
+        /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+        $tcpConnection = Mockery::spy(TcpConnection::class);
+        expect(Http::input($buffer, $tcpConnection))->not->toBe(0);
+        $tcpConnection->shouldNotHaveReceived('close');
+    })->with([
+        'HTTP/1.1 Host localhost' => [
+            "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n",
+        ],
+        'HTTP/1.0 no Host header' => [
+            "GET / HTTP/1.0\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with example.com' => [
+            "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with www.example.com' => [
+            "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with example.com:8080' => [
+            "GET / HTTP/1.1\r\nHost: example.com:8080\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with subdomain.example.com' => [
+            "GET / HTTP/1.1\r\nHost: subdomain.example.com\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with 192.168.0.1' => [
+            "GET / HTTP/1.1\r\nHost: 192.168.0.1\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with 1.1.1.1' => [
+            "GET / HTTP/1.1\r\nHost: 1.1.1.1\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with 1.1.1.1:8080' => [
+            "GET / HTTP/1.1\r\nHost: 1.1.1.1:8080\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with localhost:80' => [
+            "GET / HTTP/1.1\r\nHost: localhost:80\r\n\r\n",
+        ],
+        'HTTP/1.1 Host with localhost:65535' => [
+            "GET / HTTP/1.1\r\nHost: localhost:65535\r\n\r\n",
+        ],
+    ]);
+});
+
 describe('HTTP/1.0', function () {
     it('accepts minimal GET without Host header', function () {
         /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
