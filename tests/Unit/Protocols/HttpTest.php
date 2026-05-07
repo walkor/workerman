@@ -213,6 +213,21 @@ describe('Host header uri-host[:port] RFC 9110 Section 7.2', function () {
     ]);
 });
 
+describe('Disabled Http methods return 405', function () {
+    it('rejects bad method', function (string $buffer) {
+        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+            expect(Http::input($buffer, $tcpConnection))->toBe(0);
+        }, '405 Method Not Allowed');
+    })->with([
+        'Method OPTIONS' => [
+            "OPTIONS * HTTP/1.1\r\n\r\n",
+        ],
+        'Method TRACE' => [
+            "TRACE / HTTP/1.1\r\n\r\n",
+        ],
+    ]);
+});
+
 describe('HTTP/1.0', function () {
     it('accepts minimal GET without Host header', function () {
         /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
