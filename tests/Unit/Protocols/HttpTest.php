@@ -219,12 +219,19 @@ describe('Disabled Http methods return 405', function () {
             expect(Http::input($buffer, $tcpConnection))->toBe(0);
         }, '405 Method Not Allowed');
     })->with([
-        'OPTIONS' => [
-            "OPTIONS / HTTP/1.1\r\n\r\n",
-        ],
-        'TRACE' => [
-            "TRACE / HTTP/1.1\r\n\r\n",
-        ],
+        'OPTIONS' => ["OPTIONS / HTTP/1.1\r\n\r\n"],
+        'TRACE'   => ["TRACE / HTTP/1.1\r\n\r\n"],
+    ]);
+
+    it('rejects manual method', function (string $buffer) {
+        testWithConnectionEnd(function (TcpConnection $tcpConnection) use ($buffer) {
+            Http::$disabledMethods = [...Http::$disabledMethods, 'DELETE', 'POST'];
+            expect(Http::input($buffer, $tcpConnection))->toBe(0);
+        }, '405 Method Not Allowed');
+    })->with([
+        'DELETE' => ["DELETE / HTTP/1.1\r\n\r\n"],
+        'POST'   => ["POST / HTTP/1.1\r\n\r\n"],
+        'TRACE'  => ["TRACE / HTTP/1.1\r\n\r\n"],
     ]);
 });
 

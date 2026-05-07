@@ -160,7 +160,7 @@ class Http
         }
 
         // Check if the method is disabled
-        if (in_array($matches[0], static::$disabledMethods, true)) {
+        if (in_array($matches[0], static::$disabledMethods)) {
             $connection->end(static::HTTP_405, true);
             return 0;
         }
