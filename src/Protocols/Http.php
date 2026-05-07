@@ -19,6 +19,7 @@ namespace Workerman\Protocols;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
+use Stringable;
 use function clearstatcache;
 use function count;
 use function ctype_digit;
@@ -375,13 +376,13 @@ class Http
     /**
      * Http encode.
      *
-     * @param string|Response $response
+     * @param string|Stringable $response
      * @param TcpConnection $connection
      * @return string
      */
-    public static function encode(mixed $response, TcpConnection $connection): string
+    public static function encode(string|Stringable $response, TcpConnection $connection): string
     {
-        if (!is_object($response)) {
+        if (is_string($response)) {
             $extHeader = '';
             $contentType = 'text/html;charset=utf-8';
             foreach ($connection->headers as $name => $value) {
