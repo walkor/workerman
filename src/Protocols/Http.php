@@ -137,7 +137,7 @@ class Http
         // Validate request line: METHOD SP origin-form SP HTTP/1.x
         $firstLineEnd = strpos($header, "\r\n");
         if (!preg_match(
-            '~^(?-i:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) /[^\x00-\x20\x7f]* (?-i:HTTP)/1\.(?<minor>[01])$~',
+            '~^(?-i:GET|POST|OPTIONS|HEAD|DELETE|PUT|PATCH) /[^\x00-\x20\x7f]* (?-i:HTTP)/1\.(?<minor>[0-9])$~',
             substr($header, 0, $firstLineEnd),
             $matches
         )) {
@@ -163,7 +163,7 @@ class Http
 
         // Host: required for HTTP/1.1, must not be duplicated for any version (RFC 7230 §5.4)
         $hostCount = count($headers['host'] ?? []);
-        if ($hostCount > 1 || ($matches['minor'] === '1' && $hostCount === 0)) {
+        if ($hostCount > 1 || ($matches['minor'] > '0' && $hostCount === 0)) {
             $connection->end(static::HTTP_400, true);
             return 0;
         }
