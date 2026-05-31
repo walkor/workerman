@@ -108,6 +108,20 @@ class AsyncTcpConnection extends TcpConnection
     public string $proxyAuthorization = '';
 
     /**
+     * Socks5 proxy username.
+     *
+     * @var string
+     */
+    public string $proxySocks5Username = '';
+
+    /**
+     * Socks5 proxy password.
+     *
+     * @var string
+     */
+    public string $proxySocks5Password = '';
+
+    /**
      * Status.
      *
      * @var int
@@ -379,8 +393,37 @@ class AsyncTcpConnection extends TcpConnection
         if ($address = stream_socket_get_name($this->socket, true)) {
             // Proxy
             if ($this->proxySocks5) {
-                fwrite($this->socket, chr(5) . chr(1) . chr(0));
-                fread($this->socket, 512);
+                if ($this->proxySocks5Username !== '' || $this->proxySocks5Password !== '') {
+                    fwrite($this->socket, chr(5) . chr(2) . chr(0) . chr(2));
+                    $response = fread($this->socket, 512);
+                    if (!$response || ord($response[1]) !== 2) {
+                        $this->emitError(static::CONNECT_FAIL, 'SOCKS5 authentication method negotiation failed');
+                        if ($this->status === self::STATUS_CLOSING) {
+                            $this->destroy();
+                        }
+                        if ($this->status === self::STATUS_CLOSED) {
+                            $this->onConnect = null;
+                        }
+                        return;
+                    }
+                    $user = $this->proxySocks5Username;
+                    $pass = $this->proxySocks5Password;
+                    fwrite($this->socket, chr(1) . chr(strlen($user)) . $user . chr(strlen($pass)) . $pass);
+                    $authResponse = fread($this->socket, 512);
+                    if (!$authResponse || ord($authResponse[1]) !== 0) {
+                        $this->emitError(static::CONNECT_FAIL, 'SOCKS5 authentication failed');
+                        if ($this->status === self::STATUS_CLOSING) {
+                            $this->destroy();
+                        }
+                        if ($this->status === self::STATUS_CLOSED) {
+                            $this->onConnect = null;
+                        }
+                        return;
+                    }
+                } else {
+                    fwrite($this->socket, chr(5) . chr(1) . chr(0));
+                    fread($this->socket, 512);
+                }
                 fwrite($this->socket, chr(5) . chr(1) . chr(0) . chr(3) . chr(strlen($this->remoteHost)) . $this->remoteHost . pack("n", $this->remotePort));
                 fread($this->socket, 512);
             } elseif ($this->proxyHttp) {
