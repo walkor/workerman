@@ -161,18 +161,15 @@ class Http
             $headers[strtolower($parts[0])][] = trim($parts[1], " \t");
         }
 
-        // Host: required for HTTP/1.1, must not be duplicated for any version (RFC 7230 §5.4)
+        // Host: required for HTTP/1.1, must not be duplicated for any version (RFC 9112 Section 3.2)
         $hostCount = count($headers['host'] ?? []);
-        if ($hostCount > 1 || ($matches['minor'] > '0' && $hostCount === 0)) {
+        if ($hostCount > 1 || ((int)$matches['minor'] > 0 && $hostCount === 0)) {
             $connection->end(static::HTTP_400, true);
             return 0;
         }
-        // Host header grammar | Host = uri-host [ ‘:’ port ]” – RFC 9110 Section 7.2
-        if (isset($headers['host'][0])) {
-            if(!preg_match('/^(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])(:[0-9]+)?$/', $headers['host'][0])) {
-                $connection->end(static::HTTP_400, true);
-                return 0;
-            }
+        if ($hostCount === 1 && !preg_match('/^(?:\[[^\]\r\n]+\]|[^\s:\/\[\]\r\n]+)(?::[0-9]+)?$/', $headers['host'][0])) {
+            $connection->end(static::HTTP_400, true);
+            return 0;
         }
 
         // Transfer-Encoding: must be sole header with value "chunked", no Content-Length
@@ -208,7 +205,6 @@ class Http
         }
         return $length;
     }
-
 
     /**
      * Check the integrity of a chunked transfer-encoded request body.
