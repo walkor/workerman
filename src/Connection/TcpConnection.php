@@ -483,12 +483,6 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
 
         // Attempt to send data directly.
         if ($this->sendBuffer === '') {
-            if ($this->transport === 'ssl') {
-                $this->eventLoop->onWritable($this->socket, $this->baseWrite(...));
-                $this->sendBuffer = $sendBuffer;
-                $this->checkBufferWillFull();
-                return null;
-            }
             $len = 0;
             try {
                 $len = @fwrite($this->socket, $sendBuffer);

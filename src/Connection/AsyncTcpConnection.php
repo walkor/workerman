@@ -476,6 +476,11 @@ class AsyncTcpConnection extends TcpConnection
             // SSL handshake.
             if ($this->transport === 'ssl') {
                 $this->sslHandshakeCompleted = $this->doSslHandshake($this->socket);
+                if ($this->sslHandshakeCompleted === 0) {
+                    $this->eventLoop->onReadable($this->socket, $this->checkConnection(...));
+                    $this->eventLoop->onWritable($this->socket, $this->checkConnection(...));
+                    return;
+                }
                 if ($this->sslHandshakeCompleted === false) {
                     return;
                 }
