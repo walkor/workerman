@@ -228,10 +228,6 @@ it('decode triggers close when inflate result exceeds maxPackageSize', function 
 });
 
 it('stops inflating as soon as the output passes maxPackageSize', function () {
-    if (!function_exists('proc_open')) {
-        $this->markTestSkipped('proc_open is required for the memory-limit regression test');
-    }
-
     // Runs under a 16MB memory_limit against 24MB of inflated output, so the test only passes if
     // inflate() gives up partway instead of building the whole string first.
 
@@ -292,7 +288,7 @@ PHP;
     $exitCode = proc_close($process);
 
     expect($exitCode)->toBe(0, trim($stdout . "\n" . $stderr));
-});
+})->skip(!function_exists('proc_open'), 'proc_open is required for the memory-limit regression test');
 
 it('input returns 0 when buffer is shorter than masked frame header or payload', function () {
     $connection = wsTestMockWebSocketConnectionForInput();

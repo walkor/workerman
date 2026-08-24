@@ -185,11 +185,12 @@ it('reports the reason and never connects when the ssl negotiation is rejected',
         ->and($calls[0][2])->toContain("SSL handshake with $serverName failed")
         ->and($calls[0][2])->not->toBe("SSL handshake with $serverName failed")
         ->and($calls[0][3])->toBe('CLOSING')
-        ->and($calls[1][0])->toBe('close')
         ->and($connection->getStatus(false))->toBe('CLOSED')
         ->and($connection->onConnect)->toBeNull()
         ->and($event->readEvents)->toBe([])
         ->and($event->writeEvents)->toBe([]);
+
+    expect(array_pop($calls))->toBe(['close']);
 
     fclose($accepted);
     fclose($server);
