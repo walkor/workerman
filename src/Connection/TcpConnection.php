@@ -162,6 +162,21 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public $onWebSocketClose = null;
 
     /**
+     * Emitted when a websocket ping frame is received (Only called when protocol is ws).
+     * Without a handler the ping is answered with a pong automatically.
+     *
+     * @var ?callable
+     */
+    public $onWebSocketPing = null;
+
+    /**
+     * Emitted when a websocket pong frame is received (Only called when protocol is ws).
+     *
+     * @var ?callable
+     */
+    public $onWebSocketPong = null;
+
+    /**
      * Emitted when data is received.
      *
      * @var ?callable
@@ -795,6 +810,10 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                     }
                     // Decode request buffer before Emitting onMessage callback.
                     $request = $this->protocol::decode($oneRequestBuffer, $this);
+                    // The protocol closed the connection while decoding, so there is nothing to deliver.
+                    if ($this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
+                        return;
+                    }
                     if ((!is_object($request) || $request instanceof Request) && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
                         ($this->onMessage)($this, $request);
                         if ($request instanceof Request) {
@@ -887,7 +906,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public function doSslHandshake($socket): bool|int
     {
         if (!is_resource($socket) || feof($socket)) {
-            $this->destroy();
+            $this->emitSslHandshakeFailure('connection closed during SSL handshake');
             return false;
         }
         $async = $this instanceof AsyncTcpConnection;
@@ -909,17 +928,19 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         }
 
         // Hidden error.
-        set_error_handler(static function (int $code, string $msg): bool {
-            if (!Worker::$daemonize) {
-                Worker::safeEcho(sprintf("SSL handshake error: %s\n", $msg));
-            }
+        $reason = '';
+        set_error_handler(static function (int $code, string $msg) use (&$reason): bool {
+            $reason = $msg;
             return true;
         });
-        $ret = stream_socket_enable_crypto($socket, true, $type);
-        restore_error_handler();
+        try {
+            $ret = stream_socket_enable_crypto($socket, true, $type);
+        } finally {
+            restore_error_handler();
+        }
         // Negotiation has failed.
         if (false === $ret) {
-            $this->destroy();
+            $this->emitSslHandshakeFailure($reason);
             return false;
         }
         if (0 === $ret) {
@@ -927,6 +948,40 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             return 0;
         }
         return true;
+    }
+
+    /**
+     * Report a failed SSL negotiation to the application, then tear the connection down.
+     *
+     * onError has to fire before destroy() so the application sees the reason ahead of onClose,
+     * otherwise a client only observes an unexplained disconnect and waits out its own timeout.
+     *
+     * @param string $reason
+     * @return void
+     */
+    private function emitSslHandshakeFailure(string $reason): void
+    {
+        $message = sprintf('SSL handshake with %s failed', $this->getRemoteAddress());
+        if ($reason !== '') {
+            $message .= ": $reason";
+        }
+        if (!Worker::$daemonize) {
+            Worker::safeEcho("$message\n");
+        }
+        $this->status = self::STATUS_CLOSING;
+        if ($this->onError) {
+            try {
+                ($this->onError)($this, static::CONNECT_FAIL, $message);
+            } catch (Throwable $e) {
+                $this->error($e);
+            }
+        }
+        if ($this->status === self::STATUS_CLOSING) {
+            $this->destroy();
+        }
+        if ($this instanceof AsyncTcpConnection && $this->status === self::STATUS_CLOSED) {
+            $this->onConnect = null;
+        }
     }
 
     /**

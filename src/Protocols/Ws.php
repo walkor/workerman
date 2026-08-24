@@ -56,6 +56,29 @@ class Ws
      */
     public const BINARY_TYPE_ARRAYBUFFER = "\x82";
 
+    /**
+     * Max size of the handshake response headers. maxPackageSize only applies to frames, so the
+     * header block gets its own limit, mirroring Http::MAX_HEADER_LENGTH.
+     */
+    private const MAX_HANDSHAKE_LENGTH = 16384;
+
+    /**
+     * Reset the per-connection frame parser state. Only safe at the start or the end of a connection
+     * because it drops queued frames; handshakeStep is left untouched so the caller decides which of
+     * the two it is.
+     */
+    public static function initContext(AsyncTcpConnection $connection): void
+    {
+        // Payload of the fragments received so far for the current message.
+        $connection->context->websocketDataBuffer = '';
+        // Length of the frame currently being received, 0 when no fragment is pending.
+        $connection->context->websocketCurrentFrameLength = 0;
+        // Whether a fragmented message is currently being received.
+        $connection->context->websocketFragmented = false;
+        // Frames encoded before the handshake completed, flushed once it does.
+        $connection->context->tmpWebsocketData = '';
+    }
+
     public static function input(string $buffer, AsyncTcpConnection $connection): int
     {
         if (!isset($connection->context->handshakeStep)) {
@@ -93,6 +116,28 @@ class Ws
 
             $opcode = $firstByte & 0xf;
 
+            // RFC 6455 section 5.2: this client negotiates no extension, so all rsv bits must be zero.
+            if (($firstByte & 0x70) !== 0) {
+                Worker::safeEcho("frame sets rsv bits without a negotiated extension so close the connection\n");
+                $connection->close();
+                return 0;
+            }
+
+            // RFC 6455 section 5.5: control frames must not be fragmented and carry at most 125 bytes.
+            if ($opcode >= 0x8 && ($dataLen > 125 || !$isFinFrame)) {
+                Worker::safeEcho("invalid control frame so close the connection\n");
+                $connection->close();
+                return 0;
+            }
+
+            // RFC 6455 section 5.4: a continuation frame needs a message in progress, and a new data
+            // frame must not interrupt one.
+            if ($opcode < 0x8 && ($opcode === 0x0) !== $connection->context->websocketFragmented) {
+                Worker::safeEcho("unexpected message fragmentation so close the connection\n");
+                $connection->close();
+                return 0;
+            }
+
             switch ($opcode) {
                 case 0x0:
                     // Blob type.
@@ -106,17 +151,24 @@ class Ws
                     break;
                 // Close package.
                 case 0x8:
+                    // An unmasked control frame is always $dataLen + 2 bytes.
+                    if ($recvLen < $dataLen + 2) {
+                        return 0;
+                    }
+                    $closeFrame = substr($buffer, 0, $dataLen + 2);
+                    // The frame is handled here, so take it out of the receive buffer.
+                    $connection->consumeRecvBuffer($dataLen + 2);
                     // Try to emit onWebSocketClose callback.
                     if (isset($connection->onWebSocketClose)) {
                         try {
-                            ($connection->onWebSocketClose)($connection, self::decode($buffer, $connection));
+                            ($connection->onWebSocketClose)($connection, self::decode($closeFrame, $connection));
                         } catch (Throwable $e) {
                             Worker::stopAll(250, $e);
                         }
                     } else { // Close connection.
                         $connection->close();
                     }
-                    
+
                     return 0;
                 // Wrong opcode.
                 default :
@@ -145,6 +197,11 @@ class Ws
                 Worker::safeEcho("error package. package_length=$totalPackageSize\n");
                 $connection->close();
                 return 0;
+            }
+
+            // Past every early return, so the frame is accepted and the message state can advance.
+            if ($opcode < 0x8) {
+                $connection->context->websocketFragmented = !$isFinFrame;
             }
 
             if ($isFinFrame) {
@@ -290,8 +347,15 @@ class Ws
             default => substr($bytes, 2),
         };
 
+        // Control frames may be interleaved with a fragmented message, they carry no message data.
+        if ((ord($bytes[0]) & 0xf) >= 0x8) {
+            return $decodedData;
+        }
+
+        // More fragments are coming, buffer the payload until the fin frame arrives.
         if ($connection->context->websocketCurrentFrameLength) {
-            return $connection->context->websocketDataBuffer .= $decodedData;
+            $connection->context->websocketDataBuffer .= $decodedData;
+            return '';
         }
 
         if ($connection->context->websocketDataBuffer !== '') {
@@ -323,9 +387,7 @@ class Ws
     public static function onClose(AsyncTcpConnection $connection): void
     {
         unset($connection->context->handshakeStep);
-        $connection->context->websocketCurrentFrameLength = 0;
-        $connection->context->tmpWebsocketData = '';
-        $connection->context->websocketDataBuffer = '';
+        static::initContext($connection);
         if (!empty($connection->context->websocketPingTimer)) {
             Timer::del($connection->context->websocketPingTimer);
             $connection->context->websocketPingTimer = null;
@@ -380,10 +442,8 @@ class Ws
             "Sec-WebSocket-Version: 13\r\n" .
             "Sec-WebSocket-Key: " . $connection->context->websocketSecKey . "$userHeaderStr\r\n\r\n";
         $connection->send($header, true);
+        static::initContext($connection);
         $connection->context->handshakeStep = 1;
-        $connection->context->websocketCurrentFrameLength = 0;
-        $connection->context->websocketDataBuffer = '';
-        $connection->context->tmpWebsocketData = '';
     }
 
     /**
@@ -391,17 +451,30 @@ class Ws
      *
      * @param string $buffer
      * @param AsyncTcpConnection $connection
-     * @return bool|int
+     * @return int
      */
-    public static function dealHandshake(string $buffer, AsyncTcpConnection $connection): bool|int
+    public static function dealHandshake(string $buffer, AsyncTcpConnection $connection): int
     {
         $pos = strpos($buffer, "\r\n\r\n");
-        if (!$pos) {
+        if ($pos === false) {
+            // Until the handshake completes maxPackageSize does not apply, so bound the buffer here.
+            if (strlen($buffer) >= self::MAX_HANDSHAKE_LENGTH) {
+                Worker::safeEcho("handshake response headers too large so close the connection\n");
+                $connection->close();
+            }
+            return 0;
+        }
+        if ($pos >= self::MAX_HANDSHAKE_LENGTH) {
+            Worker::safeEcho("handshake response headers too large so close the connection\n");
+            $connection->close();
             return 0;
         }
 
+        $handshakeResponseLength = $pos + 4;
+        $header = substr($buffer, 0, $handshakeResponseLength);
+
         //checking Sec-WebSocket-Accept
-        if (preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $buffer, $match)) {
+        if (preg_match("/Sec-WebSocket-Accept: *(.*?)\r\n/i", $header, $match)) {
             if ($match[1] !== base64_encode(sha1($connection->context->websocketSecKey . "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", true))) {
                 Worker::safeEcho("Sec-WebSocket-Accept not match. Header:\n" . substr($buffer, 0, $pos) . "\n");
                 $connection->close();
@@ -415,9 +488,7 @@ class Ws
 
         // handshake complete
         $connection->context->handshakeStep = 2;
-        $handshakeResponseLength = $pos + 4;
-        $buffer = substr($buffer, 0, $handshakeResponseLength);
-        $response = static::parseResponse($buffer);
+        $response = static::parseResponse($header);
         // Try to emit onWebSocketConnect callback.
         if (isset($connection->onWebSocketConnect)) {
             try {

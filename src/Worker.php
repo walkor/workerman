@@ -190,6 +190,28 @@ class Worker
     public $onWebSocketConnected = null;
 
     /**
+     * Emitted when a websocket connection is closed by the peer (Only works when protocol is ws).
+     *
+     * @var ?callable
+     */
+    public $onWebSocketClose = null;
+
+    /**
+     * Emitted when a websocket ping frame is received (Only works when protocol is ws).
+     * Without a handler the ping is answered with a pong automatically.
+     *
+     * @var ?callable
+     */
+    public $onWebSocketPing = null;
+
+    /**
+     * Emitted when a websocket pong frame is received (Only works when protocol is ws).
+     *
+     * @var ?callable
+     */
+    public $onWebSocketPong = null;
+
+    /**
      * Emitted when data is received.
      *
      * @var ?callable
@@ -718,6 +740,10 @@ class Worker
     protected static function init(): void
     {
         set_error_handler(static function (int $code, string $msg, string $file, int $line): bool {
+            // A custom handler is called even for diagnostics silenced with @, so honour the mask ourselves.
+            if (!(error_reporting() & $code)) {
+                return true;
+            }
             static::safeEcho(sprintf("%s \"%s\" in file %s on line %d\n", static::getErrorType($code), $msg, $file, $line));
             return true;
         });
@@ -2423,8 +2449,13 @@ class Worker
 
         $msg = str_replace(['<n>', '<w>', '<g>'], [$line, $white, $green], $msg);
         $msg = str_replace(['</n>', '</w>', '</g>'], $end, $msg);
+        // The stream is normally set up by runAll(), but safeEcho() is also reachable from plain
+        // client scripts. The resource check also handles a closed handle without another warning.
+        if (static::$outputStream === null) {
+            static::initStdOut();
+        }
         set_error_handler(static fn (): bool => true);
-        if (!feof(self::$outputStream)) {
+        if (is_resource(self::$outputStream) && !feof(self::$outputStream)) {
             fwrite(self::$outputStream, $msg);
             fflush(self::$outputStream);
         }

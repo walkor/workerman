@@ -85,6 +85,39 @@ class Websocket
             ]
     ];
 
+    /**
+     * Inflating in chunks of this size keeps the maxPackageSize check running as the output grows,
+     * instead of only after a whole frame has been expanded.
+     */
+    private const INFLATE_CHUNK_SIZE = 1024;
+
+    /**
+     * Max size of the handshake headers. maxPackageSize only applies to frames, so the header block
+     * gets its own limit, mirroring Http::MAX_HEADER_LENGTH.
+     */
+    private const MAX_HANDSHAKE_LENGTH = 16384;
+
+    private const HTTP_431 = "HTTP/1.1 431 Request Header Fields Too Large\r\nConnection: close\r\n\r\n";
+
+    /**
+     * Reset the per-connection frame parser state to what a freshly handshaken connection looks like.
+     * tmpWebsocketData is deliberately left alone: it may already hold frames the application queued
+     * before the handshake completed, and dealHandshake() flushes those once the response is sent.
+     */
+    public static function initContext(TcpConnection $connection): void
+    {
+        // Payload of the fragments received so far for the current message.
+        $connection->context->websocketDataBuffer = '';
+        // Length of the frame currently being received, 0 when no fragment is pending.
+        $connection->context->websocketCurrentFrameLength = 0;
+        // Whether the message being received is permessage-deflate compressed.
+        $connection->context->websocketCompressed = false;
+        // Whether permessage-deflate was accepted in the handshake response.
+        $connection->context->websocketPermessageDeflate = false;
+        // Whether a fragmented message is currently being received.
+        $connection->context->websocketFragmented = false;
+    }
+
     public static function input(string $buffer, TcpConnection $connection): int
     {
         // Receive length.
@@ -112,6 +145,7 @@ class Websocket
             $dataLen = $secondByte & 127;
             $isFinFrame = $firstByte >> 7;
             $masked = $secondByte >> 7;
+            $opcode = $firstByte & 0xf;
 
             if (!$masked) {
                 Worker::safeEcho("frame not masked so close the connection\n");
@@ -119,7 +153,30 @@ class Websocket
                 return 0;
             }
 
-            $opcode = $firstByte & 0xf;
+            // RFC 6455 section 5.2: rsv bits must be zero unless a negotiated extension defines them.
+            // permessage-deflate is the only extension supported here and it only defines rsv1 on data frames.
+            $rsv = $firstByte & 0x70;
+            if ($rsv !== 0 && ($rsv !== 0x40 || $opcode >= 0x8 || !$connection->context->websocketPermessageDeflate)) {
+                Worker::safeEcho("frame sets rsv bits without a negotiated extension so close the connection\n");
+                $connection->close();
+                return 0;
+            }
+
+            // RFC 6455 section 5.5: control frames must not be fragmented and carry at most 125 bytes.
+            if ($opcode >= 0x8 && ($dataLen > 125 || !$isFinFrame)) {
+                Worker::safeEcho("invalid control frame so close the connection\n");
+                $connection->close();
+                return 0;
+            }
+
+            // RFC 6455 section 5.4: a continuation frame needs a message in progress, and a new data
+            // frame must not interrupt one.
+            if ($opcode < 0x8 && ($opcode === 0x0) !== $connection->context->websocketFragmented) {
+                Worker::safeEcho("unexpected message fragmentation so close the connection\n");
+                $connection->close();
+                return 0;
+            }
+
             switch ($opcode) {
                 case 0x0:
                     // Blob type.
@@ -133,6 +190,12 @@ class Websocket
                     break;
                 // Close package.
                 case 0x8:
+                    // A masked control frame is always $dataLen + 6 bytes.
+                    if ($recvLen < $dataLen + 6) {
+                        return 0;
+                    }
+                    // The frame is handled here, so take it out of the receive buffer.
+                    $connection->consumeRecvBuffer($dataLen + 6);
                     // Try to emit onWebSocketClose callback.
                     $closeCb = $connection->onWebSocketClose ?? $connection->worker->onWebSocketClose ?? false;
                     if ($closeCb) {
@@ -178,6 +241,11 @@ class Websocket
                 Worker::safeEcho("error package. package_length=$totalPackageSize\n");
                 $connection->close();
                 return 0;
+            }
+
+            // Past every early return, so the frame is accepted and the message state can advance.
+            if ($opcode < 0x8) {
+                $connection->context->websocketFragmented = !$isFinFrame;
             }
 
             if ($isFinFrame) {
@@ -313,8 +381,7 @@ class Websocket
         $firstByte = ord($buffer[0]);
         $secondByte = ord($buffer[1]);
         $len = $secondByte & 127;
-        $isFinFrame = (bool)($firstByte >> 7);
-        $rsv1 = 64 === ($firstByte & 64);
+        $opcode = $firstByte & 0xf;
 
         [$masks, $data] = match(true) {
              $len === 126 => [substr($buffer,  4, 4), substr($buffer, 8)],
@@ -325,45 +392,68 @@ class Websocket
         $dataLength = strlen($data);
         $masks = str_repeat($masks, (int)floor($dataLength / 4)) . substr($masks, 0, $dataLength % 4);
         $decoded = $data ^ $masks;
+
+        // Control frames may be interleaved with a fragmented message, they carry no message data.
+        if ($opcode >= 0x8) {
+            return $decoded;
+        }
+
+        // RFC 7692 section 6: rsv1 on the first frame marks the whole message as compressed.
+        if ($opcode !== 0x0) {
+            $connection->context->websocketCompressed = 64 === ($firstByte & 64);
+        }
+
+        // More fragments are coming, buffer the payload until the fin frame arrives.
         if ($connection->context->websocketCurrentFrameLength) {
             $connection->context->websocketDataBuffer .= $decoded;
-            if ($rsv1) {
-                return static::inflate($connection, $connection->context->websocketDataBuffer, $isFinFrame);
-            }
-            return $connection->context->websocketDataBuffer;
+            return '';
         }
+
         if ($connection->context->websocketDataBuffer !== '') {
             $decoded = $connection->context->websocketDataBuffer . $decoded;
             $connection->context->websocketDataBuffer = '';
         }
-        if ($rsv1) {
-            return static::inflate($connection, $decoded, $isFinFrame);
+
+        if ($connection->context->websocketCompressed) {
+            return static::inflate($connection, $decoded);
         }
+
         return $decoded;
     }
 
-    protected static function inflate(TcpConnection $connection, string $buffer, bool $isFinFrame): false|string
+    protected static function inflate(TcpConnection $connection, string $buffer): string
     {
         $connection->context->inflator ??= inflate_init(...self::ZLIB_INIT_OPTIONS);
-        
-        if ($isFinFrame) {
-            $buffer .= "\x00\x00\xff\xff";
+        $buffer .= "\x00\x00\xff\xff";
+
+        $result = '';
+        $bufferLength = strlen($buffer);
+        for ($offset = 0; $offset < $bufferLength; $offset += self::INFLATE_CHUNK_SIZE) {
+            // Silenced because a decode failure is an expected outcome and is handled below.
+            $chunk = @inflate_add(
+                $connection->context->inflator,
+                substr($buffer, $offset, self::INFLATE_CHUNK_SIZE)
+            );
+            if ($chunk === false) {
+                Worker::safeEcho("websocket inflate failed so close the connection\n");
+                $connection->close();
+                return '';
+            }
+            if (strlen($chunk) > $connection->maxPackageSize - strlen($result)) {
+                Worker::safeEcho("websocket inflate data exceeds maxPackageSize limit so close the connection\n");
+                $connection->close();
+                return '';
+            }
+            $result .= $chunk;
         }
-        $result = inflate_add($connection->context->inflator, $buffer);
-        // Guard against decompression bomb: check inflated size against maxPackageSize.
-        if ($result !== false && strlen($result) > $connection->maxPackageSize) {
-            Worker::safeEcho("WebSocket inflate data exceeds maxPackageSize limit\n");
-            $connection->close();
-            return false;
-        }
+
         return $result;
     }
 
-    protected static function deflate(TcpConnection $connection, string $buffer): false|string
+    protected static function deflate(TcpConnection $connection, string $buffer): string
     {
-        
         $connection->context->deflator ??= deflate_init(...self::ZLIB_INIT_OPTIONS);
-        
+
         return substr(deflate_add($connection->context->deflator, $buffer), 0, -4);
     }
 
@@ -384,13 +474,22 @@ class Websocket
 
         // Find \r\n\r\n.
         $headerEndPos = strpos($buffer, "\r\n\r\n");
-        if (!$headerEndPos) {
+        if ($headerEndPos === false) {
+            if (strlen($buffer) >= self::MAX_HANDSHAKE_LENGTH) {
+                $connection->close(self::HTTP_431, true);
+            }
+            return 0;
+        }
+        if ($headerEndPos >= self::MAX_HANDSHAKE_LENGTH) {
+            $connection->close(self::HTTP_431, true);
             return 0;
         }
         $headerLength = $headerEndPos + 4;
+        // Parse the header block only, anything after it is already websocket frame data.
+        $header = substr($buffer, 0, $headerLength);
 
         // Check WebSocket version - RFC 6455 Section 4.4
-        if (preg_match("/Sec-WebSocket-Version: *(.*?)\r\n/i", $buffer, $match)) {
+        if (preg_match("/Sec-WebSocket-Version: *(.*?)\r\n/i", $header, $match)) {
             if($match[1] !== '13') {
                 $_426 = "HTTP/1.1 426 Upgrade Required\r\n"
                     . "Connection: Upgrade\r\n"
@@ -407,7 +506,7 @@ class Websocket
         }
         
         // Get Sec-WebSocket-Key.
-        if (preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $buffer, $match)) {
+        if (preg_match("/Sec-WebSocket-Key: *(.*?)\r\n/i", $header, $match)) {
             $SecWebSocketKey = $match[1];
         } else {
             $connection->close($HTTP_400, true);
@@ -422,16 +521,11 @@ class Websocket
             . "Connection: Upgrade\r\n"
             . "Sec-WebSocket-Accept: $newKey\r\n";
 
-        // Websocket data buffer.
-        $connection->context->websocketDataBuffer = '';
-        // Current websocket frame length.
-        $connection->context->websocketCurrentFrameLength = 0;
-        // Current websocket frame data.
-        $connection->context->websocketCurrentFrameBuffer = '';
+        static::initContext($connection);
         // Consume handshake data.
         $connection->consumeRecvBuffer($headerLength);
         // Request from buffer
-        $request = new Request($buffer);
+        $request = new Request($header);
 
         // Try to emit onWebSocketConnect callback.
         $onWebsocketConnect = $connection->onWebSocketConnect ?? $connection->worker->onWebSocketConnect ?? false;
@@ -447,12 +541,16 @@ class Websocket
         $connection->websocketType ??= static::BINARY_TYPE_BLOB;
 
         if ($connection->headers) {
-                foreach ($connection->headers as $header) {
-                    if (strpbrk($header, "\r\n") !== false) {
-                        continue;
-                    }
-                    $handshakeMessage .= "$header\r\n";
+            foreach ($connection->headers as $header) {
+                if (strpbrk($header, "\r\n") !== false) {
+                    continue;
                 }
+                // Accepting the extension is what enables rsv1 compressed frames on this connection.
+                if (stripos($header, 'Sec-WebSocket-Extensions:') === 0 && stripos($header, 'permessage-deflate') !== false) {
+                    $connection->context->websocketPermessageDeflate = true;
+                }
+                $handshakeMessage .= "$header\r\n";
+            }
         }
         $handshakeMessage .= "\r\n";
         // Send handshake response.

@@ -477,41 +477,20 @@ class AsyncTcpConnection extends TcpConnection
             if ($this->transport === 'ssl') {
                 $this->sslHandshakeCompleted = $this->doSslHandshake($this->socket);
                 if ($this->sslHandshakeCompleted === 0) {
-                    $this->eventLoop->onReadable($this->socket, $this->checkConnection(...));
-                    $this->eventLoop->onWritable($this->socket, $this->checkConnection(...));
+                    // Keep the connection in CONNECTING until TLS is actually established. Retrying
+                    // through checkConnection() would repeat proxy negotiation, while also watching a
+                    // connected socket for writes would keep level-triggered loops permanently awake.
+                    $this->eventLoop->onReadable(
+                        $this->socket,
+                        fn ($socket) => $this->checkSslHandshake($socket, $address)
+                    );
                     return;
                 }
                 if ($this->sslHandshakeCompleted === false) {
                     return;
                 }
-            } else {
-                // There are some data waiting to send.
-                if ($this->sendBuffer) {
-                    $this->eventLoop->onWritable($this->socket, $this->baseWrite(...));
-                }
             }
-            // Register a listener waiting read event.
-            $this->eventLoop->onReadable($this->socket, $this->baseRead(...));
-
-            $this->status = self::STATUS_ESTABLISHED;
-            $this->remoteAddress = $address;
-
-            // Try to emit onConnect callback.
-            if ($this->onConnect) {
-                try {
-                    ($this->onConnect)($this);
-                } catch (Throwable $e) {
-                    $this->error($e);
-                }
-            }
-            // Try to emit protocol::onConnect
-            if ($this->protocol && method_exists($this->protocol, 'onConnect')) {
-                try {
-                    $this->protocol::onConnect($this);
-                } catch (Throwable $e) {
-                    $this->error($e);
-                }
-            }
+            $this->markEstablished($address);
         } else {
             // Connection failed.
             $this->emitError(static::CONNECT_FAIL, 'connect ' . $this->remoteAddress . ' fail after ' . round(microtime(true) - $this->connectStartTime, 4) . ' seconds');
@@ -520,6 +499,64 @@ class AsyncTcpConnection extends TcpConnection
             }
             if ($this->status === self::STATUS_CLOSED) {
                 $this->onConnect = null;
+            }
+        }
+    }
+
+    /**
+     * Continue an asynchronous SSL handshake after the peer supplied more data.
+     *
+     * @param resource $socket
+     * @param string $address
+     * @return void
+     */
+    private function checkSslHandshake($socket, string $address): void
+    {
+        if ($this->status !== self::STATUS_CONNECTING) {
+            return;
+        }
+
+        $this->sslHandshakeCompleted = $this->doSslHandshake($socket);
+        if ($this->sslHandshakeCompleted !== true) {
+            return;
+        }
+
+        $this->markEstablished($address);
+    }
+
+    /**
+     * Finish connection setup after TCP and, when applicable, SSL are established.
+     *
+     * @param string $address
+     * @return void
+     */
+    private function markEstablished(string $address): void
+    {
+        // Register a listener waiting read event.
+        $this->eventLoop->onReadable($this->socket, $this->baseRead(...));
+
+        $this->status = self::STATUS_ESTABLISHED;
+        $this->remoteAddress = $address;
+
+        // Flush data queued before the connection (and SSL handshake) completed.
+        if ($this->sendBuffer) {
+            $this->eventLoop->onWritable($this->socket, $this->baseWrite(...));
+        }
+
+        // Try to emit onConnect callback.
+        if ($this->onConnect) {
+            try {
+                ($this->onConnect)($this);
+            } catch (Throwable $e) {
+                $this->error($e);
+            }
+        }
+        // Try to emit protocol::onConnect
+        if ($this->protocol && method_exists($this->protocol, 'onConnect')) {
+            try {
+                $this->protocol::onConnect($this);
+            } catch (Throwable $e) {
+                $this->error($e);
             }
         }
     }
