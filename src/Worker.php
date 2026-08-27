@@ -1796,11 +1796,11 @@ class Worker
     /**
      * Get worker id.
      *
-     * @param string $workerId
+     * @param int $workerId
      * @param int $pid
      * @return false|int|string
      */
-    protected static function getId(string $workerId, int $pid): false|int|string
+    protected static function getId(int $workerId, int $pid): false|int|string
     {
         return array_search($pid, static::$idMap[$workerId]);
     }
