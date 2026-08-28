@@ -271,7 +271,7 @@ class AsyncTcpConnection extends TcpConnection
 
         $this->status = self::STATUS_CONNECTING;
         $this->connectStartTime = microtime(true);
-        set_error_handler(fn() => false);
+        set_error_handler(static fn(...$args): bool => false);
         if ($this->transport !== 'unix') {
             if (!$this->remotePort) {
                 $this->remotePort = $this->transport === 'ssl' ? 443 : 80;
