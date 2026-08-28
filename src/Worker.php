@@ -2568,7 +2568,7 @@ class Worker
                 if (isset($address['host']) && isset($address['port'])) {
                     $address = "tcp://{$address['host']}:{$address['port']}";
                     $server = null;
-                    set_error_handler(function ($code, $msg) {
+                    set_error_handler(function ($code, $msg, ...$args) {
                         throw new RuntimeException($msg);
                     });
                     $server = stream_socket_server($address, $code, $msg);
