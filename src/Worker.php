@@ -1507,17 +1507,13 @@ class Worker
             } catch (Throwable) {}
         }
 
-        static::$outputStream = null;
-
         set_error_handler(static fn (...$args): bool => true);
         $stdOutStream = fopen(static::$stdoutFile, 'a');
         restore_error_handler();
 
-        if ($stdOutStream === false) {
-            return;
+        if ($stdOutStream !== false) {
+            static::$outputStream = $stdOutStream;
         }
-
-        static::$outputStream = $stdOutStream;
 
         // Fix standard output cannot redirect of PHP 8.1.8's bug
         if (function_exists('posix_isatty') && posix_isatty(2)) {
