@@ -568,11 +568,11 @@ class Worker
     protected static bool $outputDecorated;
 
     /**
-     * Worker object's hash id(unique identifier).
+     * Worker object's id(unique identifier).
      *
-     * @var ?string
+     * @var ?int
      */
-    protected ?string $workerId = null;
+    protected ?int $workerId = null;
 
     /**
      * Constructor.
@@ -583,7 +583,7 @@ class Worker
     public function __construct(?string $socketName = null, array $socketContext = [])
     {
         // Save all worker instances.
-        $this->workerId = spl_object_hash($this);
+        $this->workerId = spl_object_id($this);
         $this->context = new stdClass();
         static::$workers[$this->workerId] = $this;
         static::$pidMap[$this->workerId] = [];
@@ -1796,11 +1796,11 @@ class Worker
     /**
      * Get worker id.
      *
-     * @param string $workerId
+     * @param int $workerId
      * @param int $pid
      * @return false|int|string
      */
-    protected static function getId(string $workerId, int $pid): false|int|string
+    protected static function getId(int $workerId, int $pid): false|int|string
     {
         return array_search($pid, static::$idMap[$workerId]);
     }
