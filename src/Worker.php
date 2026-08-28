@@ -2342,9 +2342,10 @@ class Worker
     /**
      * Check errors when current process exited.
      *
+     * @param mixed ...$args
      * @return void
      */
-    public static function checkErrors(): void
+    public static function checkErrors(mixed ...$args): void
     {
         if (static::STATUS_SHUTDOWN !== static::$status) {
             $errorMsg = DIRECTORY_SEPARATOR === '/' ? 'Worker[' . posix_getpid() . '] process terminated' : 'Worker process terminated';
