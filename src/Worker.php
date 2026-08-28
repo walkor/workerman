@@ -1164,7 +1164,11 @@ class Worker
                 break;
             case 'status':
                 // Delete status file on shutdown
-                register_shutdown_function(unlink(...), static::$statisticsFile);
+                register_shutdown_function(static function () {
+                    if (is_file(static::$statisticsFile)) {
+                        @unlink(static::$statisticsFile);
+                    }
+                });
                 while (1) {
                     // Master process will send SIGIOT signal to all child processes.
                     posix_kill($masterPid, SIGIOT);
@@ -1183,7 +1187,11 @@ class Worker
                 }
             case 'connections':
                 // Delete status file on shutdown
-                register_shutdown_function(unlink(...), static::$connectionsFile);
+                register_shutdown_function(static function () {
+                    if (is_file(static::$connectionsFile)) {
+                        @unlink(static::$connectionsFile);
+                    }
+                });
                 // Master process will send SIGIO signal to all child processes.
                 posix_kill($masterPid, SIGIO);
                 // Waiting a moment.
