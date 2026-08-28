@@ -1517,7 +1517,7 @@ class Worker
 
         // Fix standard output cannot redirect of PHP 8.1.8's bug
         if (function_exists('posix_isatty') && posix_isatty(2)) {
-            ob_start(function (string $string) {
+            ob_start(function (string $string, ...$args) {
                 file_put_contents(static::$stdoutFile, $string, FILE_APPEND);
             }, 1);
         }
