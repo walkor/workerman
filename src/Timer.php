@@ -119,9 +119,10 @@ class Timer
     /**
      * ALARM signal handler.
      *
+     * @param mixed ...$args
      * @return void
      */
-    public static function signalHandle(): void
+    public static function signalHandle(mixed ...$args): void
     {
         if (!self::$event) {
             pcntl_alarm(1);
