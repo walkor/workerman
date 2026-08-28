@@ -1489,17 +1489,25 @@ class Worker
             return;
         }
 
-        if (is_resource(STDOUT)) {
-            fclose(STDOUT);
+        if (defined('STDOUT') && is_resource(STDOUT) && get_resource_type(STDOUT) === 'stream') {
+            try {
+                @fclose(STDOUT);
+            } catch (Throwable) {}
         }
 
-        if (is_resource(STDERR)) {
-            fclose(STDERR);
+        if (defined('STDERR') && is_resource(STDERR) && get_resource_type(STDERR) === 'stream') {
+            try {
+                @fclose(STDERR);
+            } catch (Throwable) {}
         }
 
-        if (is_resource(static::$outputStream)) {
-            fclose(static::$outputStream);
+        if (is_resource(static::$outputStream) && get_resource_type(static::$outputStream) === 'stream') {
+            try {
+                @fclose(static::$outputStream);
+            } catch (Throwable) {}
         }
+
+        static::$outputStream = null;
 
         set_error_handler(static fn (...$args): bool => true);
         $stdOutStream = fopen(static::$stdoutFile, 'a');
