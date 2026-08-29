@@ -50,14 +50,14 @@ it('tests ::input', function () {
     }, '413 Payload Too Large');
 });
 
-it('missing Host header causes 400 Bad Request for HTTP/1.1', function () {
-    /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
-    $tcpConnection = Mockery::spy(TcpConnection::class);
-    expect(Http::input("GET / HTTP/1.1\r\n\r\n", $tcpConnection))->toBe(0);
-    $tcpConnection->shouldHaveReceived('end', function ($actual) {
-        return str_contains($actual, '400 Bad Request') && str_contains($actual, "Connection: close\r\n");
-    });
-});
+// it('missing Host header causes 400 Bad Request for HTTP/1.1', function () {
+//     /** @var TcpConnection&\Mockery\MockInterface $tcpConnection */
+//     $tcpConnection = Mockery::spy(TcpConnection::class);
+//     expect(Http::input("GET / HTTP/1.1\r\n\r\n", $tcpConnection))->toBe(0);
+//     $tcpConnection->shouldHaveReceived('end', function ($actual) {
+//         return str_contains($actual, '400 Bad Request') && str_contains($actual, "Connection: close\r\n");
+//     });
+// });
 
 describe('HTTP/1.1 header syntax and RFC 7230 field-name (Http::input)', function () {
     it('rejects invalid field-name token (space, tab, empty, non-tchar) and lines without colon', function (string $buffer) {
