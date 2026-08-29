@@ -929,7 +929,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
 
         // Hidden error.
         $reason = '';
-        set_error_handler(static function (int $code, string $msg) use (&$reason): bool {
+        set_error_handler(static function (int $code, string $msg, ...$args) use (&$reason): bool {
             $reason = $msg;
             return true;
         });

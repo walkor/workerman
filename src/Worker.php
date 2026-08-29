@@ -1164,7 +1164,11 @@ class Worker
                 break;
             case 'status':
                 // Delete status file on shutdown
-                register_shutdown_function(unlink(...), static::$statisticsFile);
+                register_shutdown_function(static function () {
+                    if (is_file(static::$statisticsFile)) {
+                        @unlink(static::$statisticsFile);
+                    }
+                });
                 while (1) {
                     // Master process will send SIGIOT signal to all child processes.
                     posix_kill($masterPid, SIGIOT);
@@ -1183,7 +1187,11 @@ class Worker
                 }
             case 'connections':
                 // Delete status file on shutdown
-                register_shutdown_function(unlink(...), static::$connectionsFile);
+                register_shutdown_function(static function () {
+                    if (is_file(static::$connectionsFile)) {
+                        @unlink(static::$connectionsFile);
+                    }
+                });
                 // Master process will send SIGIO signal to all child processes.
                 posix_kill($masterPid, SIGIO);
                 // Waiting a moment.
@@ -1390,8 +1398,9 @@ class Worker
      * Signal handler.
      *
      * @param int $signal
+     * @param mixed ...$args
      */
-    public static function signalHandler(int $signal): void
+    public static function signalHandler(int $signal, mixed ...$args): void
     {
         switch ($signal) {
             // Stop.
@@ -1488,31 +1497,35 @@ class Worker
             return;
         }
 
-        if (is_resource(STDOUT)) {
-            fclose(STDOUT);
+        if (defined('STDOUT') && is_resource(STDOUT) && get_resource_type(STDOUT) === 'stream') {
+            try {
+                @fclose(STDOUT);
+            } catch (Throwable) {}
         }
 
-        if (is_resource(STDERR)) {
-            fclose(STDERR);
+        if (defined('STDERR') && is_resource(STDERR) && get_resource_type(STDERR) === 'stream') {
+            try {
+                @fclose(STDERR);
+            } catch (Throwable) {}
         }
 
-        if (is_resource(static::$outputStream)) {
-            fclose(static::$outputStream);
+        if (is_resource(static::$outputStream) && get_resource_type(static::$outputStream) === 'stream') {
+            try {
+                @fclose(static::$outputStream);
+            } catch (Throwable) {}
         }
 
         set_error_handler(static fn (...$args): bool => true);
         $stdOutStream = fopen(static::$stdoutFile, 'a');
         restore_error_handler();
 
-        if ($stdOutStream === false) {
-            return;
+        if ($stdOutStream !== false) {
+            static::$outputStream = $stdOutStream;
         }
-
-        static::$outputStream = $stdOutStream;
 
         // Fix standard output cannot redirect of PHP 8.1.8's bug
         if (function_exists('posix_isatty') && posix_isatty(2)) {
-            ob_start(function (string $string) {
+            ob_start(function (string $string, ...$args) {
                 file_put_contents(static::$stdoutFile, $string, FILE_APPEND);
             }, 1);
         }
@@ -2329,9 +2342,10 @@ class Worker
     /**
      * Check errors when current process exited.
      *
+     * @param mixed ...$args
      * @return void
      */
-    public static function checkErrors(): void
+    public static function checkErrors(mixed ...$args): void
     {
         if (static::STATUS_SHUTDOWN !== static::$status) {
             $errorMsg = DIRECTORY_SEPARATOR === '/' ? 'Worker[' . posix_getpid() . '] process terminated' : 'Worker process terminated';
@@ -2563,7 +2577,7 @@ class Worker
                 if (isset($address['host']) && isset($address['port'])) {
                     $address = "tcp://{$address['host']}:{$address['port']}";
                     $server = null;
-                    set_error_handler(function ($code, $msg) {
+                    set_error_handler(function ($code, $msg, ...$args) {
                         throw new RuntimeException($msg);
                     });
                     $server = stream_socket_server($address, $code, $msg);

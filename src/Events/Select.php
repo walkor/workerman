@@ -288,7 +288,7 @@ final class Select implements EventInterface
             return;
         }
         $this->signalEvents[$signal] = $func;
-        pcntl_signal($signal, fn () => $this->safeCall($this->signalEvents[$signal], [$signal]));
+        pcntl_signal($signal, fn (...$args) => $this->safeCall($this->signalEvents[$signal], [$signal]));
     }
 
     /**
