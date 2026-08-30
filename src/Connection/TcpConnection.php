@@ -472,6 +472,9 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             return false;
         }
 
+        // Fix null to empty string.
+        $sendBuffer ??= '';
+
         // Try to call protocol::encode($sendBuffer) before sending.
         if (false === $raw && $this->protocol !== null) {
             try {
