@@ -20,6 +20,7 @@ use RuntimeException;
 use stdClass;
 use Throwable;
 use Workerman\Events\EventInterface;
+use Workerman\Events\Swoole;
 use Workerman\Protocols\Http;
 use Workerman\Protocols\Http\Request;
 use Workerman\Timer;
@@ -699,6 +700,17 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         $buffer = '';
         try {
             $buffer = @fread($socket, self::READ_BUFFER_SIZE);
+            // Swoole's runtime hook creates its TLS sockets with SSL_CTX_set_read_ahead(ctx, 1): OpenSSL pulls every
+            // byte the kernel has into its own buffer and one fread() only returns a single decrypted record. The rest
+            // sits inside OpenSSL where the event loop can no longer see it (the fd is not readable anymore), so any
+            // response larger than one TLS record stalls until the peer sends something else or closes. Drain the
+            // buffered records here. PHP's own openssl stream does not use read-ahead, so the other event loops are
+            // left untouched.
+            if ($this->transport === 'ssl' && $buffer !== '' && $buffer !== false && Worker::$globalEvent instanceof Swoole) {
+                while (($chunk = @fread($socket, self::READ_BUFFER_SIZE)) !== '' && $chunk !== false) {
+                    $buffer .= $chunk;
+                }
+            }
         } catch (Throwable) {
             // do nothing
         }
