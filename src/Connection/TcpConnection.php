@@ -892,6 +892,16 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             $this->bytesWritten += $len;
             $this->sendBuffer = substr($this->sendBuffer, $len);
         } else {
+            // A zero-length write on a non-blocking socket means EAGAIN: the send buffer is
+            // momentarily full and the peer is still there. Keep the remainder buffered and
+            // wait for the next writable event, mirroring the feof guard in send().
+            if ($len === 0) {
+                if (!is_resource($this->socket) || feof($this->socket)) {
+                    ++self::$statistics['send_fail'];
+                    $this->destroy();
+                }
+                return;
+            }
             ++self::$statistics['send_fail'];
             $this->destroy();
         }
