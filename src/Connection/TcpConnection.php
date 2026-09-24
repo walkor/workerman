@@ -864,6 +864,10 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 $len = @fwrite($this->socket, $this->sendBuffer);
             }
         } catch (Throwable) {
+            // A thrown write error is not backpressure: keep it distinguishable from a genuine
+            // zero-byte return, otherwise the branch below would treat it as EAGAIN and retry
+            // forever instead of tearing the connection down.
+            $len = false;
         }
         if ($len === strlen($this->sendBuffer)) {
             $this->bytesWritten += $len;
