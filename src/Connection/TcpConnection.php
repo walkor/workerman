@@ -858,11 +858,10 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     {
         $len = 0;
         try {
-            if ($this->transport === 'ssl') {
-                $len = @fwrite($this->socket, $this->sendBuffer, 8192);
-            } else {
-                $len = @fwrite($this->socket, $this->sendBuffer);
-            }
+            // Always retry with the whole buffer. OpenSSL must be given at least the length of the
+            // record it could not flush last time (otherwise SSL_R_BAD_LENGTH kills the session), and
+            // send() may already have queued a partially written 16KB record.
+            $len = @fwrite($this->socket, $this->sendBuffer);
         } catch (Throwable) {
         }
         if ($len === strlen($this->sendBuffer)) {
@@ -891,10 +890,16 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         if ($len > 0) {
             $this->bytesWritten += $len;
             $this->sendBuffer = substr($this->sendBuffer, $len);
-        } else {
-            ++self::$statistics['send_fail'];
-            $this->destroy();
+            return;
         }
+        // fwrite() returns 0 when the socket would block (e.g. SSL_ERROR_WANT_WRITE while the
+        // kernel send buffer is full). That is back-pressure, not an error: keep the buffer and
+        // wait for the next writable event.
+        if ($len === 0 && is_resource($this->socket) && !feof($this->socket)) {
+            return;
+        }
+        ++self::$statistics['send_fail'];
+        $this->destroy();
     }
 
     /**

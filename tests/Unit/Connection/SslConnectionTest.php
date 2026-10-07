@@ -132,6 +132,67 @@ it('writes ssl data directly before waiting for writable event', function () {
     fclose($server);
 });
 
+it('keeps the connection and its buffer when a queued write would block', function () {
+    $event = new SslConnectionTestEventLoop();
+    $server = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
+    expect($server)->not->toBeFalse();
+
+    $client = stream_socket_client('tcp://' . stream_socket_get_name($server, false), $errno, $errstr, 1);
+    expect($client)->not->toBeFalse();
+
+    $accepted = stream_socket_accept($server, 1);
+    expect($accepted)->not->toBeFalse();
+    stream_set_blocking($client, false);
+
+    $connection = new TcpConnection($event, $accepted, (string)stream_socket_get_name($accepted, true));
+    $closed = false;
+    $connection->onClose = function () use (&$closed): void {
+        $closed = true;
+    };
+
+    // Keep sending until the kernel stops accepting data because the peer is not reading.
+    $chunk = str_repeat('x', 1024 * 1024);
+    $sent = 0;
+    do {
+        $result = $connection->send($chunk, true);
+        $sent += strlen($chunk);
+    } while ($result === true && $sent < 64 * 1024 * 1024);
+    expect($result)->toBeNull()
+        ->and($event->writeEvents)->toHaveKey((int)$accepted);
+
+    // fwrite() returns 0 here (SSL_ERROR_WANT_WRITE / EAGAIN): back-pressure, not a dead connection.
+    [, $onWritable] = $event->writeEvents[(int)$accepted];
+    $onWritable($accepted);
+
+    expect($closed)->toBeFalse()
+        ->and($connection->getStatus(false))->toBe('ESTABLISHED')
+        ->and($connection->getSendBufferQueueSize())->toBeGreaterThan(0)
+        ->and($event->writeEvents)->toHaveKey((int)$accepted);
+
+    // Once the peer drains the socket, the queued data is delivered untouched.
+    $received = 0;
+    $hash = hash_init('md5');
+    $deadline = microtime(true) + 10;
+    while ($received < $sent && microtime(true) < $deadline) {
+        $data = fread($client, 65536);
+        if ($data !== false && $data !== '') {
+            $received += strlen($data);
+            hash_update($hash, $data);
+        } elseif (isset($event->writeEvents[(int)$accepted])) {
+            $onWritable($accepted);
+        }
+    }
+
+    expect($received)->toBe($sent)
+        ->and(hash_final($hash))->toBe(md5(str_repeat('x', $sent)))
+        ->and($connection->getSendBufferQueueSize())->toBe(0)
+        ->and($event->writeEvents)->toBe([]);
+
+    $connection->destroy();
+    fclose($client);
+    fclose($server);
+});
+
 it('reports the reason and never connects when the ssl negotiation is rejected', function () {
     $event = new SslConnectionTestEventLoop();
     $server = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
