@@ -154,21 +154,12 @@ class Session
     protected bool $isSafe = true;
 
     /**
-     * Session serialize_handler
-     * @var array|string[]
-     */
-    protected array $serializer = ['serialize', 'unserialize'];
-
-    /**
      * Session constructor.
      *
      * @param string $sessionId
      */
     public function __construct(string $sessionId)
     {
-        if (extension_loaded('igbinary') && ini_get('session.serialize_handler') == 'igbinary') {
-            $this->serializer = ['igbinary_serialize', 'igbinary_unserialize'];
-        }
         if (static::$handler === null) {
             static::initHandler();
         }
@@ -327,7 +318,7 @@ class Session
             if (empty($this->data)) {
                 static::$handler->destroy($this->sessionId);
             } else {
-                static::$handler->write($this->sessionId, $this->serializer[0]($this->data));
+                static::$handler->write($this->sessionId, serialize($this->data));
             }
         } elseif (static::$autoUpdateTimestamp) {
             $this->refresh();
@@ -425,11 +416,7 @@ class Session
      */
     protected function safeDeserialize(string $data): array
     {
-        if ($this->serializer[1] === 'unserialize') {
-            $result = unserialize($data, ['allowed_classes' => false]);
-        } else {
-            $result = ($this->serializer[1])($data);
-        }
+        $result = unserialize($data, ['allowed_classes' => false]);
         return is_array($result) ? $result : [];
     }
 
