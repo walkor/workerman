@@ -20,6 +20,7 @@ use RuntimeException;
 use stdClass;
 use Throwable;
 use Workerman\Events\EventInterface;
+use Workerman\Events\Swoole;
 use Workerman\Protocols\Http;
 use Workerman\Protocols\Http\Request;
 use Workerman\Timer;
@@ -684,21 +685,31 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
     public function baseRead($socket, bool $checkEof = true): void
     {
         static $requests = [];
-        // SSL handshake.
-        if ($this->transport === 'ssl' && $this->sslHandshakeCompleted !== true) {
-            if ($this->doSslHandshake($socket)) {
-                $this->sslHandshakeCompleted = true;
-                if ($this->sendBuffer) {
-                    $this->eventLoop->onWritable($socket, $this->baseWrite(...));
-                }
-            } else {
-                return;
-            }
-        }
-
         $buffer = '';
         try {
-            $buffer = @fread($socket, self::READ_BUFFER_SIZE);
+            if ($this->transport !== 'ssl') {
+                $buffer = @fread($socket, self::READ_BUFFER_SIZE);
+            } else {
+                // SSL handshake.
+                if ($this->sslHandshakeCompleted !== true) {
+                    if (!$this->doSslHandshake($socket)) {
+                        return;
+                    }
+                    $this->sslHandshakeCompleted = true;
+                    if ($this->sendBuffer) {
+                        $this->eventLoop->onWritable($socket, $this->baseWrite(...));
+                    }
+                }
+                $buffer = @fread($socket, self::READ_BUFFER_SIZE);
+                // Swoole's TLS hook returns at most one chunk per fread() and enables OpenSSL read-ahead, so decrypted
+                // data may stay inside OpenSSL while the fd is no longer readable and the event loop never fires again.
+                // Drain it here. PHP's native openssl stream has neither behaviour, so other event loops are untouched.
+                if ($buffer !== '' && $buffer !== false && $this->eventLoop instanceof Swoole) {
+                    while (($chunk = @fread($socket, self::READ_BUFFER_SIZE)) !== '' && $chunk !== false) {
+                        $buffer .= $chunk;
+                    }
+                }
+            }
         } catch (Throwable) {
             // do nothing
         }
