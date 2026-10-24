@@ -945,14 +945,21 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
 
         // Hidden error.
         $reason = '';
-        set_error_handler(static function (int $code, string $msg, ...$args) use (&$reason): bool {
-            $reason = $msg;
-            return true;
-        });
-        try {
-            $ret = stream_socket_enable_crypto($socket, true, $type);
-        } finally {
-            restore_error_handler();
+        if ($this->eventLoop instanceof Swoole) {
+            // The Swoole hook performs the handshake while yielding to other coroutines, and reports failures to its own
+            // log rather than as PHP warnings. A process-wide error handler installed here would only catch warnings raised
+            // by those other coroutines, hiding them from the application and reporting them as this handshake's reason.
+            $ret = @stream_socket_enable_crypto($socket, true, $type);
+        } else {
+            set_error_handler(static function (int $code, string $msg, ...$args) use (&$reason): bool {
+                $reason = $msg;
+                return true;
+            });
+            try {
+                $ret = stream_socket_enable_crypto($socket, true, $type);
+            } finally {
+                restore_error_handler();
+            }
         }
         // Negotiation has failed.
         if (false === $ret) {

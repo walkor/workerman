@@ -20,6 +20,7 @@ use Exception;
 use RuntimeException;
 use stdClass;
 use Throwable;
+use Workerman\Events\Swoole;
 use Workerman\Timer;
 use Workerman\Worker;
 use function class_exists;
@@ -271,34 +272,16 @@ class AsyncTcpConnection extends TcpConnection
 
         $this->status = self::STATUS_CONNECTING;
         $this->connectStartTime = microtime(true);
-        set_error_handler(static fn(...$args): bool => false);
-        if ($this->transport !== 'unix') {
-            if (!$this->remotePort) {
-                $this->remotePort = $this->transport === 'ssl' ? 443 : 80;
-                $this->remoteAddress = $this->remoteHost . ':' . $this->remotePort;
-            }
-            // Open socket connection asynchronously.
-            if ($this->proxySocks5) {
-                $this->socketContext['ssl']['peer_name'] = $this->remoteHost;
-                $context = stream_context_create($this->socketContext);
-                $this->socket = stream_socket_client("tcp://$this->proxySocks5", $errno, $err_str, 0, STREAM_CLIENT_ASYNC_CONNECT, $context);
-            } else if ($this->proxyHttp) {
-                $this->socketContext['ssl']['peer_name'] = $this->remoteHost;
-                $context = stream_context_create($this->socketContext);
-                $this->socket = stream_socket_client("tcp://$this->proxyHttp", $errno, $err_str, 0, STREAM_CLIENT_ASYNC_CONNECT, $context);
-            } else if ($this->socketContext) {
-                $context = stream_context_create($this->socketContext);
-                $this->socket = stream_socket_client("tcp://$this->remoteHost:$this->remotePort",
-                    $errno, $err_str, 0, STREAM_CLIENT_ASYNC_CONNECT, $context);
-            } else {
-                $this->socket = stream_socket_client("tcp://$this->remoteHost:$this->remotePort",
-                    $errno, $err_str, 0, STREAM_CLIENT_ASYNC_CONNECT);
-            }
+        if ($this->eventLoop instanceof Swoole) {
+            // The Swoole hook turns stream_socket_client() into a blocking connect that yields to other coroutines
+            // (DNS lookup included). A process-wide error handler installed around it would swallow every warning
+            // those coroutines raise meanwhile, bypassing the application's handler; "@" is saved per coroutine.
+            $this->socket = @$this->openSocket($errno, $err_str);
         } else {
-            $this->socket = stream_socket_client("$this->transport://$this->remoteAddress", $errno, $err_str, 0,
-                STREAM_CLIENT_ASYNC_CONNECT);
+            set_error_handler(static fn(...$args): bool => false);
+            $this->socket = $this->openSocket($errno, $err_str);
+            restore_error_handler();
         }
-        restore_error_handler();
         // If failed attempt to emit onError callback.
         if (!$this->socket || !is_resource($this->socket)) {
             $this->emitError(static::CONNECT_FAIL, $err_str);
@@ -319,6 +302,42 @@ class AsyncTcpConnection extends TcpConnection
         if (DIRECTORY_SEPARATOR === '\\' && method_exists($this->eventLoop, 'onExcept')) {
             $this->eventLoop->onExcept($this->socket, $this->checkConnection(...));
         }
+    }
+
+    /**
+     * Open the client socket asynchronously.
+     *
+     * @param int|null $errno
+     * @param string|null $errStr
+     * @return resource|false
+     */
+    private function openSocket(?int &$errno, ?string &$errStr)
+    {
+        if ($this->transport === 'unix') {
+            return stream_socket_client("$this->transport://$this->remoteAddress", $errno, $errStr, 0,
+                STREAM_CLIENT_ASYNC_CONNECT);
+        }
+        if (!$this->remotePort) {
+            $this->remotePort = $this->transport === 'ssl' ? 443 : 80;
+            $this->remoteAddress = $this->remoteHost . ':' . $this->remotePort;
+        }
+        if ($this->proxySocks5) {
+            $this->socketContext['ssl']['peer_name'] = $this->remoteHost;
+            $context = stream_context_create($this->socketContext);
+            return stream_socket_client("tcp://$this->proxySocks5", $errno, $errStr, 0, STREAM_CLIENT_ASYNC_CONNECT, $context);
+        }
+        if ($this->proxyHttp) {
+            $this->socketContext['ssl']['peer_name'] = $this->remoteHost;
+            $context = stream_context_create($this->socketContext);
+            return stream_socket_client("tcp://$this->proxyHttp", $errno, $errStr, 0, STREAM_CLIENT_ASYNC_CONNECT, $context);
+        }
+        if ($this->socketContext) {
+            $context = stream_context_create($this->socketContext);
+            return stream_socket_client("tcp://$this->remoteHost:$this->remotePort",
+                $errno, $errStr, 0, STREAM_CLIENT_ASYNC_CONNECT, $context);
+        }
+        return stream_socket_client("tcp://$this->remoteHost:$this->remotePort",
+            $errno, $errStr, 0, STREAM_CLIENT_ASYNC_CONNECT);
     }
 
     /**
