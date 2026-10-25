@@ -119,6 +119,46 @@ $tcp_worker->onClose = function ($connection) {
 Worker::runAll();
 ```
 
+### A udp server
+```php
+<?php
+use Workerman\Worker;
+use Workerman\Timer;
+use Workerman\Connection\UdpConnection;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+$worker = new Worker('udp://[::]:5060', [
+    'socket' => [
+        'so_reuseaddr' => true,
+        'so_broadcast' => true,
+    ],
+]);
+
+$worker->onWorkerStart = function (Worker $worker) {
+    $udpSender = $worker->getUdpSender();
+    if ($udpSender === null) {
+        return;
+    }
+    Timer::add(1, function () use ($udpSender) {
+        $udpSender->sendTo('192.168.1.7', 5060, "ipv4 heartbeat from 5060\n");
+        $udpSender->sendTo('fe80::1', 5060, "ipv6 heartbeat from 5060\n");
+    });
+};
+
+$worker->onMessage = function (UdpConnection $connection, $data) {
+    echo sprintf("recv %s:%d -> %s", $connection->getRemoteIp(), $connection->getRemotePort(), $data);
+
+    // Reply to the sender.
+    $connection->send("ack\n");
+
+    // Forward to a third party. Source port is still 5060.
+    $connection->sendTo('192.168.1.100', 5060, "forwarded\n");
+};
+
+Worker::runAll();
+```
+
 ### Enable SSL
 ```php
 <?php
