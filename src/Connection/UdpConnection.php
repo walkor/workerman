@@ -57,7 +57,7 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
      */
     public function __construct(
         /** @var resource|null */ protected $socket,
-        protected string $remoteAddress)
+        protected string $remoteAddress = '')
     {
         if (is_resource($socket) && stream_socket_get_name($socket, true) !== false) {
             $this->connected = true;
@@ -83,6 +83,60 @@ class UdpConnection extends ConnectionInterface implements JsonSerializable
             return strlen($sendBuffer) === stream_socket_sendto($this->socket, $sendBuffer);
         }
         return strlen($sendBuffer) === stream_socket_sendto($this->socket, $sendBuffer, 0, $this->isIpV6() ? '[' . $this->getRemoteIp() . ']:' . $this->getRemotePort() : $this->remoteAddress);
+    }
+
+    /**
+     * Send a udp packet to the given ip / port using this connection's socket
+     * as the source. Unlike send(), which replies to the remote address of the
+     * incoming packet, sendTo() lets the caller pick an arbitrary destination.
+     *
+     * This method only exists on UdpConnection. TcpConnection has no such API
+     * because a tcp connection is bound to a single peer.
+     *
+     * It can be used anywhere, including inside onMessage, onWorkerStart,
+     * timers and channel callbacks. To send proactively from onWorkerStart,
+     * obtain a reusable sender via Worker::getUdpSender():
+     *
+     *     $sender = $worker->getUdpSender();
+     *     Timer::add(1, function () use ($sender) {
+     *         $sender->sendTo('192.168.1.7', 5060, "ipv4 heartbeat");
+     *         $sender->sendTo('fe80::1', 5060, "ipv6 heartbeat");
+     *     });
+     *
+     * @param string $ip    Target ip, ipv4 or ipv6 (with or without brackets).
+     * @param int    $port  Target port, 1-65535.
+     * @param mixed  $data  Payload. Passed through protocol::encode() when
+     *                      $raw is false and a protocol is set.
+     * @param bool   $raw   Skip protocol encoding when true.
+     * @return bool         True when the whole payload was handed to the kernel.
+     */
+    public function sendTo(string $ip, int $port, mixed $data, bool $raw = false): bool
+    {
+        if (!is_resource($this->socket)) {
+            return false;
+        }
+        if ($ip === '' || $port < 1 || $port > 65535) {
+            return false;
+        }
+        if (false === $raw && $this->protocol) {
+            $data = $this->protocol::encode($data, $this);
+            if ($data === '') {
+                return true;
+            }
+        }
+        if (!is_string($data)) {
+            $data = (string)$data;
+        }
+        // Add brackets for bare IPv6, keep already bracketed form intact.
+        if (strpos($ip, ':') !== false && $ip[0] !== '[') {
+            $address = "[{$ip}]:{$port}";
+        } else {
+            $address = "{$ip}:{$port}";
+        }
+        set_error_handler(static fn (): bool => true);
+        $sent = stream_socket_sendto($this->socket, $data, 0, $address);
+        restore_error_handler();
+        return strlen($data) === $sent;
     }
 
     /**
