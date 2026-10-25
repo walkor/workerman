@@ -126,7 +126,7 @@ use Workerman\Worker;
 use Workerman\Timer;
 use Workerman\Connection\UdpConnection;
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 $worker = new Worker('udp://[::]:5060', [
     'socket' => [
