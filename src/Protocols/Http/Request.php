@@ -567,7 +567,7 @@ class Request implements Stringable
         static $cache = [];
         $this->data['post'] = $this->data['files'] = [];
         $contentType = $this->header('content-type', '');
-        if (preg_match('/boundary="?(\S+)"?/', $contentType, $match)) {
+        if (preg_match('/boundary=(?|"([^"]+)"|([^\s";,]+))/i', $contentType, $match)) {
             $httpPostBoundary = '--' . $match[1];
             $this->parseUploadFiles($httpPostBoundary);
             return;
@@ -602,7 +602,6 @@ class Request implements Stringable
      */
     protected function parseUploadFiles(string $httpPostBoundary): void
     {
-        $httpPostBoundary = trim($httpPostBoundary, '"');
         $buffer = $this->buffer;
         $postEncodeString = '';
         $filesEncodeString = '';
