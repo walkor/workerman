@@ -459,7 +459,7 @@ class Request
         static $cache = [];
         $this->_data['post'] = $this->_data['files'] = array();
         $content_type = $this->header('content-type', '');
-        if (\preg_match('/boundary="?(\S+)"?/', $content_type, $match)) {
+        if (\preg_match('/boundary=(?|"([^"]+)"|([^\s";,]+))/i', $content_type, $match)) {
             $http_post_boundary = '--' . $match[1];
             $this->parseUploadFiles($http_post_boundary);
             return;
@@ -496,7 +496,6 @@ class Request
      */
     protected function parseUploadFiles($http_post_boundary)
     {
-        $http_post_boundary = \trim($http_post_boundary, '"');
         $buffer = $this->_buffer;
         $post_encode_string = '';
         $files_encode_string = '';
