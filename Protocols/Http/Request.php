@@ -468,18 +468,20 @@ class Request
         if ($body_buffer === '') {
             return;
         }
+        $is_json = \preg_match('/\bjson\b/i', $content_type);
         $cacheable = static::$_enableCache && !isset($body_buffer[1024]);
-        if ($cacheable && isset($cache[$body_buffer])) {
-            $this->_data['post'] = $cache[$body_buffer];
+        $cache_key = $cacheable ? ($is_json ? 'json:' : 'form:') . $body_buffer : '';
+        if ($cacheable && isset($cache[$cache_key])) {
+            $this->_data['post'] = $cache[$cache_key];
             return;
         }
-        if (\preg_match('/\bjson\b/i', $content_type)) {
+        if ($is_json) {
             $this->_data['post'] = (array) json_decode($body_buffer, true);
         } else {
             \parse_str($body_buffer, $this->_data['post']);
         }
         if ($cacheable) {
-            $cache[$body_buffer] = $this->_data['post'];
+            $cache[$cache_key] = $this->_data['post'];
             if (\count($cache) > 256) {
                 unset($cache[key($cache)]);
             }
