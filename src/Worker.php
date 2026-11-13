@@ -41,6 +41,7 @@ use function restore_error_handler;
 use function set_error_handler;
 use function stream_socket_accept;
 use function stream_socket_recvfrom;
+use function stream_socket_sendto;
 use function substr;
 use function array_walk;
 use function get_class;
@@ -940,6 +941,22 @@ class Worker
     public function getMainSocket(): mixed
     {
         return $this->mainSocket;
+    }
+
+    /**
+     * Get a UdpConnection bound to this worker's listening socket for proactive sending.
+     * Only available when transport is 'udp'.
+     *
+     * @return UdpConnection|null
+     */
+    public function getUdpSender(): ?UdpConnection
+    {
+        if ($this->transport !== 'udp' || !is_resource($this->mainSocket)) {
+            return null;
+        }
+        $updSender = new UdpConnection($this->mainSocket);
+        $updSender->protocol = $this->protocol;
+        return $updSender;
     }
 
     /**
