@@ -21,7 +21,6 @@ use stdClass;
 use Throwable;
 use Workerman\Events\EventInterface;
 use Workerman\Events\Swoole;
-use Workerman\Protocols\Http;
 use Workerman\Protocols\Http\Request;
 use Workerman\Timer;
 use Workerman\Worker;
@@ -728,20 +727,11 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
             if ($this->recvBuffer === '') {
                 if (!isset($buffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$buffer])) {
                     ++self::$statistics['total_request'];
-                    if ($this->protocol === Http::class) {
-                        $request = $requests[$buffer];
-                        $request->connection = $this;
-                        try {
-                            ($this->onMessage)($this, $request);
-                        } catch (Throwable $e) {
-                            $this->error($e);
-                        }
-                        $request = clone $request;
-                        $request->destroy();
-                        $requests[$buffer] = $request;
-                        return;
-                    }
                     $request = $requests[$buffer];
+                    if ($request instanceof Request) {
+                        $request = clone $request;
+                        $request->connection = $this;
+                    }
                     try {
                         ($this->onMessage)($this, $request);
                     } catch (Throwable $e) {
@@ -809,14 +799,10 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                     if (!isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$oneRequestBuffer])) {
                         $request = $requests[$oneRequestBuffer];
                         if ($request instanceof Request) {
-                            $request->connection = $this;
-                            ($this->onMessage)($this, $request);
                             $request = clone $request;
-                            $request->destroy();
-                            $requests[$oneRequestBuffer] = $request;
-                        } else {
-                            ($this->onMessage)($this, $request);
+                            $request->connection = $this;
                         }
+                        ($this->onMessage)($this, $request);
                         continue;
                     }
                     // Decode request buffer before Emitting onMessage callback.
