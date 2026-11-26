@@ -333,15 +333,13 @@ it('reuses a cached HTTP request without sharing the object between connections'
         requestCachePush($secondConnection, $secondClient, $secondAccepted, $packet);
 
         expect($delivered)->toHaveCount(3)
-            ->and($delivered[0])->not->toBe($delivered[1])
-            ->and($delivered[0])->not->toBe($delivered[2])
-            ->and($delivered[0]->connection)->toBe($firstConnection)
-            ->and($delivered[1]->connection)->toBe($firstConnection)
-            ->and($delivered[2]->connection)->toBe($secondConnection)
-            ->and($delivered[0]->properties['marker'] ?? null)->toBe('first')
-            ->and(isset($delivered[1]->properties['marker']))->toBeFalse()
-            ->and(isset($delivered[2]->properties['marker']))->toBeFalse()
-            ->and($delivered[2]->path())->toBe('/cached-request')
+            ->and(array_unique(array_map(spl_object_id(...), $delivered)))->toHaveCount(3)
+            ->and(array_map(static fn (Request $request) => $request->connection, $delivered))
+            ->toBe([$firstConnection, $firstConnection, $secondConnection])
+            ->and(array_map(static fn (Request $request) => $request->properties['marker'] ?? null, $delivered))
+            ->toBe(['first', null, null])
+            ->and(array_map(static fn (Request $request) => $request->path(), $delivered))
+            ->toBe(['/cached-request', '/cached-request', '/cached-request'])
             ->and(RequestCacheHttpA::$decodes)->toBe(1);
     } finally {
         requestCacheClose($firstConnection, $firstClient, $firstServer);
@@ -449,12 +447,10 @@ it('stores a cached request on the protocol that decoded it when onMessage switc
         requestCachePush($protocolAConnection, $protocolAClient, $protocolAAccepted, $packet);
 
         expect($delivered)->toHaveCount(4)
-            ->and($delivered[0]->path())->toBe('/switch-mid-buffer')
-            ->and($delivered[1]->path())->toBe('/switch-mid-buffer')
-            ->and($delivered[0]->connection)->toBe($connection)
-            ->and($delivered[1]->connection)->toBe($connection)
-            ->and($delivered[2]->connection)->toBe($protocolBConnection)
-            ->and($delivered[3]->connection)->toBe($protocolAConnection)
+            ->and(array_map(static fn (Request $request) => $request->path(), $delivered))
+            ->toBe(array_fill(0, 4, '/switch-mid-buffer'))
+            ->and(array_map(static fn (Request $request) => $request->connection, $delivered))
+            ->toBe([$connection, $connection, $protocolBConnection, $protocolAConnection])
             ->and(RequestCacheHttpA::$decodes)->toBe(1)
             ->and(RequestCacheHttpB::$decodes)->toBe(1);
     } finally {
