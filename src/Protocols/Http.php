@@ -115,6 +115,9 @@ class Http
     {
         static $cache = [];
 
+        // decode() clears this flag, but it is skipped when TcpConnection serves a cached request.
+        unset($connection->context->chunked);
+
         $crlfPos = strpos($buffer, "\r\n\r\n");
         if (false === $crlfPos) {
             if (strlen($buffer) >= static::MAX_HEADER_LENGTH) {

@@ -32,7 +32,6 @@ use function feof;
 use function fread;
 use function function_exists;
 use function fwrite;
-use function is_object;
 use function is_resource;
 use function key;
 use function method_exists;
@@ -683,6 +682,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
      */
     public function baseRead($socket, bool $checkEof = true): void
     {
+        // Keyed by protocol first: the same bytes decode to different values under different protocols.
         static $requests = [];
         $buffer = '';
         try {
@@ -725,13 +725,10 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 return;
             }
             if ($this->recvBuffer === '') {
-                if (!isset($buffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$buffer])) {
+                if ($this->protocol !== null && !isset($buffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$this->protocol][$buffer])) {
                     ++self::$statistics['total_request'];
-                    $request = $requests[$buffer];
-                    if ($request instanceof Request) {
-                        $request = clone $request;
-                        $request->connection = $this;
-                    }
+                    $request = clone $requests[$this->protocol][$buffer];
+                    $request->connection = $this;
                     try {
                         ($this->onMessage)($this, $request);
                     } catch (Throwable $e) {
@@ -748,6 +745,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
         // If the application layer protocol has been set up.
         if ($this->protocol !== null) {
             while ($this->recvBuffer !== '' && !$this->isPaused) {
+                $protocol = $this->protocol;
                 // The current packet length is known.
                 if ($this->currentPackageLength) {
                     // Data is not enough for a package.
@@ -758,7 +756,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 } else {
                     // Get current package length.
                     try {
-                        $this->currentPackageLength = $this->protocol::input($this->recvBuffer, $this);
+                        $this->currentPackageLength = $protocol::input($this->recvBuffer, $this);
                     } catch (Throwable $e) {
                         $this->currentPackageLength = -1;
                         Worker::safeEcho((string)$e);
@@ -775,7 +773,7 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                         }
                     } // Wrong package.
                     else {
-                        Worker::safeEcho((string)(new RuntimeException("Protocol $this->protocol Error package. package_length=" . var_export($this->currentPackageLength, true))));
+                        Worker::safeEcho((string)(new RuntimeException("Protocol $protocol Error package. package_length=" . var_export($this->currentPackageLength, true))));
                         $this->destroy();
                         return;
                     }
@@ -796,30 +794,26 @@ class TcpConnection extends ConnectionInterface implements JsonSerializable
                 // Reset the current packet length to 0.
                 $this->currentPackageLength = 0;
                 try {
-                    if (!isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$oneRequestBuffer])) {
-                        $request = $requests[$oneRequestBuffer];
-                        if ($request instanceof Request) {
-                            $request = clone $request;
-                            $request->connection = $this;
-                        }
+                    if (!isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH]) && isset($requests[$protocol][$oneRequestBuffer])) {
+                        $request = clone $requests[$protocol][$oneRequestBuffer];
+                        $request->connection = $this;
                         ($this->onMessage)($this, $request);
                         continue;
                     }
                     // Decode request buffer before Emitting onMessage callback.
-                    $request = $this->protocol::decode($oneRequestBuffer, $this);
+                    $request = $protocol::decode($oneRequestBuffer, $this);
                     // The protocol closed the connection while decoding, so there is nothing to deliver.
                     if ($this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
                         return;
                     }
-                    if ((!is_object($request) || $request instanceof Request) && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
+                    // Only Request is cached: other decoders may depend on per-connection state, such as websocket fragments.
+                    if ($request instanceof Request && !isset($oneRequestBuffer[static::MAX_CACHE_STRING_LENGTH])) {
                         ($this->onMessage)($this, $request);
-                        if ($request instanceof Request) {
-                            $request = clone $request;
-                            $request->destroy();
-                        }
-                        $requests[$oneRequestBuffer] = $request;
-                        if (count($requests) > static::MAX_CACHE_SIZE) {
-                            unset($requests[key($requests)]);
+                        $request = clone $request;
+                        $request->destroy();
+                        $requests[$protocol][$oneRequestBuffer] = $request;
+                        if (count($requests[$protocol]) > static::MAX_CACHE_SIZE) {
+                            unset($requests[$protocol][key($requests[$protocol])]);
                         }
                         continue;
                     }
