@@ -576,7 +576,7 @@ class Request implements Stringable
         if ($bodyBuffer === '') {
             return;
         }
-        $isJson = str_contains($contentType, 'json');
+        $isJson = stripos($contentType, 'json') !== false;
         $cacheable = !isset($bodyBuffer[static::MAX_CACHE_STRING_LENGTH]);
         $cacheKey = $cacheable ? ($isJson ? 'json:' : 'form:') . $bodyBuffer : '';
         if ($cacheable && isset($cache[$cacheKey])) {
