@@ -28,3 +28,21 @@ it('parses identical bodies independently of previously cached content types', f
     'vendor JSON' => ['application/x-www-form-urlencoded', 'application/problem+json', true],
     'JSON with charset' => ['application/x-www-form-urlencoded', 'application/json; charset=utf-8', true],
 ]);
+
+it('parses JSON media types regardless of case', function (string $contentType) {
+    $expected = ['limit' => 20, 'contentType' => $contentType];
+    $body = json_encode($expected);
+
+    for ($repeat = 0; $repeat < 2; ++$repeat) {
+        $request = new Request("POST / HTTP/1.1\r\nHost: localhost\r\nContent-Type: $contentType\r\n"
+            . 'Content-Length: ' . strlen($body) . "\r\n\r\n" . $body);
+
+        expect($request->post())->toBe($expected);
+    }
+})->with([
+    'lowercase' => ['application/json'],
+    'mixed case' => ['Application/JSON'],
+    'uppercase' => ['APPLICATION/JSON'],
+    'charset parameter' => ['application/Json; charset=utf-8'],
+    'vendor media type' => ['APPLICATION/PROBLEM+JSON'],
+]);
